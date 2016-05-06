@@ -455,7 +455,7 @@ int main() {
 
 	srand(time(NULL));  
 	for (i = 0;i < count;i ++) {
-		//key = rand() % 500;
+		//key = ;
 		//keyArray[i] = key;
 		
 		node = (RBTreeNode*)malloc(sizeof(RBTreeNode));

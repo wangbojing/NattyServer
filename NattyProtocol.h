@@ -1,0 +1,35 @@
+
+
+
+
+
+#ifndef __NATTY_PROTOCOL_H__
+#define __NATTY_PROTOCOL_H__
+
+#define NTY_PROTO_TYPE_IDX			0	
+
+#define NTY_PROTO_LOGIN_REQ			0x01
+#define NTY_PROTO_LOGIN_ACK			0x81
+
+#define NTY_PROTO_HEARTBEAT_REQ		0x02 //'H'
+#define NTY_PROTO_HEARTBEAT_ACK		0x82
+
+#define NTY_PROTO_LOGOUT_REQ		0x03
+#define NTY_PROTO_LOGOUT_ACK		0x83
+
+
+
+
+#define NTY_PROTO_P2P_ADDR_REQ			0x11
+#define NTY_PROTO_P2P_ADDR_ACK			0x91
+
+#define NTY_PROTO_P2P_NOTIFY_REQ			0x12
+#define NTY_PROTO_P2P_NOTIFY_ACK			0x92
+
+
+#endif
+
+
+
+
+

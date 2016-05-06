@@ -41,7 +41,7 @@
 
 
 
-
+#include "NattyFilter.h"
 #include "NattyUdpServer.h"
 
 void error(char *msg) {  
@@ -83,12 +83,15 @@ void* ntyUdpServerDtor(void *_self) {
 
 int ntyUdpServerProcess(const void *_self) {
 	const UdpServer *self = _self;
-	struct sockaddr_in clientaddr;
+	//struct sockaddr_in clientaddr;
 	int clientlen = sizeof(struct sockaddr_in);  
 	
 	struct pollfd fds;
 	int ret = -1, n;
 	char buf[RECV_BUFFER_SIZE];
+	
+	void* pFilter = ntyProtocolFilterInit();
+	UdpClient *pClient = (UdpClient*)malloc(sizeof(UdpClient));
 	
 	if (self->sockfd <= 0) {
 		error("Udp Server Socket no Initial");
@@ -100,19 +103,24 @@ int ntyUdpServerProcess(const void *_self) {
 		ret = poll(&fds, 1, 5);
 		if (ret) { //data is comming
 			bzero(buf, RECV_BUFFER_SIZE);    
-			n = recvfrom(self->sockfd, buf, RECV_BUFFER_SIZE, 0, (struct sockaddr *) &clientaddr, &clientlen);    
-			printf("%d.%d.%d.%d:%d --> %s\n", *(unsigned char*)(&clientaddr.sin_addr.s_addr), *((unsigned char*)(&clientaddr.sin_addr.s_addr)+1),													
-				*((unsigned char*)(&clientaddr.sin_addr.s_addr)+2), *((unsigned char*)(&clientaddr.sin_addr.s_addr)+3),													
-				clientaddr.sin_port, buf);	
+			n = recvfrom(self->sockfd, buf, RECV_BUFFER_SIZE, 0, (struct sockaddr *) &pClient->addr, &clientlen);    
+			printf("%d.%d.%d.%d:%d --> %s\n", *(unsigned char*)(&pClient->addr.sin_addr.s_addr), *((unsigned char*)(&pClient->addr.sin_addr.s_addr)+1),													
+				*((unsigned char*)(&pClient->addr.sin_addr.s_addr)+2), *((unsigned char*)(&pClient->addr.sin_addr.s_addr)+3),													
+				pClient->addr.sin_port, buf);	
 			// proccess
 			// i think process protocol and search client id from rb-tree
-			// 
+			pClient->sockfd = self->sockfd;
+			
+			ntyProtocolFilterProcess(pFilter, buf, pClient);
 			//send to ack
-			n = sendto(self->sockfd, buf, strlen(buf), 0, (struct sockaddr *) &clientaddr, clientlen);    
+			n = sendto(self->sockfd, buf, strlen(buf), 0, (struct sockaddr *) &pClient->addr, clientlen);    
 			if (n < 0)       
 				error("ERROR in sendto");  
 		}
 	}
+
+	free(pClient);
+	ntyProtocolFilterRelease(pFilter);
 	return 0;
 }
 
