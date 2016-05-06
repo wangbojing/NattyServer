@@ -67,11 +67,12 @@ void *New(const void *_class, ...) {
 
 
 void Delete(void *_class) {
-	const AbstractClass *class = _class;
+	const AbstractClass **class = _class;
 
-	if (_class && class && class->dtor) {
-		_class = class->dtor(_class);
+	if (_class && (*class) && (*class)->dtor) {
+		_class = (*class)->dtor(_class);
 	}
+	
 	free(_class);
 }
 

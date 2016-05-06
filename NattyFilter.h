@@ -14,7 +14,7 @@ typedef struct {
 	void* (*dtor)(void *_self);
 	void (*setSuccessor)(void *_self, void *succ);
 	void* (*getSuccessor)(const void *_self);
-	void (*handleRequest)(const void *_self, unsigned char type,const void* obj);
+	void (*handleRequest)(const void *_self, unsigned char *buffer,const void* obj);
 } ProtocolFilter;
 
 typedef struct {

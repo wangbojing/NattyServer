@@ -6,8 +6,21 @@
 #ifndef __NATTY_PROTOCOL_H__
 #define __NATTY_PROTOCOL_H__
 
-#define NTY_PROTO_TYPE_IDX			0	
+/* ** **** ********  ****************  Length  ****************  ******** **** ** */
+#define NTY_HEARTBEAT_ACK_LENGTH		5
+#define NTY_DEVID_LENGTH				4
+#define NTY_ACKNUM_LENGTH				4
 
+
+/* ** **** ********  ****************  Index  ****************  ******** **** ** */
+#define NTY_PROTO_TYPE_IDX			0	
+#define NTY_PROTO_DEVID_IDX			1	
+#define NTY_PROTO_ACKNUM_IDX		(NTY_PROTO_DEVID_IDX+NTY_DEVID_LENGTH)
+
+
+
+
+/* ** **** ********  ****************  Header  ****************  ******** **** ** */
 #define NTY_PROTO_LOGIN_REQ			0x01
 #define NTY_PROTO_LOGIN_ACK			0x81
 
@@ -25,6 +38,8 @@
 
 #define NTY_PROTO_P2P_NOTIFY_REQ			0x12
 #define NTY_PROTO_P2P_NOTIFY_ACK			0x92
+
+
 
 
 #endif

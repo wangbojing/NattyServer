@@ -80,6 +80,19 @@ typedef struct _RBTreeOpera {
 
 
 
+void* ntyRBTreeInstance(void);
+int ntyRBTreeInterfaceInsert(void *self, int key, void *value);
+void* ntyRBTreeInterfaceSearch(void *self, int key);
+int ntyRBTreeInterfaceDelete(void *self, int key);
+int ntyRBTreeInterfaceUpdate(void *self, int key, void *value);
+void ntyRBTreeRelease(void *self);
+
+
+static void *pRBTree = NULL; //Singleton
+
+
+
+
 #endif
 
 

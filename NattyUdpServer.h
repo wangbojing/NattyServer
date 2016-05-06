@@ -68,7 +68,7 @@
 typedef struct _UdpClient {
 	int sockfd;
 	struct sockaddr_in addr;
-	int key; //client id use for rb-tree key
+	//int key; //client id use for rb-tree key
 } UdpClient;
 
 
@@ -87,6 +87,8 @@ typedef struct _UdpServerOpera {
 
 int ntyUdpServerRun(const void *arg);
 const void* ntyUdpServerInstance(void);
+int ntyClientCompare(const UdpClient *clientA, const UdpClient *clientB);
+int ntySendBuffer(const UdpClient *client, unsigned char *buffer, int length);
 
 
 

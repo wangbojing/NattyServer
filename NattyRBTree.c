@@ -41,6 +41,7 @@
 
 
 
+#include <string.h>
 
 #include "NattyRBTree.h"
 
@@ -303,7 +304,7 @@ RBTreeNode* ntyRBTreeSearch(RBTree *T, int key) {
 }
 
 
-void* ntyBRTreeOperaCtor(void *_self, va_list *params) {
+void* ntyRBTreeOperaCtor(void *_self, va_list *params) {
 	RBTree *self = _self;
 	self->nil = (RBTreeNode*)malloc(sizeof(RBTreeNode));
 	self->nil->color = BLACK;
@@ -323,12 +324,16 @@ static void ntyPosOrderRelease(RBTree *T, RBTreeNode *node) {
 
 
 
-void* ntyBRTreeOperaDtor(void *_self) {
+void* ntyRBTreeOperaDtor(void *_self) {
 	RBTree *self = _self;
+	
 	ntyPosOrderRelease(self, self->root);
+	free(self->nil);
+
+	return self;
 }
 
-int ntyBRTreeOperaInsert(void *_self, int key, void *value) {
+int ntyRBTreeOperaInsert(void *_self, int key, void *value) {
 	RBTree *self = _self;
 
 	RBTreeNode *node = ntyRBTreeSearch(self, key);
@@ -343,7 +348,7 @@ int ntyBRTreeOperaInsert(void *_self, int key, void *value) {
 	return 1; //exist
 }
 
-void* ntyBRTreeOperaSearch(void *_self, int key) {
+void* ntyRBTreeOperaSearch(void *_self, int key) {
 	RBTree *self = _self;
 	RBTreeNode *node = ntyRBTreeSearch(self, key);
 
@@ -353,11 +358,11 @@ void* ntyBRTreeOperaSearch(void *_self, int key) {
 	return node;
 }
 
-int ntyBRTreeOperaDelete(void *_self, int key) {
+int ntyRBTreeOperaDelete(void *_self, int key) {
 	RBTree *self = _self;
 
 	RBTreeNode *node = ntyRBTreeSearch(self , key);
-	if (node = self->nil) return 1;
+	if (node == self->nil) return 1;
 
 	node = ntyRBTreeDelete(self, node);
 	free(node);
@@ -365,30 +370,32 @@ int ntyBRTreeOperaDelete(void *_self, int key) {
 	return 0;
 }
 
-int ntyBRTreeOperaUpdate(void *_self, int key, void *value) {
+int ntyRBTreeOperaUpdate(void *_self, int key, void *value) {
 	RBTree *self = _self;
 
 	RBTreeNode *node = ntyRBTreeSearch(self , key);
-	if (node = self->nil) return 1;
+	if (node == self->nil) return 1;
 
+	free(node->value);
 	node->value = value;
+
 	return 0;
 }
 
 
 
 
-static const RBTreeOpera ntyBTreeOpera = {
+static const RBTreeOpera ntyRBTreeOpera = {
 	sizeof(RBTree),
-	ntyBRTreeOperaCtor,
-	ntyBRTreeOperaDtor,
-	ntyBRTreeOperaInsert,
-	ntyBRTreeOperaSearch,
-	ntyBRTreeOperaDelete,
-	ntyBRTreeOperaUpdate,
+	ntyRBTreeOperaCtor,
+	ntyRBTreeOperaDtor,
+	ntyRBTreeOperaInsert,
+	ntyRBTreeOperaSearch,
+	ntyRBTreeOperaDelete,
+	ntyRBTreeOperaUpdate,
 };
 
-const void *pNtyBTreeOpera = &ntyBTreeOpera;
+const void *pNtyRBTreeOpera = &ntyRBTreeOpera;
 
 
 static void ntyInOrderTraversal(RBTree *T, RBTreeNode *node) {
@@ -423,7 +430,7 @@ static int ntyPrintTreeByLevel(RBTree *T, RBTreeNode *node, int level) {
 		return 0;
 	}
 	if (0 == level) {
-		printf(" %d color:%d  ", node->key, node->color);
+		printf(" %d color:%d  %s\n", node->key, node->color, (char*)node->value);
 		return 1;
 	}
 
@@ -438,14 +445,66 @@ static void ntyLevelOrderTraversal(RBTree *T, RBTreeNode *node) {
 	}
 }
 
-const void* ntyRBTreeInstance(void) {
-	return pNtyBTreeOpera;
+void* ntyRBTreeInstance(void) {
+	if (pRBTree == NULL) {
+		pRBTree = New(pNtyRBTreeOpera);
+	}
+	return pRBTree;
 }
+
+int ntyRBTreeInterfaceInsert(void *self, int key, void *value) {
+	RBTreeOpera **pRBTreeOpera = self;
+
+	if (self && (*pRBTreeOpera) && (*pRBTreeOpera)->insert) {
+		return (*pRBTreeOpera)->insert(self, key, value);
+	}
+	return -1;
+}
+
+//return node->value : UdpClient
+void* ntyRBTreeInterfaceSearch(void *self, int key) {
+	RBTreeOpera **pRBTreeOpera = self;
+
+	if (self && (*pRBTreeOpera) && (*pRBTreeOpera)->search) {
+		RBTreeNode* node = (*pRBTreeOpera)->search(self, key);
+		if (node != NULL) {
+			return node->value; //UdpClient
+ 		} else {
+			return NULL;
+		}
+	}
+	return NULL;
+}
+
+int ntyRBTreeInterfaceDelete(void *self, int key) {
+	RBTreeOpera **pRBTreeOpera = self;
+
+	if (self && (*pRBTreeOpera) && (*pRBTreeOpera)->delete) {
+		return (*pRBTreeOpera)->delete(self, key);
+	}
+	return -1;
+}
+
+int ntyRBTreeInterfaceUpdate(void *self, int key, void *value) {
+	RBTreeOpera **pRBTreeOpera = self;
+
+	if (self && (*pRBTreeOpera) && (*pRBTreeOpera)->update) {
+		return (*pRBTreeOpera)->update(self, key, value);
+	}
+	return -1;
+}
+
+void ntyRBTreeRelease(void *self) {
+	return Delete(self);
+}
+
 
 #if 0
 int main() {
 	int i, count = 20, key;
 	int keyArray[20] = {12, 1, 9, 2, 0, 11, 7, 19, 4, 15, 18, 5, 14, 13, 10, 16, 6, 3, 8, 17};
+
+#if 0
 	RBTreeNode *node;
 	RBTree *T = (RBTree*)malloc(sizeof(RBTree));
 	T->nil = (RBTreeNode*)malloc(sizeof(RBTreeNode));
@@ -474,6 +533,32 @@ int main() {
 		free(node);
 
 	}
+#endif
+	char *value = NULL;
+	void* pRBTree = ntyRBTreeInstance();
+
+	for (i = 0;i < count;i ++){
+		value = (char*)malloc(16);
+		strcpy(value, "123456");
+		
+		ntyRBTreeInterfaceInsert(pRBTree, keyArray[i], value);
+	}
+	ntyLevelOrderTraversal(pRBTree, ((RBTree*)pRBTree)->root);
+
+	void* v = ntyRBTreeInterfaceSearch(pRBTree, 19);
+	printf("\n value: %s\n", (char*)v);
+
+
+	value = (char*)malloc(16);
+	strcpy(value, "nihaoma?");
+	printf(" Update: %d\n", ntyRBTreeInterfaceUpdate(pRBTree, 11, value));
+
+	v = ntyRBTreeInterfaceSearch(pRBTree, 11);
+	printf("\n value: %s\n", (char*)v);
+
+	ntyRBTreeInterfaceDelete(pRBTree, 18);
+
+	ntyRBTreeRelease(pRBTree);
 }
 
 #endif

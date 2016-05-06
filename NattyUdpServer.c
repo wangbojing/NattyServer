@@ -79,6 +79,7 @@ void* ntyUdpServerDtor(void *_self) {
 		close(self->sockfd);
 		self->sockfd = 0;
 	}
+	return self;
 }
 
 int ntyUdpServerProcess(const void *_self) {
@@ -143,6 +144,18 @@ int ntyUdpServerRun(const void *arg) {
 	return 0;
 }
 
+int ntyClientCompare(const UdpClient *clientA, const UdpClient *clientB) {
+	if ((clientA->addr.sin_port == clientB->addr.sin_port) 
+		&& (clientA->addr.sin_addr.s_addr == clientB->addr.sin_addr.s_addr)) {
+		return 1;
+	}
+
+	return 0;
+}
+
+int ntySendBuffer(const UdpClient *client, unsigned char *buffer, int length) {
+	return sendto(client->sockfd, buffer, length, 0, (struct sockaddr *)&client->addr, sizeof(struct sockaddr_in));
+}
 
 const void* ntyUdpServerInstance(void) {
 	return pNtyUdpServer;
