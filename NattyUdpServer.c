@@ -1,5 +1,5 @@
 /*
- *  Author : WangBoJing , email : 1989wangbojing@163.com
+ *  Author : WangBoJing , email : 1989wangbojing@gmail.com
  * 
  *  Copyright Statement:
  *  --------------------
@@ -41,80 +41,102 @@
 
 
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 
-#include <netdb.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+#include "NattyUdpServer.h"
+
+void error(char *msg) {  
+	perror(msg);  
+	exit(1);
+}
 
 
-#define NATTY_SERVER_PORT		8880
-#define BUFSIZE					1024
+void* ntyUdpServerCtor(void *_self, va_list *params) {
+	UdpServer *self = _self;
+	short port = NATTY_UDP_SERVER;
+	int optval; /* flag value for setsockopt */  
 
+	self->sockfd = socket(AF_INET, SOCK_DGRAM, 0); 
+	if (self->sockfd < 0)     
+		error("ERROR opening socket");
 
-int ntyUdpServer(void) {
-	int sockfd;
-	int portno = NATTY_SERVER_PORT;
-	int clientlen;
-	
-	struct sockaddr_in serveraddr;
+	optval = 1;  
+	setsockopt(self->sockfd, SOL_SOCKET, SO_REUSEADDR, 	     
+		(const void *)&optval , sizeof(int));  /*   * build the server's Internet address   */  
+	bzero((char *) &self->addr, sizeof(struct sockaddr_in));  
+	self->addr.sin_family = AF_INET;  
+	self->addr.sin_addr.s_addr = htonl(INADDR_ANY);  
+	self->addr.sin_port = htons(port); 
+
+	if (bind(self->sockfd, (struct sockaddr *)&(self->addr), sizeof(struct sockaddr_in)) < 0)     
+		error("ERROR on binding"); 
+
+	return self;
+}
+
+void* ntyUdpServerDtor(void *_self) {
+	UdpServer *self = _self;
+	if (self->sockfd) {
+		close(self->sockfd);
+		self->sockfd = 0;
+	}
+}
+
+int ntyUdpServerProcess(const void *_self) {
+	const UdpServer *self = _self;
 	struct sockaddr_in clientaddr;
-
-	struct hostent *hostp;
-	char buf[BUFSIZE];
-	char *hostaddrp;
-	char optval;
-	int n;
-
-	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sockfd < 0) {
-		printf("Error open socket\n");
-	}
-	optval = 1;
-	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (const void*)&optval, sizeof(int));
-
-	bzero((char*)&serveraddr, sizeof(serveraddr));
-	serveraddr.sin_family = AF_INET;
-	serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	serveraddr.sin_port = htons((unsigned short)portno);
-
-	if (bind(sockfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0) {
-		printf("Error on binding\n");
-	}
-
-	clientlen = sizeof(clientaddr);
-	while (1) {
-		bzero(buf, BUFSIZE);
-		n = recvfrom(sockfd, buf, BUFSIZE, 0, (struct sockaddr*)&clientaddr, &clientlen);
-		if (n < 0) {
-			printf("Error in recvfrom\n");
-		}
-		hostp = gethostbyaddr((const char *)&clientaddr.sin_addr.s_addr, sizeof(clientaddr.sin_addr.s_addr), AF_INET);
-		if (hostp == NULL) {
-			printf("Error on gethostbyaddr\n");
-		}
-		printf("server received datagram from %s\n", hostp->h_name, hostaddrp);
-		printf("server received %d/%d bytes: %s\n", strlen(buf), n, buf);
-
-		n = sendto(sockfd, buf, strlen(buf), 0, (struct sockaddr*)&clientaddr, clientlen);
-		if (n < 0) {
-			printf("Error in sendto\n");
-		}
+	int clientlen = sizeof(struct sockaddr_in);  
+	
+	struct pollfd fds;
+	int ret = -1, n;
+	char buf[RECV_BUFFER_SIZE];
+	
+	if (self->sockfd <= 0) {
+		error("Udp Server Socket no Initial");
 	}	
+	
+	fds.fd = self->sockfd;
+	fds.events = POLLIN;
+	while(1) {
+		ret = poll(&fds, 1, 5);
+		if (ret) { //data is comming
+			bzero(buf, RECV_BUFFER_SIZE);    
+			n = recvfrom(self->sockfd, buf, RECV_BUFFER_SIZE, 0, (struct sockaddr *) &clientaddr, &clientlen);    
+			printf("%d.%d.%d.%d:%d --> %s\n", *(unsigned char*)(&clientaddr.sin_addr.s_addr), *((unsigned char*)(&clientaddr.sin_addr.s_addr)+1),													
+				*((unsigned char*)(&clientaddr.sin_addr.s_addr)+2), *((unsigned char*)(&clientaddr.sin_addr.s_addr)+3),													
+				clientaddr.sin_port, buf);	
+			// proccess
+			// i think process protocol and search client id from rb-tree
+			// 
+			//send to ack
+			n = sendto(self->sockfd, buf, strlen(buf), 0, (struct sockaddr *) &clientaddr, clientlen);    
+			if (n < 0)       
+				error("ERROR in sendto");  
+		}
+	}
 	return 0;
 }
 
-int main () {
-	return ntyUdpServer();
+
+static const UdpServerOpera ntyUdpServer = {
+	sizeof(UdpServer),
+	ntyUdpServerCtor,
+	ntyUdpServerDtor,
+	ntyUdpServerProcess,
+};
+
+static const void *pNtyUdpServer = &ntyUdpServer;
+
+int ntyUdpServerRun(const void *arg) {
+	const UdpServerOpera * const *pServerConf = arg;
+	
+	if (arg && (*pServerConf)->process && (*pServerConf)) {
+		(*pServerConf)->process(arg);
+	}
+	return 0;
 }
 
 
-
-
-
-
+const void* ntyUdpServerInstance(void) {
+	return pNtyUdpServer;
+}
 

@@ -1,5 +1,5 @@
 /*
- *  Author : WangBoJing , email : 1989wangbojing@163.com
+ *  Author : WangBoJing , email : 1989wangbojing@gmail.com
  * 
  *  Copyright Statement:
  *  --------------------
@@ -54,7 +54,7 @@
 
 
 typedef struct _RBTreeNode {
-	int key;
+	unsigned int key;
 	void *value;
 	struct _RBTreeNode *right;
 	struct _RBTreeNode *left;
@@ -63,6 +63,7 @@ typedef struct _RBTreeNode {
 } RBTreeNode;
 
 typedef struct _RBTree {
+	const void *_;
 	RBTreeNode *root;
 	RBTreeNode *nil;
 } RBTree;

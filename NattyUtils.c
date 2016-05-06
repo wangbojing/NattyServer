@@ -1,5 +1,5 @@
 /*
- *  Author : WangBoJing , email : 1989wangbojing@163.com
+ *  Author : WangBoJing , email : 1989wangbojing@gmail.com
  * 
  *  Copyright Statement:
  *  --------------------
@@ -100,6 +100,8 @@ void ntyDisplayLetter(char *LogStr, int length) {
 #endif
 		printf("\n");
 	}
+
+	printf("\n\n\n\n\n");
 }
 
 
@@ -111,8 +113,15 @@ void ntyDisplay(void) {
 	ntyDisplayLetter(DB_LETTER_T);
 	ntyDisplayLetter(DB_LETTER_Y);
 #else
-	char *LogStr = "Natty";
+	char *LogStr = "Natty";	
 	ntyDisplayLetter(LogStr, 5);
+
+	printf(" Author : WangBoJing , email : 1989wangbojing@gmail.com \n");
+	printf(" This software is protected by Copyright and the information contained\n");
+	printf(" herein is confidential. The software may not be copied and the information\n");
+	printf(" contained herein may not be used or disclosed except with the written\n");
+	printf(" permission of NALEX Inc. (C) 2016\n\n\n");
+
 #endif
 }
 

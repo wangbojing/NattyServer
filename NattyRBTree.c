@@ -1,5 +1,5 @@
 /*
- *  Author : WangBoJing , email : 1989wangbojing@163.com
+ *  Author : WangBoJing , email : 1989wangbojing@gmail.com
  * 
  *  Copyright Statement:
  *  --------------------
@@ -308,6 +308,8 @@ void* ntyBRTreeOperaCtor(void *_self, va_list *params) {
 	self->nil = (RBTreeNode*)malloc(sizeof(RBTreeNode));
 	self->nil->color = BLACK;
 	self->root = self->nil;
+
+	return self;
 }
 
 static void ntyPosOrderRelease(RBTree *T, RBTreeNode *node) {
@@ -434,6 +436,10 @@ static void ntyLevelOrderTraversal(RBTree *T, RBTreeNode *node) {
 	for (i = 0;;i ++) {
 		if (!ntyPrintTreeByLevel(T, node, i)) break;
 	}
+}
+
+const void* ntyRBTreeInstance(void) {
+	return pNtyBTreeOpera;
 }
 
 #if 0

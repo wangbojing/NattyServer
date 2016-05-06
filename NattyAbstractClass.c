@@ -1,5 +1,5 @@
 /*
- *  Author : WangBoJing , email : 1989wangbojing@163.com
+ *  Author : WangBoJing , email : 1989wangbojing@gmail.com
  * 
  *  Copyright Statement:
  *  --------------------
@@ -43,17 +43,19 @@
 
 
 
+#include <string.h>
+#include <stdio.h>
 
 #include "NattyAbstractClass.h"
-
 
 void *New(const void *_class, ...) {
 	const AbstractClass *class = _class;
 	void *p = calloc(1, class->size);
-
+	memset(p, 0, class->size);
+	
 	assert(p);
 	*(const AbstractClass**)p = class;
-
+	
 	if (class->ctor) {
 		va_list params;
 		va_start(params, _class);

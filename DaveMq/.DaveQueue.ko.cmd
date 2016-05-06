@@ -1,0 +1,1 @@
+cmd_/home/wangbojing/share/DaveMq/DaveQueue.ko := ld -r -m elf_i386 -T ./scripts/module-common.lds --build-id  -o /home/wangbojing/share/DaveMq/DaveQueue.ko /home/wangbojing/share/DaveMq/DaveQueue.o /home/wangbojing/share/DaveMq/DaveQueue.mod.o

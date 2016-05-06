@@ -42,13 +42,55 @@
 
 
 
-#ifndef __NTY_UTILS_H__
-#define __NTY_UTILS_H__
+#ifndef __NATTY_UDP_SERVER_H__
+#define __NATTY_UDP_SERVER_H__
 
-#include "NattyLetter.h"
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <netdb.h>
+#include <sys/types.h> 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <poll.h>
 
-void ntyDisplay(void);
+
+#include "NattyAbstractClass.h"
+
+
+#define NATTY_UDP_SERVER		8888
+#define RECV_BUFFER_SIZE 		4096
+
+
+
+typedef struct _UdpClient {
+	int sockfd;
+	struct sockaddr_in addr;
+	int key; //client id use for rb-tree key
+} UdpClient;
+
+
+typedef struct _UdpServer {
+	const void *_;
+	int sockfd;
+	struct sockaddr_in addr;
+} UdpServer;
+
+typedef struct _UdpServerOpera {
+	size_t size;
+	void* (*ctor)(void *_self, va_list *params);
+	void* (*dtor)(void *_self);
+	int (*process)(const void *_self);
+} UdpServerOpera;
+
+int ntyUdpServerRun(const void *arg);
+const void* ntyUdpServerInstance(void);
+
 
 
 #endif
+
+
 
