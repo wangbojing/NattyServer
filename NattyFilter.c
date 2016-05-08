@@ -193,15 +193,11 @@ void ntyP2PNotifyClient(UdpClient *client, U8 *notify) {
 	int length = 0;
 	
 	notify[NTY_PROTO_TYPE_IDX] = NTY_PROTO_P2P_NOTIFY_REQ;
-	*(U32*)(&notify[NTY_PROTO_P2P_NOTIFY_IPADDR_IDX]) = client->addr.sin_addr.s_addr;
-	*(U16*)(&notify[NTY_PROTO_P2P_NOTIFY_IPPORT_IDX]) = client->addr.sin_port;
-
+	
 	length = NTY_PROTO_P2P_NOTIFY_CRC_IDX;
 	*(U32*)(&notify[length]) = ntyGenCrcValue(notify, length);
 	length += sizeof(U32);
 
-	notify[NTY_PROTO_TYPE_IDX] = NTY_PROTO_P2P_NOTIFY_REQ;
-	
 	ntySendBuffer(client, notify, length);
 
 	return ;
@@ -215,16 +211,26 @@ static int ntyUpdateClientListIpAddr(UdpClient *client, U32 key, U32 ackNum) {
 	U32* friendsList = Iterator(pClient->clientList);
 	int count = ((SingleList*)pClient->clientList)->count;
 	for (i = 0;i < count;i ++) {
+#if 1
 		UdpClient *cv = ntyRBTreeInterfaceSearch(pRBTree, *(friendsList+i));
 		if (cv != NULL) {
 			
 			U8 ackNotify[NTY_P2P_NOTIFY_ACK_LENGTH] = {0};
 			*(U32*)(&ackNotify[NTY_PROTO_P2P_NOTIFY_DEVID_IDX]) = key;
 			*(U32*)(&ackNotify[NTY_PROTO_P2P_NOTIFY_ACKNUM_IDX]) = ackNum;
+			
+			*(U32*)(&ackNotify[NTY_PROTO_P2P_NOTIFY_IPADDR_IDX]) = client->addr.sin_addr.s_addr;
+			*(U16*)(&ackNotify[NTY_PROTO_P2P_NOTIFY_IPPORT_IDX]) = client->addr.sin_port;
 
 			ntyP2PNotifyClient(cv, ackNotify);
 		}
+#else
+		U8 ackNotify[NTY_P2P_NOTIFY_ACK_LENGTH] = {0};
+		*(U32*)(&ackNotify[NTY_PROTO_P2P_NOTIFY_DEVID_IDX]) = key;
+		*(U32*)(&ackNotify[NTY_PROTO_P2P_NOTIFY_ACKNUM_IDX]) = ackNum;
 
+		ntyP2PNotifyClient(cv, ackNotify);
+#endif
 	}
 	free(friendsList);
 }
@@ -236,6 +242,7 @@ static void ntyClientFriendsList(UdpClient *client, U8 *ack) {
 
 	U32* friendsList = Iterator(pClient->clientList);
 	int count = ((SingleList*)pClient->clientList)->count;
+	*(U16*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDS_COUNT_IDX]) = (U16)count;
 	for (i = 0;i < count;i ++) {
 		UdpClient *cv = ntyRBTreeInterfaceSearch(pRBTree, *(friendsList+i));
 		if (cv != NULL) {			
@@ -267,13 +274,13 @@ static void ntyClientFriendsList(UdpClient *client, U8 *ack) {
 void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, const void* obj) {
 	const UdpClient *client = obj;
 	if (buffer[NTY_PROTO_TYPE_IDX] == NTY_PROTO_LOGIN_REQ) {
-		int i = 0, length;
+		int i = 0, length = NTY_PROTO_LOGIN_ACK_ACKNUM_IDX + NTY_ACKNUM_LENGTH;
 		void *pRBTree = ntyRBTreeInstance();
 		unsigned int key = *(unsigned int*)(buffer+NTY_PROTO_LOGIN_REQ_DEVID_IDX);
 		unsigned int ackNum = *(unsigned int*)(buffer+NTY_PROTO_LOGIN_REQ_ACKNUM_IDX)+1;
 		const UdpClient *client = obj;
 		unsigned char ack[NTY_LOGIN_ACK_LENGTH] = {0};
-
+		
 		UdpClient *cliValue = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, key);
 		if (cliValue == NULL) {			
 			UdpClient *pClient = (UdpClient*)malloc(sizeof(UdpClient));
@@ -291,8 +298,8 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, const
 				Insert(pClient->clientList, 1);
 			}
 #endif
-			ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_LOGIN_ACK;
-			*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_ACKNUM_IDX]) = ackNum;
+			//ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_LOGIN_ACK;
+			//*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_ACKNUM_IDX]) = ackNum;
 			
 			ntyClientFriendsList(pClient, ack);
 			ntyUpdateClientListIpAddr(pClient, key, ackNum);
@@ -301,17 +308,23 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, const
 				fprintf(stdout, "Client is Exist\n");
 				free(pClient);
 			}
+
+			return ;
 		} else if ((cliValue != NULL) && (!ntyClientCompare (client, cliValue))) {
 			UdpClient *pClient = cliValue;//(UdpClient*)malloc(sizeof(UdpClient));
 			pClient->sockfd = client->sockfd;
 			pClient->addr.sin_addr.s_addr = client->addr.sin_addr.s_addr;
 			pClient->addr.sin_port = client->addr.sin_port;
-			
+
+			ntyClientFriendsList(pClient, ack);
 			ntyUpdateClientListIpAddr(pClient, key, ackNum); //notify all friends dev
+
+			return ;
 		}
 		
 		fprintf(stdout, "Login deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);		
 		//send login ack
+		ack[0] = 'A';
 		ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_LOGIN_ACK;
 		//memcpy(ack+NTY_PROTO_LOGIN_ACK_ACKNUM_IDX, &ackNum, NTY_ACKNUM_LENGTH);
 		*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_ACKNUM_IDX]) = ackNum;
@@ -375,13 +388,16 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, c
 			pClient->sockfd = client->sockfd;
 			pClient->addr.sin_addr.s_addr = client->addr.sin_addr.s_addr;
 			pClient->addr.sin_port = client->addr.sin_port;
-
+			fprintf(stdout, "HeartBeat Update Info: %d\n", buffer[NTY_PROTO_TYPE_IDX]);
+		
 			ntyUpdateClientListIpAddr(pClient, key, ackNum); //notify all friends dev
+			//return ;
 		}
 		
 		fprintf(stdout, "HeartBeat deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);
 		
 		//send heartbeat ack
+		ack[0] = 'A';
 		ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_HEARTBEAT_ACK;
 		memcpy(ack+1, &ackNum, NTY_ACKNUM_LENGTH);
 		ntySendBuffer(client, ack, NTY_HEARTBEAT_ACK_LENGTH);
@@ -457,8 +473,8 @@ void ntyP2PAddrReqPacketHandleRequest(const void *_self, unsigned char *buffer, 
 		int i = 0, length;
 		void *pRBTree = ntyRBTreeInstance();
 
-		U32 key = *(unsigned int*)(buffer+NTY_PROTO_HEARTBEAT_DEVID_IDX);
-		U32 ackNum = *(unsigned int*)(buffer+NTY_PROTO_HEARTBEAT_ACKNUM_IDX)+1;
+		U32 key = *(unsigned int*)(buffer+NTY_PROTO_P2PADDR_REQ_DEVID_IDX);
+		U32 ackNum = *(unsigned int*)(buffer+NTY_PROTO_P2PADDR_REQ_ACKNUM_IDX)+1;
 
 		const UdpClient *client = obj;
 		U16 count = *(U16*)(&buffer[NTY_PROTO_P2PADDR_REQ_FRIENDS_COUNT_IDX]);
@@ -483,6 +499,7 @@ void ntyP2PAddrReqPacketHandleRequest(const void *_self, unsigned char *buffer, 
 			*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_DEVID_IDX(i)]) = reqKey;				
 		}
 		//send P2P ack
+		*(U16*)(&ack[NTY_PROTO_P2PADDR_REQ_FRIENDS_COUNT_IDX]) = (U16)count;
 
 		if (count == 0) {
 			length = NTY_PROTO_P2PADDR_ACK_FRIENDSLIST_START_IDX;
@@ -494,6 +511,7 @@ void ntyP2PAddrReqPacketHandleRequest(const void *_self, unsigned char *buffer, 
 		length = length + 1 + sizeof(U32);
 		fprintf(stdout, "P2P addr Req deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);
 
+		ack[0] = 'A';
 		ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_P2P_ADDR_ACK;
 		//memcpy(ack+NTY_PROTO_LOGIN_ACK_ACKNUM_IDX, &ackNum, NTY_ACKNUM_LENGTH);
 		*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_ACKNUM_IDX]) = ackNum;
@@ -570,6 +588,7 @@ void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length, 
 	//data crc is right
 	U32 u32Crc = ntyGenCrcValue(buffer, length-4);
 	U32 u32ClientCrc = *((U32*)(buffer+length-4));
+	printf("new crc:%x , old crc:%x\n", u32Crc, u32ClientCrc);
 	if (u32Crc != u32ClientCrc) {
 		return ;
 	}
