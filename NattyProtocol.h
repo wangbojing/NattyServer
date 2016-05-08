@@ -1,3 +1,43 @@
+/*
+ *  Author : WangBoJing , email : 1989wangbojing@gmail.com
+ * 
+ *  Copyright Statement:
+ *  --------------------
+ *  This software is protected by Copyright and the information contained
+ *  herein is confidential. The software may not be copied and the information
+ *  contained herein may not be used or disclosed except with the written
+ *  permission of NALEX Inc. (C) 2016
+ * 
+ *
+ ****		*****
+   ***	  *
+   ***        * 					    *			    *
+   * ** 	  * 					    *			    *
+   * ** 	  * 					    *			    *
+   *  **	  * 					   **			   **
+   *  **	  * 					  ***			  ***
+   *   **	  * 	    ******	          ***********	   ***********	    *****         *****
+   *   **	  * 	  **	    **		   **			   **			**		 **
+   *	  **	  *    **		**		   **			   **			 **		 *
+   *	  **	  *    **		**		   **			   **			  *		*
+   *	   **   *    **		**		   **			   **			   ** 	*
+   *	   **   * 		     ***		   **			   **			    *       *
+   *	    **  * 	      ***** **		   **			   **			    **     *
+   *	    **  * 	  *** 	**		   **			   **			    **     *
+   *	     ** *    **		**		   **			   **			     *    *
+   *	     ** *   **		**		   **			   **			     **  *
+   *		***   **		**		   **			   **			       **
+   *		***   **		**		   **	    * 	   **	    * 		 **
+   *		 **   **		**	*	   **	    * 	   **	    * 		 **
+   *		 **    **	  ****	*	    **   *		    **   *			 *
+ *****		  *******	 ***		     ****		     ****			 *
+														 *
+														 *
+													   *****
+ *													   ****
+ *
+ *
+ */
 
 
 
@@ -7,18 +47,71 @@
 #define __NATTY_PROTOCOL_H__
 
 /* ** **** ********  ****************  Length  ****************  ******** **** ** */
-#define NTY_HEARTBEAT_ACK_LENGTH		5
 #define NTY_DEVID_LENGTH				4
 #define NTY_ACKNUM_LENGTH				4
+#define NTY_IPADDR_LENGTH				4
+#define NTY_IPPORT_LENGTH				2
 
+#define NTY_HEARTBEAT_ACK_LENGTH		5
+#define NTY_LOGOUT_ACK_LENGTH			5
+#define NTY_LOGIN_ACK_LENGTH			512
+#define NTY_P2PADDR_ACK_LENGTH			512
+#define NTY_P2P_NOTIFY_ACK_LENGTH		128
 
 /* ** **** ********  ****************  Index  ****************  ******** **** ** */
-#define NTY_PROTO_TYPE_IDX			0	
-#define NTY_PROTO_DEVID_IDX			1	
-#define NTY_PROTO_ACKNUM_IDX		(NTY_PROTO_DEVID_IDX+NTY_DEVID_LENGTH)
+#define NEY_PROTO_VERSION_IDX					0
+#define NTY_PROTO_TYPE_IDX						(NEY_PROTO_VERSION_IDX+1)
+
+#define NTY_PROTO_LOGIN_REQ_DEVID_IDX					(NTY_PROTO_TYPE_IDX+1)	
+#define NTY_PROTO_LOGIN_REQ_ACKNUM_IDX				(NTY_PROTO_LOGIN_REQ_DEVID_IDX+NTY_DEVID_LENGTH)
+
+#define NTY_PROTO_LOGIN_ACK_ACKNUM_IDX					(NTY_PROTO_TYPE_IDX+1)
+#define NTY_PROTO_LOGIN_ACK_FRIENDS_COUNT_IDX			(NTY_PROTO_LOGIN_ACK_ACKNUM_IDX+NTY_ACKNUM_LENGTH)
+#define NTY_PROTO_LOGIN_ACK_FRIENDSLIST_START_IDX		(NTY_PROTO_LOGIN_ACK_FRIENDS_COUNT_IDX+2)
+
+#define NTY_PROTO_LOGIN_ACK_FRIENDSLIST_DEVID_IDX(x)								\
+					(NTY_PROTO_LOGIN_ACK_FRIENDSLIST_START_IDX + 					\
+					(NTY_DEVID_LENGTH+NTY_IPADDR_LENGTH+NTY_IPPORT_LENGTH)*(x))
+					
+#define NTY_PROTO_LOGIN_ACK_FRIENDSLIST_ADDR_IDX(x)								\
+					(NTY_PROTO_LOGIN_ACK_FRIENDSLIST_START_IDX + NTY_DEVID_LENGTH +	\
+					(NTY_DEVID_LENGTH+NTY_IPADDR_LENGTH+NTY_IPPORT_LENGTH)*(x))
+
+#define NTY_PROTO_LOGIN_ACK_FRIENDSLIST_PORT_IDX(x)								\
+					(NTY_PROTO_LOGIN_ACK_FRIENDSLIST_START_IDX + NTY_DEVID_LENGTH + NTY_IPADDR_LENGTH +	\
+					(NTY_DEVID_LENGTH+NTY_IPADDR_LENGTH+NTY_IPPORT_LENGTH)*(x))
+
+#define NTY_PROTO_LOGIN_ACK_CRC_IDX(x)		(NTY_PROTO_LOGIN_ACK_FRIENDSLIST_PORT_IDX(x)+NTY_IPPORT_LENGTH)
 
 
+#define NTY_PROTO_HEARTBEAT_DEVID_IDX		NTY_PROTO_LOGIN_REQ_DEVID_IDX
+#define NTY_PROTO_HEARTBEAT_ACKNUM_IDX		NTY_PROTO_LOGIN_REQ_ACKNUM_IDX
 
+
+#define NTY_PROTO_P2PADDR_REQ_DEVID_IDX		(NTY_PROTO_TYPE_IDX+1)
+#define NTY_PROTO_P2PADDR_REQ_ACKNUM_IDX	(NTY_PROTO_P2PADDR_REQ_DEVID_IDX+NTY_DEVID_LENGTH)
+
+#define NTY_PROTO_P2PADDR_REQ_FRIENDS_COUNT_IDX	(NTY_PROTO_P2PADDR_REQ_ACKNUM_IDX+NTY_ACKNUM_LENGTH)
+#define NTY_PROTO_P2PADDR_REQ_FRIENDSLIST_START_IDX	(NTY_PROTO_P2PADDR_REQ_FRIENDS_COUNT_IDX+2)
+
+#define NTY_PROTO_P2PADDR_REQ_FRIENDS_DEVID_IDX(x) (NTY_PROTO_P2PADDR_REQ_FRIENDSLIST_START_IDX + NTY_DEVID_LENGTH*(x))	
+
+#define NTY_PROTO_P2PADDR_ACK_ACKNUM_IDX	NTY_PROTO_LOGIN_ACK_ACKNUM_IDX
+#define NTY_PROTO_P2PADDR_ACK_FRIENDS_COUNT_IDX		NTY_PROTO_LOGIN_ACK_FRIENDS_COUNT_IDX
+
+#define NTY_PROTO_P2PADDR_ACK_FRIENDSLIST_START_IDX	NTY_PROTO_LOGIN_ACK_FRIENDSLIST_START_IDX
+#define NTY_PROTO_P2PADDR_ACK_FRIENDSLIST_DEVID_IDX(x)	NTY_PROTO_LOGIN_ACK_FRIENDSLIST_DEVID_IDX(x)
+
+#define NTY_PROTO_P2PADDR_ACK_FRIENDSLIST_ADDR_IDX(x)	NTY_PROTO_LOGIN_ACK_FRIENDSLIST_ADDR_IDX(x)
+#define NTY_PROTO_P2PADDR_ACK_FRIENDSLIST_PORT_IDX(x)	NTY_PROTO_LOGIN_ACK_FRIENDSLIST_PORT_IDX(x)
+
+#define NTY_PROTO_P2PADDR_ACK_CRC_IDX(x)			NTY_PROTO_LOGIN_ACK_CRC_IDX(x)
+
+#define NTY_PROTO_P2P_NOTIFY_DEVID_IDX				NTY_PROTO_HEARTBEAT_DEVID_IDX
+#define NTY_PROTO_P2P_NOTIFY_ACKNUM_IDX				NTY_PROTO_HEARTBEAT_ACKNUM_IDX
+#define NTY_PROTO_P2P_NOTIFY_IPADDR_IDX				(NTY_PROTO_P2P_NOTIFY_ACKNUM_IDX+NTY_ACKNUM_LENGTH)
+#define NTY_PROTO_P2P_NOTIFY_IPPORT_IDX				(NTY_PROTO_P2P_NOTIFY_IPADDR_IDX+NTY_IPADDR_LENGTH)
+#define NTY_PROTO_P2P_NOTIFY_CRC_IDX				(NTY_PROTO_P2P_NOTIFY_IPPORT_IDX+NTY_IPPORT_LENGTH)
 
 /* ** **** ********  ****************  Header  ****************  ******** **** ** */
 #define NTY_PROTO_LOGIN_REQ			0x01
@@ -32,11 +125,10 @@
 
 
 
-
 #define NTY_PROTO_P2P_ADDR_REQ			0x11
 #define NTY_PROTO_P2P_ADDR_ACK			0x91
 
-#define NTY_PROTO_P2P_NOTIFY_REQ			0x12
+#define NTY_PROTO_P2P_NOTIFY_REQ			0x12 //server sendto client
 #define NTY_PROTO_P2P_NOTIFY_ACK			0x92
 
 

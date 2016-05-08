@@ -51,6 +51,10 @@
 #include <assert.h>
 #include <stdarg.h>
 
+typedef unsigned int U32;
+typedef unsigned short U16;
+typedef unsigned char U8;
+
 
 typedef struct {
 	size_t size;

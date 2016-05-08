@@ -69,6 +69,7 @@ typedef struct _UdpClient {
 	int sockfd;
 	struct sockaddr_in addr;
 	//int key; //client id use for rb-tree key
+	void *clientList; //client id list for this key
 } UdpClient;
 
 
@@ -84,6 +85,8 @@ typedef struct _UdpServerOpera {
 	void* (*dtor)(void *_self);
 	int (*process)(const void *_self);
 } UdpServerOpera;
+
+
 
 int ntyUdpServerRun(const void *arg);
 const void* ntyUdpServerInstance(void);

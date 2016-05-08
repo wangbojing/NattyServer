@@ -60,8 +60,7 @@ void* ntyUdpServerCtor(void *_self, va_list *params) {
 		error("ERROR opening socket");
 
 	optval = 1;  
-	setsockopt(self->sockfd, SOL_SOCKET, SO_REUSEADDR, 	     
-		(const void *)&optval , sizeof(int));  /*   * build the server's Internet address   */  
+	setsockopt(self->sockfd, SOL_SOCKET, SO_REUSEADDR, (const void *)&optval , sizeof(int));  /*   * build the server's Internet address   */  
 	bzero((char *) &self->addr, sizeof(struct sockaddr_in));  
 	self->addr.sin_family = AF_INET;  
 	self->addr.sin_addr.s_addr = htonl(INADDR_ANY);  
@@ -112,7 +111,7 @@ int ntyUdpServerProcess(const void *_self) {
 			// i think process protocol and search client id from rb-tree
 			pClient->sockfd = self->sockfd;
 			
-			ntyProtocolFilterProcess(pFilter, buf, pClient);
+			ntyProtocolFilterProcess(pFilter, buf, n, pClient);
 			//send to ack
 			n = sendto(self->sockfd, buf, strlen(buf), 0, (struct sockaddr *) &pClient->addr, clientlen);    
 			if (n < 0)       

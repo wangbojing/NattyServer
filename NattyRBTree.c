@@ -288,7 +288,7 @@ RBTreeNode* ntyRBTreeDelete(RBTree *T, RBTreeNode *z) {
 	return y;
 }
 
-RBTreeNode* ntyRBTreeSearch(RBTree *T, int key) {
+RBTreeNode* ntyRBTreeSearch(RBTree *T, U32 key) {
 	RBTreeNode *node = T->root;
 
 	while (node != T->nil) {
@@ -333,7 +333,7 @@ void* ntyRBTreeOperaDtor(void *_self) {
 	return self;
 }
 
-int ntyRBTreeOperaInsert(void *_self, int key, void *value) {
+int ntyRBTreeOperaInsert(void *_self, U32 key, void *value) {
 	RBTree *self = _self;
 
 	RBTreeNode *node = ntyRBTreeSearch(self, key);
@@ -348,7 +348,7 @@ int ntyRBTreeOperaInsert(void *_self, int key, void *value) {
 	return 1; //exist
 }
 
-void* ntyRBTreeOperaSearch(void *_self, int key) {
+void* ntyRBTreeOperaSearch(void *_self, U32 key) {
 	RBTree *self = _self;
 	RBTreeNode *node = ntyRBTreeSearch(self, key);
 
@@ -358,7 +358,7 @@ void* ntyRBTreeOperaSearch(void *_self, int key) {
 	return node;
 }
 
-int ntyRBTreeOperaDelete(void *_self, int key) {
+int ntyRBTreeOperaDelete(void *_self, U32 key) {
 	RBTree *self = _self;
 
 	RBTreeNode *node = ntyRBTreeSearch(self , key);
@@ -370,7 +370,7 @@ int ntyRBTreeOperaDelete(void *_self, int key) {
 	return 0;
 }
 
-int ntyRBTreeOperaUpdate(void *_self, int key, void *value) {
+int ntyRBTreeOperaUpdate(void *_self, U32 key, void *value) {
 	RBTree *self = _self;
 
 	RBTreeNode *node = ntyRBTreeSearch(self , key);
@@ -452,7 +452,7 @@ void* ntyRBTreeInstance(void) {
 	return pRBTree;
 }
 
-int ntyRBTreeInterfaceInsert(void *self, int key, void *value) {
+int ntyRBTreeInterfaceInsert(void *self, U32 key, void *value) {
 	RBTreeOpera **pRBTreeOpera = self;
 
 	if (self && (*pRBTreeOpera) && (*pRBTreeOpera)->insert) {
@@ -462,7 +462,7 @@ int ntyRBTreeInterfaceInsert(void *self, int key, void *value) {
 }
 
 //return node->value : UdpClient
-void* ntyRBTreeInterfaceSearch(void *self, int key) {
+void* ntyRBTreeInterfaceSearch(void *self, U32 key) {
 	RBTreeOpera **pRBTreeOpera = self;
 
 	if (self && (*pRBTreeOpera) && (*pRBTreeOpera)->search) {
@@ -476,7 +476,7 @@ void* ntyRBTreeInterfaceSearch(void *self, int key) {
 	return NULL;
 }
 
-int ntyRBTreeInterfaceDelete(void *self, int key) {
+int ntyRBTreeInterfaceDelete(void *self, U32 key) {
 	RBTreeOpera **pRBTreeOpera = self;
 
 	if (self && (*pRBTreeOpera) && (*pRBTreeOpera)->delete) {
@@ -485,7 +485,7 @@ int ntyRBTreeInterfaceDelete(void *self, int key) {
 	return -1;
 }
 
-int ntyRBTreeInterfaceUpdate(void *self, int key, void *value) {
+int ntyRBTreeInterfaceUpdate(void *self, U32 key, void *value) {
 	RBTreeOpera **pRBTreeOpera = self;
 
 	if (self && (*pRBTreeOpera) && (*pRBTreeOpera)->update) {

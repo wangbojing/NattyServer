@@ -72,19 +72,19 @@ typedef struct _RBTreeOpera {
 	size_t size;
 	void* (*ctor)(void *_self, va_list *params);
 	void* (*dtor)(void *_self);
-	int (*insert)(void *_self, int key, void *value);
-	void* (*search)(void *_self, int key);
-	int (*delete)(void *_self, int key);
-	int (*update)(void *_self, int key, void *value);
+	int (*insert)(void *_self, U32 key, void *value);
+	void* (*search)(void *_self, U32 key);
+	int (*delete)(void *_self, U32 key);
+	int (*update)(void *_self, U32 key, void *value);
 } RBTreeOpera;
 
 
 
 void* ntyRBTreeInstance(void);
-int ntyRBTreeInterfaceInsert(void *self, int key, void *value);
-void* ntyRBTreeInterfaceSearch(void *self, int key);
-int ntyRBTreeInterfaceDelete(void *self, int key);
-int ntyRBTreeInterfaceUpdate(void *self, int key, void *value);
+int ntyRBTreeInterfaceInsert(void *self, U32 key, void *value);
+void* ntyRBTreeInterfaceSearch(void *self, U32 key);
+int ntyRBTreeInterfaceDelete(void *self, U32 key);
+int ntyRBTreeInterfaceUpdate(void *self, U32 key, void *value);
 void ntyRBTreeRelease(void *self);
 
 

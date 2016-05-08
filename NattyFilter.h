@@ -1,3 +1,43 @@
+/*
+ *  Author : WangBoJing , email : 1989wangbojing@gmail.com
+ * 
+ *  Copyright Statement:
+ *  --------------------
+ *  This software is protected by Copyright and the information contained
+ *  herein is confidential. The software may not be copied and the information
+ *  contained herein may not be used or disclosed except with the written
+ *  permission of NALEX Inc. (C) 2016
+ * 
+ *
+ ****		*****
+   ***	  *
+   ***        * 					    *			    *
+   * ** 	  * 					    *			    *
+   * ** 	  * 					    *			    *
+   *  **	  * 					   **			   **
+   *  **	  * 					  ***			  ***
+   *   **	  * 	    ******	          ***********	   ***********	    *****         *****
+   *   **	  * 	  **	    **		   **			   **			**		 **
+   *	  **	  *    **		**		   **			   **			 **		 *
+   *	  **	  *    **		**		   **			   **			  *		*
+   *	   **   *    **		**		   **			   **			   ** 	*
+   *	   **   * 		     ***		   **			   **			    *       *
+   *	    **  * 	      ***** **		   **			   **			    **     *
+   *	    **  * 	  *** 	**		   **			   **			    **     *
+   *	     ** *    **		**		   **			   **			     *    *
+   *	     ** *   **		**		   **			   **			     **  *
+   *		***   **		**		   **			   **			       **
+   *		***   **		**		   **	    * 	   **	    * 		 **
+   *		 **   **		**	*	   **	    * 	   **	    * 		 **
+   *		 **    **	  ****	*	    **   *		    **   *			 *
+ *****		  *******	 ***		     ****		     ****			 *
+														 *
+														 *
+													   *****
+ *													   ****
+ *
+ *
+ */
 
 
 
@@ -23,10 +63,34 @@ typedef struct {
 } Packet;
 
 void* ntyProtocolFilterInit(void);
-void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, const void *obj);
+void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length,const void *obj);
 void ntyProtocolFilterRelease(void *_filter);
 
+void ntyGenCrcTable(void);
+U32 ntyGenCrcValue(U8 *buf, int length);
 
+
+typedef struct _Node {
+	U32 clientId;
+	struct _Node *next;
+} Node;
+
+typedef struct {
+	const void *_;
+	Node *head;
+	int count;
+} SingleList;
+
+
+typedef struct {
+	size_t size;
+	void* (*ctor)(void *_self, va_list *params);
+	void* (*dtor)(void *_self);
+	void (*insert)(void *_self, int id);
+	int (*remove)(void *_self, int id);
+	U32* (*iterator)(const void *_self);
+	void (*print)(const void *_self);
+} List;
 
 
 #endif
