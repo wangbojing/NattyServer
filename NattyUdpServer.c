@@ -113,9 +113,9 @@ int ntyUdpServerProcess(const void *_self) {
 			
 			ntyProtocolFilterProcess(pFilter, buf, n, pClient);
 			//send to ack
-			n = sendto(self->sockfd, buf, n, 0, (struct sockaddr *) &pClient->addr, clientlen);    
-			if (n < 0)       
-				error("ERROR in sendto");  
+			//n = sendto(self->sockfd, buf, n, 0, (struct sockaddr *) &pClient->addr, clientlen);    
+			//if (n < 0)       
+			//	error("ERROR in sendto");  
 		}
 	}
 

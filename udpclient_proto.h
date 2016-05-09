@@ -9,32 +9,34 @@
  *  permission of NALEX Inc. (C) 2016
  * 
  *
- ****		*****
-   ***	  *
-   ***        * 					    *			    *
-   * ** 	  * 					    *			    *
-   * ** 	  * 					    *			    *
-   *  **	  * 					   **			   **
-   *  **	  * 					  ***			  ***
-   *   **	  * 	    ******	          ***********	   ***********	    *****         *****
-   *   **	  * 	  **	    **		   **			   **			**		 **
-   *	  **	  *    **		**		   **			   **			 **		 *
-   *	  **	  *    **		**		   **			   **			  *		*
-   *	   **   *    **		**		   **			   **			   ** 	*
-   *	   **   * 		     ***		   **			   **			    *       *
-   *	    **  * 	      ***** **		   **			   **			    **     *
-   *	    **  * 	  *** 	**		   **			   **			    **     *
-   *	     ** *    **		**		   **			   **			     *    *
-   *	     ** *   **		**		   **			   **			     **  *
-   *		***   **		**		   **			   **			       **
-   *		***   **		**		   **	    * 	   **	    * 		 **
-   *		 **   **		**	*	   **	    * 	   **	    * 		 **
-   *		 **    **	  ****	*	    **   *		    **   *			 *
- *****		  *******	 ***		     ****		     ****			 *
-														 *
-														 *
-													   *****
- *													   ****
+
+****       *****
+  ***        *
+  ***        *                         *               *
+  * **       *                         *               *
+  * **       *                         *               *
+  *  **      *                        **              **
+  *  **      *                       ***             ***
+  *   **     *       ******       ***********     ***********    *****    *****
+  *   **     *     **     **          **              **           **      **
+  *    **    *    **       **         **              **           **      *
+  *    **    *    **       **         **              **            *      *
+  *     **   *    **       **         **              **            **     *
+  *     **   *            ***         **              **             *    *
+  *      **  *       ***** **         **              **             **   *
+  *      **  *     ***     **         **              **             **   *
+  *       ** *    **       **         **              **              *  *
+  *       ** *   **        **         **              **              ** *
+  *        ***   **        **         **              **               * *
+  *        ***   **        **         **     *        **     *         **
+  *         **   **        **  *      **     *        **     *         **
+  *         **    **     ****  *       **   *          **   *          *
+*****        *     ******   ***         ****            ****           *
+                                                                       *
+                                                                      *
+                                                                  *****
+                                                                  ****
+
  *
  *
  */
@@ -57,8 +59,6 @@
 #define NTY_LOGIN_ACK_LENGTH			512
 #define NTY_P2PADDR_ACK_LENGTH			512
 #define NTY_P2P_NOTIFY_ACK_LENGTH		128
-
-//#define NTY_PROTO_DATAPACKET_ACK_LENGTH	32
 
 /* ** **** ********  ****************  Index  ****************  ******** **** ** */
 #define NEY_PROTO_VERSION_IDX					0
@@ -131,7 +131,6 @@
 #define NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_COUNT_IDX		(NTY_PROTO_DATAPACKET_NOTIFY_SRC_DEVID_IDX+NTY_DEVID_LENGTH)
 #define NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_IDX		(NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_COUNT_IDX+4)
 
-
 #define NTY_PROTO_DATAPACKET_ACK_DEVID_IDX		NTY_PROTO_HEARTBEAT_DEVID_IDX
 #define NTY_PROTO_DATAPACKET_ACK_ACKNUM_IDX		NTY_PROTO_HEARTBEAT_ACKNUM_IDX
 #define NTY_PROTO_DATAPACKET_ACK_SRC_DEVID_IDX	(NTY_PROTO_DATAPACKET_ACK_ACKNUM_IDX+NTY_ACKNUM_LENGTH)
@@ -160,17 +159,28 @@
 #define NTY_PROTO_P2P_CONNECT_REQ			0x13 //use for client ,
 #define NTY_PROTO_P2P_CONNECT_ACK			0x93 //use for client ,
 
-
 #define NTY_PROTO_DATAPACKET_REQ			0x21 //use for client ,
 #define NTY_PROTO_DATAPACKET_ACK			0xA1 //use for client ,
 
 #define NTY_PROTO_DATAPACKET_NOTIFY_REQ			0x22 //use for client ,
 #define NTY_PROTO_DATAPACKET_NOTIFY_ACK			0xA2 //use for client ,
 
+#define NTY_PROTO_DATAPACKET_CONTENT_COUNT_IDX(x)		NTY_PROTO_DATAPACKET_RECE_IDX(x)
+//#define NTY_PROTO_DATAPACKET_CONTENT_IDX(x)			(NTY_PROTO_DATAPACKET_CONTENT_COUNT_IDX(x)+2)
+
+
+typedef unsigned int U32;
+typedef unsigned short U16;
+typedef unsigned char U8;
+
+typedef struct _ClientInfo {
+	U8 isEnable;
+	U16 port;
+	U32 addr;
+	U32 devId;
+} ClientInfo;
+
+
 
 #endif
-
-
-
-
 
