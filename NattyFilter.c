@@ -681,7 +681,6 @@ static void ntySetSuccessor(void *_filter, void *_succ) {
 static void ntyHandleRequest(void *_filter, unsigned char *buffer, const void *obj) {
 	ProtocolFilter **filter = _filter;
 	if (_filter && (*filter) && (*filter)->handleRequest) {
-		printf("ntyHandleRequest: %x\n", buffer[1]);
 		(*filter)->handleRequest(_filter, buffer, obj);
 	}
 }

@@ -180,7 +180,10 @@ typedef struct _ClientInfo {
 	U32 devId;
 } ClientInfo;
 
-
+typedef struct Thread_arg {
+	int sockfd;
+	int devid;
+} ThreadArg;
 
 #endif
 

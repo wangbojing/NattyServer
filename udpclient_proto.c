@@ -110,12 +110,14 @@ static int clientCount = 0;
 struct sockaddr_in clientaddr;
 struct sockaddr_in serveraddr;
 static U8 heartbeartRun = 0;
-static int devid = 0;
 static int frienddevid = 0;
 
 
 void* heartbeatThread(void *arg) {
-	int sockfd = *((int*)arg), len, n;
+	ThreadArg threadArg = *((ThreadArg*)arg);
+	int devid = threadArg.devid;
+	int sockfd = threadArg.sockfd;
+	int len, n;
 	U8 buf[NTY_LOGIN_ACK_LENGTH] = {0};
 	if (heartbeartRun == 1) {
 		heartbeartRun = 1;
@@ -138,7 +140,9 @@ void* heartbeatThread(void *arg) {
 }
 
 void* recvThread(void *arg) {
-	int sockfd = *((int*)arg);
+	ThreadArg threadArg = *((ThreadArg*)arg);
+	int devid = threadArg.devid;
+	int sockfd = threadArg.sockfd;
 	int ret, n, serverlen, err;
 	U8 buf[RECV_BUFFER_SIZE] = {0};
 	
@@ -176,7 +180,7 @@ void* recvThread(void *arg) {
 				
 				level = 2;
 				printf(" Setup heartbeat Thread\n");
-				err = pthread_create(&heartbeatThread_id, NULL, heartbeatThread, &sockfd);
+				err = pthread_create(&heartbeatThread_id, NULL, heartbeatThread, arg);
 				if (err != 0) {
 					printf(" can't create thread:%s\n", strerror(err));
 					exit(0);
@@ -237,7 +241,7 @@ void* recvThread(void *arg) {
 	}
 }
 
-void sendLoginPacket(int sockfd) {
+void sendLoginPacket(int sockfd, int devid) {
 	int len, n;
 	U8 buf[RECV_BUFFER_SIZE] = {0};
 	
@@ -251,28 +255,31 @@ void sendLoginPacket(int sockfd) {
 	n = sendto(sockfd, buf, len, 0, (struct sockaddr *)&serveraddr, sizeof(serveraddr));
 }
 
-int main(int argc, char **argv) {
+
+
+void *run(void *arg) {
     int sockfd, portno, portno_1, n;
     int serverlen, len;
     struct sockaddr_in tempaddr;
     struct sockaddr_in addr;
     struct hostent *server, *server_1;
-    char *hostname, *hostname_1;
+    char *hostname = "120.76.25.198", *hostname_1;
     char buf[BUFSIZE];
     int key = 0, err;
     pthread_t recThread_id;
     int p2pConnectReqCount = 0;
+	int devid = 0;
+	ThreadArg threadArg = {0};
 
-    /* check command line arguments */
-    if (argc != 3) {
-       fprintf(stderr,"usage: %s <hostname> <port>\n", argv[0]);
-       exit(0);
-    }
-    hostname = argv[1];
-    portno = atoi(argv[2]);
     
+    //hostname = argv[1];
+    portno = 8888;
+#if 0    
     printf(" Press DevId <1 or 2>: ");
     scanf("%d", &devid);
+#endif
+	srand(time(NULL));  
+	devid = rand() % 5000;
     //hostname_1 = argv[3];
     //portno_1 = atoi(argv[4]);
     ntyGenCrcTable();
@@ -283,13 +290,15 @@ int main(int argc, char **argv) {
         error("ERROR opening socket");
 
     /* gethostbyname: get the server's DNS entry */
-    server = gethostbyname(hostname);
+    server = gethostbyname("120.76.25.198");
     if (server == NULL) {
         fprintf(stderr,"ERROR, no such host as %s\n", hostname);
         exit(0);
     }
 
-	err = pthread_create(&recThread_id, NULL, recvThread, &sockfd);
+	threadArg.sockfd = sockfd;
+	threadArg.devid = devid;
+	err = pthread_create(&recThread_id, NULL, recvThread, &threadArg);
 	if (err != 0) {
 		printf(" can't create thread:%s\n", strerror(err));
 		exit(0);
@@ -309,7 +318,7 @@ int main(int argc, char **argv) {
 		bzero(buf, BUFSIZE);
 		buf[0] = 'A';
 		if (level == 0) { // send Login Req
-			sendLoginPacket(sockfd);
+			sendLoginPacket(sockfd, devid);
 			sleep(3);
 		} else if (level == 1) { //NTY_PROTO_P2P_CONNECT_REQ
 			int i = 0;
@@ -537,3 +546,47 @@ int main(int argc, char **argv) {
 
     return 0;
 }
+
+
+
+int main() {
+	pid_t fpid;
+	fpid = fork();
+	if (fpid < 0) {
+		printf("error in fork!");   
+	} else if (fpid == 0) {
+		int err = 0, i = 0;
+		pthread_t sendThread_id;
+		pid_t id = fork();
+		fork();
+		fork();
+		fork();
+		fork();
+		
+		for (i = 0;i < 100;i ++) {
+			err = pthread_create(&sendThread_id, NULL, run, NULL);
+			if (err != 0) {
+				printf(" can't create thread:%s\n", strerror(err));
+				exit(0);
+			}
+		}
+	} else {
+		int err = 0, i = 0;
+		pthread_t sendThread_id;
+		pid_t id = fork();
+		fork();
+		fork();
+		fork();
+		fork();
+		
+		for (i = 0;i < 100;i ++) {
+			err = pthread_create(&sendThread_id, NULL, run, NULL);
+			if (err != 0) {
+				printf(" can't create thread:%s\n", strerror(err));
+				exit(0);
+			}
+		}
+	}
+	while(1);
+}
+
