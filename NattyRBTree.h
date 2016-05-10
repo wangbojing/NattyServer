@@ -89,8 +89,6 @@ int ntyRBTreeInterfaceUpdate(void *self, U32 key, void *value);
 void ntyRBTreeRelease(void *self);
 
 
-static void *pRBTree = NULL; //Singleton
-
 
 
 

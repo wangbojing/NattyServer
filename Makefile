@@ -3,12 +3,14 @@
 
 PWD = $(shell pwd)
 #CC := gcc
+FLAG = -lpthread
+
 
 objects = NattyAbstractClass.o NattyFilter.o NattyRBTree.o NattyServer.o \
-			NattyUdpServer.o NattyUtils.o
+	NattyUdpServer.o NattyUtils.o NattyThreadPool.o NattyWorkQueue.o \
 
 Natty : $(objects)
-	cc -o Natty $(objects) 
+	cc -o Natty $(objects) $(FLAG)
 
 
 	
@@ -24,6 +26,9 @@ NattyUtils.o : NattyUtils.c NattyUtils.h
 
 NattyAbstractClass.o : NattyAbstractClass.c NattyAbstractClass.h
 
+NattyThreadPool.o : NattyThreadPool.c NattyThreadPool.h
+
+NattyWorkQueue.o : NattyWorkQueue.c NattyWorkQueue.h
 
 .PHONY : clean
 

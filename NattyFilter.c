@@ -283,7 +283,7 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, const
 		unsigned int ackNum = *(unsigned int*)(buffer+NTY_PROTO_LOGIN_REQ_ACKNUM_IDX)+1;
 		const UdpClient *client = obj;
 		unsigned char ack[NTY_LOGIN_ACK_LENGTH] = {0};
-		
+
 		UdpClient *cliValue = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, key);
 		if (cliValue == NULL) {			
 			UdpClient *pClient = (UdpClient*)malloc(sizeof(UdpClient));
@@ -301,8 +301,8 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, const
 				Insert(pClient->clientList, 1);
 			}
 #endif
-			//ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_LOGIN_ACK;
-			//*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_ACKNUM_IDX]) = ackNum;
+			ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_LOGIN_ACK;
+			*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_ACKNUM_IDX]) = ackNum;
 			
 			ntyClientFriendsList(pClient, ack);
 			ntyUpdateClientListIpAddr(pClient, key, ackNum);
@@ -319,12 +319,11 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, const
 			pClient->addr.sin_addr.s_addr = client->addr.sin_addr.s_addr;
 			pClient->addr.sin_port = client->addr.sin_port;
 
-			ntyClientFriendsList(pClient, ack);
+			//ntyClientFriendsList(pClient, ack);
 			ntyUpdateClientListIpAddr(pClient, key, ackNum); //notify all friends dev
 
 			return ;
 		}
-		
 		fprintf(stdout, "Login deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);		
 		//send login ack
 		ack[0] = 'A';
@@ -375,9 +374,9 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, c
 						//set devid friends list
 #if 1 //Debug
 			//read from disk or mysql by key
-			if (key % 10 == 1) {
+			if (key == 1) {
 				Insert(pClient->clientList, 2);
-			} else if (key % 10 == 2) {
+			} else if (key == 2) {
 				Insert(pClient->clientList, 1);
 			}
 #endif
@@ -390,7 +389,7 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, c
 			}
 		} else if ((cliValue != NULL) && !ntyClientCompare(client, cliValue)) {
 			int i = 0, length = 0;
-			UdpClient *pClient = cliValue; //(UdpClient*)malloc(sizeof(UdpClient));
+			UdpClient *pClient = cliValue;//(UdpClient*)malloc(sizeof(UdpClient));
 			pClient->sockfd = client->sockfd;
 			pClient->addr.sin_addr.s_addr = client->addr.sin_addr.s_addr;
 			pClient->addr.sin_port = client->addr.sin_port;
@@ -552,7 +551,7 @@ static void ntyUserDataPacketNotifyDestClient(UdpClient *client, U8 *buffer, U8 
 	//U16 count = *(U16*)(&notify[NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_COUNT_IDX]);
 	memcpy(&notify[NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_IDX], &buffer[NTY_PROTO_DATAPACKET_CONTENT_IDX(cliCount)], recByteCount);
 
-	printf(" notify:%s\n", notify+NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_IDX);
+	printf(" recByteCount:%d  notify:%s\n", recByteCount, notify+NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_IDX);
 	length = NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_IDX + recByteCount;
 	*(U32*)(&notify[length]) = ntyGenCrcValue(notify, length);
 	length += sizeof(U32);
@@ -575,23 +574,25 @@ void ntyUserDataPacketHandleRequest(const void *_self, unsigned char *buffer, co
 
 		UdpClient *cliValue = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, key);
 		if (cliValue != NULL) {
-			printf(" count : %d ", count);
 			if (count == 0) { //Notify all client
 				int k = 0;
 				U8 notifySrc[RECV_BUFFER_SIZE] = {0};
 				U32* friendsList = Iterator(cliValue->clientList);
 				int clientCount = ((SingleList*)cliValue->clientList)->count;
 
+				if (friendsList == NULL) {
+					return ;
+				}
 				for (k = 0;k < clientCount;k ++) {
 					UdpClient *friendClient = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, *(friendsList+k));
-
-					printf(" key : %d ", *(friendsList+k));
-					memset(notifySrc, RECV_BUFFER_SIZE, 0);
-					*(U32*)(&notifySrc[NTY_PROTO_DATAPACKET_NOTIFY_DEVID_IDX]) = (U32)(*(friendsList+k));
-					*(U32*)(&notifySrc[NTY_PROTO_DATAPACKET_ACKNUM_IDX]) = ackNum;
-					*(U32*)(&notifySrc[NTY_PROTO_DATAPACKET_NOTIFY_SRC_DEVID_IDX]) = key;
-					
-					ntyUserDataPacketNotifyDestClient(friendClient, buffer, notifySrc);
+					if (friendClient != NULL) {	
+						memset(notifySrc, RECV_BUFFER_SIZE, 0);
+						*(U32*)(&notifySrc[NTY_PROTO_DATAPACKET_NOTIFY_DEVID_IDX]) = (U32)(*(friendsList+k));
+						*(U32*)(&notifySrc[NTY_PROTO_DATAPACKET_ACKNUM_IDX]) = ackNum;
+						*(U32*)(&notifySrc[NTY_PROTO_DATAPACKET_NOTIFY_SRC_DEVID_IDX]) = key;
+						
+						ntyUserDataPacketNotifyDestClient(friendClient, buffer, notifySrc);
+					}
 				}
 
 				free(friendsList);
@@ -600,9 +601,7 @@ void ntyUserDataPacketHandleRequest(const void *_self, unsigned char *buffer, co
 					
 				}
 			}
-			printf("\n");
 		}
-		
 
 		fprintf(stdout, "User Data Packet deal with: %d, data:%s\n", buffer[NTY_PROTO_TYPE_IDX], 
 			(U8*)&buffer[NTY_PROTO_DATAPACKET_CONTENT_IDX(buffer[NTY_PROTO_DATAPACKET_RECE_COUNT_IDX])]);
@@ -682,6 +681,7 @@ static void ntySetSuccessor(void *_filter, void *_succ) {
 static void ntyHandleRequest(void *_filter, unsigned char *buffer, const void *obj) {
 	ProtocolFilter **filter = _filter;
 	if (_filter && (*filter) && (*filter)->handleRequest) {
+		printf("ntyHandleRequest: %x\n", buffer[1]);
 		(*filter)->handleRequest(_filter, buffer, obj);
 	}
 }
@@ -729,11 +729,11 @@ void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length, 
 	//data crc is right, and encryto
 	U32 u32Crc = ntyGenCrcValue(buffer, length-4);
 	U32 u32ClientCrc = *((U32*)(buffer+length-4));
-	//printf("new crc:%x , old crc:%x\n", u32Crc, u32ClientCrc);
+
 	if (u32Crc != u32ClientCrc) {
 		return ;
 	}
-
+	
 	return ntyHandleRequest(_filter, buffer, obj);
 }
 

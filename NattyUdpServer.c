@@ -45,6 +45,11 @@
 
 #include "NattyFilter.h"
 #include "NattyUdpServer.h"
+#if 0 
+#include "NattyWorkQueue.h"
+#else
+#include "NattyThreadPool.h"
+#endif
 
 void error(char *msg) {  
 	perror(msg);  
@@ -83,6 +88,60 @@ void* ntyUdpServerDtor(void *_self) {
 	return self;
 }
 
+static void freeRequestPacket(void *pReq) {
+	RequestPacket *req = pReq;
+
+	if (req != NULL) {
+		if (req->client != NULL) {
+			free(req->client);
+		}
+		if (req->buffer != NULL) {
+			free(req->buffer);
+		}
+		free(req);
+	}
+}
+
+static void* allocRequestPacket(void) {
+	RequestPacket *req = (RequestPacket*)malloc(sizeof(RequestPacket));
+	if (req == NULL) {
+		perror("malloc Request Packet failed\n");
+		return NULL;
+	}
+	req->client = (UdpClient*)malloc(sizeof(UdpClient));
+	if (req->client == NULL ) {
+		perror("malloc client failed\n");
+		
+		free(req);
+		return NULL;
+	}
+#if 0
+	req->buffer = (U8*)malloc(sizeof(RECV_BUFFER_SIZE));
+	if (req->buffer == NULL) {
+		perror("malloc Recv Buffer failed\n");
+
+		free(req->client);
+		free(req);
+		return NULL;
+	}
+#endif
+	return req;
+}
+#if 0
+static void ntyUdpServerJob(job_t *job) {
+#else
+static void ntyUdpServerJob(Job *job) {
+#endif
+	RequestPacket *req = (RequestPacket*)job->user_data;
+	void* pFilter = ntyProtocolFilterInit();
+
+	printf("ntyUdpServerJob\n");
+	ntyProtocolFilterProcess(pFilter, req->buffer, req->length, req->client);
+
+	freeRequestPacket(req);
+	free(job);
+}
+
 int ntyUdpServerProcess(const void *_self) {
 	const UdpServer *self = _self;
 	//struct sockaddr_in clientaddr;
@@ -91,11 +150,21 @@ int ntyUdpServerProcess(const void *_self) {
 	struct pollfd fds;
 	int ret = -1, n;
 	char buf[RECV_BUFFER_SIZE];
-	
+	RequestPacket *req;
+#if 0	
 	void* pFilter = ntyProtocolFilterInit();
 	UdpClient *pClient = (UdpClient*)malloc(sizeof(UdpClient));
-	//
-	
+#else
+	//void* pThreadPool = ntyThreadPoolInstance();
+#if 0
+	job_t *job;
+	static workqueue_t workqueue;
+	workqueue_init(&workqueue, 40);
+#else
+	Job *job;
+	void* pThreadPool = ntyThreadPoolInstance();
+#endif
+#endif
 	if (self->sockfd <= 0) {
 		error("Udp Server Socket no Initial");
 	}	
@@ -105,17 +174,55 @@ int ntyUdpServerProcess(const void *_self) {
 	while(1) {
 		ret = poll(&fds, 1, 5);
 		if (ret) { //data is comming
+			req = (RequestPacket*)allocRequestPacket();
+			if (req == NULL) {
+				continue;
+			}
+			
 			bzero(buf, RECV_BUFFER_SIZE);    
-			n = recvfrom(self->sockfd, buf, RECV_BUFFER_SIZE, 0, (struct sockaddr *) &pClient->addr, &clientlen);    
-			printf("%d.%d.%d.%d:%d --> %s\n", *(unsigned char*)(&pClient->addr.sin_addr.s_addr), *((unsigned char*)(&pClient->addr.sin_addr.s_addr)+1),													
-				*((unsigned char*)(&pClient->addr.sin_addr.s_addr)+2), *((unsigned char*)(&pClient->addr.sin_addr.s_addr)+3),													
-				pClient->addr.sin_port, buf);	
+			n = recvfrom(self->sockfd, buf, RECV_BUFFER_SIZE, 0, (struct sockaddr *) &req->client->addr, &clientlen);    
+			printf("%d.%d.%d.%d:%d, length:%d --> %x\n", *(unsigned char*)(&req->client->addr.sin_addr.s_addr), *((unsigned char*)(&req->client->addr.sin_addr.s_addr)+1),													
+				*((unsigned char*)(&req->client->addr.sin_addr.s_addr)+2), *((unsigned char*)(&req->client->addr.sin_addr.s_addr)+3),													
+				req->client->addr.sin_port, n, buf[1]);	
 			// proccess
 			// i think process protocol and search client id from rb-tree
-			pClient->sockfd = self->sockfd;
+			req->client->sockfd = self->sockfd;
+			req->length = (U16)n;
 
-			//use thread pool to deal with message
-			ntyProtocolFilterProcess(pFilter, buf, n, pClient);
+			req->buffer = (U8*)malloc(n);
+			if (req->buffer == NULL) {
+				perror("malloc Recv Buffer failed\n");
+
+				free(req->client);
+				free(req);
+				continue;
+			}			
+			memcpy(req->buffer, buf, n);
+#if 1
+#if 0
+			job = (job_t*)malloc(sizeof(*job));
+#else
+			job = (Job*)malloc(sizeof(*job));
+#endif
+			if (job == NULL) {
+				perror("malloc Job failed\n");
+				freeRequestPacket(req);
+				continue;
+			}
+
+			printf(" ntyUdpServerProcess cccccc\n");
+			job->job_function  = ntyUdpServerJob;
+			job->user_data = req;
+#if 0
+			workqueue_add_job(&workqueue, job);
+#else
+			ntyThreadPoolPush(pThreadPool, job);
+#endif
+			//use thread pool to deal with message			
+#else
+			ntyProtocolFilterProcess(pFilter, req->buffer, n, pClient);
+			freeRequestPacket(req);
+#endif
 			//send to ack
 			//n = sendto(self->sockfd, buf, n, 0, (struct sockaddr *) &pClient->addr, clientlen);    
 			//if (n < 0)       
@@ -123,8 +230,8 @@ int ntyUdpServerProcess(const void *_self) {
 		}
 	}
 
-	free(pClient);
-	ntyProtocolFilterRelease(pFilter);
+	//free(pClient);
+	//ntyProtocolFilterRelease(pFilter);
 	return 0;
 }
 

@@ -447,6 +447,8 @@ static void ntyLevelOrderTraversal(RBTree *T, RBTreeNode *node) {
 	}
 }
 
+static void *pRBTree = NULL; //Singleton
+
 void* ntyRBTreeInstance(void) {
 	if (pRBTree == NULL) {
 		pRBTree = New(pNtyRBTreeOpera);

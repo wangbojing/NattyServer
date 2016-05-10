@@ -47,9 +47,9 @@
 #define __NATTY_THREAD_POOL_H__
 
 #include <pthread.h>
-//#include "NattyAbstractClass.h"
+#include "NattyAbstractClass.h"
 
-
+#define NTY_THREAD_POOL_NUM		40
 
 typedef struct _Worker {
 	pthread_t thread;
@@ -61,7 +61,10 @@ typedef struct _Worker {
 
 
 typedef struct _Job {
-
+	void (*job_function)(struct _Job *job);
+	void *user_data;
+	struct _Job *prev;
+	struct _Job *next;
 } Job;
 
 
@@ -71,6 +74,25 @@ typedef struct _WorkQueue {
 	pthread_mutex_t jobs_mutex;
 	pthread_cond_t jobs_cond;
 } WorkQueue;
+
+typedef struct _ThreadPool {
+	const void *_;
+	WorkQueue *wq;
+} ThreadPool;
+
+typedef struct _ThreadPoolOpera {
+	size_t size;
+	void* (*ctor)(void *_self, va_list *params);
+	void* (*dtor)(void *_self);
+	void (*addJob)(void *_self, void *task);
+} ThreadPoolOpera;
+
+void *ntyThreadPoolInstance(void);
+void ntyThreadPoolRelease(void);
+int ntyThreadPoolPush(void *self, void *task);
+
+
+
 
 #endif
 

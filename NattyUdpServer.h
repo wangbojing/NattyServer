@@ -63,7 +63,7 @@
 
 
 #define NATTY_UDP_SERVER		8888
-#define RECV_BUFFER_SIZE 		4096
+#define RECV_BUFFER_SIZE 		1048
 
 
 
@@ -89,6 +89,11 @@ typedef struct _UdpServerOpera {
 } UdpServerOpera;
 
 
+typedef struct _RequestPacket {
+	UdpClient *client;
+	U8 *buffer;
+	U16 length;
+} RequestPacket;
 
 int ntyUdpServerRun(const void *arg);
 const void* ntyUdpServerInstance(void);
