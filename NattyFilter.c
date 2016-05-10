@@ -9,33 +9,35 @@
  *  permission of NALEX Inc. (C) 2016
  * 
  *
- ****		*****
-   ***	  *
-   ***        * 					    *			    *
-   * ** 	  * 					    *			    *
-   * ** 	  * 					    *			    *
-   *  **	  * 					   **			   **
-   *  **	  * 					  ***			  ***
-   *   **	  * 	    ******	          ***********	   ***********	    *****         *****
-   *   **	  * 	  **	    **		   **			   **			**		 **
-   *	  **	  *    **		**		   **			   **			 **		 *
-   *	  **	  *    **		**		   **			   **			  *		*
-   *	   **   *    **		**		   **			   **			   ** 	*
-   *	   **   * 		     ***		   **			   **			    *       *
-   *	    **  * 	      ***** **		   **			   **			    **     *
-   *	    **  * 	  *** 	**		   **			   **			    **     *
-   *	     ** *    **		**		   **			   **			     *    *
-   *	     ** *   **		**		   **			   **			     **  *
-   *		***   **		**		   **			   **			       **
-   *		***   **		**		   **	    * 	   **	    * 		 **
-   *		 **   **		**	*	   **	    * 	   **	    * 		 **
-   *		 **    **	  ****	*	    **   *		    **   *			 *
- *****		  *******	 ***		     ****		     ****			 *
-														 *
-														 *
-													   *****
- *													   ****
- *
+ 
+****       *****
+  ***        *
+  ***        *                         *               *
+  * **       *                         *               *
+  * **       *                         *               *
+  *  **      *                        **              **
+  *  **      *                       ***             ***
+  *   **     *       ******       ***********     ***********    *****    *****
+  *   **     *     **     **          **              **           **      **
+  *    **    *    **       **         **              **           **      *
+  *    **    *    **       **         **              **            *      *
+  *     **   *    **       **         **              **            **     *
+  *     **   *            ***         **              **             *    *
+  *      **  *       ***** **         **              **             **   *
+  *      **  *     ***     **         **              **             **   *
+  *       ** *    **       **         **              **              *  *
+  *       ** *   **        **         **              **              ** *
+  *        ***   **        **         **              **               * *
+  *        ***   **        **         **     *        **     *         **
+  *         **   **        **  *      **     *        **     *         **
+  *         **    **     ****  *       **   *          **   *          *
+*****        *     ******   ***         ****            ****           *
+                                                                       *
+                                                                      *
+                                                                  *****
+                                                                  ****
+
+
  *
  */
 
@@ -373,9 +375,9 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, c
 						//set devid friends list
 #if 1 //Debug
 			//read from disk or mysql by key
-			if (key == 1) {
+			if (key % 10 == 1) {
 				Insert(pClient->clientList, 2);
-			} else if (key == 2) {
+			} else if (key % 10 == 2) {
 				Insert(pClient->clientList, 1);
 			}
 #endif
@@ -691,7 +693,7 @@ const void *pNtyHeartBeatFilter = &ntyHeartBeatFilter;
 const void *pNtyLogoutFilter = &ntyLogoutFilter;
 const void *pNtyP2PAddrReqFilter = &ntyP2PAddrFilter;
 const void *pNtyUserDataPacketFilter = &ntyUserDataPacketFilter;
-const void *pNtyUserDataPacketAckFilter = &ntyUserDataPacketFilter;
+const void *pNtyUserDataPacketAckFilter = &ntyUserDataPacketAckFilter;
 
 
 
@@ -727,7 +729,7 @@ void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length, 
 	//data crc is right, and encryto
 	U32 u32Crc = ntyGenCrcValue(buffer, length-4);
 	U32 u32ClientCrc = *((U32*)(buffer+length-4));
-	printf("new crc:%x , old crc:%x\n", u32Crc, u32ClientCrc);
+	//printf("new crc:%x , old crc:%x\n", u32Crc, u32ClientCrc);
 	if (u32Crc != u32ClientCrc) {
 		return ;
 	}

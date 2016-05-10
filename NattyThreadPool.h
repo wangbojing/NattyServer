@@ -41,15 +41,47 @@
  *
  */
 
-//#include "NattyUtils.h"
-#include "NattyUdpServer.h"
 
-int main() {
-	void* ntyServerInfo = New(ntyUdpServerInstance());
-	ntyDisplay();
 
-	return ntyUdpServerRun(ntyServerInfo);
-}
+#ifndef __NATTY_THREAD_POOL_H__ 
+#define __NATTY_THREAD_POOL_H__
+
+#include <pthread.h>
+//#include "NattyAbstractClass.h"
+
+
+
+typedef struct _Worker {
+	pthread_t thread;
+	int terminate;
+	struct _WorkQueue *workqueue;
+	struct _Worker *prev;
+	struct _Worker *next;
+} Worker;
+
+
+typedef struct _Job {
+
+} Job;
+
+
+typedef struct _WorkQueue {
+	Worker *workers;
+	Job *waiting_jobs;
+	pthread_mutex_t jobs_mutex;
+	pthread_cond_t jobs_cond;
+} WorkQueue;
+
+#endif
+
+
+
+
+
+
+
+
+
 
 
 

@@ -9,33 +9,35 @@
  *  permission of NALEX Inc. (C) 2016
  * 
  *
- ****		*****
-   ***	  *
-   ***        * 					    *			    *
-   * ** 	  * 					    *			    *
-   * ** 	  * 					    *			    *
-   *  **	  * 					   **			   **
-   *  **	  * 					  ***			  ***
-   *   **	  * 	    ******	          ***********	   ***********	    *****         *****
-   *   **	  * 	  **	    **		   **			   **			**		 **
-   *	  **	  *    **		**		   **			   **			 **		 *
-   *	  **	  *    **		**		   **			   **			  *		*
-   *	   **   *    **		**		   **			   **			   ** 	*
-   *	   **   * 		     ***		   **			   **			    *       *
-   *	    **  * 	      ***** **		   **			   **			    **     *
-   *	    **  * 	  *** 	**		   **			   **			    **     *
-   *	     ** *    **		**		   **			   **			     *    *
-   *	     ** *   **		**		   **			   **			     **  *
-   *		***   **		**		   **			   **			       **
-   *		***   **		**		   **	    * 	   **	    * 		 **
-   *		 **   **		**	*	   **	    * 	   **	    * 		 **
-   *		 **    **	  ****	*	    **   *		    **   *			 *
- *****		  *******	 ***		     ****		     ****			 *
-														 *
-														 *
-													   *****
- *													   ****
- *
+ 
+****       *****
+  ***        *
+  ***        *                         *               *
+  * **       *                         *               *
+  * **       *                         *               *
+  *  **      *                        **              **
+  *  **      *                       ***             ***
+  *   **     *       ******       ***********     ***********    *****    *****
+  *   **     *     **     **          **              **           **      **
+  *    **    *    **       **         **              **           **      *
+  *    **    *    **       **         **              **            *      *
+  *     **   *    **       **         **              **            **     *
+  *     **   *            ***         **              **             *    *
+  *      **  *       ***** **         **              **             **   *
+  *      **  *     ***     **         **              **             **   *
+  *       ** *    **       **         **              **              *  *
+  *       ** *   **        **         **              **              ** *
+  *        ***   **        **         **              **               * *
+  *        ***   **        **         **     *        **     *         **
+  *         **   **        **  *      **     *        **     *         **
+  *         **    **     ****  *       **   *          **   *          *
+*****        *     ******   ***         ****            ****           *
+                                                                       *
+                                                                      *
+                                                                  *****
+                                                                  ****
+
+
  *
  */
 
@@ -92,6 +94,7 @@ int ntyUdpServerProcess(const void *_self) {
 	
 	void* pFilter = ntyProtocolFilterInit();
 	UdpClient *pClient = (UdpClient*)malloc(sizeof(UdpClient));
+	//
 	
 	if (self->sockfd <= 0) {
 		error("Udp Server Socket no Initial");
@@ -110,7 +113,8 @@ int ntyUdpServerProcess(const void *_self) {
 			// proccess
 			// i think process protocol and search client id from rb-tree
 			pClient->sockfd = self->sockfd;
-			
+
+			//use thread pool to deal with message
 			ntyProtocolFilterProcess(pFilter, buf, n, pClient);
 			//send to ack
 			//n = sendto(self->sockfd, buf, n, 0, (struct sockaddr *) &pClient->addr, clientlen);    

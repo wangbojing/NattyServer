@@ -271,6 +271,7 @@ int main(int argc, char **argv) {
     hostname = argv[1];
     portno = atoi(argv[2]);
     
+    printf(" Press DevId <1 or 2>: ");
     scanf("%d", &devid);
     //hostname_1 = argv[3];
     //portno_1 = atoi(argv[4]);
