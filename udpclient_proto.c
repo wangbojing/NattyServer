@@ -127,7 +127,7 @@ void* heartbeatThread(void *arg) {
 		bzero(buf, NTY_LOGIN_ACK_LENGTH);   
 		buf[0] = 'A';
 		buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_HEARTBEAT_REQ;
-		*(U32*)(&buf[NTY_PROTO_LOGIN_REQ_DEVID_IDX]) = (U32) devid;
+		*(U64*)(&buf[NTY_PROTO_LOGIN_REQ_DEVID_IDX]) = (U64) devid;
 		*(U32*)(&buf[NTY_PROTO_LOGIN_REQ_ACKNUM_IDX]) = (U32) 12345;
 		*(U32*)(&buf[NTY_PROTO_LOGIN_REQ_CRC_IDX]) = ntyGenCrcValue(buf, NTY_PROTO_LOGIN_REQ_CRC_IDX);
 		
@@ -169,7 +169,7 @@ void* recvThread(void *arg) {
 				clientCount = ((count < 12 && count >= 0)  ? count : 12);
 				
 				for (i = 0;i < count && i < 12;i ++) {
-					clientInfo[i].devId = *(U32*)(&buf[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_DEVID_IDX(i)]);
+					clientInfo[i].devId = *(U64*)(&buf[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_DEVID_IDX(i)]);
 					clientInfo[i].addr = *(U32*)(&buf[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_ADDR_IDX(i)]);
 					clientInfo[i].port = *(U16*)(&buf[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_PORT_IDX(i)]);
 					
@@ -227,7 +227,7 @@ void* recvThread(void *arg) {
 				U8 recvBuf[NTY_P2P_NOTIFY_ACK_LENGTH] = {0};
 				U16 count = *(U16*)(&buf[NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_COUNT_IDX]);
 				
-				frienddevid = *(U32*)(&buf[NTY_PROTO_DATAPACKET_NOTIFY_SRC_DEVID_IDX]);
+				frienddevid = *(U64*)(&buf[NTY_PROTO_DATAPACKET_NOTIFY_SRC_DEVID_IDX]);
 				memcpy(recvBuf, &buf[NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_IDX], count);
 				printf(" recv : %s\n", recvBuf);
 				level = 5;
@@ -246,7 +246,7 @@ void sendLoginPacket(int sockfd, int devid) {
 	U8 buf[RECV_BUFFER_SIZE] = {0};
 	
 	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_LOGIN_REQ;
-	*(U32*)(&buf[NTY_PROTO_LOGIN_REQ_DEVID_IDX]) = (U32) devid;
+	*(U64*)(&buf[NTY_PROTO_LOGIN_REQ_DEVID_IDX]) = (U64) devid;
 	*(U32*)(&buf[NTY_PROTO_LOGIN_REQ_ACKNUM_IDX]) = (U32) 12345;
 	*(U32*)(&buf[NTY_PROTO_LOGIN_REQ_CRC_IDX]) = ntyGenCrcValue(buf, NTY_PROTO_LOGIN_REQ_CRC_IDX);
 	//serverlen = sizeof(serveraddr);
@@ -330,7 +330,7 @@ void *run(void *arg) {
 			sleep(3);
 			
 			buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_P2P_CONNECT_REQ;
-			*(U32*)(&buf[NTY_PROTO_LOGIN_REQ_DEVID_IDX]) = (U32) devid;
+			*(U64*)(&buf[NTY_PROTO_LOGIN_REQ_DEVID_IDX]) = (U64) devid;
 			*(U32*)(&buf[NTY_PROTO_LOGIN_REQ_ACKNUM_IDX]) = (U32) 12345;
 			*(U32*)(&buf[NTY_PROTO_LOGIN_REQ_CRC_IDX]) = ntyGenCrcValue(buf, NTY_PROTO_LOGIN_REQ_CRC_IDX);
 			
@@ -343,7 +343,7 @@ void *run(void *arg) {
 				
 				if (tempaddr.sin_addr.s_addr == 0 || tempaddr.sin_port == 0) {
 					buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_P2P_ADDR_REQ;
-					*(U32*)(&buf[NTY_PROTO_P2PADDR_REQ_DEVID_IDX]) = (U32) devid;
+					*(U64*)(&buf[NTY_PROTO_P2PADDR_REQ_DEVID_IDX]) = (U64) devid;
 					*(U32*)(&buf[NTY_PROTO_P2PADDR_REQ_ACKNUM_IDX]) = (U32) 12345;
 					*(U32*)(&buf[NTY_PROTO_P2PADDR_REQ_FRIENDS_COUNT_IDX]) = clientInfo[i].devId;
 					n = sendto(sockfd, buf, len, 0, (struct sockaddr *)&serveraddr, serverlen);
@@ -365,7 +365,7 @@ void *run(void *arg) {
 			}
 			
 			buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_P2P_CONNECT_REQ;
-			*(U32*)(&buf[NTY_PROTO_LOGIN_REQ_DEVID_IDX]) = (U32) devid;
+			*(U64*)(&buf[NTY_PROTO_LOGIN_REQ_DEVID_IDX]) = (U64) devid;
 			*(U32*)(&buf[NTY_PROTO_LOGIN_REQ_ACKNUM_IDX]) = (U32) 12345;
 			*(U32*)(&buf[NTY_PROTO_LOGIN_REQ_CRC_IDX]) = ntyGenCrcValue(buf, NTY_PROTO_LOGIN_REQ_CRC_IDX);
 			
@@ -384,7 +384,7 @@ void *run(void *arg) {
 			
 		} else if (level == 4) {
 			buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_P2P_CONNECT_ACK;
-			*(U32*)(&buf[NTY_PROTO_LOGIN_REQ_DEVID_IDX]) = (U32) devid;
+			*(U64*)(&buf[NTY_PROTO_LOGIN_REQ_DEVID_IDX]) = (U64) devid;
 			*(U32*)(&buf[NTY_PROTO_LOGIN_REQ_ACKNUM_IDX]) = (U32) 12345;
 			*(U32*)(&buf[NTY_PROTO_LOGIN_REQ_CRC_IDX]) = ntyGenCrcValue(buf, NTY_PROTO_LOGIN_REQ_CRC_IDX);
 			
@@ -396,7 +396,7 @@ void *run(void *arg) {
 			level = 0x0A;
 		} else if (level == 5) {
 			buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_DATAPACKET_NOTIFY_ACK;
-			*(U32*)(&buf[NTY_PROTO_DATAPACKET_ACK_DEVID_IDX]) = (U32) devid;
+			*(U64*)(&buf[NTY_PROTO_DATAPACKET_ACK_DEVID_IDX]) = (U64) devid;
 			*(U32*)(&buf[NTY_PROTO_DATAPACKET_ACK_ACKNUM_IDX]) = (U32) 12345;
 			*(U32*)(&buf[NTY_PROTO_DATAPACKET_ACK_SRC_DEVID_IDX]) = (U32) frienddevid;
 			*(U32*)(&buf[NTY_PROTO_DATAPACKET_ACK_CRC_IDX]) = ntyGenCrcValue(buf, NTY_PROTO_DATAPACKET_ACK_CRC_IDX);
@@ -413,7 +413,7 @@ void *run(void *arg) {
 			U8 *tempBuf;
 			
 			buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
-			*(U32*)(&buf[NTY_PROTO_DATAPACKET_DEVID_IDX]) = (U32) devid;
+			*(U64*)(&buf[NTY_PROTO_DATAPACKET_DEVID_IDX]) = (U64) devid;
 			*(U32*)(&buf[NTY_PROTO_DATAPACKET_ACKNUM_IDX]) = (U32) 12345;
 			
 			*(U32*)(&buf[NTY_PROTO_DATAPACKET_RECE_COUNT_IDX]) = (U32) 0;
@@ -550,6 +550,7 @@ void *run(void *arg) {
 
 
 int main() {
+#if 0
 	pid_t fpid;
 	fpid = fork();
 	if (fpid < 0) {
@@ -587,6 +588,16 @@ int main() {
 			}
 		}
 	}
+#else
+	int err = 0;
+	pthread_t sendThread_id;
+
+	err = pthread_create(&sendThread_id, NULL, run, NULL);
+	if (err != 0) {
+		printf(" can't create thread:%s\n", strerror(err));
+		exit(0);
+	}
+#endif
 	while(1);
 }
 

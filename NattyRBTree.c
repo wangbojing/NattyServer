@@ -290,7 +290,7 @@ RBTreeNode* ntyRBTreeDelete(RBTree *T, RBTreeNode *z) {
 	return y;
 }
 
-RBTreeNode* ntyRBTreeSearch(RBTree *T, U32 key) {
+RBTreeNode* ntyRBTreeSearch(RBTree *T, C_DEVID key) {
 	RBTreeNode *node = T->root;
 
 	while (node != T->nil) {
@@ -335,7 +335,7 @@ void* ntyRBTreeOperaDtor(void *_self) {
 	return self;
 }
 
-int ntyRBTreeOperaInsert(void *_self, U32 key, void *value) {
+int ntyRBTreeOperaInsert(void *_self, C_DEVID key, void *value) {
 	RBTree *self = _self;
 
 	RBTreeNode *node = ntyRBTreeSearch(self, key);
@@ -350,7 +350,7 @@ int ntyRBTreeOperaInsert(void *_self, U32 key, void *value) {
 	return 1; //exist
 }
 
-void* ntyRBTreeOperaSearch(void *_self, U32 key) {
+void* ntyRBTreeOperaSearch(void *_self, C_DEVID key) {
 	RBTree *self = _self;
 	RBTreeNode *node = ntyRBTreeSearch(self, key);
 
@@ -360,7 +360,7 @@ void* ntyRBTreeOperaSearch(void *_self, U32 key) {
 	return node;
 }
 
-int ntyRBTreeOperaDelete(void *_self, U32 key) {
+int ntyRBTreeOperaDelete(void *_self, C_DEVID key) {
 	RBTree *self = _self;
 
 	RBTreeNode *node = ntyRBTreeSearch(self , key);
@@ -372,7 +372,7 @@ int ntyRBTreeOperaDelete(void *_self, U32 key) {
 	return 0;
 }
 
-int ntyRBTreeOperaUpdate(void *_self, U32 key, void *value) {
+int ntyRBTreeOperaUpdate(void *_self, C_DEVID key, void *value) {
 	RBTree *self = _self;
 
 	RBTreeNode *node = ntyRBTreeSearch(self , key);
@@ -403,7 +403,7 @@ const void *pNtyRBTreeOpera = &ntyRBTreeOpera;
 static void ntyInOrderTraversal(RBTree *T, RBTreeNode *node) {
 	if (node != T->nil) {
 		ntyInOrderTraversal(T, node->left);
-		printf(" %d ", node->key);
+		printf(" %lld ", node->key);
 		ntyInOrderTraversal(T, node->right);
 	}
 	return ;
@@ -411,7 +411,7 @@ static void ntyInOrderTraversal(RBTree *T, RBTreeNode *node) {
 
 static void ntyPreOrderTraversal(RBTree *T, RBTreeNode *node) {
 	if (node != T->nil) {
-		printf(" %d ", node->key);
+		printf(" %lld ", node->key);
 		ntyInOrderTraversal(T, node->left);
 		ntyInOrderTraversal(T, node->right);
 	}
@@ -422,7 +422,7 @@ static void ntyPosOrderTraversal(RBTree *T, RBTreeNode *node) {
 	if (node != T->nil) {
 		ntyInOrderTraversal(T, node->left);
 		ntyInOrderTraversal(T, node->right);
-		printf(" %d ", node->key);
+		printf(" %lld ", node->key);
 	}
 	return ;
 }
@@ -432,7 +432,7 @@ static int ntyPrintTreeByLevel(RBTree *T, RBTreeNode *node, int level) {
 		return 0;
 	}
 	if (0 == level) {
-		printf(" %d color:%d  %s\n", node->key, node->color, (char*)node->value);
+		printf(" %lld color:%d  %s\n", node->key, node->color, (char*)node->value);
 		return 1;
 	}
 
@@ -456,7 +456,7 @@ void* ntyRBTreeInstance(void) {
 	return pRBTree;
 }
 
-int ntyRBTreeInterfaceInsert(void *self, U32 key, void *value) {
+int ntyRBTreeInterfaceInsert(void *self, C_DEVID key, void *value) {
 	RBTreeOpera **pRBTreeOpera = self;
 
 	if (self && (*pRBTreeOpera) && (*pRBTreeOpera)->insert) {
@@ -466,7 +466,7 @@ int ntyRBTreeInterfaceInsert(void *self, U32 key, void *value) {
 }
 
 //return node->value : UdpClient
-void* ntyRBTreeInterfaceSearch(void *self, U32 key) {
+void* ntyRBTreeInterfaceSearch(void *self, C_DEVID key) {
 	RBTreeOpera **pRBTreeOpera = self;
 
 	if (self && (*pRBTreeOpera) && (*pRBTreeOpera)->search) {
@@ -480,7 +480,7 @@ void* ntyRBTreeInterfaceSearch(void *self, U32 key) {
 	return NULL;
 }
 
-int ntyRBTreeInterfaceDelete(void *self, U32 key) {
+int ntyRBTreeInterfaceDelete(void *self, C_DEVID key) {
 	RBTreeOpera **pRBTreeOpera = self;
 
 	if (self && (*pRBTreeOpera) && (*pRBTreeOpera)->delete) {
@@ -489,7 +489,7 @@ int ntyRBTreeInterfaceDelete(void *self, U32 key) {
 	return -1;
 }
 
-int ntyRBTreeInterfaceUpdate(void *self, U32 key, void *value) {
+int ntyRBTreeInterfaceUpdate(void *self, C_DEVID key, void *value) {
 	RBTreeOpera **pRBTreeOpera = self;
 
 	if (self && (*pRBTreeOpera) && (*pRBTreeOpera)->update) {

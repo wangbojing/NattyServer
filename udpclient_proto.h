@@ -49,7 +49,7 @@
 #define __NATTY_PROTOCOL_H__
 
 /* ** **** ********  ****************  Length  ****************  ******** **** ** */
-#define NTY_DEVID_LENGTH				4
+#define NTY_DEVID_LENGTH				8
 #define NTY_ACKNUM_LENGTH				4
 #define NTY_IPADDR_LENGTH				4
 #define NTY_IPPORT_LENGTH				2
@@ -168,7 +168,7 @@
 #define NTY_PROTO_DATAPACKET_CONTENT_COUNT_IDX(x)		NTY_PROTO_DATAPACKET_RECE_IDX(x)
 //#define NTY_PROTO_DATAPACKET_CONTENT_IDX(x)			(NTY_PROTO_DATAPACKET_CONTENT_COUNT_IDX(x)+2)
 
-
+typedef long long U64;
 typedef unsigned int U32;
 typedef unsigned short U16;
 typedef unsigned char U8;
@@ -177,12 +177,12 @@ typedef struct _ClientInfo {
 	U8 isEnable;
 	U16 port;
 	U32 addr;
-	U32 devId;
+	U64 devId;
 } ClientInfo;
 
 typedef struct Thread_arg {
 	int sockfd;
-	int devid;
+	U64 devid;
 } ThreadArg;
 
 #endif

@@ -55,7 +55,7 @@
 
 
 typedef struct _RBTreeNode {
-	unsigned int key;
+	C_DEVID key;
 	void *value;
 	struct _RBTreeNode *right;
 	struct _RBTreeNode *left;
@@ -73,19 +73,19 @@ typedef struct _RBTreeOpera {
 	size_t size;
 	void* (*ctor)(void *_self, va_list *params);
 	void* (*dtor)(void *_self);
-	int (*insert)(void *_self, U32 key, void *value);
-	void* (*search)(void *_self, U32 key);
-	int (*delete)(void *_self, U32 key);
-	int (*update)(void *_self, U32 key, void *value);
+	int (*insert)(void *_self, C_DEVID key, void *value);
+	void* (*search)(void *_self, C_DEVID key);
+	int (*delete)(void *_self, C_DEVID key);
+	int (*update)(void *_self, C_DEVID key, void *value);
 } RBTreeOpera;
 
 
 
 void* ntyRBTreeInstance(void);
-int ntyRBTreeInterfaceInsert(void *self, U32 key, void *value);
-void* ntyRBTreeInterfaceSearch(void *self, U32 key);
-int ntyRBTreeInterfaceDelete(void *self, U32 key);
-int ntyRBTreeInterfaceUpdate(void *self, U32 key, void *value);
+int ntyRBTreeInterfaceInsert(void *self, C_DEVID key, void *value);
+void* ntyRBTreeInterfaceSearch(void *self, C_DEVID key);
+int ntyRBTreeInterfaceDelete(void *self, C_DEVID key);
+int ntyRBTreeInterfaceUpdate(void *self, C_DEVID key, void *value);
 void ntyRBTreeRelease(void *self);
 
 

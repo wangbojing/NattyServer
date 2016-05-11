@@ -49,7 +49,7 @@
 #define __NATTY_PROTOCOL_H__
 
 /* ** **** ********  ****************  Length  ****************  ******** **** ** */
-#define NTY_DEVID_LENGTH				4
+#define NTY_DEVID_LENGTH				8
 #define NTY_ACKNUM_LENGTH				4
 #define NTY_IPADDR_LENGTH				4
 #define NTY_IPPORT_LENGTH				2

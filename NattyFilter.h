@@ -73,7 +73,7 @@ U32 ntyGenCrcValue(U8 *buf, int length);
 
 
 typedef struct _Node {
-	U32 clientId;
+	C_DEVID clientId;
 	struct _Node *next;
 } Node;
 
@@ -90,7 +90,7 @@ typedef struct {
 	void* (*dtor)(void *_self);
 	void (*insert)(void *_self, int id);
 	int (*remove)(void *_self, int id);
-	U32* (*iterator)(const void *_self);
+	C_DEVID* (*iterator)(const void *_self);
 	void (*print)(const void *_self);
 } List;
 

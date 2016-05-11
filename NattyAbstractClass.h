@@ -57,6 +57,7 @@ typedef long long U64;
 typedef unsigned int U32;
 typedef unsigned short U16;
 typedef unsigned char U8;
+typedef long long C_DEVID;
 
 
 typedef struct {
