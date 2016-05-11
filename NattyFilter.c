@@ -143,6 +143,8 @@ static const List ntyClientList = {
 
 const void *pNtyClientList = &ntyClientList;
 
+
+
 void Insert(void *self, int Id) {
 	List **pListOpera = self;
 	if (self && (*pListOpera) && (*pListOpera)->insert) {
@@ -210,8 +212,8 @@ static int ntyUpdateClientListIpAddr(UdpClient *client, C_DEVID key, U32 ackNum)
 	UdpClient *pClient = client;
 	void *pRBTree = ntyRBTreeInstance();
 
-	C_DEVID* friendsList = Iterator(pClient->clientList);
-	int count = ((SingleList*)pClient->clientList)->count;
+	C_DEVID* friendsList = Iterator(pClient->friends);
+	int count = ((SingleList*)pClient->friends)->count;
 	for (i = 0;i < count;i ++) {
 #if 1
 		UdpClient *cv = ntyRBTreeInterfaceSearch(pRBTree, *(friendsList+i));
@@ -243,8 +245,8 @@ static void ntyClientFriendsList(UdpClient *client, U8 *ack) {
 	void *pRBTree = ntyRBTreeInstance();
 	UdpClient *pClient = client;
 
-	C_DEVID* friendsList = Iterator(pClient->clientList);
-	int count = ((SingleList*)pClient->clientList)->count;
+	C_DEVID* friendsList = Iterator(pClient->friends);
+	int count = ((SingleList*)pClient->friends)->count;
 	*(U16*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDS_COUNT_IDX]) = (U16)count;
 	for (i = 0;i < count;i ++) {
 		UdpClient *cv = ntyRBTreeInterfaceSearch(pRBTree, *(friendsList+i));
@@ -279,10 +281,10 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, const
 	if (buffer[NTY_PROTO_TYPE_IDX] == NTY_PROTO_LOGIN_REQ) {
 		int i = 0, length = NTY_PROTO_LOGIN_ACK_ACKNUM_IDX + NTY_ACKNUM_LENGTH;
 		void *pRBTree = ntyRBTreeInstance();
-		unsigned int key = *(unsigned int*)(buffer+NTY_PROTO_LOGIN_REQ_DEVID_IDX);
-		unsigned int ackNum = *(unsigned int*)(buffer+NTY_PROTO_LOGIN_REQ_ACKNUM_IDX)+1;
-		const UdpClient *client = obj;
-		unsigned char ack[NTY_LOGIN_ACK_LENGTH] = {0};
+		C_DEVID key = *(C_DEVID*)(buffer+NTY_PROTO_LOGIN_REQ_DEVID_IDX);
+		U32 ackNum = *(U32*)(buffer+NTY_PROTO_LOGIN_REQ_ACKNUM_IDX)+1;
+		
+		U8 ack[NTY_LOGIN_ACK_LENGTH] = {0};
 
 		UdpClient *cliValue = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, key);
 		if (cliValue == NULL) {			
@@ -290,15 +292,15 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, const
 			pClient->sockfd = client->sockfd;
 			pClient->addr.sin_addr.s_addr = client->addr.sin_addr.s_addr;
 			pClient->addr.sin_port = client->addr.sin_port;
-			
-			pClient->clientList = New(pNtyClientList);
+#if 0			
+			pClient->friends = New(pNtyClientList);
 			//set devid friends list
 #if 1 //Debug
 			//read from disk or mysql by key
 			if (key == 1) {
-				Insert(pClient->clientList, 2);				
+				Insert(pClient->friends, 2);				
 			} else if (key == 2) {
-				Insert(pClient->clientList, 1);
+				Insert(pClient->friends, 1);
 			}
 #endif
 			ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_LOGIN_ACK;
@@ -311,7 +313,16 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, const
 				fprintf(stdout, "Client is Exist\n");
 				free(pClient);
 			}
+#else
+			//read from disk friends 
+			
+			//send client friends list
 
+			//notify friends 
+
+			//insert rb-tree
+			
+#endif
 			return ;
 		} else if ((cliValue != NULL) && (!ntyClientCompare (client, cliValue))) {
 			UdpClient *pClient = cliValue;//(UdpClient*)malloc(sizeof(UdpClient));
@@ -320,8 +331,15 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, const
 			pClient->addr.sin_port = client->addr.sin_port;
 
 			//ntyClientFriendsList(pClient, ack);
+#if 0
 			ntyUpdateClientListIpAddr(pClient, key, ackNum); //notify all friends dev
+#else
+			//friends is null and update
+			
+			//send client friends list
 
+			//notify friends 
+#endif
 			return ;
 		}
 		fprintf(stdout, "Login deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);		
@@ -358,10 +376,10 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, c
 	if (buffer[NTY_PROTO_TYPE_IDX] == NTY_PROTO_HEARTBEAT_REQ) {
 
 		void *pRBTree = ntyRBTreeInstance();
-		unsigned int key = *(unsigned int*)(buffer+NTY_PROTO_HEARTBEAT_DEVID_IDX);
-		unsigned int ackNum = *(unsigned int*)(buffer+NTY_PROTO_HEARTBEAT_ACKNUM_IDX)+1;
+		C_DEVID key = *(C_DEVID*)(buffer+NTY_PROTO_HEARTBEAT_DEVID_IDX);
+		U32 ackNum = *(U32*)(buffer+NTY_PROTO_HEARTBEAT_ACKNUM_IDX)+1;
 		const UdpClient *client = obj;
-		unsigned char ack[NTY_HEARTBEAT_ACK_LENGTH] = {0};
+		U8 ack[NTY_HEARTBEAT_ACK_LENGTH] = {0};
 
 		UdpClient *cliValue = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, key);
 		if (cliValue == NULL) {			
@@ -370,19 +388,19 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, c
 			pClient->addr.sin_addr.s_addr = client->addr.sin_addr.s_addr;
 			pClient->addr.sin_port = client->addr.sin_port;
 			
-			pClient->clientList = New(pNtyClientList);
+			pClient->friends = New(pNtyClientList);
 						//set devid friends list
 #if 1 //Debug
 			//read from disk or mysql by key
 			if (key == 1) {
-				Insert(pClient->clientList, 2);
+				Insert(pClient->friends, 2);
 			} else if (key == 2) {
-				Insert(pClient->clientList, 1);
+				Insert(pClient->friends, 1);
 			}
 #endif
 			if (ntyRBTreeInterfaceInsert(pRBTree, key, pClient)) {
 				fprintf(stdout, "Client is Exist\n");
-				Delete(pClient->clientList);
+				Delete(pClient->friends);
 				free(pClient);
 			} else { //Natify
 				ntyUpdateClientListIpAddr(pClient, key, ackNum);
@@ -429,20 +447,20 @@ static const ProtocolFilter ntyHeartBeatFilter = {
 /*
  * Logout Packet
  */
-void ntyLogoutPacketHandleRequest(const void *_self, unsigned char *buffer, const void* obj) {
+void ntyLogoutPacketHandleRequest(const void *_self, U8 *buffer, const void* obj) {
 	const UdpClient *client = obj;
 	if (buffer[NTY_PROTO_TYPE_IDX] == NTY_PROTO_LOGOUT_REQ) {
 		//delete key
 		void *pRBTree = ntyRBTreeInstance();
-		unsigned int key = *(unsigned int*)(buffer+NTY_PROTO_HEARTBEAT_DEVID_IDX);
-		unsigned int ackNum = *(unsigned int*)(buffer+NTY_PROTO_HEARTBEAT_ACKNUM_IDX)+1;
+		C_DEVID key = *(C_DEVID*)(buffer+NTY_PROTO_HEARTBEAT_DEVID_IDX);
+		U32 ackNum = *(U32*)(buffer+NTY_PROTO_HEARTBEAT_ACKNUM_IDX)+1;
 		const UdpClient *client = obj;
 		unsigned char ack[NTY_HEARTBEAT_ACK_LENGTH] = {0};
 
 
 		UdpClient *cliValue = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, key);
 		if (cliValue != NULL) {
-			Delete(cliValue->clientList);
+			Delete(cliValue->friends);
 		}
 		
 		ntyRBTreeInterfaceDelete(pRBTree, key);
@@ -472,14 +490,14 @@ static const ProtocolFilter ntyLogoutFilter = {
 /*
  * P2P Packet
  */
-void ntyP2PAddrReqPacketHandleRequest(const void *_self, unsigned char *buffer, const void* obj) {
+void ntyP2PAddrReqPacketHandleRequest(const void *_self, U8 *buffer, const void* obj) {
 	const UdpClient *client = obj;
 	if (buffer[NTY_PROTO_TYPE_IDX] == NTY_PROTO_P2P_ADDR_REQ) {
 		int i = 0, length;
 		void *pRBTree = ntyRBTreeInstance();
 
-		C_DEVID key = *(unsigned int*)(buffer+NTY_PROTO_P2PADDR_REQ_DEVID_IDX);
-		U32 ackNum = *(unsigned int*)(buffer+NTY_PROTO_P2PADDR_REQ_ACKNUM_IDX)+1;
+		C_DEVID key = *(C_DEVID*)(buffer+NTY_PROTO_P2PADDR_REQ_DEVID_IDX);
+		U32 ackNum = *(U32*)(buffer+NTY_PROTO_P2PADDR_REQ_ACKNUM_IDX)+1;
 
 		//const UdpClient *client = obj;
 		U16 count = *(U16*)(&buffer[NTY_PROTO_P2PADDR_REQ_FRIENDS_COUNT_IDX]);
@@ -569,7 +587,7 @@ void ntyUserDataPacketHandleRequest(const void *_self, unsigned char *buffer, co
 		U16 i = 0;
 		void *pRBTree = ntyRBTreeInstance();		
 		C_DEVID key = *(C_DEVID*)(buffer+NTY_PROTO_DATAPACKET_DEVID_IDX);
-		U32 ackNum = *(unsigned int*)(buffer+NTY_PROTO_DATAPACKET_ACKNUM_IDX)+1;
+		U32 ackNum = *(U32*)(buffer+NTY_PROTO_DATAPACKET_ACKNUM_IDX)+1;
 		U16 count = *(U16*)(buffer+NTY_PROTO_DATAPACKET_RECE_COUNT_IDX);
 
 		UdpClient *cliValue = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, key);
@@ -577,8 +595,8 @@ void ntyUserDataPacketHandleRequest(const void *_self, unsigned char *buffer, co
 			if (count == 0) { //Notify all client
 				int k = 0;
 				U8 notifySrc[RECV_BUFFER_SIZE] = {0};
-				C_DEVID* friendsList = Iterator(cliValue->clientList);
-				int clientCount = ((SingleList*)cliValue->clientList)->count;
+				C_DEVID* friendsList = Iterator(cliValue->friends);
+				int clientCount = ((SingleList*)cliValue->friends)->count;
 
 				if (friendsList == NULL) {
 					return ;

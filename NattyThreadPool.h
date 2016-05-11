@@ -49,7 +49,7 @@
 #include <pthread.h>
 #include "NattyAbstractClass.h"
 
-#define NTY_THREAD_POOL_NUM		40
+#define NTY_THREAD_POOL_NUM		400
 
 typedef struct _Worker {
 	pthread_t thread;

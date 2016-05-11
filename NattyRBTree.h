@@ -77,6 +77,7 @@ typedef struct _RBTreeOpera {
 	void* (*search)(void *_self, C_DEVID key);
 	int (*delete)(void *_self, C_DEVID key);
 	int (*update)(void *_self, C_DEVID key, void *value);
+	void (*traversal)(void *_self, HANDLE_CLIENTID handle_FN);
 } RBTreeOpera;
 
 
@@ -87,6 +88,19 @@ void* ntyRBTreeInterfaceSearch(void *self, C_DEVID key);
 int ntyRBTreeInterfaceDelete(void *self, C_DEVID key);
 int ntyRBTreeInterfaceUpdate(void *self, C_DEVID key, void *value);
 void ntyRBTreeRelease(void *self);
+
+
+
+void *ntyFriendsTreeInstance(void);
+int ntyFriendsTreeInsert(void *self, C_DEVID key);
+void* ntyFriendsTreeSearch(void *self, C_DEVID key);
+int ntyFriendsTreeDelete(void *self, C_DEVID key);
+void ntyFriendsTreeTraversal(void *self, HANDLE_CLIENTID handle_FN);
+int ntyFriendsTreeIsExist(void *self, C_DEVID key);
+void ntyFriendsTreeRelease(void *self);
+
+
+
 
 
 

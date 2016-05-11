@@ -71,7 +71,7 @@ typedef struct _UdpClient {
 	int sockfd;
 	struct sockaddr_in addr;
 	//int key; //client id use for rb-tree key
-	void *clientList; //client id list for this key
+	void *friends; //client id list for this key
 } UdpClient;
 
 

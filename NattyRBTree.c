@@ -384,27 +384,12 @@ int ntyRBTreeOperaUpdate(void *_self, C_DEVID key, void *value) {
 	return 0;
 }
 
-
-
-
-static const RBTreeOpera ntyRBTreeOpera = {
-	sizeof(RBTree),
-	ntyRBTreeOperaCtor,
-	ntyRBTreeOperaDtor,
-	ntyRBTreeOperaInsert,
-	ntyRBTreeOperaSearch,
-	ntyRBTreeOperaDelete,
-	ntyRBTreeOperaUpdate,
-};
-
-const void *pNtyRBTreeOpera = &ntyRBTreeOpera;
-
-
-static void ntyInOrderTraversal(RBTree *T, RBTreeNode *node) {
+static void ntyInOrderTraversal(RBTree *T, RBTreeNode *node, HANDLE_CLIENTID handle_FN) {
 	if (node != T->nil) {
-		ntyInOrderTraversal(T, node->left);
-		printf(" %lld ", node->key);
-		ntyInOrderTraversal(T, node->right);
+		ntyInOrderTraversal(T, node->left, handle_FN);
+		//printf(" %lld ", node->key);
+		handle_FN(node->key);
+		ntyInOrderTraversal(T, node->right, handle_FN);
 	}
 	return ;
 }
@@ -412,16 +397,16 @@ static void ntyInOrderTraversal(RBTree *T, RBTreeNode *node) {
 static void ntyPreOrderTraversal(RBTree *T, RBTreeNode *node) {
 	if (node != T->nil) {
 		printf(" %lld ", node->key);
-		ntyInOrderTraversal(T, node->left);
-		ntyInOrderTraversal(T, node->right);
+		ntyPreOrderTraversal(T, node->left);
+		ntyPreOrderTraversal(T, node->right);
 	}
 	return ;
 }
 
 static void ntyPosOrderTraversal(RBTree *T, RBTreeNode *node) {
 	if (node != T->nil) {
-		ntyInOrderTraversal(T, node->left);
-		ntyInOrderTraversal(T, node->right);
+		ntyPosOrderTraversal(T, node->left);
+		ntyPosOrderTraversal(T, node->right);
 		printf(" %lld ", node->key);
 	}
 	return ;
@@ -446,6 +431,30 @@ static void ntyLevelOrderTraversal(RBTree *T, RBTreeNode *node) {
 		if (!ntyPrintTreeByLevel(T, node, i)) break;
 	}
 }
+
+
+void ntyRBTreeOperaTraversal(void *_self, HANDLE_CLIENTID handle_FN) {
+	RBTree *self = _self;
+
+	return ntyInOrderTraversal(self, self->root, handle_FN);
+}
+
+
+
+static const RBTreeOpera ntyRBTreeOpera = {
+	sizeof(RBTree),
+	ntyRBTreeOperaCtor,
+	ntyRBTreeOperaDtor,
+	ntyRBTreeOperaInsert,
+	ntyRBTreeOperaSearch,
+	ntyRBTreeOperaDelete,
+	ntyRBTreeOperaUpdate,
+	ntyRBTreeOperaTraversal,
+};
+
+const void *pNtyRBTreeOpera = &ntyRBTreeOpera;
+
+
 
 static void *pRBTree = NULL; //Singleton
 
@@ -502,6 +511,57 @@ void ntyRBTreeRelease(void *self) {
 	return Delete(self);
 }
 
+
+/*
+ * use for client friends tree
+ * 
+ */
+
+void *ntyFriendsTreeInstance(void) {
+	void *pFriends = New(pNtyRBTreeOpera);
+	return pFriends;
+}
+
+
+int ntyFriendsTreeInsert(void *self, C_DEVID key) {
+	return ntyRBTreeInterfaceInsert(self, key, NULL);
+}
+
+void* ntyFriendsTreeSearch(void *self, C_DEVID key) {
+	RBTreeOpera **pRBTreeOpera = self;
+
+	if (self && (*pRBTreeOpera) && (*pRBTreeOpera)->search) {
+		return (*pRBTreeOpera)->search(self, key);
+	}
+	return NULL;
+}
+
+int ntyFriendsTreeDelete(void *self, C_DEVID key) {
+	return ntyRBTreeInterfaceDelete(self, key);
+}
+
+void ntyFriendsTreeTraversal(void *self, HANDLE_CLIENTID handle_FN) {
+	RBTreeOpera **pRBTreeOpera = self;
+
+	if (self && (*pRBTreeOpera) && (*pRBTreeOpera)->traversal) {
+		return (*pRBTreeOpera)->traversal(self, handle_FN);
+	}
+}
+
+/*
+ * 1 : Exist
+ * 0 : no Exist
+ */
+int ntyFriendsTreeIsExist(void *self, C_DEVID key) {
+	if (NULL == ntyFriendsTreeSearch(self, key)) {
+		return 0;
+	}
+	return 1;
+}
+
+void ntyFriendsTreeRelease(void *self) {
+	return Delete(self);
+}
 
 #if 0
 int main() {
