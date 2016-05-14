@@ -44,7 +44,7 @@
 
 #include "NattyRBTree.h"
 #include "NattyFilter.h"
-
+#include "NattySession.h"
 
 
 
@@ -292,54 +292,63 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, const
 			pClient->sockfd = client->sockfd;
 			pClient->addr.sin_addr.s_addr = client->addr.sin_addr.s_addr;
 			pClient->addr.sin_port = client->addr.sin_port;
-#if 0			
-			pClient->friends = New(pNtyClientList);
-			//set devid friends list
-#if 1 //Debug
-			//read from disk or mysql by key
-			if (key == 1) {
-				Insert(pClient->friends, 2);				
-			} else if (key == 2) {
-				Insert(pClient->friends, 1);
-			}
-#endif
-			ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_LOGIN_ACK;
-			*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_ACKNUM_IDX]) = ackNum;
-			
-			ntyClientFriendsList(pClient, ack);
-			ntyUpdateClientListIpAddr(pClient, key, ackNum);
+			pClient->ackNum = ackNum;
 
+			//new firends tree			
+			pClient->friends = ntyFriendsTreeInstance();
+			//read from disk friends and store in rb-tree
+#if 1	//just for debug		
+			if (key == 1) {
+				ntyFriendsTreeInsert(pClient->friends, 2);
+				ntyFriendsTreeInsert(pClient->friends, 3);
+			} else if (key == 2) {
+				ntyFriendsTreeInsert(pClient->friends, 1);
+				ntyFriendsTreeInsert(pClient->friends, 3);
+			}
+#else
+#endif
+			//insert rb-tree
 			if (ntyRBTreeInterfaceInsert(pRBTree, key, pClient)) {
 				fprintf(stdout, "Client is Exist\n");
 				free(pClient);
+				return ;
 			}
-#else
-			//read from disk friends 
-			
-			//send client friends list
-
+			//send friends list to this client.
+			//ntyFriendsTreeGetAllNodeList
+			ntySendFriendsTreeIpAddr(pClient);
+			//ntyFriendsTreeTraversal(pClient->friends, ntySendFriendIpAddr);
 			//notify friends 
+			ntyFriendsTreeTraversal(pClient->friends, ntyNotifyFriendConnect);
 
-			//insert rb-tree
-			
-#endif
 			return ;
 		} else if ((cliValue != NULL) && (!ntyClientCompare (client, cliValue))) {
 			UdpClient *pClient = cliValue;//(UdpClient*)malloc(sizeof(UdpClient));
 			pClient->sockfd = client->sockfd;
 			pClient->addr.sin_addr.s_addr = client->addr.sin_addr.s_addr;
 			pClient->addr.sin_port = client->addr.sin_port;
-
-			//ntyClientFriendsList(pClient, ack);
-#if 0
-			ntyUpdateClientListIpAddr(pClient, key, ackNum); //notify all friends dev
-#else
-			//friends is null and update
+			pClient->ackNum = ackNum;
 			
-			//send client friends list
+			//ntyClientFriendsList(pClient, ack);
 
+			//friends is null and update friends tree
+			if (ntyFriendsTreeIsEmpty(cliValue->friends)) {
+#if 1	//just for debug		
+				if (key == 1) {
+					ntyFriendsTreeInsert(pClient->friends, 2);
+					ntyFriendsTreeInsert(pClient->friends, 3);
+				} else if (key == 2) {
+					ntyFriendsTreeInsert(pClient->friends, 1);
+					ntyFriendsTreeInsert(pClient->friends, 3);
+				}
+#else
+#endif				
+			}
+			
+			//send friends list to client
+			ntySendFriendsTreeIpAddr(pClient);
 			//notify friends 
-#endif
+			ntyFriendsTreeTraversal(pClient->friends, ntyNotifyFriendConnect);
+
 			return ;
 		}
 		fprintf(stdout, "Login deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);		
@@ -387,33 +396,49 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, c
 			pClient->sockfd = client->sockfd;
 			pClient->addr.sin_addr.s_addr = client->addr.sin_addr.s_addr;
 			pClient->addr.sin_port = client->addr.sin_port;
+			pClient->ackNum = ackNum;
 			
-			pClient->friends = New(pNtyClientList);
-						//set devid friends list
-#if 1 //Debug
-			//read from disk or mysql by key
+			//determine this key is available and read from disk friends 
+#if 1	//just for debug		
 			if (key == 1) {
-				Insert(pClient->friends, 2);
+				ntyFriendsTreeInsert(pClient->friends, 2);
+				ntyFriendsTreeInsert(pClient->friends, 3);
 			} else if (key == 2) {
-				Insert(pClient->friends, 1);
+				ntyFriendsTreeInsert(pClient->friends, 1);
+				ntyFriendsTreeInsert(pClient->friends, 3);
 			}
-#endif
+#else
+#endif	
+			//insert rb-tree
 			if (ntyRBTreeInterfaceInsert(pRBTree, key, pClient)) {
 				fprintf(stdout, "Client is Exist\n");
-				Delete(pClient->friends);
 				free(pClient);
-			} else { //Natify
-				ntyUpdateClientListIpAddr(pClient, key, ackNum);
+				return ;
 			}
+			//notify friends 
+			ntyFriendsTreeTraversal(pClient->friends, ntyNotifyFriendConnect);
+
+			//send friends list to client 
+			ntyFriendsTreeTraversal(pClient->friends, ntySendFriendIpAddr);
+			
+			
 		} else if ((cliValue != NULL) && !ntyClientCompare(client, cliValue)) {
 			int i = 0, length = 0;
 			UdpClient *pClient = cliValue;//(UdpClient*)malloc(sizeof(UdpClient));
 			pClient->sockfd = client->sockfd;
 			pClient->addr.sin_addr.s_addr = client->addr.sin_addr.s_addr;
 			pClient->addr.sin_port = client->addr.sin_port;
+			pClient->ackNum = ackNum;
+			
 			fprintf(stdout, "HeartBeat Update Info: %d\n", buffer[NTY_PROTO_TYPE_IDX]);
-		
-			ntyUpdateClientListIpAddr(pClient, key, ackNum); //notify all friends dev
+
+			//client dev ipaddr is changed
+			//notify its friends list, reset p2p
+			ntyFriendsTreeTraversal(pClient->friends, ntyNotifyFriendConnect);
+			//
+			//send friends list to client 
+			ntyFriendsTreeTraversal(pClient->friends, ntySendFriendIpAddr);
+			
 			//return ;
 		}
 		
@@ -491,7 +516,7 @@ static const ProtocolFilter ntyLogoutFilter = {
  * P2P Packet
  */
 void ntyP2PAddrReqPacketHandleRequest(const void *_self, U8 *buffer, const void* obj) {
-	const UdpClient *client = obj;
+	//const UdpClient *client = obj;
 	if (buffer[NTY_PROTO_TYPE_IDX] == NTY_PROTO_P2P_ADDR_REQ) {
 		int i = 0, length;
 		void *pRBTree = ntyRBTreeInstance();
@@ -499,10 +524,10 @@ void ntyP2PAddrReqPacketHandleRequest(const void *_self, U8 *buffer, const void*
 		C_DEVID key = *(C_DEVID*)(buffer+NTY_PROTO_P2PADDR_REQ_DEVID_IDX);
 		U32 ackNum = *(U32*)(buffer+NTY_PROTO_P2PADDR_REQ_ACKNUM_IDX)+1;
 
-		//const UdpClient *client = obj;
+		UdpClient *client = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, key);;
 		U16 count = *(U16*)(&buffer[NTY_PROTO_P2PADDR_REQ_FRIENDS_COUNT_IDX]);
 		U8 ack[NTY_P2PADDR_ACK_LENGTH] = {0};
-		
+#if 0		
 		//deal with P2P addr Req
 		for (i = 0;i < count;i ++) {
 			C_DEVID reqKey = *(C_DEVID*)(&buffer[NTY_PROTO_P2PADDR_REQ_FRIENDS_DEVID_IDX(i)]);
@@ -539,6 +564,22 @@ void ntyP2PAddrReqPacketHandleRequest(const void *_self, U8 *buffer, const void*
 		//memcpy(ack+NTY_PROTO_LOGIN_ACK_ACKNUM_IDX, &ackNum, NTY_ACKNUM_LENGTH);
 		*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_ACKNUM_IDX]) = ackNum;
 		ntySendBuffer(client, ack, length);
+#else
+
+		//client key is available and 
+
+		//send ip addr to client		
+		C_DEVID *devIdList = (C_DEVID*)malloc(count*sizeof(C_DEVID));
+		for (i = 0;i < count;i ++) {
+			*(devIdList+i) = *(C_DEVID*)(&buffer[NTY_PROTO_P2PADDR_REQ_FRIENDS_DEVID_IDX(i)]);
+			//notify friend to connect this client
+			ntyNotifyFriendConnect(client, *(devIdList+i));
+		}
+		ntySendIpAddrFriendsList(client, devIdList, count);
+		free(devIdList);
+
+		fprintf(stdout, "P2P addr Req deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);
+#endif		
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, obj);
@@ -587,12 +628,15 @@ void ntyUserDataPacketHandleRequest(const void *_self, unsigned char *buffer, co
 		U16 i = 0;
 		void *pRBTree = ntyRBTreeInstance();		
 		C_DEVID key = *(C_DEVID*)(buffer+NTY_PROTO_DATAPACKET_DEVID_IDX);
-		U32 ackNum = *(U32*)(buffer+NTY_PROTO_DATAPACKET_ACKNUM_IDX)+1;
+		//U32 ackNum = *(U32*)(buffer+NTY_PROTO_DATAPACKET_ACKNUM_IDX)+1;
 		U16 count = *(U16*)(buffer+NTY_PROTO_DATAPACKET_RECE_COUNT_IDX);
-
+		
+		printf(" aaaaaaaaaaa :%d\n", count);
 		UdpClient *cliValue = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, key);
 		if (cliValue != NULL) {
-			if (count == 0) { //Notify all client
+			//cliValue->ackNum = ackNum;
+			if (count == 0) { //Notify all friends
+#if 0
 				int k = 0;
 				U8 notifySrc[RECV_BUFFER_SIZE] = {0};
 				C_DEVID* friendsList = Iterator(cliValue->friends);
@@ -614,9 +658,22 @@ void ntyUserDataPacketHandleRequest(const void *_self, unsigned char *buffer, co
 				}
 
 				free(friendsList);
+#else
+				C_DEVID *friendsList = ntyFriendsTreeGetAllNodeList(cliValue->friends);
+				U16 friendsSize = ntyFriendsTreeGetNodeCount(cliValue->friends);
+				printf(" friendsSize: %d \n", friendsSize);
+				for (i = 0;i < friendsSize;i ++) {
+					//UdpClient *friendClient = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, *(friendsList+i));
+					//if (friendClient == NULL) continue;
+					ntyRouteUserData(*(friendsList+i), buffer);
+				}
+				free(friendsList);
+#endif
 			} else {
-				for (i = 0;i < count;i ++) { //Notify clients
-					
+				printf(" bbbbbbbbbbb \n");
+				for (i = 0;i < count;i ++) { //Notify friends
+					C_DEVID friendId = *(C_DEVID*)(buffer+NTY_PROTO_DATAPACKET_RECE_IDX(i));
+					ntyRouteUserData(friendId, buffer);
 				}
 			}
 		}
@@ -655,14 +712,14 @@ void ntyUserDataPacketAckHandleRequest(const void *_self, unsigned char *buffer,
 		void *pRBTree = ntyRBTreeInstance();		
 		C_DEVID key = *(C_DEVID*)(buffer+NTY_PROTO_DATAPACKET_ACK_DEVID_IDX);
 		U32 ackNum = *(U32*)(buffer+NTY_PROTO_DATAPACKET_ACK_ACKNUM_IDX)+1;
-		U32 srcKey = *(U32*)(buffer+NTY_PROTO_DATAPACKET_ACK_SRC_DEVID_IDX);
+		C_DEVID srcKey = *(U32*)(buffer+NTY_PROTO_DATAPACKET_ACK_SRC_DEVID_IDX);
 
 		UdpClient *cliValue = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, srcKey);
 		if (cliValue != NULL) {
 			//U8 Notify[]
 			int length = NTY_PROTO_DATAPACKET_ACK_CRC_IDX+4;
 			*(C_DEVID*)(buffer+NTY_PROTO_DATAPACKET_ACK_DEVID_IDX) = srcKey;
-			*(U32*)(buffer+NTY_PROTO_DATAPACKET_ACK_SRC_DEVID_IDX) = key;
+			*(C_DEVID*)(buffer+NTY_PROTO_DATAPACKET_ACK_SRC_DEVID_IDX) = key;
 			*(U32*)(buffer+NTY_PROTO_DATAPACKET_ACK_CRC_IDX) = ntyGenCrcValue(buffer, NTY_PROTO_DATAPACKET_ACK_CRC_IDX);
 			ntySendBuffer(client, buffer, length);
 		}
@@ -747,6 +804,7 @@ void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length, 
 	U32 u32Crc = ntyGenCrcValue(buffer, length-4);
 	U32 u32ClientCrc = *((U32*)(buffer+length-4));
 
+	printf(" old:%x, new:%x\n", u32Crc, u32ClientCrc);
 	if (u32Crc != u32ClientCrc) {
 		return ;
 	}

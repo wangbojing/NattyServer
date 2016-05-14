@@ -67,6 +67,7 @@ typedef struct _RBTree {
 	const void *_;
 	RBTreeNode *root;
 	RBTreeNode *nil;
+	U16 count;
 } RBTree;
 
 typedef struct _RBTreeOpera {
@@ -97,7 +98,10 @@ void* ntyFriendsTreeSearch(void *self, C_DEVID key);
 int ntyFriendsTreeDelete(void *self, C_DEVID key);
 void ntyFriendsTreeTraversal(void *self, HANDLE_CLIENTID handle_FN);
 int ntyFriendsTreeIsExist(void *self, C_DEVID key);
+int ntyFriendsTreeIsEmpty(const void *self);
 void ntyFriendsTreeRelease(void *self);
+C_DEVID* ntyFriendsTreeGetAllNodeList(const void *self);
+U16 ntyFriendsTreeGetNodeCount(const void *self);
 
 
 

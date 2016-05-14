@@ -311,6 +311,7 @@ void* ntyRBTreeOperaCtor(void *_self, va_list *params) {
 	self->nil = (RBTreeNode*)malloc(sizeof(RBTreeNode));
 	self->nil->color = BLACK;
 	self->root = self->nil;
+	self->count = 0;
 
 	return self;
 }
@@ -344,7 +345,7 @@ int ntyRBTreeOperaInsert(void *_self, C_DEVID key, void *value) {
 		node->key = key;
 		node->value = value;
 		NattyRBTreeInsert(self, node);
-
+		self->count ++;
 		return 0;
 	}
 	return 1; //exist
@@ -368,6 +369,7 @@ int ntyRBTreeOperaDelete(void *_self, C_DEVID key) {
 
 	node = ntyRBTreeDelete(self, node);
 	free(node);
+	self->count --;
 
 	return 0;
 }
@@ -386,13 +388,24 @@ int ntyRBTreeOperaUpdate(void *_self, C_DEVID key, void *value) {
 
 static void ntyInOrderTraversal(RBTree *T, RBTreeNode *node, HANDLE_CLIENTID handle_FN) {
 	if (node != T->nil) {
-		ntyInOrderTraversal(T, node->left, handle_FN);
-		//printf(" %lld ", node->key);
-		handle_FN(node->key);
+		ntyInOrderTraversal(T, node->left, handle_FN);		
+		handle_FN(T, node->key);
 		ntyInOrderTraversal(T, node->right, handle_FN);
 	}
 	return ;
 }
+
+static void ntyInOrderTraversalForList(const RBTree *T, RBTreeNode *node, C_DEVID *list) {
+	if (node != T->nil) {
+		ntyInOrderTraversalForList(T, node->left, list);
+		//printf(" %lld ", node->key);
+		//handle_FN(node->key);
+		*list = node->key;
+		ntyInOrderTraversalForList(T, node->right, ++list);
+	}
+	return ;
+}
+
 
 static void ntyPreOrderTraversal(RBTree *T, RBTreeNode *node) {
 	if (node != T->nil) {
@@ -401,6 +414,16 @@ static void ntyPreOrderTraversal(RBTree *T, RBTreeNode *node) {
 		ntyPreOrderTraversal(T, node->right);
 	}
 	return ;
+}
+
+static void* ntyPreOrderTraversalForList(const RBTree *T, RBTreeNode *node, C_DEVID *list) {
+	if (node != T->nil) {
+		*(list++) = node->key;
+
+		list = ntyPreOrderTraversalForList(T, node->left, list);
+		list = ntyPreOrderTraversalForList(T, node->right, list);
+	}
+	return list;
 }
 
 static void ntyPosOrderTraversal(RBTree *T, RBTreeNode *node) {
@@ -554,13 +577,51 @@ void ntyFriendsTreeTraversal(void *self, HANDLE_CLIENTID handle_FN) {
  */
 int ntyFriendsTreeIsExist(void *self, C_DEVID key) {
 	if (NULL == ntyFriendsTreeSearch(self, key)) {
-		return 0;
+		return 1;
 	}
-	return 1;
+	return 0;
+}
+
+int ntyFriendsTreeIsEmpty(const void *self) {
+	const RBTree *tree = self;
+	if (tree->root == tree->nil) {
+		return 1;
+	}
+	return 0;
+}
+
+
+C_DEVID* ntyFriendsTreeGetAllNodeList(const void *self) {
+	const RBTree *tree = self;
+	int count = tree->count;
+
+	if (count == 0) return NULL;
+
+	//C_DEVID *list = (C_DEVID*)malloc(count*sizeof(C_DEVID));
+	C_DEVID *list = (C_DEVID*)malloc(count*sizeof(C_DEVID));
+	C_DEVID *friends = list;
+	assert(list);
+	memset(list, 0, count*sizeof(C_DEVID));
+	
+	list = ntyPreOrderTraversalForList(tree, tree->root, list);
+	assert((list-friends) == count);
+
+	return friends;
+}
+
+
+U16 ntyFriendsTreeGetNodeCount(const void *self) {
+	const RBTree *tree = self;
+	return tree->count;
 }
 
 void ntyFriendsTreeRelease(void *self) {
 	return Delete(self);
+}
+
+void* ntyFriendsTreeGetFristNode(void *self) {
+	const RBTree *tree = self;
+	return tree->root->value;
 }
 
 #if 0
@@ -607,7 +668,17 @@ int main() {
 		
 		ntyRBTreeInterfaceInsert(pRBTree, keyArray[i], value);
 	}
-	ntyLevelOrderTraversal(pRBTree, ((RBTree*)pRBTree)->root);
+	//ntyLevelOrderTraversal(pRBTree, ((RBTree*)pRBTree)->root);
+#if 1
+	int size = ntFriendsTreeGetNodeCount(pRBTree);
+	C_DEVID *list = ntyFriendsTreeGetAllNodeList(pRBTree);
+	for (i = 0;i < size;i ++) {
+		printf("  %lld, ", (C_DEVID)(*(list+i)));
+		
+	}
+	free(list);
+	printf(" addr: %x \n", list);
+#endif		
 
 	void* v = ntyRBTreeInterfaceSearch(pRBTree, 19);
 	printf("\n value: %s\n", (char*)v);
@@ -621,6 +692,9 @@ int main() {
 	printf("\n value: %s\n", (char*)v);
 
 	ntyRBTreeInterfaceDelete(pRBTree, 18);
+
+	
+	
 
 	ntyRBTreeRelease(pRBTree);
 }

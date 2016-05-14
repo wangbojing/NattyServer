@@ -263,7 +263,7 @@ void *run(void *arg) {
     struct sockaddr_in tempaddr;
     struct sockaddr_in addr;
     struct hostent *server, *server_1;
-    char *hostname = "120.76.25.198", *hostname_1;
+    char *hostname = "127.0.0.1", *hostname_1; //"120.76.25.198"
     char buf[BUFSIZE];
     int key = 0, err;
     pthread_t recThread_id;
@@ -274,12 +274,13 @@ void *run(void *arg) {
     
     //hostname = argv[1];
     portno = 8888;
-#if 0    
+#if 1    
     printf(" Press DevId <1 or 2>: ");
     scanf("%d", &devid);
-#endif
+#else
 	srand(time(NULL));  
 	devid = rand() % 5000;
+#endif
     //hostname_1 = argv[3];
     //portno_1 = atoi(argv[4]);
     ntyGenCrcTable();
@@ -313,7 +314,7 @@ void *run(void *arg) {
     serveraddr.sin_port = htons(portno);
     
 #if 1 // send Login Req
-
+	printf(" bbbbbbbbbbb \n");
 	while (1) {
 		bzero(buf, BUFSIZE);
 		buf[0] = 'A';

@@ -8,10 +8,15 @@ FLAG = -lpthread
 
 objects = NattyAbstractClass.o NattyFilter.o NattyRBTree.o NattyServer.o \
 	NattyUdpServer.o NattyUtils.o NattyThreadPool.o NattyWorkQueue.o \
+	NattySession.o
+
+client_obj = NattyUdpClient.o NattyRBTree.o NattyAbstractClass.o
 
 Natty : $(objects)
 	cc -o Natty $(objects) $(FLAG)
 
+client : $(client_obj)
+	cc -o NattyUdpClient $(client_obj) $(FLAG)
 
 	
 NattyFilter.o : NattyFilter.c NattyFilter.h
@@ -30,10 +35,14 @@ NattyThreadPool.o : NattyThreadPool.c NattyThreadPool.h
 
 NattyWorkQueue.o : NattyWorkQueue.c NattyWorkQueue.h
 
+NattySession.o : NattySession.c NattySession.h
+
+NattyUdpClient.o : NattyUdpClient.c
+
 .PHONY : clean
 
 clean:
-	rm -rf Natty $(objects)
+	rm -rf Natty $(objects) NattyUdpClient.o
 
 
 

@@ -40,70 +40,26 @@
 
  *
  */
+ 
 
+#ifndef __NATTY_SESSION_H__
+#define __NATTY_SESSION_H__
 
+#include "NattyUdpServer.h"
+#include "NattyProtocol.h"
 
-
-#ifndef __NATTY_UDP_SERVER_H__
-#define __NATTY_UDP_SERVER_H__
-
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
-#include <netdb.h>
-#include <sys/types.h> 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <poll.h>
-
-
-#include "NattyAbstractClass.h"
-
-
-#define NATTY_UDP_SERVER		8888
-#define RECV_BUFFER_SIZE 		1048
-
-
-
-typedef struct _UdpClient {
-	int sockfd;
-	struct sockaddr_in addr;
-	//int key; //client id use for rb-tree key
-	U32 ackNum;
-	void *friends; //client id list for this key
-} UdpClient;
-
-
-typedef struct _UdpServer {
-	const void *_;
-	int sockfd;
-	struct sockaddr_in addr;
-} UdpServer;
-
-typedef struct _UdpServerOpera {
-	size_t size;
-	void* (*ctor)(void *_self, va_list *params);
-	void* (*dtor)(void *_self);
-	int (*process)(const void *_self);
-} UdpServerOpera;
-
-
-typedef struct _RequestPacket {
-	UdpClient *client;
-	U8 *buffer;
-	U16 length;
-} RequestPacket;
-
-int ntyUdpServerRun(const void *arg);
-const void* ntyUdpServerInstance(void);
-int ntyClientCompare(const UdpClient *clientA, const UdpClient *clientB);
-int ntySendBuffer(const UdpClient *client, unsigned char *buffer, int length);
-
+int ntySendFriendIpAddr(void* fTree, C_DEVID id);
+int ntyNotifyFriendConnect(void* fTree, C_DEVID id);
+int ntySendFriendsTreeIpAddr(void *fTree);
+int ntyRouteUserData(C_DEVID friendId, U8 *buffer);
 
 
 #endif
+
+
+
+
+
 
 
 

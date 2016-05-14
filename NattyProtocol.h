@@ -48,6 +48,8 @@
 #ifndef __NATTY_PROTOCOL_H__
 #define __NATTY_PROTOCOL_H__
 
+#define NEY_PROTO_VERSION	'A'
+
 /* ** **** ********  ****************  Length  ****************  ******** **** ** */
 #define NTY_DEVID_LENGTH				8
 #define NTY_ACKNUM_LENGTH				4
@@ -86,7 +88,7 @@
 					(NTY_PROTO_LOGIN_ACK_FRIENDSLIST_START_IDX + NTY_DEVID_LENGTH + NTY_IPADDR_LENGTH +	\
 					(NTY_DEVID_LENGTH+NTY_IPADDR_LENGTH+NTY_IPPORT_LENGTH)*(x))
 
-#define NTY_PROTO_LOGIN_ACK_CRC_IDX(x)		(NTY_PROTO_LOGIN_ACK_FRIENDSLIST_PORT_IDX(x)+NTY_IPPORT_LENGTH)
+#define NTY_PROTO_LOGIN_ACK_CRC_IDX(x)		NTY_PROTO_LOGIN_ACK_FRIENDSLIST_DEVID_IDX(x)
 
 
 #define NTY_PROTO_HEARTBEAT_DEVID_IDX		NTY_PROTO_LOGIN_REQ_DEVID_IDX
@@ -150,18 +152,14 @@
 #define NTY_PROTO_LOGOUT_REQ		0x03
 #define NTY_PROTO_LOGOUT_ACK		0x83
 
-
-
 #define NTY_PROTO_P2P_ADDR_REQ			0x11
 #define NTY_PROTO_P2P_ADDR_ACK			0x91
 
 #define NTY_PROTO_P2P_NOTIFY_REQ			0x12 //server sendto client
 #define NTY_PROTO_P2P_NOTIFY_ACK			0x92
 
-
 #define NTY_PROTO_P2P_CONNECT_REQ			0x13 //use for client ,
 #define NTY_PROTO_P2P_CONNECT_ACK			0x93 //use for client ,
-
 
 #define NTY_PROTO_DATAPACKET_REQ			0x21 //use for client ,
 #define NTY_PROTO_DATAPACKET_ACK			0xA1 //use for client ,
@@ -169,8 +167,26 @@
 #define NTY_PROTO_DATAPACKET_NOTIFY_REQ			0x22 //use for client ,
 #define NTY_PROTO_DATAPACKET_NOTIFY_ACK			0xA2 //use for client ,
 
-#define NTY_PROTO_P2P_DATAPACKET_NOTIFY_REQ			0x22 //use for client ,
-#define NTY_PROTO_P2P_DATAPACKET_NOTIFY_ACK			0xA2 //use for client ,
+#define NTY_PROTO_P2PDATAPACKET_REQ			0x23 //use for client ,
+#define NTY_PROTO_P2PDATAPACKET_ACK			0xA3 //use for client ,
+
+#define NTY_PROTO_P2P_DATAPACKET_REQ		0x24
+#define NTY_PROTO_P2P_DATAPACKET_ACK		0xA4
+//#define NTY_PROTO_
+
+//#define NTY_PROTO_FRIENDSLIST_ADDR_INFO				0x24
+//#define NTY_PROTO_FRIENDSLIST_ADDR_ACK				0xA4
+
+
+/* ** **** ********  ****************  Timer  ****************  ******** **** ** */
+
+#define NTY_TIMER_LOGIN_CLIENT 				0x01
+#define NTY_TIMER_HEARTBEAT_CLIENT			0x02
+#define NTY_TIMER_HEARTBEAT_SERVER			0x03
+#define NTY_TIMER_LOGOUT_CLIENT				0x04
+#define NTY_TIMER_PROXY_USERDATA_CLIENT		0x05
+#define NTY_TIMER_P2P_USERDATA_CLIENT		0x06
+
 
 
 #endif
