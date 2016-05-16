@@ -116,6 +116,8 @@ int ntyNotifyFriendConnect(void* fTree, C_DEVID id) {
 	if (client == NULL) return -1;
 
 	notify[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+	notify[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_REQ;
+	notify[NTY_PROTO_TYPE_IDX] = NTY_PROTO_P2P_NOTIFY_REQ;
 	*(C_DEVID*)(&notify[NTY_PROTO_P2P_NOTIFY_DEVID_IDX]) = ntyClientGetDevId(pClient);
 	*(U32*)(&notify[NTY_PROTO_P2P_NOTIFY_ACKNUM_IDX]) = pClient->ackNum;
 			
@@ -147,9 +149,8 @@ int ntySendFriendsTreeIpAddr(void *client) {
 		*(C_DEVID*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_DEVID_IDX(i)]) = *(friends+i);
 	}
 
-	printf("ntySendFriendsTreeIpAddr\n");
-
 	ack[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+	ack[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_ACK;
 	ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_LOGIN_ACK;
 	*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_ACKNUM_IDX]) = pClient->ackNum;
 	*(U16*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDS_COUNT_IDX]) = Count;
@@ -180,6 +181,7 @@ int ntySendIpAddrFriendsList(void *client, C_DEVID *friends, U16 Count) {
 	}
 
 	ack[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+	ack[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_ACK;
 	ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_P2P_ADDR_ACK;
 	*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_ACKNUM_IDX]) = pClient->ackNum;
 	*(U16*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDS_COUNT_IDX]) = Count;
@@ -190,8 +192,19 @@ int ntySendIpAddrFriendsList(void *client, C_DEVID *friends, U16 Count) {
 }
 
 /*
- * 用于数据转发
+ * transparent transport data
+ * VERSION 			1			BYTE
+ * MESSAGE TYPE		1			BYTE
+ * TYPE			1			BYTE
+ * DEVID			8			BYTE
+ * ACKNUM			4			BYTE
+ * FRIENDID			8			BYTE
+ * BYTECOUNT		2			BYTE
+ * CONTENT			*(BYTECOUNT)	BYTE
+ * CRC			4			BYTE
  */
+
+#if 0 
 int ntyRouteUserData(C_DEVID friendId, U8 *buffer) {
 	int length = 0;
 	U8 notify[RECV_BUFFER_SIZE] = {0};
@@ -204,20 +217,20 @@ int ntyRouteUserData(C_DEVID friendId, U8 *buffer) {
 	if (pClient == NULL) return -1;
 	
 	notify[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
-	notify[NTY_PROTO_TYPE_IDX] = NTY_PROTO_DATAPACKET_NOTIFY_REQ;
+	notify[NTY_PROTO_TYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
 
-	*(C_DEVID*)(&notify[NTY_PROTO_DATAPACKET_NOTIFY_DEVID_IDX]) = friendId;
+	*(C_DEVID*)(&notify[NTY_PROTO_DATAPACKET_NOTIFY_DEVID_IDX]) = *(C_DEVID*)(&buffer[NTY_PROTO_DATAPACKET_DEVID_IDX]); //friendId;
 	*(U32*)(&notify[NTY_PROTO_DATAPACKET_ACKNUM_IDX]) = *(U32*)(buffer+NTY_PROTO_DATAPACKET_ACKNUM_IDX);
-	*(C_DEVID*)(&notify[NTY_PROTO_DATAPACKET_NOTIFY_SRC_DEVID_IDX]) = *(C_DEVID*)(buffer+NTY_PROTO_DATAPACKET_DEVID_IDX);
-	memcpy(&notify[NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_COUNT_IDX], &buffer[NTY_PROTO_DATAPACKET_CONTENT_COUNT_IDX(cliCount)], 2);
+	*(C_DEVID*)(&notify[NTY_PROTO_DATAPACKET_NOTIFY_DEST_DEVID_IDX]) = friendId;//*(C_DEVID*)(buffer+NTY_PROTO_DATAPACKET_DEVID_IDX);
+	memcpy(&notify[NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_COUNT_IDX], &cliCount, 2);
 	memcpy(&notify[NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_IDX], &buffer[NTY_PROTO_DATAPACKET_CONTENT_IDX(cliCount)], recByteCount);
 
 	printf(" recByteCount:%d  notify:%s\n", recByteCount, notify+NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_IDX);
 	length = NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_IDX + recByteCount;
 	*(U32*)(&notify[length]) = ntyGenCrcValue(notify, length);
 	length += sizeof(U32);
-
+	
 	return ntySendBuffer(pClient, notify, length);
 }
-
+#endif
 

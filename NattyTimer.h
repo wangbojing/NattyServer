@@ -43,75 +43,49 @@
 
 
 
+#ifndef __NATTY_TIMER_H__
+#define __NATTY_TIMER_H__
 
-
-#ifndef __NATTY_RBTREE_H__
-#define __NATTY_RBTREE_H__
-
+#include <pthread.h>
 #include "NattyAbstractClass.h"
 
-#define RED		1
-#define BLACK		2
+typedef void (*HANDLE_TIMER)(int sig);
 
-
-typedef struct _RBTreeNode {
-	C_DEVID key;
-	void *value;
-	struct _RBTreeNode *right;
-	struct _RBTreeNode *left;
-	struct _RBTreeNode *parent;
-	unsigned char color;
-} RBTreeNode;
-
-typedef struct _RBTree {
+typedef struct _NetworkTimer {
 	const void *_;
-	RBTreeNode *root;
-	RBTreeNode *nil;
-	U16 count;
-} RBTree;
+	int sigNum;
+	HANDLE_TIMER timerFunc;
+	pthread_mutex_t timer_mutex;
+	//pthread_cond_t jobs_cond;
+} NetworkTimer;
 
-typedef struct _RBTreeOpera {
+typedef struct _TIMEROPERA {
 	size_t size;
 	void* (*ctor)(void *_self, va_list *params);
 	void* (*dtor)(void *_self);
-	int (*insert)(void *_self, C_DEVID key, void *value);
-	void* (*search)(void *_self, C_DEVID key);
-	int (*delete)(void *_self, C_DEVID key);
-	int (*update)(void *_self, C_DEVID key, void *value);
-	void (*traversal)(void *_self, HANDLE_CLIENTID handle_FN);
-} RBTreeOpera;
+	int (*start)(void *_self, HANDLE_TIMER fun);
+	int (*stop)(void *_self);
+} TimerOpera;
 
 
-
-void* ntyRBTreeInstance(void);
-int ntyRBTreeInterfaceInsert(void *self, C_DEVID key, void *value);
-void* ntyRBTreeInterfaceSearch(void *self, C_DEVID key);
-int ntyRBTreeInterfaceDelete(void *self, C_DEVID key);
-int ntyRBTreeInterfaceUpdate(void *self, C_DEVID key, void *value);
-void ntyRBTreeRelease(void *self);
+#define TIMER_TICK		100
+#define MS(x)		(x*1000)
 
 
-
-void *ntyFriendsTreeInstance(void);
-int ntyFriendsTreeInsert(void *self, C_DEVID key);
-void* ntyFriendsTreeSearch(void *self, C_DEVID key);
-int ntyFriendsTreeDelete(void *self, C_DEVID key);
-void ntyFriendsTreeTraversal(void *self, HANDLE_CLIENTID handle_FN);
-int ntyFriendsTreeIsExist(void *self, C_DEVID key);
-int ntyFriendsTreeIsEmpty(const void *self);
-void ntyFriendsTreeRelease(void *self);
-C_DEVID* ntyFriendsTreeGetAllNodeList(const void *self);
-U16 ntyFriendsTreeGetNodeCount(const void *self);
-C_DEVID ntyFriendsTreeGetFristNodeKey(void *self);
-
-
-
-
-
+void *ntyNetworkTimerInstance(void);
+int ntyStartTimer(void *self,  HANDLE_TIMER func);
+int ntyStopTimer(void *self);
+//int ntySetAckNum(void *self,  U32 ack);
+//U32 ntyGetAckNum(void *self);
 
 
 
 #endif
+
+
+
+
+
 
 
 

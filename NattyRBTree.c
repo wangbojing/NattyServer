@@ -624,6 +624,12 @@ void* ntyFriendsTreeGetFristNode(void *self) {
 	return tree->root->value;
 }
 
+C_DEVID ntyFriendsTreeGetFristNodeKey(void *self) {
+	const RBTree *tree = self;
+	return tree->root->key;
+}
+
+
 #if 0
 int main() {
 	int i, count = 20, key;

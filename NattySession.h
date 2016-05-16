@@ -51,7 +51,7 @@
 int ntySendFriendIpAddr(void* fTree, C_DEVID id);
 int ntyNotifyFriendConnect(void* fTree, C_DEVID id);
 int ntySendFriendsTreeIpAddr(void *fTree);
-int ntyRouteUserData(C_DEVID friendId, U8 *buffer);
+//int ntyRouteUserData(C_DEVID friendId, U8 *buffer);
 
 
 #endif

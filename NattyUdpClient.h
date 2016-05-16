@@ -1,9 +1,52 @@
+/*
+ *  Author : WangBoJing , email : 1989wangbojing@gmail.com
+ * 
+ *  Copyright Statement:
+ *  --------------------
+ *  This software is protected by Copyright and the information contained
+ *  herein is confidential. The software may not be copied and the information
+ *  contained herein may not be used or disclosed except with the written
+ *  permission of NALEX Inc. (C) 2016
+ * 
+ *
+ 
+****       *****
+  ***        *
+  ***        *                         *               *
+  * **       *                         *               *
+  * **       *                         *               *
+  *  **      *                        **              **
+  *  **      *                       ***             ***
+  *   **     *       ******       ***********     ***********    *****    *****
+  *   **     *     **     **          **              **           **      **
+  *    **    *    **       **         **              **           **      *
+  *    **    *    **       **         **              **            *      *
+  *     **   *    **       **         **              **            **     *
+  *     **   *            ***         **              **             *    *
+  *      **  *       ***** **         **              **             **   *
+  *      **  *     ***     **         **              **             **   *
+  *       ** *    **       **         **              **              *  *
+  *       ** *   **        **         **              **              ** *
+  *        ***   **        **         **              **               * *
+  *        ***   **        **         **     *        **     *         **
+  *         **   **        **  *      **     *        **     *         **
+  *         **    **     ****  *       **   *          **   *          *
+*****        *     ******   ***         ****            ****           *
+                                                                       *
+                                                                      *
+                                                                  *****
+                                                                  ****
+
+
+ *
+ */
 
 
 
 #ifndef __NATTY_UDP_CLIENT_H__
 #define __NATTY_UDP_CLIENT_H__
 
+#include "NattyTimer.h"
 #include "NattyProtocol.h"
 #include "NattyRBTree.h"
 
@@ -27,8 +70,6 @@ typedef struct _FRIENDSINFO {
 	U8 isP2P;
 } FriendsInfo;
 
-
-#define MS(x)		(x*1000)
 
 #define SIGNAL_LOGIN_REQ			0x00000001
 #define SIGNAL_LOGIN_ACK			0x00000003
@@ -61,7 +102,39 @@ enum {
 	LEVEL_P2PADDR = 0x05,
 	LEVEL_P2PDATAPACKET = 0x06,
 	LEVEL_DATAPACKET = 0x07,
+	LEVEL_P2PCONNECTFRIEND = 0x08,
 } LEVEL;
+
+
+#define CACHE_BUFFER_SIZE	1048
+
+typedef struct _NETWORK {
+	const void *_;
+	int sockfd;
+	struct sockaddr_in addr;
+	int length;	
+	HANDLE_TIMER onAck;
+	U32 ackNum;
+	U8 buffer[CACHE_BUFFER_SIZE];
+	//void *timer;
+} Network;
+
+typedef struct _NETWORKOPERA {
+	size_t size;
+	void* (*ctor)(void *_self, va_list *params);
+	void* (*dtor)(void *_self);
+	int (*send)(void *_self, struct sockaddr_in *to, U8 *buf, int len);
+	int (*recv)(void *_self, U8 *buf, int len, struct sockaddr_in *from);
+	int (*resend)(void *_self);
+} NetworkOpera;
+
+
+void *ntyNetworkInstance(void);
+void ntyNetworkRelease(void *self);
+int ntySendFrame(void *self, struct sockaddr_in *to, U8 *buf, int len);
+int ntyRecvFrame(void *self, U8 *buf, int len, struct sockaddr_in *from);
+
+
 
 #endif
 
