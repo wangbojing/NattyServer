@@ -351,7 +351,7 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 
 			return ;
 		}
-		fprintf(stdout, "Login deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);		
+		//fprintf(stdout, "Login deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);		
 		//send login ack
 		ack[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
 		ack[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_ACK;
@@ -443,7 +443,7 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 			return ;
 		}
 		
-		fprintf(stdout, "HeartBeat deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);
+		//fprintf(stdout, "HeartBeat deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);
 		
 		//send heartbeat ack
 		ack[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
@@ -632,7 +632,7 @@ void ntyUserDataPacketHandleRequest(const void *_self, unsigned char *buffer, in
 		const UdpClient *client = obj;
 
 		U16 recByteCount = *(U16*)(&buffer[NTY_PROTO_DATAPACKET_CONTENT_COUNT_IDX]);
-		printf("ntyUserDataPacketHandleRequest : %d\n", recByteCount);
+
 		memcpy(data, buffer+NTY_PROTO_DATAPACKET_CONTENT_IDX, recByteCount);
 		printf(" Proxy data: %s\n", data);
 		
@@ -762,7 +762,6 @@ void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length, 
 	U32 u32Crc = ntyGenCrcValue(buffer, length-4);
 	U32 u32ClientCrc = *((U32*)(buffer+length-4));
 
-	printf(" old:%x, new:%x\n", u32Crc, u32ClientCrc);
 	if (u32Crc != u32ClientCrc) {
 		return ;
 	}

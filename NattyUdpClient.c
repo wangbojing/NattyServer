@@ -78,6 +78,8 @@ static int sockfd_local = 0;
 static int ntyNetworkResendFrame(void *_self);
 void sendP2PConnectAck(C_DEVID friId, U32 ack);
 void sendProxyDataPacketAck(C_DEVID friId, U32 ack);
+void sendP2PDataPacketAck(C_DEVID friId, U32 ack);
+
 
 
 
@@ -354,11 +356,9 @@ void* recvThread(void *arg) {
 				int count = *(U16*)(&buf[NTY_PROTO_LOGIN_ACK_FRIENDS_COUNT_IDX]);
 				void *pTree = ntyRBTreeInstance();
 
-				printf("NTY_PROTO_LOGIN_ACK\n");
 				for (i = 0;i < count;i ++) {
 					C_DEVID friendId = *(C_DEVID*)(&buf[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_DEVID_IDX(i)]);
 					
-					printf(" friend COUNT :%d, friendId:%lld\n", count, friendId);
 					FriendsInfo *pFriend = (FriendsInfo*)malloc(sizeof(FriendsInfo));
 					assert(pFriend);
 					pFriend->sockfd = sockfd;
@@ -381,7 +381,6 @@ void* recvThread(void *arg) {
 				friendId = *(C_DEVID*)(&buf[NTY_PROTO_LOGIN_REQ_DEVID_IDX]);	
 				void *pTree = ntyRBTreeInstance();	
 
-				printf(" friend Id :%lld\n", friendId);
 				FriendsInfo *pFriend = ntyRBTreeInterfaceSearch(pTree, friendId);
 				if (pFriend != NULL) {
 					pFriend->isP2P = 1;
@@ -444,7 +443,7 @@ void* recvThread(void *arg) {
 				memcpy(data, buf+NTY_PROTO_DATAPACKET_CONTENT_IDX, recByteCount);
 				printf(" P2P recv:%s\n", data);
 				//sendP2PDataPacketReq(friId, data);
-				sendProxyDataPacketAck(friId, ack);
+				sendP2PDataPacketAck(friId, ack);
 			} else if (buf[NTY_PROTO_TYPE_IDX] == NTY_PROTO_P2PDATAPACKET_ACK) {
 				printf(" P2P send success\n");
 			}
