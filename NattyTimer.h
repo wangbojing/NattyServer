@@ -68,15 +68,13 @@ typedef struct _TIMEROPERA {
 } TimerOpera;
 
 
-#define TIMER_TICK		100
+#define TIMER_TICK		200
 #define MS(x)		(x*1000)
 
 
 void *ntyNetworkTimerInstance(void);
 int ntyStartTimer(void *self,  HANDLE_TIMER func);
 int ntyStopTimer(void *self);
-//int ntySetAckNum(void *self,  U32 ack);
-//U32 ntyGetAckNum(void *self);
 
 
 

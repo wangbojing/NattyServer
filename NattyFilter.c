@@ -272,6 +272,24 @@ static void ntyClientFriendsList(UdpClient *client, U8 *ack) {
 	ntySendBuffer(client, ack, length);
 }
 
+#if 1
+
+#undef offsetof
+#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+
+#define container_of(ptr, type, member) ({                   \
+	const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
+	(type *)( (char *)__mptr - offsetof(type,member) );})
+
+/*
+C_DEVID ntyClientGetDevId(void *client) {
+	RBTreeNode *pNode = container_of(client, RBTreeNode, value);
+	return pNode->key;
+}
+*/
+
+#endif
+
 /*
  * Login Packet
  * Login Packet, HeartBeatPacket, LogoutPacket etc. should use templete designer pattern
@@ -313,13 +331,13 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 				free(pClient);
 				return ;
 			}
+						
+			//notify friends 			
+			ntyFriendsTreeTraversalNotify(pClient->friends, key, ntyNotifyFriendMessage);
 			//send friends list to this client.
 			//ntyFriendsTreeGetAllNodeList
-			ntySendFriendsTreeIpAddr(pClient);
-			//ntyFriendsTreeTraversal(pClient->friends, ntySendFriendIpAddr);
-			//notify friends 
-			ntyFriendsTreeTraversal(pClient->friends, ntyNotifyFriendConnect);
-
+			ntySendFriendsTreeIpAddr(pClient, 1);
+			
 			return ;
 		} else if ((cliValue != NULL) && (!ntyClientCompare (client, cliValue))) {
 			UdpClient *pClient = cliValue;//(UdpClient*)malloc(sizeof(UdpClient));
@@ -331,7 +349,21 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 			//ntyClientFriendsList(pClient, ack);
 
 			//friends is null and update friends tree
-			if (ntyFriendsTreeIsEmpty(cliValue->friends)) {
+			if (pClient->friends != NULL) {
+				if (ntyFriendsTreeIsEmpty(pClient->friends)) {
+#if 1	//just for debug		
+					if (key == 1) {
+						ntyFriendsTreeInsert(pClient->friends, 2);
+						//ntyFriendsTreeInsert(pClient->friends, 3);
+					} else if (key == 2) {
+						ntyFriendsTreeInsert(pClient->friends, 1);
+						//ntyFriendsTreeInsert(pClient->friends, 3);
+					}
+#else
+#endif				
+				}	
+			} else {
+				pClient->friends = ntyFriendsTreeInstance();
 #if 1	//just for debug		
 				if (key == 1) {
 					ntyFriendsTreeInsert(pClient->friends, 2);
@@ -341,13 +373,14 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 					//ntyFriendsTreeInsert(pClient->friends, 3);
 				}
 #else
-#endif				
+#endif
 			}
-			
-			//send friends list to client
-			ntySendFriendsTreeIpAddr(pClient);
+
+			//printf(" keys : %d");
 			//notify friends 
-			ntyFriendsTreeTraversal(pClient->friends, ntyNotifyFriendConnect);
+			ntyFriendsTreeTraversalNotify(pClient->friends, key, ntyNotifyFriendMessage);
+			//send friends list to client
+			ntySendFriendsTreeIpAddr(pClient, 1);
 
 			return ;
 		}
@@ -398,7 +431,8 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 			pClient->addr.sin_addr.s_addr = client->addr.sin_addr.s_addr;
 			pClient->addr.sin_port = client->addr.sin_port;
 			pClient->ackNum = ackNum;
-			
+			//new firends tree			
+			pClient->friends = ntyFriendsTreeInstance();
 			//determine this key is available and read from disk friends 
 #if 1	//just for debug		
 			if (key == 1) {
@@ -416,11 +450,14 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 				free(pClient);
 				return ;
 			}
+			
 			//notify friends 
-			ntyFriendsTreeTraversal(pClient->friends, ntyNotifyFriendConnect);
+			//ntyFriendsTreeTraversal(pClient->friends, ntyNotifyFriendConnect);
+			ntyFriendsTreeTraversalNotify(pClient->friends, key, ntyNotifyFriendMessage);
 
 			//send friends list to client 
-			ntyFriendsTreeTraversal(pClient->friends, ntySendFriendIpAddr);
+			//ntyFriendsTreeTraversal(pClient->friends, ntySendFriendIpAddr);
+			ntySendFriendsTreeIpAddr(pClient, 0);
 			
 			return ;
 		} else if ((cliValue != NULL) && !ntyClientCompare(client, cliValue)) {
@@ -433,13 +470,41 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 			
 			fprintf(stdout, "HeartBeat Update Info: %d\n", buffer[NTY_PROTO_TYPE_IDX]);
 
+			//friends is null and update friends tree
+			if (pClient->friends != NULL) {
+				if (ntyFriendsTreeIsEmpty(pClient->friends)) {
+#if 1	//just for debug		
+					if (key == 1) {
+						ntyFriendsTreeInsert(pClient->friends, 2);
+						//ntyFriendsTreeInsert(pClient->friends, 3);
+					} else if (key == 2) {
+						ntyFriendsTreeInsert(pClient->friends, 1);
+						//ntyFriendsTreeInsert(pClient->friends, 3);
+					}
+#else
+#endif				
+				}	
+			} else {
+				pClient->friends = ntyFriendsTreeInstance();
+#if 1	//just for debug		
+				if (key == 1) {
+					ntyFriendsTreeInsert(pClient->friends, 2);
+					//ntyFriendsTreeInsert(pClient->friends, 3);
+				} else if (key == 2) {
+					ntyFriendsTreeInsert(pClient->friends, 1);
+					//ntyFriendsTreeInsert(pClient->friends, 3);
+				}
+#else
+#endif
+			}
+
 			//client dev ipaddr is changed
 			//notify its friends list, reset p2p
-			ntyFriendsTreeTraversal(pClient->friends, ntyNotifyFriendConnect);
+			ntyFriendsTreeTraversalNotify(pClient->friends, key, ntyNotifyFriendMessage);
 			//
 			//send friends list to client 
-			ntyFriendsTreeTraversal(pClient->friends, ntySendFriendIpAddr);
-			
+			//ntyFriendsTreeTraversal(pClient->friends, ntySendFriendIpAddr);
+			ntySendFriendsTreeIpAddr(pClient, 0);
 			return ;
 		}
 		
@@ -451,7 +516,7 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 		ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_HEARTBEAT_ACK;
 		*(U32*)(&ack[NTY_PROTO_ACKNUM_IDX]) = ackNum;
 		*(U32*)(&ack[NTY_PROTO_LOGIN_REQ_CRC_IDX]) = ntyGenCrcValue(ack, NTY_PROTO_LOGIN_REQ_CRC_IDX);
-		ntySendBuffer(client, ack, NTY_PROTO_ACKNUM_IDX+sizeof(U32));
+		ntySendBuffer(client, ack, NTY_PROTO_LOGIN_REQ_CRC_IDX+sizeof(U32));
 
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);

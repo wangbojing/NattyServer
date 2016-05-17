@@ -79,6 +79,7 @@ typedef struct _RBTreeOpera {
 	int (*delete)(void *_self, C_DEVID key);
 	int (*update)(void *_self, C_DEVID key, void *value);
 	void (*traversal)(void *_self, HANDLE_CLIENTID handle_FN);
+	void (*notify)(void *_self, C_DEVID selfId, HANDLE_NOTIFY notify_FN);
 } RBTreeOpera;
 
 

@@ -197,6 +197,7 @@ enum {
 	MSG_REQ = 0x01,
 	MSG_ACK = 0x02,
 	MSG_RET	= 0x03, //proxy server to return
+	MSG_UPDATE = 0x04, //Update Message
 };
 
 #endif

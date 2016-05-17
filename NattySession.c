@@ -57,6 +57,8 @@
 
 /*
  * send Friend Ip to client
+ * heart beat
+ * 
  */
 int ntySendFriendIpAddr(void* fTree, C_DEVID id) {
 	int i = 0, length;
@@ -69,7 +71,8 @@ int ntySendFriendIpAddr(void* fTree, C_DEVID id) {
 	if (client == NULL) return -1;
 	
 	ack[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
-	ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_LOGIN_ACK;
+	ack[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_ACK;
+	ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_HEARTBEAT_ACK;
 	*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_ACKNUM_IDX]) = pClient->ackNum;
 	*(U16*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDS_COUNT_IDX]) = (U16)1;
 
@@ -82,6 +85,10 @@ int ntySendFriendIpAddr(void* fTree, C_DEVID id) {
 
 	return ntySendBuffer(pClient, ack,length);
 }
+
+/*
+ * send friends list to client
+ */
 
 
 int ntyNotifyClient(UdpClient *client, U8 *notify) {
@@ -98,7 +105,7 @@ int ntyNotifyClient(UdpClient *client, U8 *notify) {
 }
 
 C_DEVID ntyClientGetDevId(void *client) {
-	RBTreeNode *pNode = container_of(client, RBTreeNode, value);
+	RBTreeNode *pNode = container_of(&client, RBTreeNode, value);
 	return pNode->key;
 }
 
@@ -109,15 +116,18 @@ C_DEVID ntyClientGetDevId(void *client) {
 int ntyNotifyFriendConnect(void* fTree, C_DEVID id) {
 	U8 notify[NTY_LOGIN_ACK_LENGTH] = {0};
 	
-	UdpClient *pClient = container_of(fTree, UdpClient, friends);	
+	UdpClient *pClient = container_of(&fTree, UdpClient, friends);	
 	void *pRBTree = ntyRBTreeInstance();
 
 	UdpClient *client = ntyRBTreeInterfaceSearch(pRBTree, id);
 	if (client == NULL) return -1;
 
+
 	notify[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
 	notify[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_REQ;
 	notify[NTY_PROTO_TYPE_IDX] = NTY_PROTO_P2P_NOTIFY_REQ;
+
+
 	*(C_DEVID*)(&notify[NTY_PROTO_P2P_NOTIFY_DEVID_IDX]) = ntyClientGetDevId(pClient);
 	*(U32*)(&notify[NTY_PROTO_P2P_NOTIFY_ACKNUM_IDX]) = pClient->ackNum;
 			
@@ -127,10 +137,36 @@ int ntyNotifyFriendConnect(void* fTree, C_DEVID id) {
 	return ntyNotifyClient(client, notify);
 }
 
+int ntyNotifyFriendMessage(C_DEVID fromId, C_DEVID toId) {
+	U8 notify[NTY_LOGIN_ACK_LENGTH] = {0};
+	
+	void *pRBTree = ntyRBTreeInstance();
+	UdpClient *toClient = ntyRBTreeInterfaceSearch(pRBTree, toId);
+	if (toClient == NULL) return -1;
+
+	UdpClient *fromClient = ntyRBTreeInterfaceSearch(pRBTree, fromId);
+	if (fromClient == NULL) return -1;
+
+	notify[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+	notify[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_REQ;
+	notify[NTY_PROTO_TYPE_IDX] = NTY_PROTO_P2P_NOTIFY_REQ;
+
+	
+	*(C_DEVID*)(&notify[NTY_PROTO_P2P_NOTIFY_DEVID_IDX]) = fromId;
+	*(U32*)(&notify[NTY_PROTO_P2P_NOTIFY_ACKNUM_IDX]) = fromClient->ackNum;
+				
+	*(U32*)(&notify[NTY_PROTO_P2P_NOTIFY_IPADDR_IDX]) = fromClient->addr.sin_addr.s_addr;
+	*(U16*)(&notify[NTY_PROTO_P2P_NOTIFY_IPPORT_IDX]) = fromClient->addr.sin_port;
+
+	return ntyNotifyClient(toClient, notify);
+}
+
+
+
 /*
  * send friends list to client
  */
-int ntySendFriendsTreeIpAddr(void *client) {
+int ntySendFriendsTreeIpAddr(void *client, U8 reqType) {
 	int i = 0, length;
 	U8 ack[NTY_LOGIN_ACK_LENGTH] = {0};
 	
@@ -150,8 +186,12 @@ int ntySendFriendsTreeIpAddr(void *client) {
 	}
 
 	ack[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
-	ack[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_ACK;
-	ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_LOGIN_ACK;
+	ack[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_UPDATE;
+	if (reqType) {
+		ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_LOGIN_ACK;
+	} else {
+		ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_HEARTBEAT_ACK;
+	}
 	*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_ACKNUM_IDX]) = pClient->ackNum;
 	*(U16*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDS_COUNT_IDX]) = Count;
 	*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_CRC_IDX(Count)]) = ntyGenCrcValue(ack, NTY_PROTO_LOGIN_ACK_CRC_IDX(Count));
