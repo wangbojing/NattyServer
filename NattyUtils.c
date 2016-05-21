@@ -6,7 +6,7 @@
  *  This software is protected by Copyright and the information contained
  *  herein is confidential. The software may not be copied and the information
  *  contained herein may not be used or disclosed except with the written
- *  permission of NALEX Inc. (C) 2016
+ *  permission of Author. (C) 2016
  * 
  *
  
@@ -122,7 +122,7 @@ void ntyDisplay(void) {
 	printf(" This software is protected by Copyright and the information contained\n");
 	printf(" herein is confidential. The software may not be copied and the information\n");
 	printf(" contained herein may not be used or disclosed except with the written\n");
-	printf(" permission of NALEX Inc. (C) 2016\n\n\n");
+	printf(" permission of Author. (C) 2016\n\n\n");
 
 #endif
 }

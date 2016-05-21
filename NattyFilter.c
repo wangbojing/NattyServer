@@ -6,7 +6,7 @@
  *  This software is protected by Copyright and the information contained
  *  herein is confidential. The software may not be copied and the information
  *  contained herein may not be used or disclosed except with the written
- *  permission of NALEX Inc. (C) 2016
+ *  permission of Author. (C) 2016
  * 
  *
  
@@ -272,23 +272,6 @@ static void ntyClientFriendsList(UdpClient *client, U8 *ack) {
 	ntySendBuffer(client, ack, length);
 }
 
-#if 1
-
-#undef offsetof
-#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
-
-#define container_of(ptr, type, member) ({                   \
-	const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
-	(type *)( (char *)__mptr - offsetof(type,member) );})
-
-/*
-C_DEVID ntyClientGetDevId(void *client) {
-	RBTreeNode *pNode = container_of(client, RBTreeNode, value);
-	return pNode->key;
-}
-*/
-
-#endif
 
 /*
  * Login Packet
@@ -332,8 +315,9 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 				return ;
 			}
 						
-			//notify friends 			
-			ntyFriendsTreeTraversalNotify(pClient->friends, key, ntyNotifyFriendMessage);
+			//notify friends 	
+			// this step hive off
+			//ntyFriendsTreeTraversalNotify(pClient->friends, key, ntyNotifyFriendMessage);
 			//send friends list to this client.
 			//ntyFriendsTreeGetAllNodeList
 			ntySendFriendsTreeIpAddr(pClient, 1);
@@ -378,7 +362,7 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 
 			//printf(" keys : %d");
 			//notify friends 
-			ntyFriendsTreeTraversalNotify(pClient->friends, key, ntyNotifyFriendMessage);
+			//ntyFriendsTreeTraversalNotify(pClient->friends, key, ntyNotifyFriendMessage);
 			//send friends list to client
 			ntySendFriendsTreeIpAddr(pClient, 1);
 
@@ -453,7 +437,7 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 			
 			//notify friends 
 			//ntyFriendsTreeTraversal(pClient->friends, ntyNotifyFriendConnect);
-			ntyFriendsTreeTraversalNotify(pClient->friends, key, ntyNotifyFriendMessage);
+			//ntyFriendsTreeTraversalNotify(pClient->friends, key, ntyNotifyFriendMessage);
 
 			//send friends list to client 
 			//ntyFriendsTreeTraversal(pClient->friends, ntySendFriendIpAddr);
@@ -500,7 +484,7 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 
 			//client dev ipaddr is changed
 			//notify its friends list, reset p2p
-			ntyFriendsTreeTraversalNotify(pClient->friends, key, ntyNotifyFriendMessage);
+			//ntyFriendsTreeTraversalNotify(pClient->friends, key, ntyNotifyFriendMessage);
 			//
 			//send friends list to client 
 			//ntyFriendsTreeTraversal(pClient->friends, ntySendFriendIpAddr);
@@ -726,12 +710,6 @@ static const ProtocolFilter ntyUserDataPacketFilter = {
 	ntyUserDataPacketHandleRequest,
 };
 
-static void ntyUserDataPacketNotifySrcClient(UdpClient *client, U8 *buffer) {
-	//int length = NTY_PROTO_DATAPACKET_ACK_CRC_IDX+4;
-	
-}
-
-
 void ntyUserDataPacketAckHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const UdpClient *client = obj;
 	if (buffer[NTY_PROTO_TYPE_IDX] == NTY_PROTO_DATAPACKET_ACK) {
@@ -767,6 +745,74 @@ static const ProtocolFilter ntyUserDataPacketAckFilter = {
 	ntyUserDataPacketAckHandleRequest,
 };
 
+void ntyP2PConnectNotifyPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
+	const UdpClient *client = obj;
+	if (buffer[NTY_PROTO_TYPE_IDX] == NTY_PROTO_P2P_NOTIFY_REQ) {
+		C_DEVID from = *(C_DEVID*)(&buffer[NTY_PROTO_P2P_NOTIFY_DEVID_IDX]);
+		C_DEVID to = *(C_DEVID*)(&buffer[NTY_PROTO_P2P_NOTIFY_DEST_DEVID_IDX]);
+
+		void *pRBTree = ntyRBTreeInstance();
+		UdpClient *fromClient = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, from);
+		if (fromClient != NULL) {
+			fromClient->ackNum = *(U32*)(&buffer[NTY_PROTO_P2P_NOTIFY_ACKNUM_IDX]);
+		}
+		ntyNotifyFriendMessage(from, to);
+	} else if (ntyPacketGetSuccessor(_self) != NULL) {
+		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
+		(*succ)->handleRequest(succ, buffer, length, obj);
+	} else {
+		fprintf(stderr, "Can't deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);
+	}
+
+}
+
+
+static const ProtocolFilter ntyP2PConnectNotifyPacketFilter = {
+	sizeof(Packet),
+	ntyPacketCtor,
+	ntyPacketDtor,
+	ntyPacketSetSuccessor,
+	ntyPacketGetSuccessor,
+	ntyP2PConnectNotifyPacketHandleRequest,
+};
+
+void ntyP2PConnectNotifyPacketAckHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
+	const UdpClient *client = obj;
+	if (buffer[NTY_PROTO_TYPE_IDX] == NTY_PROTO_P2P_NOTIFY_ACK) {
+		C_DEVID destDevId = *(C_DEVID*)(&buffer[NTY_PROTO_DATAPACKET_DEST_DEVID_IDX]);
+		void *pRBTree = ntyRBTreeInstance();
+		UdpClient *destClient = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, destDevId);
+		printf(" destDevId:%lld\n", destDevId);
+		if (destClient == NULL) {
+			//C_DEVID selfDevId = *(C_DEVID*)(&buffer[NTY_PROTO_DEVID_IDX]);
+			buffer[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_RET;
+			U32 ack = *(U32*)(&buffer[NTY_PROTO_ACKNUM_IDX]);
+			*(U32*)(&buffer[NTY_PROTO_ACKNUM_IDX]) = ack+1;
+
+			printf("send to srcClient\n");
+			ntySendBuffer(client, buffer, length);
+		} else {
+			printf("send to destClient\n");
+			ntySendBuffer(destClient, buffer, length);
+		}
+		fprintf(stdout, "P2P Connect Notify Packet Ack deal\n");
+	} else if (ntyPacketGetSuccessor(_self) != NULL) {
+		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
+		(*succ)->handleRequest(succ, buffer, length, obj);
+	} else {
+		fprintf(stderr, "Can't deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);
+	}
+
+}
+
+static const ProtocolFilter ntyP2PConnectNotifyPacketAckFilter = {
+	sizeof(Packet),
+	ntyPacketCtor,
+	ntyPacketDtor,
+	ntyPacketSetSuccessor,
+	ntyPacketGetSuccessor,
+	ntyP2PConnectNotifyPacketAckHandleRequest,
+};
 
 
 static void ntySetSuccessor(void *_filter, void *_succ) {
@@ -791,6 +837,8 @@ const void *pNtyLogoutFilter = &ntyLogoutFilter;
 const void *pNtyP2PAddrReqFilter = &ntyP2PAddrFilter;
 const void *pNtyUserDataPacketFilter = &ntyUserDataPacketFilter;
 const void *pNtyUserDataPacketAckFilter = &ntyUserDataPacketAckFilter;
+const void *pNtyP2PConnectNotifyPacketFilter = &ntyP2PConnectNotifyPacketFilter;
+const void *pNtyP2PConnectNotifyPacketAckFilter = &ntyP2PConnectNotifyPacketAckFilter;
 
 
 
@@ -801,12 +849,17 @@ void* ntyProtocolFilterInit(void) {
 	void *pP2PAddrReqFilter = New(pNtyP2PAddrReqFilter);
 	void *pUserDataPacketFilter = New(pNtyUserDataPacketFilter);
 	void *pUserDataPacketAckFilter = New(pNtyUserDataPacketAckFilter);
+	void *pP2PConnectNotifyPacketFilter = New(pNtyP2PConnectNotifyPacketFilter);
+	void *pP2PConnectNotifyPacketAckFilter = New(pNtyP2PConnectNotifyPacketAckFilter);
 
 	ntySetSuccessor(pHeartBeatFilter, pLoginFilter);
 	ntySetSuccessor(pLoginFilter, pLogoutFilter);
 	ntySetSuccessor(pLogoutFilter, pP2PAddrReqFilter);
 	ntySetSuccessor(pP2PAddrReqFilter, pUserDataPacketFilter);
+	
 	ntySetSuccessor(pUserDataPacketFilter, pUserDataPacketAckFilter);
+	ntySetSuccessor(pUserDataPacketAckFilter, pP2PConnectNotifyPacketFilter);
+	ntySetSuccessor(pP2PConnectNotifyPacketFilter, pP2PConnectNotifyPacketAckFilter);
 
 	/*
 	 * add your Filter

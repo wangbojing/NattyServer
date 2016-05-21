@@ -6,7 +6,7 @@
  *  This software is protected by Copyright and the information contained
  *  herein is confidential. The software may not be copied and the information
  *  contained herein may not be used or disclosed except with the written
- *  permission of NALEX Inc. (C) 2016
+ *  permission of Author. (C) 2016
  * 
  *
  
@@ -103,6 +103,8 @@ enum {
 	LEVEL_P2PDATAPACKET = 0x06,
 	LEVEL_DATAPACKET = 0x07,
 	LEVEL_P2PCONNECTFRIEND = 0x08,
+	LEVEL_P2PCONNECT_NOTIFY = 0x09,
+	LEVEL_DEFAULT			= 0xFF,
 } LEVEL;
 
 

@@ -6,7 +6,7 @@
  *  This software is protected by Copyright and the information contained
  *  herein is confidential. The software may not be copied and the information
  *  contained herein may not be used or disclosed except with the written
- *  permission of NALEX Inc. (C) 2016
+ *  permission of Author. (C) 2016
  * 
  *
  
@@ -54,9 +54,10 @@ typedef void (*HANDLE_TIMER)(int sig);
 typedef struct _NetworkTimer {
 	const void *_;
 	int sigNum;
+	U32 timerProcess;
 	HANDLE_TIMER timerFunc;
 	pthread_mutex_t timer_mutex;
-	//pthread_cond_t jobs_cond;
+	pthread_cond_t timer_cond;
 } NetworkTimer;
 
 typedef struct _TIMEROPERA {

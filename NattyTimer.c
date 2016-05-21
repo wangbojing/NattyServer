@@ -6,7 +6,7 @@
  *  This software is protected by Copyright and the information contained
  *  herein is confidential. The software may not be copied and the information
  *  contained herein may not be used or disclosed except with the written
- *  permission of NALEX Inc. (C) 2016
+ *  permission of Author. (C) 2016
  * 
  *
  
@@ -53,11 +53,12 @@
 static void* ntyTimerCtor(void *_self, va_list *params) {
 	NetworkTimer *timer = _self;
 	pthread_mutex_t blank_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-	timer->sigNum = SIGALRM;
-	//timer->timer_mutex = PTHREAD_MUTEX_INITIALIZER;
-	memcpy(&timer->timer_mutex, &blank_mutex, sizeof(timer->timer_mutex));
+	pthread_cond_t blank_cond = PTHREAD_COND_INITIALIZER;
 	
+	timer->sigNum = SIGALRM;
+	timer->timerProcess = 0;
+	memcpy(&timer->timer_mutex, &blank_mutex, sizeof(timer->timer_mutex));
+	memcpy(&timer->timer_cond, &blank_mutex, sizeof(timer->timer_cond));
 
 	return timer;
 }
@@ -80,12 +81,18 @@ static int ntyStartTimerOpera(void *_self, HANDLE_TIMER fun) {
 	tick.it_interval.tv_sec = 0;
 	tick.it_interval.tv_usec = MS(TIMER_TICK);
 
+	
 	pthread_mutex_lock(&timer->timer_mutex);
+	while (timer->timerProcess) {
+		pthread_cond_wait(&timer->timer_cond, &timer->timer_mutex);
+	}
+	timer->timerProcess = 1;
+	
 	if (setitimer(ITIMER_REAL, &tick, NULL) < 0) {
 		printf("Set timer failed!\n");
-		pthread_mutex_unlock(&timer->timer_mutex);
-		return -1;
 	}
+	pthread_mutex_unlock(&timer->timer_mutex);
+	
 	return 0;
 }
 
@@ -104,11 +111,13 @@ static int ntyStopTimerOpera(void *_self) {
 	tick.it_interval.tv_sec = 0;
 	tick.it_interval.tv_usec = 0;//MS(TIMER_TICK);
 
-	pthread_mutex_unlock(&timer->timer_mutex);
+	pthread_mutex_lock(&timer->timer_mutex);
+	timer->timerProcess = 0;
+	pthread_cond_broadcast(&timer->timer_cond);
 	if (setitimer(ITIMER_REAL, &tick, NULL) < 0) {
-		printf("Set timer failed!\n");		
-		return -1;
+		printf("Set timer failed!\n");	
 	}
+	pthread_mutex_unlock(&timer->timer_mutex);
 	
 	return 0;
 }
