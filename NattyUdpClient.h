@@ -68,6 +68,7 @@ typedef struct _FRIENDSINFO {
 	U32 addr;
 	U16 port;
 	U8 isP2P;
+	U8 counter;
 } FriendsInfo;
 
 
@@ -109,6 +110,11 @@ enum {
 
 
 #define CACHE_BUFFER_SIZE	1048
+
+#define HEARTBEAT_TIMEOUT		25
+#define P2P_HEARTBEAT_TIMEOUT	60
+#define P2P_HEARTBEAT_TIMEOUT_COUNTR	5
+
 
 typedef struct _NETWORK {
 	const void *_;

@@ -149,6 +149,8 @@
 #define NTY_PROTO_DATAPACKET_ACK_CRC_IDX		(NTY_PROTO_DATAPACKET_ACK_SRC_DEVID_IDX+NTY_DEVID_LENGTH)
 
 
+//#define NTY_PROTO_P2P_HEARTBEAT_DEST_DEVID_IDX					
+
 /* ** **** ********  ****************  Header  ****************  ******** **** ** */
 #define NTY_PROTO_LOGIN_REQ			0x01
 #define NTY_PROTO_LOGIN_ACK			0x81
@@ -176,6 +178,9 @@
 
 #define NTY_PROTO_P2PDATAPACKET_REQ			0x23 //use for client ,
 #define NTY_PROTO_P2PDATAPACKET_ACK			0xA3 //use for client ,
+
+#define NTY_PROTO_P2P_HEARTBEAT_REQ			0x24
+#define NTY_PROTO_P2P_HEARTBEAT_ACK			0xA4
 
 //#define NTY_PROTO_P2P_DATAPACKET_REQ		0x24
 //#define NTY_PROTO_P2P_DATAPACKET_ACK		0xA4

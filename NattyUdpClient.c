@@ -81,6 +81,9 @@ void sendProxyDataPacketAck(C_DEVID friId, U32 ack);
 void sendP2PDataPacketAck(C_DEVID friId, U32 ack);
 void sendP2PConnectNotifyAck(C_DEVID friId, U32 ack);
 void sendP2PConnectNotify(C_DEVID fromId, C_DEVID toId);
+U8 ntyGetReqType(void *self);
+C_DEVID ntyGetDestDevId(void *self);
+
 
 
 
@@ -118,6 +121,19 @@ void ntyMessageOnDataLost(void) {
 	//ntyCancelTimer();
 	////////////////////////////////////////////////////////////
 	printf("ntyMessageOnDataLost\n");
+
+	void *pNetwork = ntyNetworkInstance();
+	U8 u8ReqType = ntyGetReqType(pNetwork);
+	if (u8ReqType == NTY_PROTO_P2P_HEARTBEAT_REQ) {
+		C_DEVID destDevId = ntyGetDestDevId(pNetwork);
+		void *pTree = ntyRBTreeInstance();
+		FriendsInfo *pFriend = ntyRBTreeInterfaceSearch(pTree, destDevId);
+		if(pFriend->counter > P2P_HEARTBEAT_TIMEOUT_COUNTR) {
+			pFriend->isP2P = 0;
+			//don't take reconnect
+		}
+	}
+	
 	void* pTimer = ntyNetworkTimerInstance();
 	ntyStopTimer(pTimer);
 #if 0
@@ -281,11 +297,22 @@ int ntyGetSocket(void *self) {
 	return network->sockfd;
 }
 
+U8 ntyGetReqType(void *self) {
+	Network *network = self;
+	return network->buffer[NTY_PROTO_TYPE_IDX];
+}
+
+C_DEVID ntyGetDestDevId(void *self) {
+	Network *network = self;
+	return *(C_DEVID*)(&network->buffer[NTY_PROTO_DEST_DEVID_IDX]);
+}
+
 
 
 struct sockaddr_in serveraddr;
 int portno;
 static U8 heartbeartRun = 0;
+static U8 p2pHeartbeatRun = 0;
 
 /*
  * heartbeat Packet
@@ -310,7 +337,7 @@ void *heartbeatThread(void *arg) {
 		heartbeartRun = 1;		
 		return NULL;	
 	}	
-
+	heartbeartRun = 1;
 	void *pNetwork = ntyNetworkInstance();
 
 	while (1) {		
@@ -324,9 +351,112 @@ void *heartbeatThread(void *arg) {
 		len = NTY_PROTO_LOGIN_REQ_CRC_IDX+sizeof(U32);
 		
 		n = ntySendFrame(pNetwork, &serveraddr, buf, len);
-		sleep(25);	
+		sleep(HEARTBEAT_TIMEOUT);	
 	}
 }
+
+
+
+/*
+ * p2p heartbeat ack
+ * VERSION					1			BYTE
+ * MESSAGE TYPE				1			BYTE (req, ack)
+ * TYPE					1			BYTE 
+ * DEVID					8			BYTE
+ * ACKNUM					4			BYTE (Network Module Set Value)
+ * DEST_DEVI				8			BYTE 
+ * CRC 					4			BYTE (Network Module Set Value)
+ * 
+ * send to server addr
+ */
+void sendP2PHeartbeatAck(C_DEVID fromId, C_DEVID toId)  {
+	U8 notify[NTY_LOGIN_ACK_LENGTH] = {0};
+	int len = 0, n;
+
+	void *pTree = ntyRBTreeInstance();
+	FriendsInfo *pFriend = ntyRBTreeInterfaceSearch(pTree, toId);
+	if (pFriend == NULL || pFriend->isP2P == 0) {
+		printf(" Client Id : %lld, P2P is not Success\n", toId);
+		return ;
+	}
+	
+	notify[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+	notify[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_ACK;
+	notify[NTY_PROTO_TYPE_IDX] = NTY_PROTO_P2P_HEARTBEAT_ACK;
+
+	
+	*(C_DEVID*)(&notify[NTY_PROTO_DEVID_IDX]) = fromId;
+	*(C_DEVID*)(&notify[NTY_PROTO_DEST_DEVID_IDX]) = toId;
+	
+	len = NTY_PROTO_CRC_IDX + sizeof(U32);
+
+	struct sockaddr_in friendaddr;
+	friendaddr.sin_family = AF_INET;
+	friendaddr.sin_addr.s_addr = pFriend->addr;				
+	friendaddr.sin_port = pFriend->port;
+
+	//pFriend->counter ++; //timeout count
+	void *pNetwork = ntyNetworkInstance();
+	n = ntySendFrame(pNetwork, &friendaddr, notify, len);
+}
+
+
+/*
+ * p2p heartbeat Packet
+ * VERSION					1			BYTE
+ * MESSAGE TYPE				1			BYTE (req, ack)
+ * TYPE					1			BYTE 
+ * DEVID					8			BYTE
+ * ACKNUM					4			BYTE (Network Module Set Value)
+ * DEST_DEVI				8			BYTE 
+ * CRC 					4			BYTE (Network Module Set Value)
+ * 
+ * send to server addr
+ */
+void sendP2PHeartbeat(C_DEVID fromId, C_DEVID toId)  {
+	U8 notify[NTY_LOGIN_ACK_LENGTH] = {0};
+	int len = 0, n;
+
+	void *pTree = ntyRBTreeInstance();
+	FriendsInfo *pFriend = ntyRBTreeInterfaceSearch(pTree, toId);
+	if (pFriend == NULL || pFriend->isP2P == 0) {
+		printf(" Client Id : %lld, P2P is not Success, state:%d\n", toId, pFriend->isP2P);
+		return ;
+	}
+	
+	notify[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+	notify[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_REQ;
+	notify[NTY_PROTO_TYPE_IDX] = NTY_PROTO_P2P_HEARTBEAT_REQ;
+
+	
+	*(C_DEVID*)(&notify[NTY_PROTO_DEVID_IDX]) = fromId;
+	*(C_DEVID*)(&notify[NTY_PROTO_DEST_DEVID_IDX]) = toId;
+	
+	len = NTY_PROTO_CRC_IDX + sizeof(U32);
+
+	struct sockaddr_in friendaddr;
+	friendaddr.sin_family = AF_INET;
+	friendaddr.sin_addr.s_addr = pFriend->addr;				
+	friendaddr.sin_port = pFriend->port;
+
+	pFriend->counter ++; //timeout count
+	void *pNetwork = ntyNetworkInstance();
+	n = ntySendFrame(pNetwork, &friendaddr, notify, len);
+}
+
+void *heartbeatP2PThread(void *arg) {
+	void *pTree = ntyRBTreeInstance();
+	if (p2pHeartbeatRun == 0) {
+		p2pHeartbeatRun = 1;
+	} else {
+		return NULL;
+	}
+	while (1) {
+		ntyFriendsTreeTraversalNotify(pTree, devid, sendP2PHeartbeat);
+		sleep(P2P_HEARTBEAT_TIMEOUT);
+	}
+}
+
 
 void* recvThread(void *arg) {
 	ThreadArg threadArg = *((ThreadArg*)arg);
@@ -337,7 +467,7 @@ void* recvThread(void *arg) {
 	U8 buf[RECV_BUFFER_SIZE] = {0};
 	struct sockaddr_in addr;
 	int clientLen = sizeof(struct sockaddr_in);
-	pthread_t heartbeatThread_id;
+	pthread_t heartbeatThread_id, p2pHeartbeatThread_id;
 
 	void *pNetwork = ntyNetworkInstance();
 
@@ -373,12 +503,14 @@ void* recvThread(void *arg) {
 						assert(pFriend);
 						pFriend->sockfd = sockfd;
 						pFriend->isP2P = 0;
+						pFriend->counter = 0;
 						pFriend->addr = *(U32*)(&buf[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_ADDR_IDX(i)]);
 						pFriend->port = *(U16*)(&buf[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_PORT_IDX(i)]);
 						ntyRBTreeInterfaceInsert(pTree, friendId, pFriend);
 					} else {
 						friendInfo->sockfd = sockfd;
 						friendInfo->isP2P = 0;
+						friendInfo->counter = 0;
 						friendInfo->addr = *(U32*)(&buf[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_ADDR_IDX(i)]);
 						friendInfo->port = *(U16*)(&buf[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_PORT_IDX(i)]);
 					}					
@@ -426,12 +558,14 @@ void* recvThread(void *arg) {
 							assert(pFriend);
 							pFriend->sockfd = sockfd;
 							pFriend->isP2P = 0;
+							pFriend->counter = 0;
 							pFriend->addr = *(U32*)(&buf[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_ADDR_IDX(i)]);
 							pFriend->port = *(U16*)(&buf[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_PORT_IDX(i)]);
 							ntyRBTreeInterfaceInsert(pTree, friendId, pFriend);
 						} else {
 							friendInfo->sockfd = sockfd;
 							friendInfo->isP2P = 0;
+							friendInfo->counter = 0;
 							friendInfo->addr = *(U32*)(&buf[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_ADDR_IDX(i)]);
 							friendInfo->port = *(U16*)(&buf[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_PORT_IDX(i)]);
 						}					
@@ -448,22 +582,24 @@ void* recvThread(void *arg) {
 
 				FriendsInfo *pFriend = ntyRBTreeInterfaceSearch(pTree, friendId);
 				if (pFriend != NULL) {
-					pFriend->isP2P = 1;
 					pFriend->sockfd = sockfd;
-					pFriend->port = addr.sin_port;
 					pFriend->addr = addr.sin_addr.s_addr;
+					pFriend->port = addr.sin_port;
+					pFriend->isP2P = 0;
+					pFriend->counter = 0;
 
 					printf(" P2P client:%lld request connect\n", friendId);
 				} else {
 					FriendsInfo *friendInfo = (FriendsInfo*)malloc(sizeof(FriendsInfo));
 					assert(pFriend);
 					friendInfo->sockfd = sockfd;
-					friendInfo->isP2P = 1;
 					friendInfo->addr = addr.sin_addr.s_addr;
 					friendInfo->port = addr.sin_port;
+					friendInfo->isP2P = 0;
+					friendInfo->counter = 0;
 					ntyRBTreeInterfaceInsert(pTree, friendId, friendInfo);
 				}
-				
+
 				sendP2PConnectAck(friendId, ack);	
 				level = LEVEL_P2PDATAPACKET;				
 			} else if (buf[NTY_PROTO_TYPE_IDX] == NTY_PROTO_P2P_CONNECT_ACK) {
@@ -471,6 +607,19 @@ void* recvThread(void *arg) {
 				
 				level = LEVEL_P2PDATAPACKET;
 				friendId = *(C_DEVID*)(&buf[NTY_PROTO_LOGIN_REQ_DEVID_IDX]);	
+
+				void *pTree = ntyRBTreeInstance();	
+				FriendsInfo *pFriend = ntyRBTreeInterfaceSearch(pTree, friendId);
+				if (pFriend != NULL) {
+					pFriend->isP2P = 1; 
+				}
+				printf(" Setup p2p heartbeat Thread\n");	
+				err = pthread_create(&heartbeatThread_id, NULL, heartbeatP2PThread, arg);				
+				if (err != 0) {					
+					printf(" can't create thread:%s\n", strerror(err));	
+					exit(0);				
+				}
+				
 				printf(" P2P client %lld connect Success\n", friendId);
 			} else if (buf[NTY_PROTO_TYPE_IDX] == NTY_PROTO_P2P_NOTIFY_REQ) {	
 				//NTY_PROTO_P2P_NOTIFY_REQ
@@ -483,10 +632,11 @@ void* recvThread(void *arg) {
 
 				FriendsInfo *pFriend = ntyRBTreeInterfaceSearch(pTree, friendId);
 				if (pFriend != NULL) {
-					pFriend->isP2P = 0;
+					pFriend->sockfd = sockfd;
 					pFriend->addr = *(U32*)(&buf[NTY_PROTO_P2P_NOTIFY_IPADDR_IDX]);
 					pFriend->port = *(U16*)(&buf[NTY_PROTO_P2P_NOTIFY_IPPORT_IDX]);
-
+					pFriend->isP2P = 0;
+					pFriend->counter = 0;
 					printf(" P2P client:%lld\n", friendId);
 					printf("%d.%d.%d.%d:%d\n", *(unsigned char*)(&pFriend->addr), *((unsigned char*)(&pFriend->addr)+1),	
 						*((unsigned char*)(&pFriend->addr)+2), *((unsigned char*)(&pFriend->addr)+3),	 pFriend->port);
@@ -494,9 +644,10 @@ void* recvThread(void *arg) {
 					FriendsInfo *pFriend = (FriendsInfo*)malloc(sizeof(FriendsInfo));
 					assert(pFriend);
 					pFriend->sockfd = sockfd;
-					pFriend->isP2P = 0;
 					pFriend->addr = *(U32*)(&buf[NTY_PROTO_P2P_NOTIFY_IPADDR_IDX]);
 					pFriend->port = *(U16*)(&buf[NTY_PROTO_P2P_NOTIFY_IPPORT_IDX]);
+					pFriend->isP2P = 0;
+					pFriend->counter = 0;
 					ntyRBTreeInterfaceInsert(pTree, friendId, pFriend);
 				}
 				//send ack to src devid
@@ -523,7 +674,13 @@ void* recvThread(void *arg) {
 				U16 recByteCount = *(U16*)(&buf[NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_COUNT_IDX]);
 				C_DEVID friId = *(C_DEVID*)(&buf[NTY_PROTO_DEVID_IDX]);
 				U32 ack = *(U32*)(&buf[NTY_PROTO_ACKNUM_IDX]);
-
+				
+				void *pTree = ntyRBTreeInstance();
+				FriendsInfo *pFriend = ntyRBTreeInterfaceSearch(pTree, friendId);
+				if (pFriend != NULL) {
+					pFriend->isP2P = 1;
+				}
+				
 				memcpy(data, buf+NTY_PROTO_DATAPACKET_CONTENT_IDX, recByteCount);
 				printf(" P2P recv:%s\n", data);
 				//sendP2PDataPacketReq(friId, data);
@@ -531,6 +688,23 @@ void* recvThread(void *arg) {
 			} else if (buf[NTY_PROTO_TYPE_IDX] == NTY_PROTO_P2PDATAPACKET_ACK) {
 				printf(" P2P send success\n");
 				level = LEVEL_P2PDATAPACKET;
+			} else if (buf[NTY_PROTO_TYPE_IDX] == NTY_PROTO_P2P_HEARTBEAT_REQ) {
+				C_DEVID fromId = *(C_DEVID*)(&buf[NTY_PROTO_DEVID_IDX]);
+				C_DEVID selfId = *(C_DEVID*)(&buf[NTY_PROTO_DEST_DEVID_IDX]);
+				void *pTree = ntyRBTreeInstance();
+				FriendsInfo *pFriend = ntyRBTreeInterfaceSearch(pTree, fromId);
+				if (pFriend != NULL) {
+					pFriend->counter = 0;
+				}
+				sendP2PHeartbeatAck(selfId, fromId);
+			} else if (buf[NTY_PROTO_TYPE_IDX] == NTY_PROTO_P2P_HEARTBEAT_ACK) {
+				C_DEVID fromId = *(C_DEVID*)(&buf[NTY_PROTO_DEVID_IDX]);
+				C_DEVID selfId = *(C_DEVID*)(&buf[NTY_PROTO_DEST_DEVID_IDX]);
+				void *pTree = ntyRBTreeInstance();
+				FriendsInfo *pFriend = ntyRBTreeInterfaceSearch(pTree, fromId);
+				if (pFriend != NULL) {
+					pFriend->counter = 0;
+				}
 			}
 
 		}
@@ -585,7 +759,7 @@ int sendP2PConnectReq(void* fTree, C_DEVID id) {
 	struct sockaddr_in friendaddr;
 
 	FriendsInfo *client = ntyRBTreeInterfaceSearch(fTree, id);
-	if (client == NULL || (client->isP2P == 1)){ 
+	if (client == NULL || (client->isP2P == 1)){//
 		printf(" Client is not exist or P2P State : %d\n", client->isP2P);
 		return -1;
 	} //
@@ -847,11 +1021,58 @@ void sendP2PConnectNotifyAck(C_DEVID friId, U32 ack) {
 }
 
 
+void *sendThread(void *arg) {
+	void *pNetwork = ntyNetworkInstance();
+	//U8 buf[RECV_BUFFER_SIZE];
+	int times = 0;
+
+	while (1) {
+		//bzero(buf, RECV_BUFFER_SIZE);
+		//buf[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+		if (level == LEVEL_LOGIN) {
+			sendLoginPacket();
+			level = LEVEL_DEFAULT;
+		} else if (level == LEVEL_P2PCONNECT_NOTIFY) {
+			// 
+			void *pTree = ntyRBTreeInstance();
+			ntyFriendsTreeTraversalNotify(pTree, devid, sendP2PConnectNotify);
+
+			level = LEVEL_DEFAULT;
+		} else if (level == LEVEL_P2PCONNECTFRIEND) { 
+			//
+			printf("LEVEL_P2PCONNECTFRIEND times : %d, friendId:%lld\n", times, friendId);
+			if (times++ < 3) {
+				void *pTree = ntyRBTreeInstance();
+				sendP2PConnectReq(pTree, friendId);
+			} else {
+				times = 0;
+				level = LEVEL_DATAPACKET;
+			}
+			sleep(1); 
+			continue;
+		} else if (level == LEVEL_P2PCONNECT) {
+			//
+			printf("LEVEL_P2PCONNECT times : %d, friendId:%lld\n", times, friendId);
+			if (times ++ < 3) {
+				void *pTree = ntyRBTreeInstance();
+				ntyFriendsTreeTraversal(pTree, sendP2PConnectReq);			
+			} else {
+				times = 0;
+				level = LEVEL_DATAPACKET;
+			}
+			sleep(1);
+			continue;
+		}
+		times = 0; 
+		//sleep(2);
+	}
+}
+
 int main () {
 	
 #if 1
-	int sockfd, err, times = 0;
-	pthread_t recvThread_id, heartbeartThread_id;
+	int sockfd, err;
+	pthread_t recvThread_id, sendThread_id;
 	struct sockaddr_in addr;	
 	struct hostent *server;
 	
@@ -884,14 +1105,7 @@ int main () {
 	devid = rand() % 5000;
 #endif
 
-	//sockfd_local = sockfd;
-	threadArg.sockfd = 0;
-	threadArg.devid = devid;
-	err = pthread_create(&recvThread_id, NULL, recvThread, &threadArg);	
-	if (err != 0) {		
-		printf(" can't create thread:%s\n", strerror(err));		
-		exit(0);	
-	}
+	
 
 	//ntyInitTimer();
 	ntyGenCrcTable();
@@ -901,41 +1115,30 @@ int main () {
 	bcopy((char *)server->h_addr, (char *)&serveraddr.sin_addr.s_addr, server->h_length);    
 	serveraddr.sin_port = htons(portno);
 
+
+	//sockfd_local = sockfd;
+	threadArg.sockfd = 0;
+	threadArg.devid = devid;
+
+	//setup sendThread
+	err = pthread_create(&sendThread_id, NULL, sendThread, &threadArg); 
+	if (err != 0) { 	
+		printf(" can't create thread:%s\n", strerror(err)); 	
+		exit(0);	
+	}
+	
+	//setup recvThread
+	err = pthread_create(&recvThread_id, NULL, recvThread, &threadArg);	
+	if (err != 0) {		
+		printf(" can't create thread:%s\n", strerror(err));		
+		exit(0);	
+	}
+	
+
 	while (1) {
 		bzero(buf, RECV_BUFFER_SIZE);
 		buf[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
-		if (level == LEVEL_LOGIN) {
-			sendLoginPacket();
-			level = LEVEL_DEFAULT;
-		} else if (level == LEVEL_P2PCONNECT_NOTIFY) {
-			// 
-			void *pTree = ntyRBTreeInstance();
-			ntyFriendsTreeTraversalNotify(pTree, devid, sendP2PConnectNotify);
-
-			level = LEVEL_DEFAULT;
-		} else if (level == LEVEL_P2PCONNECTFRIEND) { 
-			//
-			printf("LEVEL_P2PCONNECTFRIEND times : %d, friendId:%lld\n", times, friendId);
-			if (times++ < 3) {
-				void *pTree = ntyRBTreeInstance();
-				sendP2PConnectReq(pTree, friendId);
-			} else {
-				times = 0;
-				level = LEVEL_DATAPACKET;
-			}
-			sleep(1); 
-		} else if (level == LEVEL_P2PCONNECT) {
-			//
-			printf("LEVEL_P2PCONNECT times : %d, friendId:%lld\n", times, friendId);
-			if (times ++ < 3) {
-				void *pTree = ntyRBTreeInstance();
-				ntyFriendsTreeTraversal(pTree, sendP2PConnectReq);			
-			} else {
-				times = 0;
-				level = LEVEL_DATAPACKET;
-			}
-			sleep(1);
-		} else if (level == LEVEL_P2PDATAPACKET) {
+		if (level == LEVEL_P2PDATAPACKET) {
 			U8 *tempBuf;
 
 			tempBuf = &buf[NTY_PROTO_DATAPACKET_CONTENT_IDX];
@@ -949,6 +1152,7 @@ int main () {
 				tempId = friId;
 			}
 #endif
+			if (level != LEVEL_P2PDATAPACKET) continue;
 			sendP2PDataPacketReq(tempId, buf, len);
 		} else if (level == LEVEL_DATAPACKET) {
 			U8 *tempBuf;
@@ -964,9 +1168,9 @@ int main () {
 				tempId = friId;
 			}
 #endif
+			if (level != LEVEL_DATAPACKET) continue;
 			sendProxyDataPacketReq(tempId, buf, len);
-		} 
-
+		}
 		//sleep(2);
 	}
 #endif	
