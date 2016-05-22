@@ -58,7 +58,7 @@ static void* ntyTimerCtor(void *_self, va_list *params) {
 	timer->sigNum = SIGALRM;
 	timer->timerProcess = 0;
 	memcpy(&timer->timer_mutex, &blank_mutex, sizeof(timer->timer_mutex));
-	memcpy(&timer->timer_cond, &blank_mutex, sizeof(timer->timer_cond));
+	memcpy(&timer->timer_cond, &blank_cond, sizeof(timer->timer_cond));
 
 	return timer;
 }
@@ -87,7 +87,6 @@ static int ntyStartTimerOpera(void *_self, HANDLE_TIMER fun) {
 		pthread_cond_wait(&timer->timer_cond, &timer->timer_mutex);
 	}
 	timer->timerProcess = 1;
-	
 	if (setitimer(ITIMER_REAL, &tick, NULL) < 0) {
 		printf("Set timer failed!\n");
 	}
@@ -113,7 +112,11 @@ static int ntyStopTimerOpera(void *_self) {
 
 	pthread_mutex_lock(&timer->timer_mutex);
 	timer->timerProcess = 0;
+#if 0
 	pthread_cond_broadcast(&timer->timer_cond);
+#else
+	pthread_cond_signal(&timer->timer_cond);
+#endif
 	if (setitimer(ITIMER_REAL, &tick, NULL) < 0) {
 		printf("Set timer failed!\n");	
 	}
