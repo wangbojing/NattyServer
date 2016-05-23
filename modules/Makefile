@@ -10,7 +10,7 @@ all:$(SUBDIRS) $(CUR_OBJS)
 $(SUBDIRS):ECHO
 
 $(CUR_OBJS):%.o:%.c
-	$(CC) -c $^ -o $(BIN_DIR)/$@ $(FLAG)
+	$(CC) -c $^ -o $(shell pwd)/$@ $(FLAG)
 
 ECHO:
 	@echo $(SUBDIRS)

@@ -1,51 +1,46 @@
 
 
+CC = gcc
+#SUBDIRS=$(shell ls -l | grep ^d | awk '{if($$9 != "debug") print $$9}')
+SUBDIRS = ssl/ src/ #modules/
+DEBUG = $(shell ls -l | grep ^d | awk '{if($$9 == "release") print $$9}')
+ROOT_DIR = $(shell pwd)
+BIN_DIR = $(ROOT_DIR)/release
 
-PWD = $(shell pwd)
-#CC := gcc
-FLAG = -lpthread -O3
+FLAG = -lpthread -O3 -I $(ROOT_DIR)/include -Wunused-result
 
+CUR_SOURCE = ${wildcard *.c}
+CUR_OBJS = ${patsubst %.c, %.o, $(CUR_SOURCE)}
 
-objects = NattyAbstractClass.o NattyFilter.o NattyRBTree.o NattyServer.o \
-	NattyUdpServer.o NattyUtils.o NattyThreadPool.o NattyWorkQueue.o \
-	NattySession.o
+SERVER_BIN = NattyServer
+CLIENT_BIN = NattyClient
 
-client_obj = NattyUdpClient.o NattyRBTree.o NattyAbstractClass.o NattyTimer.o
+export CC OBJS_DIR BIN_DIR ROOT_DIR FLAG
 
-Natty : $(objects)
-	cc -o Natty $(objects) $(FLAG)
+#BIN=NattyServer
 
-client : $(client_obj)
-	cc -o NattyUdpClient $(client_obj) $(FLAG)
+all : $(SUBDIRS) $(CUR_OBJS) 
+#DEBUG
 
-	
-NattyFilter.o : NattyFilter.c NattyFilter.h
+$(SUBDIRS) : ECHO
+	make -C $@
 
-NattyRBTree.o : NattyRBTree.c NattyRBTree.h
+#DEBUG : ECHO
+#	make -c release
 
-NattyServer.o : NattyServer.c
+ECHO :
+	@echo $(SUBDIRS)
 
-NattyUdpServer.o : NattyUdpServer.c NattyUdpServer.h
+$(CUR_OBJS) : %.o : %.c
+	$(CC) -c $^ -o $(ROOT_DIR)/$(OBJS_DIR)/$@
 
-NattyUtils.o : NattyUtils.c NattyUtils.h
+bin :
+	$(CC) -o $(BIN_DIR)/$(SERVER_BIN) $(ROOT_DIR)/$(OBJS_DIR)/$(objects) $(FLAG)
+	$(CC) -o $(BIN_DIR)/$(CLIENT_BIN) $(ROOT_DIR)/$(OBJS_DIR)/$(client_obj) $(FLAG)
 
-NattyAbstractClass.o : NattyAbstractClass.c NattyAbstractClass.h
-
-NattyThreadPool.o : NattyThreadPool.c NattyThreadPool.h
-
-NattyWorkQueue.o : NattyWorkQueue.c NattyWorkQueue.h
-
-NattySession.o : NattySession.c NattySession.h
-
-NattyTimer.o : NattyTimer.c NattyTimer.h
-
-NattyUdpClient.o : NattyUdpClient.c NattyUdpClient.h
-
-
-.PHONY : clean
-
-clean:
-	rm -rf Natty $(objects) NattyUdpClient.o NattyTimer.o
-
-
+clean : 
+	rm -rf $(BIN_DIR)/*.o
+#	rm ssl/*.o
+#	rm src/*.o
+#	@rm -rf $(BIN_DIR)/*
 

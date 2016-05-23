@@ -402,8 +402,10 @@ static void sighandler(int signal) {
 
 /* Main function for demonstrating the echo server.
  * You can remove this and simply call runServer() from your application. */
+#if 0
 int main(int argc, char *argv[]) {
 	ntyDisplay();
 
 	return runServer();
 }
+#endif
