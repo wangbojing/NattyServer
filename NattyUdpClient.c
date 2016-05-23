@@ -469,6 +469,13 @@ void* recvThread(void *arg) {
 	int clientLen = sizeof(struct sockaddr_in);
 	pthread_t heartbeatThread_id, p2pHeartbeatThread_id;
 
+	printf(" Setup p2p heartbeat Thread\n");	
+	err = pthread_create(&heartbeatThread_id, NULL, heartbeatP2PThread, arg);				
+	if (err != 0) {					
+		printf(" can't create thread:%s\n", strerror(err));	
+		exit(0);				
+	}
+
 	void *pNetwork = ntyNetworkInstance();
 
 	struct pollfd fds;
@@ -612,13 +619,7 @@ void* recvThread(void *arg) {
 				FriendsInfo *pFriend = ntyRBTreeInterfaceSearch(pTree, friendId);
 				if (pFriend != NULL) {
 					pFriend->isP2P = 1; 
-				}
-				printf(" Setup p2p heartbeat Thread\n");	
-				err = pthread_create(&heartbeatThread_id, NULL, heartbeatP2PThread, arg);				
-				if (err != 0) {					
-					printf(" can't create thread:%s\n", strerror(err));	
-					exit(0);				
-				}
+				}				
 				
 				printf(" P2P client %lld connect Success\n", friendId);
 			} else if (buf[NTY_PROTO_TYPE_IDX] == NTY_PROTO_P2P_NOTIFY_REQ) {	
@@ -695,6 +696,7 @@ void* recvThread(void *arg) {
 				FriendsInfo *pFriend = ntyRBTreeInterfaceSearch(pTree, fromId);
 				if (pFriend != NULL) {
 					pFriend->counter = 0;
+					pFriend->isP2P = 1;
 				}
 				sendP2PHeartbeatAck(selfId, fromId);
 			} else if (buf[NTY_PROTO_TYPE_IDX] == NTY_PROTO_P2P_HEARTBEAT_ACK) {
@@ -704,6 +706,7 @@ void* recvThread(void *arg) {
 				FriendsInfo *pFriend = ntyRBTreeInterfaceSearch(pTree, fromId);
 				if (pFriend != NULL) {
 					pFriend->counter = 0;
+					pFriend->isP2P = 1;
 				}
 			}
 
