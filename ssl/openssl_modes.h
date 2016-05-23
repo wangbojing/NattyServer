@@ -1,8 +1,39 @@
-/* ====================================================================
- * Copyright (c) 2008 The OpenSSL Project. All rights reserved.
+/*
+ *  Author : WangBoJing , email : 1989wangbojing@gmail.com
+ * 
+ *  Copyright (c) 1998-2002 The OpenSSL Project.  All rights reserved.
+ * 
  *
- * Rights for redistribution and usage in source and binary
- * forms are granted according to the OpenSSL license.
+ 
+****       *****
+  ***        *
+  ***        *                         *               *
+  * **       *                         *               *
+  * **       *                         *               *
+  *  **      *                        **              **
+  *  **      *                       ***             ***
+  *   **     *       ******       ***********     ***********    *****    *****
+  *   **     *     **     **          **              **           **      **
+  *    **    *    **       **         **              **           **      *
+  *    **    *    **       **         **              **            *      *
+  *     **   *    **       **         **              **            **     *
+  *     **   *            ***         **              **             *    *
+  *      **  *       ***** **         **              **             **   *
+  *      **  *     ***     **         **              **             **   *
+  *       ** *    **       **         **              **              *  *
+  *       ** *   **        **         **              **              ** *
+  *        ***   **        **         **              **               * *
+  *        ***   **        **         **     *        **     *         **
+  *         **   **        **  *      **     *        **     *         **
+  *         **    **     ****  *       **   *          **   *          *
+*****        *     ******   ***         ****            ****           *
+                                                                       *
+                                                                      *
+                                                                  *****
+                                                                  ****
+
+
+ *
  */
 
 #include <stddef.h>
