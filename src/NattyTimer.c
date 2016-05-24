@@ -112,7 +112,7 @@ static int ntyStopTimerOpera(void *_self) {
 
 	pthread_mutex_lock(&timer->timer_mutex);
 	timer->timerProcess = 0;
-#if 0
+#if 0 //mac os don't support
 	pthread_cond_broadcast(&timer->timer_cond);
 #else
 	pthread_cond_signal(&timer->timer_cond);
