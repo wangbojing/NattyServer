@@ -61,7 +61,7 @@
 #define NTY_LOGIN_ACK_LENGTH			512
 #define NTY_P2PADDR_ACK_LENGTH			512
 #define NTY_P2P_NOTIFY_ACK_LENGTH		128
-
+#define NTY_PROXYDATA_PACKET_LENGTH		512
 //#define NTY_PROTO_DATAPACKET_ACK_LENGTH	32
 
 /* ** **** ********  ****************  Index  ****************  ******** **** ** */

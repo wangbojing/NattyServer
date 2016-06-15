@@ -143,6 +143,9 @@
 #define	ROTATE(a,n)	(_lrotr(a,n))
 #elif defined(__GNUC__) && __GNUC__>=2 && !defined(__STRICT_ANSI__) && !defined(OPENSSL_NO_ASM) && !defined(OPENSSL_NO_INLINE_ASM) && !defined(PEDANTIC)
 # if defined(__i386) || defined(__i386__) || defined(__x86_64) || defined(__x86_64__)
+#if defined(__APPLE__) //Update By WangBoJing
+#undef ROTATE
+#else
 #  define ROTATE(a,n)	({ register unsigned int ret;	\
 				asm ("rorl %1,%0"	\
 					: "=r"(ret)	\
@@ -150,6 +153,7 @@
 					: "cc");	\
 			   ret;				\
 			})
+#endif
 # endif
 #endif
 #ifndef ROTATE

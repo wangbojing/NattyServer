@@ -56,6 +56,11 @@ typedef unsigned short U16;
 typedef unsigned char U8;
 typedef long long C_DEVID;
 
+#define SERVER_NAME		"112.93.116.188" //"127.0.0.1"
+#define SERVER_PORT		8888
+#define RECV_BUFFER_SIZE	(1024+16)
+#define SENT_TIMEOUT	3
+
 
 typedef struct _ThreadArg {
 	int sockfd;
@@ -115,6 +120,8 @@ enum {
 #define P2P_HEARTBEAT_TIMEOUT	60
 #define P2P_HEARTBEAT_TIMEOUT_COUNTR	5
 
+typedef void (*PROXY_CALLBACK)(int len);
+
 
 typedef struct _NETWORK {
 	const void *_;
@@ -122,6 +129,7 @@ typedef struct _NETWORK {
 	struct sockaddr_in addr;
 	int length;	
 	HANDLE_TIMER onAck;
+	PROXY_CALLBACK onDataLost;
 	U32 ackNum;
 	U8 buffer[CACHE_BUFFER_SIZE];
 	//void *timer;
@@ -141,6 +149,12 @@ void *ntyNetworkInstance(void);
 void ntyNetworkRelease(void *self);
 int ntySendFrame(void *self, struct sockaddr_in *to, U8 *buf, int len);
 int ntyRecvFrame(void *self, U8 *buf, int len, struct sockaddr_in *from);
+
+
+int ntyGetSocket(void *self);
+U8 ntyGetReqType(void *self);
+C_DEVID ntyGetDestDevId(void *self);
+void ntySetDevId(C_DEVID id);
 
 
 

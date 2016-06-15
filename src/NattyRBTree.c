@@ -416,6 +416,14 @@ static void ntyInOrderTraversalForList(const RBTree *T, RBTreeNode *node, C_DEVI
 	return ;
 }
 
+static void ntyInOrderMass(RBTree *T, RBTreeNode *node, HANDLE_MASS handle_FN, U8 *buf, int length) {
+	if (node != T->nil) {
+		ntyInOrderMass(T, node->left, handle_FN, buf, length);		
+		handle_FN(node->key, buf, length);
+		ntyInOrderMass(T, node->right, handle_FN, buf, length);
+	}
+	return ;
+}
 
 static void ntyPreOrderTraversal(RBTree *T, RBTreeNode *node) {
 	if (node != T->nil) {
@@ -479,6 +487,12 @@ void ntyRBTreeOperaNotify(void *_self, C_DEVID selfId, HANDLE_NOTIFY notify_FN) 
 	return ntyInOrderTraversalNotify(self, self->root, selfId, notify_FN);
 }
 
+void ntyRBTreeOperaMass(void *_self, HANDLE_MASS handle_FN, U8 *buf, int length) {
+	RBTree *self = _self;
+
+	return ntyInOrderMass(self, self->root, handle_FN, buf, length);
+}
+
 
 static const RBTreeOpera ntyRBTreeOpera = {
 	sizeof(RBTree),
@@ -490,6 +504,7 @@ static const RBTreeOpera ntyRBTreeOpera = {
 	ntyRBTreeOperaUpdate,
 	ntyRBTreeOperaTraversal,
 	ntyRBTreeOperaNotify,
+	ntyRBTreeOperaMass,
 };
 
 const void *pNtyRBTreeOpera = &ntyRBTreeOpera;
@@ -595,6 +610,16 @@ void ntyFriendsTreeTraversalNotify(void *self, C_DEVID selfId, HANDLE_NOTIFY not
 		return (*pRBTreeOpera)->notify(self, selfId, notify_FN);
 	}
 }
+
+void ntyFriendsTreeMass(void *self, HANDLE_MASS handle_FN, U8 *buf, int length) {
+	RBTreeOpera **pRBTreeOpera = self;
+	
+	if (self && (*pRBTreeOpera) && (*pRBTreeOpera)->traversal) {
+		return (*pRBTreeOpera)->mass(self, handle_FN, buf, length);
+	}
+}
+
+
 /*
  * 1 : Exist
  * 0 : no Exist

@@ -60,6 +60,8 @@ typedef unsigned char U8;
 typedef long long C_DEVID;
 typedef int (*HANDLE_CLIENTID)(void* client, C_DEVID id);
 typedef int (*HANDLE_NOTIFY)(C_DEVID from, C_DEVID to);
+typedef int (*HANDLE_MASS)(C_DEVID to, U8 *data, int length);
+
 
 typedef struct {
 	size_t size;

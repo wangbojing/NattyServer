@@ -299,6 +299,7 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 			pClient->friends = ntyFriendsTreeInstance();
 			//read from disk friends and store in rb-tree
 #if 1	//just for debug		
+			printf(" key : %lld\n", key);
 			if (key == 1) {
 				ntyFriendsTreeInsert(pClient->friends, 2);
 				//ntyFriendsTreeInsert(pClient->friends, 3);
@@ -880,11 +881,12 @@ void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length, 
 	U32 u32Crc = ntyGenCrcValue(buffer, length-4);
 	U32 u32ClientCrc = *((U32*)(buffer+length-4));
 
+	//printf(" client:%x, server:%x", u32ClientCrc, u32Crc);
 	if (u32Crc != u32ClientCrc) {
 		return ;
 	}
 	
-	return ntyHandleRequest(_filter, buffer, length,obj);
+	return ntyHandleRequest(_filter, buffer, length, obj);
 }
 
 void ntyProtocolFilterRelease(void *_filter) {
