@@ -41,27 +41,51 @@
  *
  */
 
+#include <string.h>
 
-#ifndef __NATTY_PROTO_CLIENT_H__
-#define __NATTY_PROTO_CLIENT_H__
-
-
-#include "NattyNetwork.h"
+#include "NattyProtoClient.h"
 
 
 
-//typedef void (PROXY_FAILED)(int len);
+void ntyUserRecvCb(int len) {
+	int i = 0;
+	U8 *buffer = ntyGetRecvBuffer();
+
+	for (i = 0;i < len;i ++) {
+		printf("%x", buffer[i]);
+	}
+	printf("\n");
+}
+
+void ntySendSuccess(int arg) {
+	printf("Success\n");
+}
+
+void ntySendFailed(int arg) {
+	printf("Failed\n");
+}
 
 
-int ntySendDataPacket(C_DEVID toId, U8 *data, int length);
-int ntySendMassDataPacket(U8 *data, int length);
-void ntySetSendSuccessCallback(PROXY_CALLBACK cb);
-void ntySetSendFailedCallback(PROXY_CALLBACK cb);
-void ntySetProxyCallback(PROXY_CALLBACK cb);
-U8* ntyGetRecvBuffer(void);
-void ntySetDevId(C_DEVID id);
+int main() {
+	C_DEVID AppId = 0x01;
+	int n = 0, length;
+	U8 tempBuf[RECV_BUFFER_SIZE] = {0};
+	
+	printf(" Press DevId <1 or 2>: ");   	
+	n = scanf("%lld", &AppId);
+	
+	ntySetDevId(AppId);
+	ntySetProxyCallback(ntyUserRecvCb);
+	ntySetSendFailedCallback(ntySendFailed);
+	ntySetSendSuccessCallback(ntySendSuccess);
 
+	sleep(5);
+	while(1) {
+		printf("Proxy Please send msg:");
+		char *ptr = fgets(tempBuf, RECV_BUFFER_SIZE, stdin);
+		int len = strlen(tempBuf);
+		ntySendMassDataPacket(tempBuf, len);
+	}
+}
 
-
-#endif
 

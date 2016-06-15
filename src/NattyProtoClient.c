@@ -51,6 +51,7 @@
 #include <pthread.h>
 
 #include "NattyProtoClient.h"
+#include "NattyTimer.h"
 
 
 static void ntySetupHeartBeatThread(void* self);
@@ -62,6 +63,8 @@ static void* ntyRecvProc(void *arg);
 
 
 #if 1 //
+
+typedef void* (*RECV_CALLBACK)(void *arg);
 
 typedef enum {
 	STATUS_NETWORK_LOGIN,
@@ -105,6 +108,7 @@ typedef struct _NATTYPROTO_OPERA {
 } NattyProtoOpera;
 
 
+
 #endif
 
 
@@ -112,13 +116,14 @@ typedef struct _NATTYPROTO_OPERA {
 
 void* ntyProtoClientCtor(void *_self, va_list *params) {
 	NattyProto *proto = _self;
-	struct hostent *server;
+	struct hostent *server = NULL;
 
 	proto->onRecvCallback = ntyRecvProc;
 	proto->level = STATUS_NETWORK_LOGIN;
 	proto->p2pHeartbeatRun = 0;
 	proto->heartbeartRun = 0;
 	proto->recvLen = 0;
+	proto->devid = 0;
 
 #if 1 //server addr init
 	server = gethostbyname(SERVER_NAME);    
@@ -128,19 +133,19 @@ void* ntyProtoClientCtor(void *_self, va_list *params) {
 		bzero((char *) &proto->serveraddr, sizeof(proto->serveraddr)); 
 		return proto;
 	}
-
+	
 	bzero((char *) &proto->serveraddr, sizeof(proto->serveraddr));    
 	proto->serveraddr.sin_family = AF_INET;    
 	bcopy((char *)server->h_addr, (char *)&proto->serveraddr.sin_addr.s_addr, server->h_length);    
 	proto->serveraddr.sin_port = htons(SERVER_PORT);
+
+	ntyGenCrcTable();
 
 #if 1 //set network callback
 	void *pNetwork = ntyNetworkInstance();
 	((Network*)pNetwork)->onDataLost = ntySendTimeout;
 #endif
 
-	ntySetupRecvProcThread(_self); //setup recv proc
-	ntySetupHeartBeatThread(_self); //setup heart proc
 #endif
 
 	return proto;
@@ -190,6 +195,7 @@ void* ntyProtoClientHeartBeat(void *_self) {
 	while (1) {		
 		bzero(buf, NTY_LOGIN_ACK_LENGTH);
 		sleep(HEARTBEAT_TIMEOUT);	
+		if (proto->devid == 0) continue; //set devid
 		
 		buf[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;	
 		buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_REQ;	
@@ -198,7 +204,6 @@ void* ntyProtoClientHeartBeat(void *_self) {
 		
 		len = NTY_PROTO_LOGIN_REQ_CRC_IDX+sizeof(U32);
 		
-		if (proto->serveraddr.sin_port == 0) continue; //just server is right
 		n = ntySendFrame(pNetwork, &proto->serveraddr, buf, len);
 	}
 }
@@ -226,6 +231,7 @@ void ntyProtoClientLogin(void *_self) {
 	
 	len = NTY_PROTO_LOGIN_REQ_CRC_IDX+sizeof(U32);				
 
+	printf(" ntyProtoClientLogin %d\n", __LINE__);
 	void *pNetwork = ntyNetworkInstance();
 	n = ntySendFrame(pNetwork, &proto->serveraddr, buf, len);
 }
@@ -326,6 +332,7 @@ static void *pProtoOpera = NULL;
 
 void *ntyProtoInstance(void) {
 	if (pProtoOpera == NULL) {
+		printf("ntyProtoInstance\n");
 		pProtoOpera = New(pNattyProtoOpera);
 	}
 	return pProtoOpera;
@@ -367,6 +374,7 @@ static void ntySetupRecvProcThread(void *self) {
 static void ntySendLogin(void *self) {
 	NattyProtoOpera * const * protoOpera = self;
 
+	printf(" ntySendLogin %d\n", __LINE__);
 	if (self && (*protoOpera) && (*protoOpera)->login) {
 		return (*protoOpera)->login(self);
 	}
@@ -403,7 +411,7 @@ int ntySendDataPacket(C_DEVID toId, U8 *data, int length) {
 #else
 	U8 *tempBuf = &buf[NTY_PROTO_DATAPACKET_CONTENT_IDX];
 	memcpy(tempBuf, data, length);
-
+	printf(" toId : %lld \n", toId);
 	if (proto && (*protoOpera) && (*protoOpera)->proxyReq) {
 		(*protoOpera)->proxyReq(proto, toId, buf, length);
 		return 0;
@@ -438,10 +446,16 @@ void ntySetProxyCallback(PROXY_CALLBACK cb) {
 		proto->onProxyCallback = cb;
 	}
 }
+
 void ntySetDevId(C_DEVID id) {
 	NattyProto* proto = ntyProtoInstance();
 	if (proto) {
 		proto->devid = id;
+		printf("ntySendLogin \n");
+		
+		ntySendLogin(proto);
+		ntySetupHeartBeatThread(proto); //setup heart proc
+		ntySetupRecvProcThread(proto); //setup recv proc
 	}
 }
 
@@ -459,6 +473,9 @@ static void ntySendTimeout(int len) {
 	if (proto && proto->onProxyFailed) {
 		proto->onProxyFailed(len);
 	}
+
+	void* pTimer = ntyNetworkTimerInstance();
+	ntyStopTimer(pTimer);
 }
 
 static void* ntyRecvProc(void *arg) {
@@ -475,11 +492,18 @@ static void* ntyRecvProc(void *arg) {
 	fds.fd = ntyGetSocket(pNetwork);
 	fds.events = POLLIN;
 
+	printf(" ntyRecvProc %d\n", fds.fd);
 	while (1) {
 		ret = poll(&fds, 1, 5);
 		if (ret) {
 			bzero(buf, RECV_BUFFER_SIZE);
 			proto->recvLen = ntyRecvFrame(pNetwork, buf, RECV_BUFFER_SIZE, &addr);
+
+			printf("%d.%d.%d.%d:%d, length:%d --> %x, id:%lld\n", *(unsigned char*)(&addr.sin_addr.s_addr), *((unsigned char*)(&addr.sin_addr.s_addr)+1),													
+				*((unsigned char*)(&addr.sin_addr.s_addr)+2), *((unsigned char*)(&addr.sin_addr.s_addr)+3),													
+				addr.sin_port, proto->recvLen, buf[NTY_PROTO_TYPE_IDX], *(C_DEVID*)(&buf[NTY_PROTO_DEVID_IDX]));	
+			
+			
 			if (buf[NTY_PROTO_TYPE_IDX] == NTY_PROTO_LOGIN_ACK) {
 				int i = 0;
 				

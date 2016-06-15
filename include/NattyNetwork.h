@@ -50,6 +50,11 @@
 #include "NattyProtocol.h"
 #include "NattyRBTree.h"
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+
 typedef long long U64;
 typedef unsigned int U32;
 typedef unsigned short U16;

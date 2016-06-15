@@ -171,6 +171,7 @@ static void* ntyNetworkCtor(void *_self, va_list *params) {
 	if (network->sockfd < 0) {
 		error(" ERROR opening socket");
 	}
+	printf(" sockfd %d, %s, %d\n",network->sockfd, __FILE__, __LINE__);
 #endif
 	
 	return network;
@@ -182,6 +183,7 @@ static void* ntyNetworkDtor(void *_self) {
 
 static int ntyNetworkResendFrame(void *_self) {
 	Network *network = _self;
+
 	return sendto(network->sockfd, network->buffer, network->length, 0, 
 			(struct sockaddr *)&network->addr, sizeof(struct sockaddr_in));
 }
@@ -206,8 +208,6 @@ static int ntyNetworkSendFrame(void *_self, struct sockaddr_in *to, U8 *buf, int
 	network->length = len;
 	*(U32*)(&network->buffer[len-sizeof(U32)]) = ntyGenCrcValue(network->buffer, len-sizeof(U32));
 
-	printf("ntyNetworkSendFrame : %x\n", buf[NTY_PROTO_TYPE_IDX]);
-	
 	return sendto(network->sockfd, network->buffer, network->length, 0, 
 		(struct sockaddr *)&network->addr, sizeof(struct sockaddr_in));
 }
@@ -308,6 +308,7 @@ C_DEVID ntyGetDestDevId(void *self) {
 	return *(C_DEVID*)(&network->buffer[NTY_PROTO_DEST_DEVID_IDX]);
 }
 
+#if 0
 
 struct sockaddr_in serveraddr;
 int portno;
@@ -1204,3 +1205,4 @@ int main () {
 }
 #endif
 
+#endif
