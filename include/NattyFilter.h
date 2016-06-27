@@ -65,6 +65,8 @@ typedef struct {
 } Packet;
 
 void* ntyProtocolFilterInit(void);
+void* ntyProtocolFilterInstance(void);
+
 void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length,const void *obj);
 void ntyProtocolFilterRelease(void *_filter);
 

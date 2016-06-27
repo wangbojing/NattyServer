@@ -46,8 +46,27 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 #include "NattyUtils.h"
+#include "NattyProtocol.h"
+#include "NattyAbstractClass.h"
+
+
+void ntyTimeCheckStamp(U8 *buf) {
+	time_t timer;
+	struct tm *tblock;
+	timer = time(NULL);
+	tblock = localtime(&timer);
+
+	buf[NTY_PROTO_TIMECHECK_YEAR_IDX] = (U8)(tblock->tm_year % 100);
+	buf[NTY_PROTO_TIMECHECK_MONTH_IDX] = (U8)(tblock->tm_mon);
+	buf[NTY_PROTO_TIMECHECK_DAY_IDX] = (U8)(tblock->tm_mday);
+	buf[NTY_PROTO_TIMECHECK_WDAY_IDX] = (U8)(tblock->tm_wday);
+	buf[NTY_PROTO_TIMECHECK_HOUR_IDX] = (U8)(tblock->tm_hour);
+	buf[NTY_PROTO_TIMECHECK_MINUTE_IDX] = (U8)(tblock->tm_min);
+	buf[NTY_PROTO_TIMECHECK_SECOND_IDX] = (U8)(tblock->tm_sec);
+}
 
 
 void ntyDisplayLetter(char *LogStr, int length) {

@@ -126,6 +126,7 @@ void* ntyProtoClientCtor(void *_self, va_list *params) {
 	proto->devid = 0;
 
 #if 1 //server addr init
+#if 0 //android JNI don't support gethostbyname
 	server = gethostbyname(SERVER_NAME);    
 	if (server == NULL) {        
 		fprintf(stderr,"ERROR, no such host as %s\n", SERVER_NAME);  
@@ -133,11 +134,17 @@ void* ntyProtoClientCtor(void *_self, va_list *params) {
 		bzero((char *) &proto->serveraddr, sizeof(proto->serveraddr)); 
 		return proto;
 	}
-	
 	bzero((char *) &proto->serveraddr, sizeof(proto->serveraddr));    
 	proto->serveraddr.sin_family = AF_INET;    
 	bcopy((char *)server->h_addr, (char *)&proto->serveraddr.sin_addr.s_addr, server->h_length);    
 	proto->serveraddr.sin_port = htons(SERVER_PORT);
+#else
+	bzero((char *) &proto->serveraddr, sizeof(proto->serveraddr));    
+	proto->serveraddr.sin_family = AF_INET;    
+	proto->serveraddr.sin_addr.s_addr = inet_addr(SERVER_NAME);
+	proto->serveraddr.sin_port = htons(SERVER_PORT);
+#endif	
+	
 
 	ntyGenCrcTable();
 
@@ -423,7 +430,7 @@ int ntySendDataPacket(C_DEVID toId, U8 *data, int length) {
 
 int ntySendMassDataPacket(U8 *data, int length) {	
 	void *pTree = ntyRBTreeInstance();
-	ntyRBTreeOperaMass(pTree, ntySendDataPacket, data, length);
+	ntyFriendsTreeMass(pTree, ntySendDataPacket, data, length);
 
 	return 0;
 }
@@ -468,10 +475,18 @@ U8* ntyGetRecvBuffer(void) {
 	return NULL;
 }
 
+int ntyGetRecvBufferSize(void) {
+	NattyProto* proto = ntyProtoInstance();
+	if (proto) {
+		return proto->recvLen;
+	}
+	return -1;
+}
+
 static void ntySendTimeout(int len) {
 	NattyProto* proto = ntyProtoInstance();
 	if (proto && proto->onProxyFailed) {
-		proto->onProxyFailed(len);
+		proto->onProxyFailed(STATUS_TIMEOUT);
 	}
 
 	void* pTimer = ntyNetworkTimerInstance();
@@ -546,12 +561,20 @@ static void* ntyRecvProc(void *arg) {
 				printf(" recv:%s\n", data);
 				
 				//sendProxyDataPacketAck(friId, ack);
+				if (buf[NTY_PROTO_MESSAGE_TYPE] == MSG_RET) {
+					if (proto->onProxyFailed)
+						proto->onProxyFailed(STATUS_NOEXIST);
+					
+					continue;
+				}
+				
 				if (arg && (*protoOpera) && (*protoOpera)->proxyAck) {
 					(*protoOpera)->proxyAck(proto, friId, ack);
 				}
 
 				if (proto->onProxyCallback) {
-					proto->onProxyCallback(proto->recvLen-NTY_PROTO_DATAPACKET_CONTENT_IDX-sizeof(U32));
+					proto->recvLen -= NTY_PROTO_DATAPACKET_CONTENT_IDX-sizeof(U32);
+					proto->onProxyCallback(proto->recvLen);
 				}
 			} else if (buf[NTY_PROTO_TYPE_IDX] == NTY_PROTO_DATAPACKET_ACK) {
 				printf(" send success\n");

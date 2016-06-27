@@ -49,8 +49,10 @@
 #include "NattyNetwork.h"
 
 
-
-//typedef void (PROXY_FAILED)(int len);
+typedef enum {
+	STATUS_TIMEOUT = 0x0,
+	STATUS_NOEXIST,
+} StatusSendResult;
 
 
 int ntySendDataPacket(C_DEVID toId, U8 *data, int length);
@@ -60,6 +62,7 @@ void ntySetSendFailedCallback(PROXY_CALLBACK cb);
 void ntySetProxyCallback(PROXY_CALLBACK cb);
 U8* ntyGetRecvBuffer(void);
 void ntySetDevId(C_DEVID id);
+int ntyGetRecvBufferSize(void);
 
 
 

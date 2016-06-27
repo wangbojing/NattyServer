@@ -816,6 +816,38 @@ static const ProtocolFilter ntyP2PConnectNotifyPacketAckFilter = {
 };
 
 
+void ntyTimeCheckHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
+	const UdpClient *client = obj;
+	if (buffer[NTY_PROTO_TYPE_IDX] == NTY_PROTO_TIME_CHECK_REQ) {
+		C_DEVID key = *(C_DEVID*)(buffer+NTY_PROTO_LOGIN_REQ_DEVID_IDX);
+		U32 ackNum = *(U32*)(buffer+NTY_PROTO_LOGIN_REQ_ACKNUM_IDX)+1;
+		
+		void *pRBTree = ntyRBTreeInstance();
+		UdpClient *cliValue = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, key);
+		
+		ntySendDeviceTimeCheckAck(client, ackNum);
+		
+	} else if (ntyPacketGetSuccessor(_self) != NULL) {
+		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
+		(*succ)->handleRequest(succ, buffer, length, obj);
+	} else {
+		fprintf(stderr, "Can't deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);
+	}
+
+}
+
+
+static const ProtocolFilter ntyTimeCheckFilter = {
+	sizeof(Packet),
+	ntyPacketCtor,
+	ntyPacketDtor,
+	ntyPacketSetSuccessor,
+	ntyPacketGetSuccessor,
+	ntyTimeCheckHandleRequest,
+};
+
+
+
 static void ntySetSuccessor(void *_filter, void *_succ) {
 	ProtocolFilter **filter = _filter;
 	if (_filter && (*filter) && (*filter)->setSuccessor) {
@@ -840,6 +872,7 @@ const void *pNtyUserDataPacketFilter = &ntyUserDataPacketFilter;
 const void *pNtyUserDataPacketAckFilter = &ntyUserDataPacketAckFilter;
 const void *pNtyP2PConnectNotifyPacketFilter = &ntyP2PConnectNotifyPacketFilter;
 const void *pNtyP2PConnectNotifyPacketAckFilter = &ntyP2PConnectNotifyPacketAckFilter;
+const void *pNtyTimeCheckFilter = &ntyTimeCheckFilter;
 
 
 
@@ -852,6 +885,7 @@ void* ntyProtocolFilterInit(void) {
 	void *pUserDataPacketAckFilter = New(pNtyUserDataPacketAckFilter);
 	void *pP2PConnectNotifyPacketFilter = New(pNtyP2PConnectNotifyPacketFilter);
 	void *pP2PConnectNotifyPacketAckFilter = New(pNtyP2PConnectNotifyPacketAckFilter);
+	void *pTimeCheckFilter = New(pNtyTimeCheckFilter);
 
 	ntySetSuccessor(pHeartBeatFilter, pLoginFilter);
 	ntySetSuccessor(pLoginFilter, pLogoutFilter);
@@ -860,7 +894,8 @@ void* ntyProtocolFilterInit(void) {
 	
 	ntySetSuccessor(pUserDataPacketFilter, pUserDataPacketAckFilter);
 	ntySetSuccessor(pUserDataPacketAckFilter, pP2PConnectNotifyPacketFilter);
-	ntySetSuccessor(pP2PConnectNotifyPacketFilter, pP2PConnectNotifyPacketAckFilter);
+	ntySetSuccessor(pP2PConnectNotifyPacketFilter, pTimeCheckFilter);
+	ntySetSuccessor(pTimeCheckFilter, NULL);
 
 	/*
 	 * add your Filter
@@ -897,7 +932,14 @@ void ntyProtocolFilterRelease(void *_filter) {
 	Delete(self);
 }
 
+static void *ntyProtocolFilter = NULL;
 
+void* ntyProtocolFilterInstance(void) {
+	if (ntyProtocolFilter == NULL) {
+		ntyProtocolFilter = ntyProtocolFilterInit();
+	}
+	return ntyProtocolFilter;
+}
 
 #define NTY_CRCTABLE_LENGTH			256
 #define NTY_CRC_KEY		0x04c11db7ul

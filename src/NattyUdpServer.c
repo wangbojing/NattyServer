@@ -131,10 +131,10 @@ static void* allocRequestPacket(void) {
 static void ntyUdpServerJob(Job *job) {
 	
 	RequestPacket *req = (RequestPacket*)job->user_data;
-	void* pFilter = ntyProtocolFilterInit();
-
+	void* pFilter = ntyProtocolFilterInstance();
 	ntyProtocolFilterProcess(pFilter, req->buffer, req->length, req->client);
 
+	//ntyProtocolFilterRelease(pFilter);
 	freeRequestPacket(req);
 	free(job);
 }
@@ -151,6 +151,7 @@ int ntyUdpServerProcess(const void *_self) {
 
 	Job *job;
 	void* pThreadPool = ntyThreadPoolInstance();
+	void* pFilter = ntyProtocolFilterInstance();
 
 	if (self->sockfd <= 0) {
 		error("Udp Server Socket no Initial");
@@ -207,6 +208,7 @@ int ntyUdpServerProcess(const void *_self) {
 		}
 	}
 
+	ntyProtocolFilterProcess(pFilter, req->buffer, req->length, req->client);
 	//free(pClient);
 	//ntyProtocolFilterRelease(pFilter);
 	return 0;

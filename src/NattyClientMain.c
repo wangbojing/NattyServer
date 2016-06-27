@@ -62,7 +62,10 @@ void ntySendSuccess(int arg) {
 }
 
 void ntySendFailed(int arg) {
-	printf("Failed\n");
+	if (arg == STATUS_TIMEOUT)
+		printf("STATUS_TIMEOUT\n");
+	else if (arg == STATUS_NOEXIST)
+		printf("STATUS_NOEXIST\n");
 }
 
 
@@ -74,10 +77,11 @@ int main() {
 	printf(" Press DevId <1 or 2>: ");   	
 	n = scanf("%lld", &AppId);
 	
-	ntySetDevId(AppId);
 	ntySetProxyCallback(ntyUserRecvCb);
 	ntySetSendFailedCallback(ntySendFailed);
 	ntySetSendSuccessCallback(ntySendSuccess);
+
+	ntySetDevId(AppId);
 
 	sleep(5);
 	while(1) {

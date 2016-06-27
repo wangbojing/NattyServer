@@ -274,3 +274,24 @@ int ntyRouteUserData(C_DEVID friendId, U8 *buffer) {
 }
 #endif
 
+
+int ntySendDeviceTimeCheckAck(const UdpClient *pClient, U32 ackNum) {
+	int length = 0;
+	U8 ack[RECV_BUFFER_SIZE] = {0};
+
+	
+	ack[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+	ack[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_ACK;
+	ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_TIME_CHECK_ACK;
+	ack[NTY_PROTO_DEVID_IDX] = pClient->devId;
+	
+	*(U32*)(&ack[NTY_PROTO_ACKNUM_IDX]) = ackNum;
+
+	ntyTimeCheckStamp(ack);
+	
+	*(U32*)(&ack[NTY_PROTO_TIMECHECK_CRC_IDX]) = ntyGenCrcValue(ack, NTY_PROTO_LOGIN_REQ_CRC_IDX);
+	length = NTY_PROTO_TIMECHECK_CRC_IDX+sizeof(U32);
+	
+	return ntySendBuffer(pClient, ack, length);
+}
+
