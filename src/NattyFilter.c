@@ -684,7 +684,7 @@ void ntyUserDataPacketHandleRequest(const void *_self, unsigned char *buffer, in
 		U16 recByteCount = *(U16*)(&buffer[NTY_PROTO_DATAPACKET_CONTENT_COUNT_IDX]);
 
 		memcpy(data, buffer+NTY_PROTO_DATAPACKET_CONTENT_IDX, recByteCount);
-		printf(" Proxy data: %s\n", data);
+		printf(" Proxy data: %s, destDevId:%lld\n", data, destDevId);
 		
 		if (destClient == NULL) {
 			//C_DEVID selfDevId = *(C_DEVID*)(&buffer[NTY_PROTO_DEVID_IDX]);
