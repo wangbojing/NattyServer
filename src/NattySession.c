@@ -175,7 +175,7 @@ int ntySendFriendsTreeIpAddr(void *client, U8 reqType) {
 
 	C_DEVID *friends = ntyFriendsTreeGetAllNodeList(pClient->friends);
 	U16 Count = ntyFriendsTreeGetNodeCount(pClient->friends);
-
+	printf("Count : %d\n", Count);
 	for (i = 0;i < Count;i ++) {
 		UdpClient *cliValue = ntyRBTreeInterfaceSearch(pRBTree, *(friends+i));
 		if (cliValue != NULL) {

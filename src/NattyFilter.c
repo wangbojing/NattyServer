@@ -419,7 +419,9 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 			//new firends tree			
 			pClient->friends = ntyFriendsTreeInstance();
 			//determine this key is available and read from disk friends 
+
 #if 1	//just for debug		
+			if (key != 1 || key != 2) return ;
 			if (key == 1) {
 				ntyFriendsTreeInsert(pClient->friends, 2);
 				//ntyFriendsTreeInsert(pClient->friends, 3);
@@ -429,6 +431,7 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 			}
 #else
 #endif	
+			fprintf(stdout, "Insert New Client Node\n");
 			//insert rb-tree
 			if (ntyRBTreeInterfaceInsert(pRBTree, key, pClient)) {
 				fprintf(stdout, "Client is Exist\n");
@@ -493,7 +496,7 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 			return ;
 		}
 		
-		//fprintf(stdout, "HeartBeat deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);
+		fprintf(stdout, "HeartBeat deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);
 		
 		//send heartbeat ack
 		ack[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
@@ -684,7 +687,9 @@ void ntyUserDataPacketHandleRequest(const void *_self, unsigned char *buffer, in
 		U16 recByteCount = *(U16*)(&buffer[NTY_PROTO_DATAPACKET_CONTENT_COUNT_IDX]);
 
 		memcpy(data, buffer+NTY_PROTO_DATAPACKET_CONTENT_IDX, recByteCount);
-		printf(" Proxy data: %s, destDevId:%lld\n", data, destDevId);
+		printf(" Proxy data: %s, destDevId:%lld %d.%d.%d.%d:%d\n", data, destDevId, *(unsigned char*)(&destClient->addr.sin_addr.s_addr),
+			*((unsigned char*)(&destClient->addr.sin_addr.s_addr)+1), *((unsigned char*)(&destClient->addr.sin_addr.s_addr)+2), 
+			*((unsigned char*)(&destClient->addr.sin_addr.s_addr)+3), destClient->addr.sin_port);
 		
 		if (destClient == NULL) {
 			//C_DEVID selfDevId = *(C_DEVID*)(&buffer[NTY_PROTO_DEVID_IDX]);
@@ -717,6 +722,8 @@ void ntyUserDataPacketAckHandleRequest(const void *_self, unsigned char *buffer,
 		C_DEVID destDevId = *(C_DEVID*)(&buffer[NTY_PROTO_DATAPACKET_DEST_DEVID_IDX]);
 		void *pRBTree = ntyRBTreeInstance();
 		UdpClient *destClient = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, destDevId);
+		printf("%x %x %x %x\n", buffer[NTY_PROTO_MESSAGE_TYPE], buffer[NTY_PROTO_TYPE_IDX], 
+			buffer[NTY_PROTO_TYPE_IDX+1], buffer[NTY_PROTO_TYPE_IDX+2]);
 		if (destClient == NULL) {
 			//C_DEVID selfDevId = *(C_DEVID*)(&buffer[NTY_PROTO_DEVID_IDX]);
 			buffer[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_RET;

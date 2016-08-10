@@ -43,51 +43,32 @@
 
 
 
+#ifndef __DAVE_MQ_H__
+#define __DAVE_MQ_H__
 
+//#include "NattyAbstractClass.h"
 
-#ifndef __NATTY_ABSTRACT_CLASS_H__
-#define __NATTY_ABSTRACT_CLASS_H__
+typedef int VALUE_TYPE;
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <stdarg.h>
+typedef struct _DaveNode {
+	VALUE_TYPE value;
+	struct _DaveNode *next;
+	struct _DaveNode *prev;
+} DaveNode ;
 
-typedef long long U64;
-typedef unsigned int U32;
-typedef unsigned short U16;
-typedef unsigned char U8;
-typedef long long C_DEVID;
-typedef int (*HANDLE_CLIENTID)(void* client, C_DEVID id);
-typedef int (*HANDLE_NOTIFY)(C_DEVID from, C_DEVID to);
-typedef int (*HANDLE_MASS)(C_DEVID to, U8 *data, int length);
+typedef struct _DaveQueue {
+	const void *_;
+	DaveNode *head;
+	DaveNode *tail;
+	DaveNode *nil;
+} DaveQueue;
 
-
-typedef struct {
-	size_t size;
-	void* (*ctor)(void *_self, va_list *params);
+struct DaveQueueHandle {
+	int size;
+	void* (*ctor)(void *_self);
 	void* (*dtor)(void *_self);
-} AbstractClass;
-
-
-void *New(const void *_class, ...);
-void Delete(void *_class);
-
-
-#define QUEUE_ADD(item, list) {	\
-	item->prev = NULL;			\
-	item->next = list;			\
-	list = item;				\
-}
-
-#define QUEUE_REMOVE(item, list) {							\
-	if (item->prev != NULL) item->prev->next = item->next;	\
-	if (item->next != NULL) item->next->prev = item->prev;	\
-	if (list == item) list = item->next;					\
-	item->prev = item->next = NULL;							\
-}
-
-
+	
+};
 
 
 #endif

@@ -146,7 +146,7 @@ int ntyUdpServerProcess(const void *_self) {
 	
 	struct pollfd fds;
 	int ret = -1, n;
-	char buf[RECV_BUFFER_SIZE];
+	unsigned char buf[RECV_BUFFER_SIZE];
 	RequestPacket *req;
 
 	Job *job;
