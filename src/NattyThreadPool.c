@@ -47,6 +47,19 @@
 
 
 
+#define QUEUE_ADD(item, list) {	\
+	item->prev = NULL;			\
+	item->next = list;			\
+	list = item;				\
+}
+
+#define QUEUE_REMOVE(item, list) {							\
+	if (item->prev != NULL) item->prev->next = item->next;	\
+	if (item->next != NULL) item->next->prev = item->prev;	\
+	if (list == item) list = item->next;					\
+	item->prev = item->next = NULL;							\
+}
+
 static void *ntyRunner(void *arg) {
 	Worker *worker = (Worker*)arg;
 	Job *job = NULL;
@@ -150,7 +163,7 @@ static void ntyThreadPoolAddJob(void *_self, void *task) {
 	ntyWorkQueueAddJob(pool->wq, job);
 }
 
-static const ThreadPoolOpera ntyThreadPoolOpera = {
+const ThreadPoolOpera ntyThreadPoolOpera = {
 	sizeof(ThreadPool),
 	ntyThreadPoolCtor,
 	ntyThreadPoolDtor,

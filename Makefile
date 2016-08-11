@@ -2,7 +2,7 @@
 
 CC = gcc
 #SUBDIRS=$(shell ls -l | grep ^d | awk '{if($$9 != "debug") print $$9}')
-SUBDIRS = ssl/ src/ #modules/
+SUBDIRS = ssl/ src/ src/DaveMQ #modules/
 DEBUG = $(shell ls -l | grep ^d | awk '{if($$9 == "release") print $$9}')
 ROOT_DIR = $(shell pwd)
 BIN_DIR = $(ROOT_DIR)/bin

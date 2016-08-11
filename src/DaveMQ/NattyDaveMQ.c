@@ -42,54 +42,16 @@
  */
 
 
-
-//#include <arch/atomic.h>
-
 #include "NattyDaveMQ.h"
+#include "NattyThreadPool.h"
+
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
 
-
-
-unsigned long cmpxchg(void *addr, unsigned long _old, unsigned long _new, int size) {
-	unsigned long prev;
-	volatile unsigned int *_ptr = (volatile unsigned int *)(addr);
-
-	switch (size) {
-		case 1: {
-			__asm__ volatile (
-		        "lock; cmpxchgb %b1, %2"
-		        : "=a" (prev)
-		        : "r" (_new), "m" (*_ptr), "0" (_old)
-		        : "memory");
-			break;
-		}
-		case 2: {
-			__asm__ volatile (
-		        "lock; cmpxchgw %w1, %2"
-		        : "=a" (prev)
-		        : "r" (_new), "m" (*_ptr), "0" (_old)
-		        : "memory");
-			break;
-		}
-		case 4: {
-			__asm__ volatile (
-		        "lock; cmpxchgl %1, %2"
-		        : "=a" (prev)
-		        : "r" (_new), "m" (*_ptr), "0" (_old)
-		        : "memory");
-			break;
-		}
-	}
-
-	return prev;
-}
-
-
-
+extern int ntyThreadPoolPush(void *self, void *task);
 
 DaveQueue* ntyDaveQueueInitialize(DaveQueue *Queue) {
 	Queue = (DaveQueue *)malloc(sizeof(DaveQueue));
@@ -103,11 +65,10 @@ DaveQueue* ntyDaveQueueInitialize(DaveQueue *Queue) {
 	return Queue;
 }
 
-void ntyDaveQueueRelease(DaveQueue *Queue) {
+void ntyDaveQueueDestroy(DaveQueue *Queue) {
 	free(Queue->nil);
 	free(Queue);
 }
-
 
 void ntyDaveEnQueue(DaveQueue *Queue, VALUE_TYPE val) {
 	DaveNode *tail = Queue->nil;
@@ -120,13 +81,14 @@ void ntyDaveEnQueue(DaveQueue *Queue, VALUE_TYPE val) {
 
 	
 	while (1) {
-		if (Queue->head == Queue->nil) Queue->head = node;
+		//if (Queue->head == Queue->nil) Queue->head = node;
+		cmpxchg((void*)(&Queue->head), (unsigned long)Queue->nil, (unsigned long)node, WORD_WIDTH);
 		
 		tail = Queue->tail;
 		node->next = Queue->tail;
 		Queue->tail->prev = node;
 		
-        if ((unsigned long)tail == cmpxchg((void*)(&Queue->tail), (unsigned long)tail, (unsigned long)node, 4)) {
+        if ((unsigned long)tail == cmpxchg((void*)(&Queue->tail), (unsigned long)tail, (unsigned long)node, WORD_WIDTH)) {
             break;
         } else {
 			printf(" enqueue cmpxchg failed");
@@ -153,6 +115,51 @@ DaveNode* ntyDaveDeQueue(DaveQueue *Queue) {
 	return head;
 }
 
+
+void *ntyDaveQueueCtor(void *self) {
+	return ntyDaveQueueInitialize(self);
+}
+
+void *ntyDaveQueueDtor(void *self) {
+	ntyDaveQueueDestroy(self);
+	return self;
+}
+
+void ntyDaveQueueEnqueue(void *self, VALUE_TYPE value) {
+	ntyDaveEnQueue(self, value);
+}
+
+void *ntyDaveQueueDequeue(void *self) {
+	return ntyDaveDeQueue(self);
+}
+
+static const DaveQueueHandle ntyDaveQueueHandle = {
+	sizeof(DaveQueue),
+	ntyDaveQueueCtor,
+	ntyDaveQueueDtor,
+	ntyDaveQueueEnqueue,
+	ntyDaveQueueDequeue,
+};
+
+const void *pNtyDaveQueueHandle = &ntyDaveQueueHandle;
+static void *pDaveQueueHandle = NULL;
+
+
+void *ntyDaveQueueInstance(void) {
+	if (pDaveQueueHandle == NULL) {
+		void *pDQHandle = New(pNtyDaveQueueHandle);
+		if ((unsigned long)NULL != cmpxchg((void*)(&pDaveQueueHandle), (unsigned long)NULL, (unsigned long)pDQHandle, WORD_WIDTH)) {
+			Delete(pDQHandle);
+		}
+	}
+	
+	return pDaveQueueHandle;
+}
+
+void ntyDaveQueueRelease(void *self) {	
+	Delete(self);
+}
+
 static void* ntyEnQueueThread(void *arg) {
 	DaveQueue *Queue = (DaveQueue*)arg;
 	int i = 0;
@@ -172,21 +179,61 @@ static void* ntyEnQueueThread(void *arg) {
 
 static void* ntyDeQueueThread(void *arg) {
 	DaveQueue *Queue = (DaveQueue*)arg;
-	DaveNode *node;
+	DaveNode *node = Queue->nil;
+	void *Workers = ntyDaveMqWorkerInstance();
 
 	printf("ntyDeQueueThread --> ");
 	//usleep(10);
 	while(1) {
 		node = ntyDaveDeQueue(Queue);
-		if (node != Queue->nil &&  node != NULL)
+		if (node != Queue->nil &&  node != NULL) {
 			printf("%d ", node->value);
-		else 
-			break;
-
-		free(node);
+			//ntyThreadPoolPush
+			free(node);
+		}
 	}
 	printf("\n");
 }
+
+extern const ThreadPoolOpera ntyThreadPoolOpera;
+const void *pNtyDaveMqWorker = &ntyThreadPoolOpera;
+
+
+static void *pDaveMqWorker = NULL;
+void *ntyDaveMqWorkerInstance(void) {
+	if (pDaveMqWorker == NULL) {
+		void *pWorker = New(pNtyDaveMqWorker);
+		if ((unsigned long)NULL != cmpxchg((void*)(&pDaveMqWorker), (unsigned long)NULL, (unsigned long)pWorker, WORD_WIDTH)) {
+			Delete(pWorker);
+		}
+	}
+	return pDaveMqWorker;
+}
+
+void ntyDaveMqWorkerRelease(void) {
+	Delete(pDaveMqWorker);
+}
+
+void ntyDaveMqStart(void) {
+	pthread_t thread;
+	int rc = -1;
+	void *Queue = ntyDaveQueueInstance();
+
+	rc = pthread_create(&thread, NULL, ntyDeQueueThread, (void*)Queue);
+	if (rc) {
+		printf("ERROR; return code is %d\n", rc);
+	}
+}
+
+void ntyDaveMqEnd(void) {
+	void *Queue = ntyDaveQueueInstance();
+
+	ntyDaveQueueRelease(Queue);
+}
+
+
+
+#if 0
 
 void *PrintHello(void *args)
 {
@@ -198,7 +245,6 @@ void *PrintHello(void *args)
 }
 
 
-#if 1
 int ticks = 2;
 
 #define NUM_THREADS 20

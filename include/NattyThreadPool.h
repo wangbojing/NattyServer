@@ -51,6 +51,7 @@
 
 #define NTY_THREAD_POOL_NUM		80
 
+
 typedef struct _Worker {
 	pthread_t thread;
 	int terminate;
@@ -90,7 +91,6 @@ typedef struct _ThreadPoolOpera {
 void *ntyThreadPoolInstance(void);
 void ntyThreadPoolRelease(void);
 int ntyThreadPoolPush(void *self, void *task);
-
 
 
 

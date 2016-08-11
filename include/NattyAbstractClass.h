@@ -53,6 +53,12 @@
 #include <assert.h>
 #include <stdarg.h>
 
+
+#define BYTE_WIDTH				1
+#define WCHAR_WIDTH				2
+#define WORD_WIDTH				4
+
+
 typedef long long U64;
 typedef unsigned int U32;
 typedef unsigned short U16;
@@ -72,21 +78,7 @@ typedef struct {
 
 void *New(const void *_class, ...);
 void Delete(void *_class);
-
-
-#define QUEUE_ADD(item, list) {	\
-	item->prev = NULL;			\
-	item->next = list;			\
-	list = item;				\
-}
-
-#define QUEUE_REMOVE(item, list) {							\
-	if (item->prev != NULL) item->prev->next = item->next;	\
-	if (item->next != NULL) item->next->prev = item->prev;	\
-	if (list == item) list = item->next;					\
-	item->prev = item->next = NULL;							\
-}
-
+unsigned long cmpxchg(void *addr, unsigned long _old, unsigned long _new, int size);
 
 
 

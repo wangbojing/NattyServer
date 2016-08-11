@@ -78,3 +78,40 @@ void Delete(void *_class) {
 	free(_class);
 }
 
+
+
+unsigned long cmpxchg(void *addr, unsigned long _old, unsigned long _new, int size) {
+	unsigned long prev;
+	volatile unsigned int *_ptr = (volatile unsigned int *)(addr);
+
+	switch (size) {
+		case BYTE_WIDTH: {
+			__asm__ volatile (
+		        "lock; cmpxchgb %b1, %2"
+		        : "=a" (prev)
+		        : "r" (_new), "m" (*_ptr), "0" (_old)
+		        : "memory");
+			break;
+		}
+		case WCHAR_WIDTH: {
+			__asm__ volatile (
+		        "lock; cmpxchgw %w1, %2"
+		        : "=a" (prev)
+		        : "r" (_new), "m" (*_ptr), "0" (_old)
+		        : "memory");
+			break;
+		}
+		case WORD_WIDTH: {
+			__asm__ volatile (
+		        "lock; cmpxchgl %1, %2"
+		        : "=a" (prev)
+		        : "r" (_new), "m" (*_ptr), "0" (_old)
+		        : "memory");
+			break;
+		}
+	}
+
+	return prev;
+}
+
+

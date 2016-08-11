@@ -46,7 +46,24 @@
 #ifndef __DAVE_MQ_H__
 #define __DAVE_MQ_H__
 
-//#include "NattyAbstractClass.h"
+#include "NattyAbstractClass.h"
+
+
+
+#define DAVE_MESSAGE_LENGTH			256
+
+
+typedef enum {
+	MSG_TYPE_START = 0,
+	MSG_TYPE_QJK = MSG_TYPE_START,
+	MSG_TYPE_GAODE,
+	MSG_TYPE_END = MSG_TYPE_GAODE,
+} MESSAGE_TYPE;
+
+typedef struct _MESSAGETAG {
+	int msgType;
+	//unsigned char 
+} MessageTag;
 
 typedef int VALUE_TYPE;
 
@@ -63,12 +80,15 @@ typedef struct _DaveQueue {
 	DaveNode *nil;
 } DaveQueue;
 
-struct DaveQueueHandle {
+typedef struct _DaveQueueHandle {
 	int size;
 	void* (*ctor)(void *_self);
 	void* (*dtor)(void *_self);
-	
-};
+	void (*enqueue)(void *_self, VALUE_TYPE value);
+	void* (*dequeue)(void *_self);
+} DaveQueueHandle;
+
+void *ntyDaveMqWorkerInstance(void);
 
 
 #endif
