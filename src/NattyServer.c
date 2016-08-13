@@ -43,10 +43,13 @@
 
 //#include "NattyUtils.h"
 #include "NattyUdpServer.h"
+#include "NattyDaveMQ.h"
 
 int main() {
 	void* ntyServerInfo = New(ntyUdpServerInstance());
 	ntyDisplay();
+
+	ntyDaveMqStart();
 
 	return ntyUdpServerRun(ntyServerInfo);
 }

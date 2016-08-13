@@ -88,7 +88,7 @@ static int ntyStartTimerOpera(void *_self, HANDLE_TIMER fun) {
 	}
 	timer->timerProcess = 1;
 	if (setitimer(ITIMER_REAL, &tick, NULL) < 0) {
-		printf("Set timer failed!\n");
+		ntylog("Set timer failed!\n");
 	}
 	pthread_mutex_unlock(&timer->timer_mutex);
 	
@@ -118,7 +118,7 @@ static int ntyStopTimerOpera(void *_self) {
 	pthread_cond_signal(&timer->timer_cond);
 #endif
 	if (setitimer(ITIMER_REAL, &tick, NULL) < 0) {
-		printf("Set timer failed!\n");	
+		ntylog("Set timer failed!\n");	
 	}
 	pthread_mutex_unlock(&timer->timer_mutex);
 	

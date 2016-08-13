@@ -129,7 +129,7 @@ void* ntyProtoClientCtor(void *_self, va_list *params) {
 #if 0 //android JNI don't support gethostbyname
 	server = gethostbyname(SERVER_NAME);    
 	if (server == NULL) {        
-		fprintf(stderr,"ERROR, no such host as %s\n", SERVER_NAME);  
+		ntylog("ERROR, no such host as %s\n", SERVER_NAME);  
 		//exit(0);   
 		bzero((char *) &proto->serveraddr, sizeof(proto->serveraddr)); 
 		return proto;
@@ -191,7 +191,7 @@ void* ntyProtoClientHeartBeat(void *_self) {
 	int len, n;	
 	U8 buf[NTY_LOGIN_ACK_LENGTH] = {0};	
 
-	printf(" heartbeatThread running\n");
+	ntylog(" heartbeatThread running\n");
 	if (proto->heartbeartRun == 1) {		
 		proto->heartbeartRun = 1;		
 		return NULL;	
@@ -238,7 +238,7 @@ void ntyProtoClientLogin(void *_self) {
 	
 	len = NTY_PROTO_LOGIN_REQ_CRC_IDX+sizeof(U32);				
 
-	printf(" ntyProtoClientLogin %d\n", __LINE__);
+	ntylog(" ntyProtoClientLogin %d\n", __LINE__);
 	void *pNetwork = ntyNetworkInstance();
 	n = ntySendFrame(pNetwork, &proto->serveraddr, buf, len);
 }
@@ -339,7 +339,7 @@ static void *pProtoOpera = NULL;
 
 void *ntyProtoInstance(void) {
 	if (pProtoOpera == NULL) {
-		printf("ntyProtoInstance\n");
+		ntylog("ntyProtoInstance\n");
 		pProtoOpera = New(pNattyProtoOpera);
 	}
 	return pProtoOpera;
@@ -357,7 +357,7 @@ static void ntySetupHeartBeatThread(void* self) {
 	if (self && (*protoOpera) && (*protoOpera)->heartbeat) {		
 		err = pthread_create(&heartbeatThread_id, NULL, (*protoOpera)->heartbeat, self);				
 		if (err != 0) { 				
-			printf(" can't create thread:%s\n", strerror(err)); 
+			ntylog(" can't create thread:%s\n", strerror(err)); 
 			exit(0);				
 		}
 	}
@@ -372,7 +372,7 @@ static void ntySetupRecvProcThread(void *self) {
 	if (self && proto && proto->onRecvCallback) {		
 		err = pthread_create(&recvThread_id, NULL, proto->onRecvCallback, self);				
 		if (err != 0) { 				
-			printf(" can't create thread:%s\n", strerror(err)); 
+			ntylog(" can't create thread:%s\n", strerror(err)); 
 			exit(0);				
 		}
 	}
@@ -381,7 +381,7 @@ static void ntySetupRecvProcThread(void *self) {
 static void ntySendLogin(void *self) {
 	NattyProtoOpera * const * protoOpera = self;
 
-	printf(" ntySendLogin %d\n", __LINE__);
+	ntylog(" ntySendLogin %d\n", __LINE__);
 	if (self && (*protoOpera) && (*protoOpera)->login) {
 		return (*protoOpera)->login(self);
 	}
@@ -418,7 +418,7 @@ int ntySendDataPacket(C_DEVID toId, U8 *data, int length) {
 #else
 	U8 *tempBuf = &buf[NTY_PROTO_DATAPACKET_CONTENT_IDX];
 	memcpy(tempBuf, data, length);
-	printf(" toId : %lld \n", toId);
+	ntylog(" toId : %lld \n", toId);
 	if (proto && (*protoOpera) && (*protoOpera)->proxyReq) {
 		(*protoOpera)->proxyReq(proto, toId, buf, length);
 		return 0;
@@ -458,7 +458,7 @@ void ntySetDevId(C_DEVID id) {
 	NattyProto* proto = ntyProtoInstance();
 	if (proto) {
 		proto->devid = id;
-		printf("ntySendLogin \n");
+		ntylog("ntySendLogin \n");
 		
 		ntySendLogin(proto);
 		ntySetupHeartBeatThread(proto); //setup heart proc
@@ -507,14 +507,14 @@ static void* ntyRecvProc(void *arg) {
 	fds.fd = ntyGetSocket(pNetwork);
 	fds.events = POLLIN;
 
-	printf(" ntyRecvProc %d\n", fds.fd);
+	ntylog(" ntyRecvProc %d\n", fds.fd);
 	while (1) {
 		ret = poll(&fds, 1, 5);
 		if (ret) {
 			bzero(buf, RECV_BUFFER_SIZE);
 			proto->recvLen = ntyRecvFrame(pNetwork, buf, RECV_BUFFER_SIZE, &addr);
 
-			printf("%d.%d.%d.%d:%d, length:%d --> %x, id:%lld\n", *(unsigned char*)(&addr.sin_addr.s_addr), *((unsigned char*)(&addr.sin_addr.s_addr)+1),													
+			ntylog("%d.%d.%d.%d:%d, length:%d --> %x, id:%lld\n", *(unsigned char*)(&addr.sin_addr.s_addr), *((unsigned char*)(&addr.sin_addr.s_addr)+1),													
 				*((unsigned char*)(&addr.sin_addr.s_addr)+2), *((unsigned char*)(&addr.sin_addr.s_addr)+3),													
 				addr.sin_port, proto->recvLen, buf[NTY_PROTO_TYPE_IDX], *(C_DEVID*)(&buf[NTY_PROTO_DEVID_IDX]));	
 			
@@ -548,7 +548,7 @@ static void* ntyRecvProc(void *arg) {
 				}
 		
 				proto->level = LEVEL_DATAPACKET;
-				//printf("NTY_PROTO_LOGIN_ACK\n");
+				//ntylog("NTY_PROTO_LOGIN_ACK\n");
 				
 			} else if (buf[NTY_PROTO_TYPE_IDX] == NTY_PROTO_DATAPACKET_REQ) {
 				//U16 cliCount = *(U16*)(&buf[NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_COUNT_IDX]);
@@ -558,7 +558,7 @@ static void* ntyRecvProc(void *arg) {
 				U32 ack = *(U32*)(&buf[NTY_PROTO_ACKNUM_IDX]);
 
 				memcpy(data, buf+NTY_PROTO_DATAPACKET_CONTENT_IDX, recByteCount);
-				printf(" recv:%s\n", data);
+				ntylog(" recv:%s\n", data);
 				
 				//sendProxyDataPacketAck(friId, ack);
 				if (buf[NTY_PROTO_MESSAGE_TYPE] == MSG_RET) {
@@ -577,7 +577,7 @@ static void* ntyRecvProc(void *arg) {
 					proto->onProxyCallback(proto->recvLen);
 				}
 			} else if (buf[NTY_PROTO_TYPE_IDX] == NTY_PROTO_DATAPACKET_ACK) {
-				printf(" send success\n");
+				ntylog(" send success\n");
 				if (proto->onProxySuccess) {
 					proto->onProxySuccess(0);
 				}

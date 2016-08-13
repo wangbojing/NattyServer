@@ -58,6 +58,21 @@
 #define WCHAR_WIDTH				2
 #define WORD_WIDTH				4
 
+#define NTY_DEBUG 	1
+#if (NTY_DEBUG == 1) //catcher 
+#define ntylog(format, ...) 		fprintf(stdout, format, ##__VA_ARGS__)
+#define ntydbg(format, ...) 		fprintf(stdout, format, ##__VA_ARGS__)
+#elif (NTY_DEBUG == 2) // Serial
+#define ntylog(format, ...)
+#define ntydbg(format, ...) 		
+#elif (NTY_DEBUG == 3) //Log file
+#define ntylog(format, ...)
+#define ntydbg(format, ...) 
+#else
+#define ntylog(format, ...)
+#define ntydbg(format, ...) 
+#endif
+
 
 typedef long long U64;
 typedef unsigned int U32;

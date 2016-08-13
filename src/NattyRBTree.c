@@ -408,7 +408,7 @@ static void ntyInOrderTraversalNotify(RBTree *T, RBTreeNode *node, C_DEVID selfI
 static void ntyInOrderTraversalForList(const RBTree *T, RBTreeNode *node, C_DEVID *list) {
 	if (node != T->nil) {
 		ntyInOrderTraversalForList(T, node->left, list);
-		//printf(" %lld ", node->key);
+		//ntylog(" %lld ", node->key);
 		//handle_FN(node->key);
 		*list = node->key;
 		ntyInOrderTraversalForList(T, node->right, ++list);
@@ -427,7 +427,7 @@ static void ntyInOrderMass(RBTree *T, RBTreeNode *node, HANDLE_MASS handle_FN, U
 
 static void ntyPreOrderTraversal(RBTree *T, RBTreeNode *node) {
 	if (node != T->nil) {
-		printf(" %lld ", node->key);
+		ntylog(" %lld ", node->key);
 		ntyPreOrderTraversal(T, node->left);
 		ntyPreOrderTraversal(T, node->right);
 	}
@@ -448,7 +448,7 @@ static void ntyPosOrderTraversal(RBTree *T, RBTreeNode *node) {
 	if (node != T->nil) {
 		ntyPosOrderTraversal(T, node->left);
 		ntyPosOrderTraversal(T, node->right);
-		printf(" %lld ", node->key);
+		ntylog(" %lld ", node->key);
 	}
 	return ;
 }
@@ -458,7 +458,7 @@ static int ntyPrintTreeByLevel(RBTree *T, RBTreeNode *node, int level) {
 		return 0;
 	}
 	if (0 == level) {
-		printf(" %lld color:%d  %s\n", node->key, node->color, (char*)node->value);
+		ntylog(" %lld color:%d  %s\n", node->key, node->color, (char*)node->value);
 		return 1;
 	}
 
@@ -515,7 +515,10 @@ static void *pRBTree = NULL; //Singleton
 
 void* ntyRBTreeInstance(void) {
 	if (pRBTree == NULL) {
-		pRBTree = New(pNtyRBTreeOpera);
+		void *pTree = New(pNtyRBTreeOpera);
+		if ((unsigned long)NULL != cmpxchg((void*)(&pRBTree), (unsigned long)NULL, (unsigned long)pTree, WORD_WIDTH)) {
+			Delete(pTree);
+		}
 	}
 	return pRBTree;
 }
@@ -705,7 +708,7 @@ int main() {
 		NattyRBTreeInsert(T, node);
 	}
 
-	printf("\n");
+	ntylog("\n");
 
 	for (i = 0;i < count;i ++) {
 		node = ntyRBTreeSearch(T, keyArray[i]);
@@ -729,23 +732,23 @@ int main() {
 	int size = ntFriendsTreeGetNodeCount(pRBTree);
 	C_DEVID *list = ntyFriendsTreeGetAllNodeList(pRBTree);
 	for (i = 0;i < size;i ++) {
-		printf("  %lld, ", (C_DEVID)(*(list+i)));
+		ntylog("  %lld, ", (C_DEVID)(*(list+i)));
 		
 	}
 	free(list);
-	printf(" addr: %x \n", list);
+	ntylog(" addr: %x \n", list);
 #endif		
 
 	void* v = ntyRBTreeInterfaceSearch(pRBTree, 19);
-	printf("\n value: %s\n", (char*)v);
+	ntylog("\n value: %s\n", (char*)v);
 
 
 	value = (char*)malloc(16);
 	strcpy(value, "nihaoma?");
-	printf(" Update: %d\n", ntyRBTreeInterfaceUpdate(pRBTree, 11, value));
+	ntylog(" Update: %d\n", ntyRBTreeInterfaceUpdate(pRBTree, 11, value));
 
 	v = ntyRBTreeInterfaceSearch(pRBTree, 11);
-	printf("\n value: %s\n", (char*)v);
+	ntylog("\n value: %s\n", (char*)v);
 
 	ntyRBTreeInterfaceDelete(pRBTree, 18);
 

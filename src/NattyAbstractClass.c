@@ -103,7 +103,7 @@ unsigned long cmpxchg(void *addr, unsigned long _old, unsigned long _new, int si
 		}
 		case WORD_WIDTH: {
 			__asm__ volatile (
-		        "lock; cmpxchgl %1, %2"
+		        "lock; cmpxchg %1, %2"
 		        : "=a" (prev)
 		        : "r" (_new), "m" (*_ptr), "0" (_old)
 		        : "memory");

@@ -175,7 +175,7 @@ int ntySendFriendsTreeIpAddr(void *client, U8 reqType) {
 
 	C_DEVID *friends = ntyFriendsTreeGetAllNodeList(pClient->friends);
 	U16 Count = ntyFriendsTreeGetNodeCount(pClient->friends);
-	printf("Count : %d\n", Count);
+	ntylog("Count : %d\n", Count);
 	for (i = 0;i < Count;i ++) {
 		UdpClient *cliValue = ntyRBTreeInterfaceSearch(pRBTree, *(friends+i));
 		if (cliValue != NULL) {
@@ -265,7 +265,7 @@ int ntyRouteUserData(C_DEVID friendId, U8 *buffer) {
 	memcpy(&notify[NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_COUNT_IDX], &cliCount, 2);
 	memcpy(&notify[NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_IDX], &buffer[NTY_PROTO_DATAPACKET_CONTENT_IDX(cliCount)], recByteCount);
 
-	printf(" recByteCount:%d  notify:%s\n", recByteCount, notify+NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_IDX);
+	ntylog(" recByteCount:%d  notify:%s\n", recByteCount, notify+NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_IDX);
 	length = NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_IDX + recByteCount;
 	*(U32*)(&notify[length]) = ntyGenCrcValue(notify, length);
 	length += sizeof(U32);
