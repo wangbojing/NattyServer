@@ -41,64 +41,40 @@
  *
  */
 
+#ifndef __NATTY_TCP_SERVER_H__
+#define __NATTY_TCP_SERVER_H__
 
 
-#ifndef __NATTY_FILTER_H__
-#define __NATTY_FILTER_H__
 
 #include "NattyUdpServer.h"
-#include "NattyProtocol.h"
-#include "NattyAbstractClass.h"
 
-typedef struct {
-	size_t size;
-	void* (*ctor)(void *_self, va_list *params);
-	void* (*dtor)(void *_self);
-	void (*setSuccessor)(void *_self, void *succ);
-	void* (*getSuccessor)(const void *_self);
-	void (*handleRequest)(const void *_self, unsigned char *buffer, int length,const void* obj);
-} ProtocolFilter;
+#define NATTY_TCP_SERVER_PORT			NATTY_UDP_SERVER_PORT
+#define NATTY_CONNECTION_BACKLOG 		8
+#define NATTY_SOCKET_READ_TIMEOUT		10
+#define NATTY_SOCKET_WRITE_TIMEOUT		10
 
-typedef struct {
-	const void *_;
-	void *succ;
-} Packet;
-
-void* ntyProtocolFilterInit(void);
-void* ntyProtocolFilterInstance(void);
-
-void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length,const void *obj);
-void ntyProtocolFilterRelease(void *_filter);
-
-void ntyGenCrcTable(void);
-U32 ntyGenCrcValue(U8 *buf, int length);
-
-void ntyProtoHttpProxyTransform(C_DEVID fromId, C_DEVID toId, U8 *buf, int length);
+typedef Client TcpClient;
+typedef Server TcpServer;
+typedef ServerHandle TcpServerHandle; 
+#if 0
+typedef struct _TcpClient {
+	int fd;
+	struct event_base *evbase;
+	struct bufferevent *buf_ev;
+	struct evbuffer *output_buffer;
+} TcpClient;
+#endif
 
 
-typedef struct _Node {
-	C_DEVID clientId;
-	struct _Node *next;
-} Node;
 
-typedef struct {
-	const void *_;
-	Node *head;
-	int count;
-} SingleList;
+void* ntyTcpServerInstance(void);
+int ntyTcpServerRun(const void *arg);
 
-
-typedef struct {
-	size_t size;
-	void* (*ctor)(void *_self, va_list *params);
-	void* (*dtor)(void *_self);
-	void (*insert)(void *_self, int id);
-	int (*remove)(void *_self, int id);
-	C_DEVID* (*iterator)(const void *_self);
-	void (*print)(const void *_self);
-} List;
 
 
 #endif
+
+
+
 
 

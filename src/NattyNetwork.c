@@ -55,6 +55,7 @@
 #include <poll.h>
 #include <sys/time.h>
 #include <signal.h>
+#include <errno.h>
 
 #include "NattyNetwork.h"
 
@@ -114,7 +115,7 @@ void ntyMessageOnDataLost(void) {
 	////////////////////////////////////////////////////////////
 	//ntyCancelTimer();
 	////////////////////////////////////////////////////////////
-	ntylog("ntyMessageOnDataLost\n");
+	ntydbg("ntyMessageOnDataLost\n");
 
 	void *pNetwork = ntyNetworkInstance();
 	U8 u8ReqType = ntyGetReqType(pNetwork);
@@ -171,7 +172,7 @@ static void* ntyNetworkCtor(void *_self, va_list *params) {
 	if (network->sockfd < 0) {
 		error(" ERROR opening socket");
 	}
-	ntylog(" sockfd %d, %s, %d\n",network->sockfd, __FILE__, __LINE__);
+	ntydbg(" sockfd %d, %s, %d\n",network->sockfd, __FILE__, __LINE__);
 #endif
 	
 	return network;
@@ -257,15 +258,98 @@ static const NetworkOpera ntyNetworkOpera = {
 	ntyNetworkSendFrame,
 	ntyNetworkRecvFrame,
 	ntyNetworkResendFrame,
+	NULL,
 };
 
 const void *pNtyNetworkOpera = &ntyNetworkOpera;
+
+
+
+static void* ntyTcpNetworkCtor(void *self, va_list *params) {
+	int res = -1;
+	Network *network = self;
+
+	if ((network->sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+		ntydbg("Socket Error:%s\n", strerror(errno));
+		return network;
+	}
+
+	memset(&network->addr, 0, sizeof(network->addr));
+	network->addr.sin_family = AF_INET;
+	network->addr.sin_port = htons(SERVER_PORT);
+	network->addr.sin_addr.s_addr = inet_addr(SERVER_NAME);
+
+	res = connect(network->sockfd, (struct sockaddr*)(&network->addr), sizeof(struct sockaddr));
+	ntydbg("connect failed :%d --> %s\n", res, strerror(errno));
+	if (-1 == res) {
+		close(network->sockfd);
+		network->sockfd = -1;
+		return network;
+	}
+
+	return network;
+}
+
+static void* ntyTcpNetworkDtor(void *self) {
+	Network *network = self;
+	close(network->sockfd);
+	return self;
+}
+
+static int ntyTcpNetworkSendFrame(void *self, struct sockaddr_in *to, U8 *buf, int len) {
+	Network *network = self;
+	
+	memcpy(&network->addr, to, sizeof(struct sockaddr_in));
+	bzero(network->buffer, CACHE_BUFFER_SIZE);
+	memcpy(network->buffer, buf, len);
+	
+	if (buf[NTY_PROTO_MESSAGE_TYPE] == MSG_REQ) {
+		*(U32*)(&network->buffer[NTY_PROTO_ACKNUM_IDX]) = network->ackNum;
+	}
+	network->length = len;
+	*(U32*)(&network->buffer[len-sizeof(U32)]) = ntyGenCrcValue(network->buffer, len-sizeof(U32));
+	
+	return send(network->sockfd, network->buffer, len, 0);
+}
+
+static int ntyTcpNetworkRecvFrame(void *self, U8 *buf, int len, struct sockaddr_in *from) {
+	Network *network = self;
+	int nSize = sizeof(struct sockaddr_in);
+
+	getpeername(network->sockfd,(struct sockaddr*)from, &nSize);
+	
+	return recv(network->sockfd, buf, len, 0);
+}
+
+static int ntyTcpNetworkReconnect(void *self) {
+	Network *network = self;
+
+	if (0 != connect(network->sockfd, (struct sockaddr*)(&network->addr), sizeof(struct sockaddr))) {
+		close(network->sockfd);
+		network->sockfd = -1;
+		return -1;
+	}
+	return 0;
+}
+
+
+static const NetworkOpera ntyTcpNetworkOpera = {
+	sizeof(Network),
+	ntyTcpNetworkCtor,
+	ntyTcpNetworkDtor,
+	ntyTcpNetworkSendFrame,
+	ntyTcpNetworkRecvFrame,
+	NULL,
+	ntyTcpNetworkReconnect,
+};
+const void *pNtyTcpNetworkOpera = &ntyTcpNetworkOpera;
+
 
 static void *pNetworkOpera = NULL;
 
 void *ntyNetworkInstance(void) {
 	if (pNetworkOpera == NULL) {
-		pNetworkOpera = New(pNtyNetworkOpera);
+		pNetworkOpera = New(pNtyTcpNetworkOpera);
 	}
 	return pNetworkOpera;
 }
@@ -273,6 +357,8 @@ void *ntyNetworkInstance(void) {
 void ntyNetworkRelease(void *self) {	
 	return Delete(self);
 }
+
+
 
 
 int ntySendFrame(void *self, struct sockaddr_in *to, U8 *buf, int len) {
@@ -291,6 +377,10 @@ int ntyRecvFrame(void *self, U8 *buf, int len, struct sockaddr_in *from) {
 		return (*pNetworkOpera)->recv(self, buf, len, from);
 	}
 	return -2;
+}
+
+int ntyReconnect(void *self) {
+	return ntyTcpNetworkReconnect(self);
 }
 
 int ntyGetSocket(void *self) {

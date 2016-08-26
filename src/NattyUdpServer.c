@@ -45,11 +45,7 @@
 
 #include "NattyFilter.h"
 #include "NattyUdpServer.h"
-#if 0 
-#include "NattyWorkQueue.h"
-#else
 #include "NattyThreadPool.h"
-#endif
 
 void error(char *msg) {  
 	perror(msg);  
@@ -88,7 +84,7 @@ void* ntyUdpServerDtor(void *_self) {
 	return self;
 }
 
-static void freeRequestPacket(void *pReq) {
+void freeRequestPacket(void *pReq) {
 	RequestPacket *req = pReq;
 
 	if (req != NULL) {
@@ -102,7 +98,7 @@ static void freeRequestPacket(void *pReq) {
 	}
 }
 
-static void* allocRequestPacket(void) {
+void* allocRequestPacket(void) {
 	RequestPacket *req = (RequestPacket*)malloc(sizeof(RequestPacket));
 	if (req == NULL) {
 		perror("malloc Request Packet failed\n");
@@ -175,8 +171,8 @@ int ntyUdpServerProcess(const void *_self) {
 			// proccess
 			// i think process protocol and search client id from rb-tree
 			req->client->sockfd = self->sockfd;
+			req->client->clientType = PROTO_TYPE_UDP;
 			req->length = (U16)n;
-
 			req->buffer = (U8*)malloc(n);
 			if (req->buffer == NULL) {
 				perror("malloc Recv Buffer failed\n");
@@ -223,6 +219,7 @@ static const UdpServerOpera ntyUdpServer = {
 };
 
 static const void *pNtyUdpServer = &ntyUdpServer;
+static void *pUdpServer = NULL;
 
 int ntyUdpServerRun(const void *arg) {
 	const UdpServerOpera * const *pServerConf = arg;
@@ -243,10 +240,21 @@ int ntyClientCompare(const UdpClient *clientA, const UdpClient *clientB) {
 }
 
 int ntySendBuffer(const UdpClient *client, unsigned char *buffer, int length) {
-	return sendto(client->sockfd, buffer, length, 0, (struct sockaddr *)&client->addr, sizeof(struct sockaddr_in));
+	if (client->clientType == PROTO_TYPE_UDP) {
+		return sendto(client->sockfd, buffer, length, 0, (struct sockaddr *)&client->addr, sizeof(struct sockaddr_in));
+	} else if (client->clientType == PROTO_TYPE_TCP) {
+		return send(client->sockfd, buffer, length, 0);
+	}
+	return -1;
 }
 
-const void* ntyUdpServerInstance(void) {
-	return pNtyUdpServer;
+void* ntyUdpServerInstance(void) {
+	if (pUdpServer == NULL) {
+		void *pServer = New(pNtyUdpServer);
+		if ((unsigned long)NULL != cmpxchg((void*)(&pUdpServer), (unsigned long)NULL, (unsigned long)pServer, WORD_WIDTH)) {
+			Delete(pServer);
+		}
+	}
+	return pUdpServer;
 }
 

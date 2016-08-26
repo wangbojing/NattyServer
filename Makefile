@@ -7,7 +7,7 @@ DEBUG = $(shell ls -l | grep ^d | awk '{if($$9 == "release") print $$9}')
 ROOT_DIR = $(shell pwd)
 BIN_DIR = $(ROOT_DIR)/bin
 
-FLAG = -lpthread -lcurl -O3 -I $(ROOT_DIR)/include #-Wunused-result
+FLAG = -lpthread -lcurl -lzlog -lev -O3 -I $(ROOT_DIR)/include #-Wunused-result
 
 CUR_SOURCE = ${wildcard *.c}
 CUR_OBJS = ${patsubst %.c, %.o, $(CUR_SOURCE)}

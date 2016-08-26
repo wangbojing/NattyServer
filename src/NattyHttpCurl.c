@@ -44,6 +44,7 @@
 
 #include "NattyHttpCurl.h"
 #include "NattyDaveMQ.h"
+#include "NattyFilter.h"
 
 #include <curl/curl.h>
 #include <string.h>
@@ -52,7 +53,7 @@
 size_t ntyHttpQJKFallenHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
 	VALUE_TYPE *tag = stream;
 
-	printf("buffer:%s, %d, %d\n", (char*)buffer, size*nmemb, strlen(buffer));
+	printf("buffer:%s, %ld\n", (char*)buffer, size*nmemb);
 	free(tag);
 
 	return size*nmemb;
@@ -127,6 +128,7 @@ size_t ntyHttpGaodeWifiCellAPIHandleResult(void* data, size_t size, size_t nmemb
 	U8 u8Lat[PATTERN_COUNT] = {0};
 	U8 u8Lon[PATTERN_COUNT] = {0};
 	U8 *buffer = data;
+	U8 u8ResultBuffer[256] = {0};
 	
 	ntyKMP(buffer, len, pattern_start, len_start, start_matches);
 	ntyKMP(buffer, len, pattern_end, len_end, end_matches);
@@ -150,6 +152,9 @@ size_t ntyHttpGaodeWifiCellAPIHandleResult(void* data, size_t size, size_t nmemb
 			memcpy(u8Lat, location+k, strlen(location)-k);
 			
 			ntylog("lat:%s, lon:%s\n", u8Lat, u8Lon);
+			
+			sprintf(u8ResultBuffer+NTY_PROTO_DATAPACKET_CONTENT_IDX, "Set Location %s:%s:3", u8Lat, u8Lon);
+			ntyProtoHttpProxyTransform(tag->fromId, tag->toId, u8ResultBuffer, strlen(u8ResultBuffer+NTY_PROTO_DATAPACKET_CONTENT_IDX));
 
 			break;
 		}
@@ -228,6 +233,7 @@ size_t ntyHttpMtkQuickLocationHandleResult(void* data, size_t size, size_t nmemb
 	U8 u8Lat[PATTERN_COUNT] = {0};
 	U8 u8Lon[PATTERN_COUNT] = {0};
 	U8 *buffer = data;
+	U8 u8ResultBuffer[256] = {0};
 	
 	ntyKMP(buffer, len, pattern_start, len_start, start_matches);
 	ntyKMP(buffer, len, pattern_end, len_end, end_matches);
@@ -243,7 +249,7 @@ size_t ntyHttpMtkQuickLocationHandleResult(void* data, size_t size, size_t nmemb
 			for (j = start_matches[i]+len_start;j < end_matches[i];j ++) {
 				location[(k >= LOCATION_INFO_COUNT ? 0 : k++)] = buffer[j];
 			}
-			ntylog("location:%s\n", location);
+			//ntylog("location:%s\n", location);
 
 			k = 0;
 			while (location[k++] != ',');
@@ -252,6 +258,10 @@ size_t ntyHttpMtkQuickLocationHandleResult(void* data, size_t size, size_t nmemb
 			memcpy(u8Lat, location+k, strlen(location)-k);
 			
 			ntylog("lat:%s, lon:%s\n", u8Lat, u8Lon);
+			sprintf(u8ResultBuffer+NTY_PROTO_DATAPACKET_CONTENT_IDX, "Set Location %s:%s:3", u8Lat, u8Lon);
+			ntyProtoHttpProxyTransform(tag->fromId, tag->toId, u8ResultBuffer, strlen(u8ResultBuffer+NTY_PROTO_DATAPACKET_CONTENT_IDX));
+
+			break;
 		}
 	}
 

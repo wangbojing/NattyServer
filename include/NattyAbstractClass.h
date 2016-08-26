@@ -58,6 +58,8 @@
 #define WCHAR_WIDTH				2
 #define WORD_WIDTH				4
 
+//ntyLogInfo(format, ##__VA_ARGS__)//
+
 #define NTY_DEBUG 	1
 #if (NTY_DEBUG == 1) //catcher 
 #define ntylog(format, ...) 		fprintf(stdout, format, ##__VA_ARGS__)

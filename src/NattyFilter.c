@@ -291,6 +291,7 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 		if (cliValue == NULL) {			
 			UdpClient *pClient = (UdpClient*)malloc(sizeof(UdpClient));
 			pClient->sockfd = client->sockfd;
+			pClient->clientType = client->clientType;
 			pClient->addr.sin_addr.s_addr = client->addr.sin_addr.s_addr;
 			pClient->addr.sin_port = client->addr.sin_port;
 			pClient->ackNum = ackNum;
@@ -318,7 +319,7 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 						
 			//notify friends 	
 			// this step hive off
-			//ntyFriendsTreeTraversalNotify(pClient->friends, key, ntyNotifyFriendMessage);
+			ntyFriendsTreeTraversalNotify(pClient->friends, key, ntyNotifyFriendMessage);
 			//send friends list to this client.
 			//ntyFriendsTreeGetAllNodeList
 			ntySendFriendsTreeIpAddr(pClient, 1);
@@ -327,6 +328,7 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 		} else if ((cliValue != NULL) && (!ntyClientCompare (client, cliValue))) {
 			UdpClient *pClient = cliValue;//(UdpClient*)malloc(sizeof(UdpClient));
 			pClient->sockfd = client->sockfd;
+			pClient->clientType = client->clientType;
 			pClient->addr.sin_addr.s_addr = client->addr.sin_addr.s_addr;
 			pClient->addr.sin_port = client->addr.sin_port;
 			pClient->ackNum = ackNum;
@@ -371,6 +373,7 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 		}
 		//ntylog("Login deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);		
 		//send login ack
+		
 		ack[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
 		ack[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_ACK;
 		ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_LOGIN_ACK;
@@ -413,6 +416,7 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 		if (cliValue == NULL) {			
 			UdpClient *pClient = (UdpClient*)malloc(sizeof(UdpClient));
 			pClient->sockfd = client->sockfd;
+			pClient->clientType = client->clientType;
 			pClient->addr.sin_addr.s_addr = client->addr.sin_addr.s_addr;
 			pClient->addr.sin_port = client->addr.sin_port;
 			pClient->ackNum = ackNum;
@@ -452,6 +456,7 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 			int i = 0, length = 0;
 			UdpClient *pClient = cliValue;//(UdpClient*)malloc(sizeof(UdpClient));
 			pClient->sockfd = client->sockfd;
+			pClient->clientType = client->clientType;
 			pClient->addr.sin_addr.s_addr = client->addr.sin_addr.s_addr;
 			pClient->addr.sin_port = client->addr.sin_port;
 			pClient->ackNum = ackNum;
@@ -499,13 +504,14 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 		ntylog("HeartBeat deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);
 		
 		//send heartbeat ack
-		ack[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
-		ack[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_ACK;
-		ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_HEARTBEAT_ACK;
-		*(U32*)(&ack[NTY_PROTO_ACKNUM_IDX]) = ackNum;
-		*(U32*)(&ack[NTY_PROTO_LOGIN_REQ_CRC_IDX]) = ntyGenCrcValue(ack, NTY_PROTO_LOGIN_REQ_CRC_IDX);
-		ntySendBuffer(client, ack, NTY_PROTO_LOGIN_REQ_CRC_IDX+sizeof(U32));
-
+		if (client->clientType == PROTO_TYPE_UDP) {
+			ack[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+			ack[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_ACK;
+			ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_HEARTBEAT_ACK;
+			*(U32*)(&ack[NTY_PROTO_ACKNUM_IDX]) = ackNum;
+			*(U32*)(&ack[NTY_PROTO_LOGIN_REQ_CRC_IDX]) = ntyGenCrcValue(ack, NTY_PROTO_LOGIN_REQ_CRC_IDX);
+			ntySendBuffer(client, ack, NTY_PROTO_LOGIN_REQ_CRC_IDX+sizeof(U32));
+		}
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
@@ -701,7 +707,7 @@ void ntyUserDataPacketHandleRequest(const void *_self, unsigned char *buffer, in
 #if 0
 			ntySendBuffer(destClient, buffer, length);
 #else
-			if (0 >= ntyClassifyMessageType(client->devId, data, recByteCount)) {
+			if (0 >= ntyClassifyMessageType(client->devId, destClient->devId, data, recByteCount)) {
 				ntySendBuffer(destClient, buffer, length);
 			}
 #endif
@@ -935,7 +941,7 @@ void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length, 
 	U32 u32Crc = ntyGenCrcValue(buffer, length-4);
 	U32 u32ClientCrc = *((U32*)(buffer+length-4));
 
-	//ntylog(" client:%x, server:%x", u32ClientCrc, u32Crc);
+	ntydbg(" client:%x, server:%x, length:%d", u32ClientCrc, u32Crc, length);
 	if (u32Crc != u32ClientCrc) {
 		return ;
 	}
@@ -955,7 +961,10 @@ static void *ntyProtocolFilter = NULL;
 
 void* ntyProtocolFilterInstance(void) {
 	if (ntyProtocolFilter == NULL) {
-		ntyProtocolFilter = ntyProtocolFilterInit();
+		void* pFilter = ntyProtocolFilterInit();
+		if ((unsigned long)NULL != cmpxchg((void*)(&ntyProtocolFilter), (unsigned long)NULL, (unsigned long)pFilter, WORD_WIDTH)) {
+			Delete(pFilter);
+		}
 	}
 	return ntyProtocolFilter;
 }
@@ -992,6 +1001,34 @@ U32 ntyGenCrcValue(U8 *buf, int length) {
 
 	return u32CRC;
 }
+
+#if 1
+void ntyProtoHttpProxyTransform(C_DEVID fromId, C_DEVID toId, U8 *buf, int length) {
+	int n = 0;
+	void *pRBTree = ntyRBTreeInstance();
+	UdpClient *destClient = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, toId);
+	if (destClient == NULL) {
+		ntylog(" destClient is not exist\n");
+		return ;
+	}
+
+	buf[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_REQ;	
+	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
+	*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEVID_IDX]) = fromId;
+	*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEST_DEVID_IDX]) = toId;
+	
+	*(U16*)(&buf[NTY_PROTO_DATAPACKET_CONTENT_COUNT_IDX]) = (U16)length;
+	length += NTY_PROTO_DATAPACKET_CONTENT_IDX;
+
+	*(U32*)(&buf[length]) = ntyGenCrcValue(buf, length);
+	length += sizeof(U32);
+
+	ntySendBuffer(destClient, buf, length);
+	
+}
+
+#endif
 
 
 

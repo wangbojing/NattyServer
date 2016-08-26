@@ -146,6 +146,7 @@ static void* ntyThreadPoolCtor(void *_self, va_list *params) {
 
 	return pool;
 }
+
 static void* ntyThreadPoolDtor(void *_self) {
 	ThreadPool *pool = (ThreadPool*)_self;
 
@@ -177,7 +178,10 @@ static void *pThreadPool = NULL;
 
 void *ntyThreadPoolInstance(void) {
 	if (pThreadPool == NULL) {
-		pThreadPool = New(pNtyThreadPoolOpera);
+		void *pPool = New(pNtyThreadPoolOpera);
+		if ((unsigned long)NULL != cmpxchg((void*)(&pThreadPool), (unsigned long)NULL, (unsigned long)pPool, WORD_WIDTH)) {
+			Delete(pPool);
+		}
 	}
 	return pThreadPool;
 }

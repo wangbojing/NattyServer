@@ -219,7 +219,7 @@ void ntyDaveMqWorkerRelease(void) {
 void ntyDaveMqStart(void) {
 	pthread_t thread;
 	int rc = -1;
-	ntydbg("ntyDaveMqStart\n");
+	ntydbg("\n ... Dave Message Queue Start ...\n");
 	void *Queue= ntyDaveQueueInstance();
 
 	rc = pthread_create(&thread, NULL, ntyDeQueueThread, (void*)Queue);
@@ -282,7 +282,7 @@ void ntyDaveMqPushWorker(void *arg) {
 	
 }
 
-int ntyDaveMqEnQueue(void *Queue, C_DEVID fromId, MESSAGE_TYPE type, U8 *data, int length) {
+int ntyDaveMqEnQueue(void *Queue, C_DEVID fromId, C_DEVID toId, MESSAGE_TYPE type, U8 *data, int length) {
 	DaveQueueHandle * const * handle = Queue;
 
 	if (Queue && (*handle) && (*handle)->enqueue) {
@@ -291,6 +291,7 @@ int ntyDaveMqEnQueue(void *Queue, C_DEVID fromId, MESSAGE_TYPE type, U8 *data, i
 		tag->length = length;
 		tag->Type = type;
 		tag->fromId = fromId;
+		tag->toId = toId;
 
 		(*handle)->enqueue(Queue, tag);
 #if 0
@@ -302,15 +303,15 @@ int ntyDaveMqEnQueue(void *Queue, C_DEVID fromId, MESSAGE_TYPE type, U8 *data, i
 	return -1;
 }
 
-int ntyPushDaveMessageQueue(MESSAGE_TYPE type, C_DEVID fromId, U8 *data, int length) {
+int ntyPushDaveMessageQueue(MESSAGE_TYPE type, C_DEVID fromId, C_DEVID toId, U8 *data, int length) {
 	void *Queue = ntyDaveQueueInstance();
 	if (Queue == NULL) return -2;
 
-	return ntyDaveMqEnQueue(Queue, fromId, type, data, length);
+	return ntyDaveMqEnQueue(Queue, fromId, toId, type, data, length);
 }
 
 
-int ntyClassifyMessageType(C_DEVID fromId, U8 *data, int length) {
+int ntyClassifyMessageType(C_DEVID fromId, C_DEVID toId, U8 *data, int length) {
 	int i = 0;
 	
 	if (length <= 4) return -5;
@@ -327,18 +328,18 @@ int ntyClassifyMessageType(C_DEVID fromId, U8 *data, int length) {
 
 	if (0 == strncmp(NTY_HTTP_GET_HANDLE_STRING, data, 3)) {
 		if (0 == strncmp(data+4, HTTP_QJK_BASE_URL, strlen(HTTP_QJK_BASE_URL))) {
-			return ntyPushDaveMessageQueue(MSG_TYPE_QJK_FALLEN, fromId, data+4, length);
+			return ntyPushDaveMessageQueue(MSG_TYPE_QJK_FALLEN, fromId, toId, data+4, length);
 		} else if (0 == strncmp(data+4, HTTP_GAODE_BASE_URL, strlen(HTTP_GAODE_BASE_URL))) {
-			return ntyPushDaveMessageQueue(MSG_TYPE_GAODE_WIFI_CELL_API, fromId, data+4, length);
+			return ntyPushDaveMessageQueue(MSG_TYPE_GAODE_WIFI_CELL_API, fromId, toId, data+4, length);
 		}
 	} else if (0 == strncmp(NTY_HTTP_POST_HANDLE_STRING, data, 4)) {
 
 	} else if (0 == strncmp(NTY_HTTP_RET_HANDLE_STRING, data, 3)) {
 		if (0 == strncmp(data+4, HTTP_GAODE_BASE_URL, strlen(HTTP_GAODE_BASE_URL))) {
-			return ntyPushDaveMessageQueue(MSG_TYPE_MTK_QUICKLOCATION, fromId, data, length);
+			return ntyPushDaveMessageQueue(MSG_TYPE_MTK_QUICKLOCATION, fromId, toId, data, length);
 		}
 	} else {
-		return 0;
+		return -4;
 	}
 }
 

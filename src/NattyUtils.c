@@ -53,11 +53,17 @@
 #include "NattyProtocol.h"
 
 
-void ntyTimeCheckStamp(U8 *buf) {
+TimeStamp* ntyGetSystemTime(void) {
 	time_t timer;
-	struct tm *tblock;
+	TimeStamp *tblock;
 	timer = time(NULL);
 	tblock = localtime(&timer);
+
+	return tblock;
+}
+
+void ntyTimeCheckStamp(U8 *buf) {
+	struct tm *tblock = ntyGetSystemTime();
 
 	buf[NTY_PROTO_TIMECHECK_YEAR_IDX] = (U8)(tblock->tm_year % 100);
 	buf[NTY_PROTO_TIMECHECK_MONTH_IDX] = (U8)(tblock->tm_mon);

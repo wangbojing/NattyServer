@@ -64,9 +64,9 @@
 
 #define NATTY_UDP_SERVER		8888
 #define RECV_BUFFER_SIZE 		1048
+#define NATTY_UDP_SERVER_PORT	NATTY_UDP_SERVER
 
-
-
+#if 0
 typedef struct _UdpClient {
 	int sockfd;
 	struct sockaddr_in addr;
@@ -75,31 +75,67 @@ typedef struct _UdpClient {
 	void *friends; //client id list for this key
 } UdpClient;
 
-
 typedef struct _UdpServer {
 	const void *_;
 	int sockfd;
 	struct sockaddr_in addr;
 } UdpServer;
 
-typedef struct _UdpServerOpera {
+#else
+
+typedef enum _CLIENT_TYPE {
+	PROTO_TYPE_START = 0x0,
+	PROTO_TYPE_TCP = PROTO_TYPE_START,
+	PROTO_TYPE_UDP,
+	PROTO_TYPE_END = PROTO_TYPE_UDP,
+	PROTO_TYPE_COUNT
+} CLIENT_TYPE;
+
+typedef struct _Client {
+	int sockfd;
+	struct sockaddr_in addr;
+	C_DEVID devId; //client id use for rb-tree key
+	U32 ackNum;
+	void *friends; //client id list for this key
+	U8 clientType; //UDP / TCP
+} Client;
+
+typedef Client UdpClient;
+
+typedef struct _Server {
+	const void *_;
+	int sockfd;
+	struct sockaddr_in addr;
+} Server;
+
+typedef Server UdpServer;
+
+typedef struct _ServerHandle {
 	size_t size;
 	void* (*ctor)(void *_self, va_list *params);
 	void* (*dtor)(void *_self);
 	int (*process)(const void *_self);
-} UdpServerOpera;
+} ServerHandle;
+
+typedef ServerHandle UdpServerOpera;
+
+#endif
+
+
 
 
 typedef struct _RequestPacket {
-	UdpClient *client;
+	Client *client;
 	U8 *buffer;
 	U16 length;
 } RequestPacket;
 
 int ntyUdpServerRun(const void *arg);
-const void* ntyUdpServerInstance(void);
+void* ntyUdpServerInstance(void);
 int ntyClientCompare(const UdpClient *clientA, const UdpClient *clientB);
 int ntySendBuffer(const UdpClient *client, unsigned char *buffer, int length);
+void* allocRequestPacket(void);
+void freeRequestPacket(void *pReq);
 
 
 

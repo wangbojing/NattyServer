@@ -50,12 +50,16 @@
 #include "NattyLetter.h"
 #include "NattyAbstractClass.h"
 
+
+typedef struct tm TimeStamp;
+
 void ntyDisplay(void);
 
 void ntyFree(void *p);
 void *ntyMalloc(size_t size);
 
 U32 ntyKMP(const char *text,const U32 text_length, const char *pattern,const U32 pattern_length, U32 *matches) ;
+TimeStamp* ntyGetSystemTime(void);
 
 
 #endif

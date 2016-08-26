@@ -71,6 +71,7 @@ typedef struct _MESSAGETAG {
 	U8 Tag[DAVE_MESSAGE_LENGTH];
 	int length;
 	C_DEVID fromId;
+	C_DEVID toId;
 } MessageTag;
 
 //typedef int VALUE_TYPE;
@@ -100,7 +101,7 @@ typedef struct _DaveQueueHandle {
 
 void *ntyDaveMqWorkerInstance(void);
 void ntyDaveMqPushWorker(void *arg) ;
-int ntyClassifyMessageType(C_DEVID fromId, U8 *data, int length);
+int ntyClassifyMessageType(C_DEVID fromId, C_DEVID toId, U8 *data, int length);
 
 void ntyDaveMqStart(void);
 
