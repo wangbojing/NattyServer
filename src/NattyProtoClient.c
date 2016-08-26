@@ -590,7 +590,7 @@ static void* ntyRecvProc(void *arg) {
 					proto->onProxyCallback(proto->recvLen);
 				}
 			} else if (buf[NTY_PROTO_TYPE_IDX] == NTY_PROTO_DATAPACKET_ACK) {
-				ntydbg(" send success\n");
+				//ntydbg(" send success\n");
 				if (proto->onProxySuccess) {
 					proto->onProxySuccess(0);
 				}
