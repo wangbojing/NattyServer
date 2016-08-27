@@ -293,6 +293,7 @@ static void* ntyTcpNetworkCtor(void *self, va_list *params) {
 static void* ntyTcpNetworkDtor(void *self) {
 	Network *network = self;
 	close(network->sockfd);
+	network->sockfd = -1;
 	return self;
 }
 
@@ -323,10 +324,9 @@ static int ntyTcpNetworkRecvFrame(void *self, U8 *buf, int len, struct sockaddr_
 
 static int ntyTcpNetworkReconnect(void *self) {
 	Network *network = self;
-
 	if (0 != connect(network->sockfd, (struct sockaddr*)(&network->addr), sizeof(struct sockaddr))) {
-		close(network->sockfd);
-		network->sockfd = -1;
+		//close(network->sockfd);
+		//network->sockfd = -1;
 		return -1;
 	}
 	return 0;
@@ -344,7 +344,6 @@ static const NetworkOpera ntyTcpNetworkOpera = {
 };
 const void *pNtyTcpNetworkOpera = &ntyTcpNetworkOpera;
 
-
 static void *pNetworkOpera = NULL;
 
 void *ntyNetworkInstance(void) {
@@ -354,12 +353,11 @@ void *ntyNetworkInstance(void) {
 	return pNetworkOpera;
 }
 
-void ntyNetworkRelease(void *self) {	
-	return Delete(self);
+void* ntyNetworkRelease(void *self) {	
+	Delete(self);
+	pNetworkOpera = NULL;
+	return self;
 }
-
-
-
 
 int ntySendFrame(void *self, struct sockaddr_in *to, U8 *buf, int len) {
 	const NetworkOpera *const * pNetworkOpera = self;
@@ -380,6 +378,7 @@ int ntyRecvFrame(void *self, U8 *buf, int len, struct sockaddr_in *from) {
 }
 
 int ntyReconnect(void *self) {
+	ntydbg("ntyReconnect to server\n");
 	return ntyTcpNetworkReconnect(self);
 }
 

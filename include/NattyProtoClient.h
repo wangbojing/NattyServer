@@ -63,6 +63,7 @@ void ntySetProxyCallback(PROXY_CALLBACK cb);
 U8* ntyGetRecvBuffer(void);
 void ntySetDevId(C_DEVID id);
 int ntyGetRecvBufferSize(void);
+void ntyStartupClient(void);
 
 
 

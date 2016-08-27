@@ -319,7 +319,7 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 						
 			//notify friends 	
 			// this step hive off
-			ntyFriendsTreeTraversalNotify(pClient->friends, key, ntyNotifyFriendMessage);
+			//ntyFriendsTreeTraversalNotify(pClient->friends, key, ntyNotifyFriendMessage);
 			//send friends list to this client.
 			//ntyFriendsTreeGetAllNodeList
 			ntySendFriendsTreeIpAddr(pClient, 1);
@@ -941,7 +941,7 @@ void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length, 
 	U32 u32Crc = ntyGenCrcValue(buffer, length-4);
 	U32 u32ClientCrc = *((U32*)(buffer+length-4));
 
-	ntydbg(" client:%x, server:%x, length:%d", u32ClientCrc, u32Crc, length);
+	//ntydbg(" client:%x, server:%x, length:%d", u32ClientCrc, u32Crc, length);
 	if (u32Crc != u32ClientCrc) {
 		return ;
 	}

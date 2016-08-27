@@ -72,8 +72,12 @@ typedef struct _TIMEROPERA {
 #define TIMER_TICK		200
 #define MS(x)		(x*1000)
 
+#define RECONNECT_TICK		60
+#define S(x)		(MS(x)*1000)
 
 void *ntyNetworkTimerInstance(void);
+void *ntyReconnectTimerInstance(void);
+
 int ntyStartTimer(void *self,  HANDLE_TIMER func);
 int ntyStopTimer(void *self);
 

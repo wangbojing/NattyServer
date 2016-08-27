@@ -226,5 +226,44 @@ U32 ntyKMP(const char *text,const U32 text_length, const char *pattern,const U32
 
 #endif
 
+#if 1 //string operator
+
+
+U16 ntyU8ArrayToU16(U8 *buf) {
+	U16 dat1 = 0;
+	int i = 0;
+
+	for (i = 0;i < sizeof(U16);i ++) {
+		dat1 |= (buf[i] << 8*i);
+	}
+
+	return dat1;
+}
+
+
+U32 ntyU8ArrayToU32(U8 *buf) {
+	U32 dat2 = 0;
+	int i = 0;
+
+	for (i = 0;i < sizeof(U32);i ++) {
+		dat2 |= (buf[i] << 8*i);
+	}
+
+	return dat2;
+}
+
+C_DEVID ntyU8ArrayToU64(U8 *buf) {
+	C_DEVID id = 0;
+	int i = 0;
+
+	for (i = 0;i < sizeof(C_DEVID);i ++) {
+		id |= (buf[i] << 8*i);
+	}
+
+	return id;
+}
+
+
+#endif
 
 

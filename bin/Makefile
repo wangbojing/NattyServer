@@ -5,7 +5,7 @@ SERVER_OBJ = NattyAbstractClass.o NattyFilter.o NattyRBTree.o NattyServer.o \
 	NattySession.o NattyDaveMQ.o NattyHttpCurl.o NattyLetter.o NattyLog.o
 
 CLIENT_OBJ = NattyNetwork.o NattyRBTree.o NattyAbstractClass.o NattyTimer.o NattyProtoClient.o \
-	NattyClientMain.o
+	NattyClientMain.o NattyUtils.o NattyLetter.o 
 
 SERVER_BIN = NattyServer
 CLIENT_BIN = NattyClient

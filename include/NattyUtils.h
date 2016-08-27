@@ -61,6 +61,12 @@ void *ntyMalloc(size_t size);
 U32 ntyKMP(const char *text,const U32 text_length, const char *pattern,const U32 pattern_length, U32 *matches) ;
 TimeStamp* ntyGetSystemTime(void);
 
+U16 ntyU8ArrayToU16(U8 *buf);
+U32 ntyU8ArrayToU32(U8 *buf);
+C_DEVID ntyU8ArrayToU64(U8 *buf);
+
+
+
 
 #endif
 

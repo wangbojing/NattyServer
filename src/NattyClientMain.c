@@ -52,7 +52,7 @@ void ntyUserRecvCb(int len) {
 	U8 *buffer = ntyGetRecvBuffer();
 
 	//for (i = 0;i < len;i ++) {
-		ntydbg("len:%d, %s", len, buffer);
+	ntydbg("len:%d, %s ", len, buffer);
 	//}
 	ntydbg("\n");
 }
@@ -66,6 +66,14 @@ void ntySendFailed(int arg) {
 		ntydbg("STATUS_TIMEOUT\n");
 	else if (arg == STATUS_NOEXIST)
 		ntydbg("STATUS_NOEXIST\n");
+}
+
+void ntyDisconnect(int arg) {
+	ntydbg("ntyDisconnect\n");
+}
+
+void ntyReconnected(int arg) {
+	ntydbg("ntyReconnected\n");
 }
 
 
@@ -82,8 +90,11 @@ int main() {
 	ntySetProxyCallback(ntyUserRecvCb);
 	ntySetSendFailedCallback(ntySendFailed);
 	ntySetSendSuccessCallback(ntySendSuccess);
-
+	ntySetProxyDisconnect(ntyDisconnect);
+	ntySetProxyReconnect(ntyReconnected);
 	ntySetDevId(AppId);
+	
+	ntyStartupClient();
 	sleep(5);
 #if 1
 	while(1) {
@@ -93,9 +104,9 @@ int main() {
 
 		//memset(tempBuf, 0, RECV_BUFFER_SIZE);
 		//memcpy(tempBuf, url, strlen(url));
-		ntydbg(" tempBuf:%s\n", tempBuf);
 		int len = strlen(tempBuf);
-		ntySendMassDataPacket(tempBuf, len);
+		ntydbg(" tempBuf:%s, len:%d\n", tempBuf, len);
+		ntySendMassDataPacket(tempBuf, len-1);
 	}
 #endif
 }
