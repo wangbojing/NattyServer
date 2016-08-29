@@ -54,14 +54,16 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-
-typedef long long U64;
+#if 0
+typedef unsigned long long U64;
 typedef unsigned int U32;
 typedef unsigned short U16;
 typedef unsigned char U8;
 typedef long long C_DEVID;
+//typedef long long C_DEVID;
+#endif
 
-#define SERVER_NAME		"112.93.116.189" //"127.0.0.1" 
+#define SERVER_NAME		"127.0.0.1" //"112.93.116.189" //"127.0.0.1" 
 #define SERVER_PORT		8888
 #define RECV_BUFFER_SIZE	(1024+16)
 #define SENT_TIMEOUT	3

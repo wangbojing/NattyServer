@@ -76,11 +76,20 @@
 #endif
 
 
-typedef long long U64;
+typedef unsigned long long U64;
+typedef signed long long S64;
 typedef unsigned int U32;
 typedef unsigned short U16;
 typedef unsigned char U8;
 typedef long long C_DEVID;
+
+typedef   signed char   int8_t;
+typedef unsigned char  uint8_t;
+typedef   signed short  int16_t;
+typedef unsigned short uint16_t;
+typedef   signed int    int32_t;
+typedef unsigned int   uint32_t;
+
 typedef int (*HANDLE_CLIENTID)(void* client, C_DEVID id);
 typedef int (*HANDLE_NOTIFY)(C_DEVID from, C_DEVID to);
 typedef int (*HANDLE_MASS)(C_DEVID to, U8 *data, int length);

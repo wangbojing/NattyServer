@@ -556,6 +556,14 @@ static void ntyReconnectProc(int len) {
 	return ;
 }
 
+void ntyReleaseNetwork(void *network) {
+	network = ntyNetworkRelease(network);
+	network = NULL;
+
+	void *pConnTimer = ntyReconnectTimerInstance();	
+	ntyStartTimer(pConnTimer, ntyReconnectProc);
+}
+
 static void* ntyRecvProc(void *arg) {
 	struct sockaddr_in addr;
 	int clientLen = sizeof(struct sockaddr_in);
@@ -579,11 +587,7 @@ static void* ntyRecvProc(void *arg) {
 			if (proto->recvLen == 0) { //disconnect
 				//ntyReconnect(pNetwork);
 				//Release Network
-				pNetwork = ntyNetworkRelease(pNetwork);
-				pNetwork = NULL;
-
-				void *pConnTimer = ntyReconnectTimerInstance();	
-				ntyStartTimer(pConnTimer, ntyReconnectProc);
+				ntyReleaseNetwork(pNetwork);
 				
 				ntydbg("Prepare to Reconnect to server\n");
 				if (proto->onProxyDisconnect) {

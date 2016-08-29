@@ -46,6 +46,7 @@
 #include <string.h>
 
 #include "NattyRBTree.h"
+#include "NattyUdpServer.h"
 
 
 void ntyRBTreeLeftRotate(RBTree *T, RBTreeNode *x) {
@@ -368,6 +369,16 @@ int ntyRBTreeOperaDelete(void *_self, C_DEVID key) {
 	if (node == self->nil) return 1;
 
 	node = ntyRBTreeDelete(self, node);
+#if 1 //Release Friend list
+	if (node->value != NULL) {
+		UdpClient *client = node->value;
+		if (client->friends != NULL) {
+			client->friends = ntyRBTreeOperaDtor(client->friends);
+			client->friends = NULL;
+		}
+		free(node->value);
+	}
+#endif
 	free(node);
 	self->count --;
 
@@ -682,6 +693,9 @@ C_DEVID ntyFriendsTreeGetFristNodeKey(void *self) {
 	const RBTree *tree = self;
 	return tree->root->key;
 }
+
+
+//int nty
 
 
 #if 0

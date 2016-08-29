@@ -41,7 +41,7 @@
  *
  */
 
-
+#include "NattyHash.h"
 #include "NattyTcpServer.h"
 #include "NattyThreadPool.h"
 #include "NattyFilter.h"
@@ -88,13 +88,38 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 	} else if (rLen == 0) {
 		struct sockaddr_in client_addr;
 		int nSize = sizeof(struct sockaddr_in);
+#if 1
+		extern void* ntyRBTreeInstance(void);
+		extern int ntyRBTreeInterfaceDelete(void *self, C_DEVID key);
+#endif
+	
 		getpeername(watcher->fd,(struct sockaddr*)&client_addr, &nSize); 
 		
 		printf(" %d.%d.%d.%d:%d --> Client Disconnected\n", *(unsigned char*)(&client_addr.sin_addr.s_addr), *((unsigned char*)(&client_addr.sin_addr.s_addr)+1),													
 				*((unsigned char*)(&client_addr.sin_addr.s_addr)+2), *((unsigned char*)(&client_addr.sin_addr.s_addr)+3),													
 				client_addr.sin_port);	
-		//release client
-		
+		// release client
+		// search hash table for client key
+		sleep(1);
+		C_DEVID devid = ntySearchDevIdFromHashTable(&client_addr);
+		ntylog("devid : %d\n", devid);
+		int ret = ntyDeleteNodeFromHashTable(&client_addr, devid);
+		if (ret == -1) {
+			ntylog("Delete Node From Hash Table Parameter is Error");
+			return ;
+		} else if (ret == -2) {
+			ntylog("Hash Table Node is not Exist");
+		}
+
+		ntylog("Delete Node Success\n");
+		void *tree = ntyRBTreeInstance();
+		//ntyRBTreeOperaDelete
+		// delete rb-tree node
+		ntyRBTreeInterfaceDelete(tree, devid);
+
+		ntylog("RBTree Delete Node Success\n");
+		//close(watcher->fd);
+		//watcher->fd = -1;
 		ev_io_stop(loop, watcher);
 		free(watcher);
 	} else {
@@ -167,6 +192,8 @@ void ntyOnAcceptEvent(struct ev_loop *loop, struct ev_io *watcher, int revents){
 		*(unsigned char*)(&client_addr.sin_addr.s_addr), *((unsigned char*)(&client_addr.sin_addr.s_addr)+1),													
 		*((unsigned char*)(&client_addr.sin_addr.s_addr)+2), *((unsigned char*)(&client_addr.sin_addr.s_addr)+3),													
 		client_addr.sin_port);
+
+	// insert search hash table
 
 	ev_io_init(ev_client, ntyOnReadEvent, client_fd, EV_READ);
 	ev_io_start(loop, ev_client);

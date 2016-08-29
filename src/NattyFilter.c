@@ -288,7 +288,11 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 		U8 ack[NTY_LOGIN_ACK_LENGTH] = {0};
 
 		UdpClient *cliValue = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, key);
-		if (cliValue == NULL) {			
+		if (cliValue == NULL) {		
+#if 1		
+			extern int ntyInsertNodeToHashTable(struct sockaddr_in *addr, C_DEVID id);
+#endif
+			
 			UdpClient *pClient = (UdpClient*)malloc(sizeof(UdpClient));
 			pClient->sockfd = client->sockfd;
 			pClient->clientType = client->clientType;
@@ -316,13 +320,20 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 				free(pClient);
 				return ;
 			}
-						
+
 			//notify friends 	
 			// this step hive off
 			//ntyFriendsTreeTraversalNotify(pClient->friends, key, ntyNotifyFriendMessage);
 			//send friends list to this client.
 			//ntyFriendsTreeGetAllNodeList
 			ntySendFriendsTreeIpAddr(pClient, 1);
+#if 1 //Insert Hash table
+			ntylog("Insert Hash Table\n");
+			int ret = ntyInsertNodeToHashTable(&pClient->addr, key);
+			if (ret == 0) {				
+				ntylog("Hash Table Node Insert Success");
+			}
+#endif
 			
 			return ;
 		} else if ((cliValue != NULL) && (!ntyClientCompare (client, cliValue))) {

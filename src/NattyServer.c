@@ -65,6 +65,7 @@ int main() {
 	
 	ntyDisplay();
 	ntyDaveMqStart();
+	void *pHash = ntyHashTableInstance();
 
 	
 	ntydbg("Server Startup\n");
