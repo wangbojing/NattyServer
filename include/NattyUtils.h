@@ -50,6 +50,8 @@
 #include "NattyLetter.h"
 #include "NattyAbstractClass.h"
 
+#include <jemalloc/jemalloc.h>
+
 
 typedef struct tm TimeStamp;
 
