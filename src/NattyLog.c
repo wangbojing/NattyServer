@@ -75,6 +75,7 @@ void nLogFinally(void) {
 }
 
 void nLogInfoWithTime(nLogCategory *cat, const char *format, va_list *params) {
+
 	U8 catBuffer[NATTY_LOG_BUFFER_LENGTH] = {0};
 	U8 buffer[NATTY_LOG_BUFFER_LENGTH + 32] = {0};
 	
@@ -86,8 +87,21 @@ void nLogInfoWithTime(nLogCategory *cat, const char *format, va_list *params) {
 		tblock->tm_hour, tblock->tm_min, tblock->tm_sec, catBuffer);
 
 	zlog_info(cat, "%s", buffer);
-	
 }
+
+void nLogInfoWithTimePrefix(nLogCategory *cat, const char *format) {
+
+	U8 buffer[NATTY_LOG_BUFFER_LENGTH + 32] = {0};
+	
+	TimeStamp *tblock = ntyGetSystemTime();
+	
+	sprintf(buffer, " [%d-%d-%d %d:%d:%d] --> %s", tblock->tm_year % 100 + 2000, tblock->tm_mon+1, tblock->tm_mday,
+		tblock->tm_hour, tblock->tm_min, tblock->tm_sec, format);
+
+	zlog_info(cat, "%s", buffer);
+
+}
+
 
 #endif
 
@@ -120,10 +134,10 @@ void* ntyLogDtor(void *self) {
 }
 
 
-void ntyLogWithTime(void *self, const char *format, va_list *params) {
+void ntyLogWithTime(void *self, const char *format) {
 	nLog *log = self;
-
-	nLogInfoWithTime(log->nCategory, format, params);
+	
+	nLogInfoWithTimePrefix(log->nCategory, format);
 }
 
 static const LogHandle ntyLogHandle = {
@@ -148,10 +162,14 @@ void* ntyLogInstance(void) {
 
 void ntyLogInfo(const char *format, ...) {
 	void *log = ntyLogInstance();
+	U8 catBuffer[NATTY_LOG_BUFFER_LENGTH] = {0};
 
 	va_list params;
 	va_start(params, format);
-	ntyLogWithTime(log, format, &params);
+	
+	vsprintf(catBuffer, format, params);
+	ntyLogWithTime(log, catBuffer);
+	
 	va_end(params);
 }
 

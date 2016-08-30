@@ -1,0 +1,48 @@
+ [2016-8-30 15:56:50] --> ntyHashTableInstance
+
+ [2016-8-30 15:56:55] -->  127.0.0.1:49331 --> New Client Connected 
+
+ [2016-8-30 15:56:55] -->  127.0.0.1:49331, length:19 --> 1, id:2
+
+ [2016-8-30 15:56:55] -->  key : 2
+
+ [2016-8-30 15:56:55] --> Count : 1, type:0
+
+ [2016-8-30 15:56:55] -->  tcp send success : 35
+
+ [2016-8-30 15:56:55] --> Insert Hash Table
+
+ [2016-8-30 15:56:55] --> ntyInsertNodeToHashTable Start -->
+ [2016-8-30 15:56:55] --> ntyInsertNodeToHashTable Start 111
+
+ [2016-8-30 15:56:55] -->  CRC:104b1c1e, b1c1e
+
+ [2016-8-30 15:56:55] --> Hash Table Node Insert Success
+ [2016-8-30 15:57:0] -->  127.0.0.1:49331, length:29 --> 21, id:2
+
+ [2016-8-30 15:57:0] --> destClient is no exist
+
+ [2016-8-30 15:57:0] -->  tcp send success : 29
+
+ [2016-8-30 15:57:6] -->  127.0.0.1:49331, length:34 --> 21, id:2
+
+ [2016-8-30 15:57:6] --> destClient is no exist
+
+ [2016-8-30 15:57:6] -->  tcp send success : 34
+
+ [2016-8-30 15:57:9] -->  127.0.0.1:49331 --> Client Disconnected
+
+ [2016-8-30 15:57:9] -->  CRC:104b1c1e, b1c1e
+
+ [2016-8-30 15:57:9] --> ntyHashTableSearch
+
+ [2016-8-30 15:57:9] --> ntyHashSearch 
+
+ [2016-8-30 15:57:9] --> ntyHashSearchNode port:49331
+
+ [2016-8-30 15:57:9] -->  CRC:104b1c1e, b1c1e
+
+ [2016-8-30 15:57:9] --> Delete Node Success
+
+ [2016-8-30 15:57:9] --> RBTree Delete Node Success
+

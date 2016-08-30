@@ -71,7 +71,7 @@ typedef struct _LOGHANDLE {
 	size_t size;
 	void* (*ctor)(void *_self, va_list *params);
 	void* (*dtor)(void *_self);
-	void (*logt)(void *_self, const char *format, va_list *params);
+	void (*logt)(void *self, const char *format);
 } LogHandle;
 
 #endif

@@ -645,13 +645,12 @@ int ntyDeleteNodeFromHashTable(struct sockaddr_in *addr, C_DEVID id) {
 
 int ntyInsertNodeToHashTable(struct sockaddr_in *addr, C_DEVID id) {
 	ntylog("ntyInsertNodeToHashTable Start -->");
-	printf(" %d.%d.%d.%d:%d \n", *(unsigned char*)(&addr->sin_addr.s_addr), *((unsigned char*)(&addr->sin_addr.s_addr)+1),													
+	ntylog(" %d.%d.%d.%d:%d \n", *(unsigned char*)(&addr->sin_addr.s_addr), *((unsigned char*)(&addr->sin_addr.s_addr)+1),													
 				*((unsigned char*)(&addr->sin_addr.s_addr)+2), *((unsigned char*)(&addr->sin_addr.s_addr)+3),													
 				addr->sin_port);
 	void *pHash = ntyHashTableInstance();
 
 	if (addr == NULL) return -1;
-	ntylog("ntyInsertNodeToHashTable Start 111\n");
 
 	Payload *pLoad = (Payload*)malloc(sizeof(Payload));
 	if (pLoad == NULL) {

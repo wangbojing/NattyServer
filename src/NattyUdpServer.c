@@ -244,7 +244,7 @@ int ntySendBuffer(const UdpClient *client, unsigned char *buffer, int length) {
 		return sendto(client->sockfd, buffer, length, 0, (struct sockaddr *)&client->addr, sizeof(struct sockaddr_in));
 	} else if (client->clientType == PROTO_TYPE_TCP) {
 		int ret = send(client->sockfd, buffer, length, 0);
-		ntydbg(" tcp send success : %d\n", ret);
+		ntylog(" tcp send success : %d\n", ret);
 		return ret;
 	}
 	return -1;

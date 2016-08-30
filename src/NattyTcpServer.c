@@ -95,7 +95,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 	
 		getpeername(watcher->fd,(struct sockaddr*)&client_addr, &nSize); 
 		
-		printf(" %d.%d.%d.%d:%d --> Client Disconnected\n", *(unsigned char*)(&client_addr.sin_addr.s_addr), *((unsigned char*)(&client_addr.sin_addr.s_addr)+1),													
+		ntylog(" %d.%d.%d.%d:%d --> Client Disconnected\n", *(unsigned char*)(&client_addr.sin_addr.s_addr), *((unsigned char*)(&client_addr.sin_addr.s_addr)+1),													
 				*((unsigned char*)(&client_addr.sin_addr.s_addr)+2), *((unsigned char*)(&client_addr.sin_addr.s_addr)+3),													
 				client_addr.sin_port);	
 		// release client
@@ -133,7 +133,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		}
 			
 		getpeername(watcher->fd,(struct sockaddr*)&req->client->addr, &nSize);
-		printf(" %d.%d.%d.%d:%d, length:%ld --> %x, id:%lld\n", *(unsigned char*)(&req->client->addr.sin_addr.s_addr), *((unsigned char*)(&req->client->addr.sin_addr.s_addr)+1),													
+		ntylog(" %d.%d.%d.%d:%d, length:%ld --> %x, id:%lld\n", *(unsigned char*)(&req->client->addr.sin_addr.s_addr), *((unsigned char*)(&req->client->addr.sin_addr.s_addr)+1),													
 				*((unsigned char*)(&req->client->addr.sin_addr.s_addr)+2), *((unsigned char*)(&req->client->addr.sin_addr.s_addr)+3),													
 				req->client->addr.sin_port, rLen, buffer[NTY_PROTO_TYPE_IDX], *(C_DEVID*)(&buffer[NTY_PROTO_DEVID_IDX]));	
 
