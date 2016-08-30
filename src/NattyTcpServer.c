@@ -41,10 +41,10 @@
  *
  */
 
-#include "NattyHash.h"
 #include "NattyTcpServer.h"
 #include "NattyThreadPool.h"
 #include "NattyFilter.h"
+#include "NattyHash.h"
 
 #include <fcntl.h>
 #include <string.h>
@@ -100,9 +100,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 				client_addr.sin_port);	
 		// release client
 		// search hash table for client key
-		sleep(1);
 		C_DEVID devid = ntySearchDevIdFromHashTable(&client_addr);
-		ntylog("devid : %d\n", devid);
 		int ret = ntyDeleteNodeFromHashTable(&client_addr, devid);
 		if (ret == -1) {
 			ntylog("Delete Node From Hash Table Parameter is Error");
@@ -118,6 +116,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		ntyRBTreeInterfaceDelete(tree, devid);
 
 		ntylog("RBTree Delete Node Success\n");
+		
 		//close(watcher->fd);
 		//watcher->fd = -1;
 		ev_io_stop(loop, watcher);

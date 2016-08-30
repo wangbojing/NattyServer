@@ -162,6 +162,16 @@ void *ntyMalloc(size_t size) {
 	return malloc(size);
 }
 
+void *ntyJeMalloc(size_t size) {
+	return malloc(size);
+}
+
+void ntyJeFree(void *p) {
+	if (p != NULL) {
+		free(p);
+	}
+}
+
 
 #if 1
 void ntyBuildNext(const char *pattern, U32 length, U32 *next) {

@@ -50,6 +50,8 @@
 #include "NattyLetter.h"
 #include "NattyAbstractClass.h"
 
+#define JEMALLOC_NO_DEMANGLE 1
+#define JEMALLOC_NO_RENAME	 1
 #include <jemalloc/jemalloc.h>
 
 
@@ -59,6 +61,8 @@ void ntyDisplay(void);
 
 void ntyFree(void *p);
 void *ntyMalloc(size_t size);
+void *ntyJeMalloc(size_t size);
+
 
 U32 ntyKMP(const char *text,const U32 text_length, const char *pattern,const U32 pattern_length, U32 *matches) ;
 TimeStamp* ntyGetSystemTime(void);

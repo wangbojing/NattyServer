@@ -45,6 +45,7 @@
 #include "NattyTcpServer.h"
 #include "NattyUdpServer.h"
 #include "NattyDaveMQ.h"
+#include "NattyHash.h"
 
 void *ntyStartupTcpServerThread(void *arg) {
 	if (arg == NULL) return NULL;

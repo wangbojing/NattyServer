@@ -66,7 +66,7 @@
 #define	KQI(q)	QI(q##LL)
  
 
-#define NATTY_DICTIONARY_LENGTH			1<<8
+#define NATTY_DICTIONARY_LENGTH			(1<<20)
 #define NATTY_DICTIONARY_MASK			(NATTY_DICTIONARY_LENGTH-1)
 #define NATTY_POLY						0x01101
 
@@ -74,11 +74,11 @@
 typedef RBTree Tree;
 
 typedef struct _Payload {
-	unsigned int srcip;
-	unsigned int dstip;
-	unsigned short sport;
-	unsigned short dport;
 	unsigned short proto;
+	unsigned int dstip;
+	unsigned short dport;
+	unsigned int srcip;
+	unsigned short sport;
 } Payload;
 
 typedef struct _HashNode {
@@ -118,6 +118,8 @@ int ntyHashTableUpdate(void *self, U32 key, Payload* load, C_DEVID id);
 
 
 C_DEVID ntySearchDevIdFromHashTable(struct sockaddr_in *addr);
+int ntyDeleteNodeFromHashTable(struct sockaddr_in *addr, C_DEVID id);
+int ntyInsertNodeToHashTable(struct sockaddr_in *addr, C_DEVID id);
 
 
 
