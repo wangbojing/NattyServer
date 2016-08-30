@@ -52,6 +52,10 @@
 #include <sys/socket.h>
 #include <ev.h>
 
+#define JEMALLOC_NO_DEMANGLE 1
+#define JEMALLOC_NO_RENAME	 1
+#include <jemalloc/jemalloc.h>
+
 
 static int ntySetNonblock(int fd) {
 	int flags;
@@ -117,9 +121,10 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 
 		ntylog("RBTree Delete Node Success\n");
 		
-		//close(watcher->fd);
-		//watcher->fd = -1;
+		
 		ev_io_stop(loop, watcher);
+		close(watcher->fd);
+		watcher->fd = -1;
 		free(watcher);
 	} else {
 		struct sockaddr_in client_addr;
