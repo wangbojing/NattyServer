@@ -219,7 +219,7 @@ void ntyDaveMqWorkerRelease(void) {
 void ntyDaveMqStart(void) {
 	pthread_t thread;
 	int rc = -1;
-	ntydbg("\n ... Dave Message Queue Start ...\n");
+	ntylog("\n ... Dave Message Queue Start ...\n");
 	void *Queue= ntyDaveQueueInstance();
 
 	rc = pthread_create(&thread, NULL, ntyDeQueueThread, (void*)Queue);

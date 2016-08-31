@@ -49,13 +49,13 @@
 
 void *ntyStartupTcpServerThread(void *arg) {
 	if (arg == NULL) return NULL;
-	ntydbg(" ... TCP Server Startup ... \n");
+	ntylog(" ... TCP Server Startup ... \n");
 	ntyTcpServerRun(arg);
 }
 
 void *ntyStartupUdpServerThread(void *arg) {
 	if (arg == NULL) return NULL;
-	ntydbg(" ... UDP Server Startup ... \n");
+	ntylog(" ... UDP Server Startup ... \n");
 	ntyUdpServerRun(arg);
 } 
 
@@ -63,24 +63,25 @@ int main() {
 	//void* ntyServerInfo = New(ntyUdpServerInstance());
 	int i = 0, rc = -1;
 	pthread_t thread_id[PROTO_TYPE_COUNT] = {0}; 
-	
+
+	ntylog(" ... Server Startup ...\n");
 	ntyDisplay();
 	ntyDaveMqStart();
+	ntylog(" ... Dave Message Queue Startup ... \n");
 	void *pHash = ntyHashTableInstance();
 
-	
-	ntydbg("Server Startup\n");
+	ntylog(" ... Hash Table Startup ... \n");
 	for (i = 0;i < PROTO_TYPE_COUNT;i ++) {
 		if (i == PROTO_TYPE_TCP) { //startup tcp server
 			void *server = ntyTcpServerInstance();
-			ntydbg("ntyTcpServerInstance\n");
+			ntylog("ntyTcpServerInstance\n");
 			rc = pthread_create(&thread_id[i], NULL, ntyStartupTcpServerThread, server);
 			if (rc) {
 				ntylog("ERROR; return code is %d\n", rc);
 			}
 		} else if (i == PROTO_TYPE_UDP) { //startup udp server
 			void *server = ntyUdpServerInstance();
-			ntydbg("ntyUdpServerInstance\n");
+			ntylog("ntyUdpServerInstance\n");
 			rc = pthread_create(&thread_id[i], NULL, ntyStartupUdpServerThread, server);
 			if (rc) {
 				ntylog("ERROR; return code is %d\n", rc);

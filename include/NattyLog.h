@@ -52,7 +52,7 @@
 typedef zlog_category_t nLogCategory;
 
 
-#define NATTY_LOG_CONF		"./nlog.conf"
+#define NATTY_LOG_CONF		"/usr/local/Natty/nlog.conf"
 
 #define NATTY_LOG_OUTSTREAM	nCategory
 #define NATTY_LOG_CATEGORY	"nCategory"
