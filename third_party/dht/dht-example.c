@@ -186,7 +186,7 @@ main(int argc, char **argv)
 
     {
         unsigned seed;
-        read(fd, &seed, sizeof(seed));
+        int res = read(fd, &seed, sizeof(seed));
         srandom(seed);
     }
 

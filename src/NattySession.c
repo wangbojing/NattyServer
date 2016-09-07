@@ -295,3 +295,169 @@ int ntySendDeviceTimeCheckAck(const UdpClient *pClient, U32 ackNum) {
 	return ntySendBuffer(pClient, ack, length);
 }
 
+int ntySendDeviceRouterInfo(const Client *pClient, U8 *buffer, int length) {
+	U8 buf[RECV_BUFFER_SIZE] = {0};
+	
+	buf[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_UPDATE;	
+	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
+	*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEVID_IDX]) = pClient->devId;
+	*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEST_DEVID_IDX]) = pClient->devId;
+
+	U8 *tempBuf = &buf[NTY_PROTO_DATAPACKET_CONTENT_IDX];
+	memcpy(tempBuf, buffer, length);
+	
+	*(U16*)(&buf[NTY_PROTO_DATAPACKET_CONTENT_COUNT_IDX]) = (U16)length;
+	length += NTY_PROTO_DATAPACKET_CONTENT_IDX;
+	length += sizeof(U32);
+
+	return ntySendBuffer(pClient, buf, length);
+}
+
+int ntySendAppRouterInfo(const Client *pClient, C_DEVID fromId, U8 *buffer, int length) {
+	U8 buf[RECV_BUFFER_SIZE] = {0};
+	int i = 0;
+	
+	buf[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_REQ;	
+	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
+#if 0
+	*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEVID_IDX]) = fromId;
+	*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEST_DEVID_IDX]) = pClient->devId;
+#else
+	memcpy(&buf[NTY_PROTO_DATAPACKET_DEVID_IDX], &fromId, sizeof(C_DEVID));
+	memcpy(&buf[NTY_PROTO_DATAPACKET_DEST_DEVID_IDX], &pClient->devId, sizeof(C_DEVID));
+#endif
+	U8 *tempBuf = &buf[NTY_PROTO_DATAPACKET_CONTENT_IDX];
+	memcpy(tempBuf, buffer, length);
+
+	ntylog(" ntySendAppRouterInfo --> fromId:%lld, toId:%lld, cmd:%s, length:%d, type:%x\n", *(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEVID_IDX]),
+		*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEST_DEVID_IDX]), tempBuf, length, buf[NTY_PROTO_TYPE_IDX]);
+	
+	*(U16*)(&buf[NTY_PROTO_DATAPACKET_CONTENT_COUNT_IDX]) = (U16)length;
+	length += NTY_PROTO_DATAPACKET_CONTENT_IDX;
+	length += sizeof(U32);
+
+	return ntySendBuffer(pClient, buf, length);
+}
+
+
+static int ntyBoardcastItem(void* client, C_DEVID toId, U8 *data, int length) {
+	Client *selfNode = client;
+
+	ntylog(" ntyBoardcastItem --> Start\n");
+	void *pRBTree = ntyRBTreeInstance();
+	Client *toClient = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, toId);
+	if (toClient == NULL) {
+		ntylog(" ntyBoardcastItem --> toId:%lld is not Exist\n", toId);
+		return ;
+	}
+
+	ntylog(" ntyBoardcastItem --> fromId:%lld, toId:%lld, data:%s, length:%d\n", selfNode->devId, toId, data, length);
+	return ntySendAppRouterInfo(toClient, selfNode->devId, data, length);
+}
+
+
+int ntyBoardcastAllFriends(const Client *self, U8 *buffer, int length) {
+	void *pRBTree = ntyRBTreeInstance();
+
+	ntylog("ntyBoardcastAllFriends --> self devid:%lld\n", self->devId);
+	Client *selfNode = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, self->devId);
+	if (selfNode != NULL) {
+		RBTree *friends = (RBTree*)selfNode->friends;
+		if (friends != NULL) {
+			ntylog("ntyBoardcastAllFriends --> self devid:%lld, selfNode.id:%lld\n", self->devId, selfNode->devId);
+			ntyFriendsTreeBroadcast(friends, ntyBoardcastItem, selfNode, buffer, length);
+		}
+	}
+}
+
+int ntyBoardcastAllFriendsById(C_DEVID fromId, U8 *buffer, int length) {
+	void *pRBTree = ntyRBTreeInstance();
+
+	ntylog("ntyBoardcastAllFriendsById --> self devid:%lld\n", fromId);
+	Client *selfNode = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, fromId);
+	if (selfNode != NULL) {
+		RBTree *friends = (RBTree*)selfNode->friends;
+		if (friends != NULL) {
+			ntylog("ntyBoardcastAllFriendsById --> self devid:%lld, selfNode.id:%lld\n", fromId, selfNode->devId);
+			ntyFriendsTreeBroadcast(friends, ntyBoardcastItem, selfNode, buffer, length);
+		}
+	}
+}
+
+int ntyBoardcastAllFriendsNotifyDisconnect(C_DEVID selfId) {
+	U8 u8ResultBuffer[256] = {0};
+	
+	ntylog(" ntyBoardcastAllFriendsNotifyDisconnect --> Notify All Friends\n");
+	sprintf(u8ResultBuffer, "Set Disconnect 1");
+	ntyBoardcastAllFriendsById(selfId, u8ResultBuffer, strlen(u8ResultBuffer));
+
+	return 0;
+}
+
+#if 1
+void ntyProtoHttpProxyTransform(C_DEVID fromId, C_DEVID toId, U8 *buffer, int length) {
+	int n = 0;
+	U8 buf[RECV_BUFFER_SIZE] = {0};
+	void *pRBTree = ntyRBTreeInstance();
+	UdpClient *destClient = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, toId);
+	if (destClient == NULL) {
+		ntylog(" destClient is not exist proxy:%lld\n", toId);
+		return ;
+	}
+
+	buf[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_REQ;	
+	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
+	*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEVID_IDX]) = fromId;
+	*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEST_DEVID_IDX]) = toId;
+	
+	*(U16*)(&buf[NTY_PROTO_DATAPACKET_CONTENT_COUNT_IDX]) = (U16)length;
+	memcpy(buf+NTY_PROTO_DATAPACKET_CONTENT_IDX, buffer, length);
+	ntylog(" ntyProtoHttpProxyTransform ---> %s\n", buf+NTY_PROTO_DATAPACKET_CONTENT_IDX);
+	
+	
+	length += NTY_PROTO_DATAPACKET_CONTENT_IDX;
+
+	*(U32*)(&buf[length]) = ntyGenCrcValue(buf, length);
+	length += sizeof(U32);
+
+	ntySendBuffer(destClient, buf, length);
+	
+}
+
+void ntyProtoHttpRetProxyTransform(C_DEVID toId, U8 *buffer, int length) {
+	int n = 0;
+	U8 buf[RECV_BUFFER_SIZE] = {0};
+	void *pRBTree = ntyRBTreeInstance();
+	UdpClient *destClient = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, toId);
+	if (destClient == NULL) {
+		ntylog(" destClient is not exist, toId:%lld\n", toId);
+		return ;
+	}
+
+	buf[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_REQ;	
+	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_ROUTERDATA_REQ;
+	//*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEVID_IDX]) = fromId;
+	*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEST_DEVID_IDX]) = toId;
+	
+	*(U16*)(&buf[NTY_PROTO_DATAPACKET_CONTENT_COUNT_IDX]) = (U16)length;
+	memcpy(buf+NTY_PROTO_DATAPACKET_CONTENT_IDX, buffer, length);
+
+	ntylog(" ntyProtoHttpRetProxyTransform ---> %s, length:%d\n", buf+NTY_PROTO_DATAPACKET_CONTENT_IDX, length);
+	length += NTY_PROTO_DATAPACKET_CONTENT_IDX;
+
+	*(U32*)(&buf[length]) = ntyGenCrcValue(buf, length);
+	length += sizeof(U32);
+
+	ntySendBuffer(destClient, buf, length);
+	
+}
+
+
+#endif
+
+
+

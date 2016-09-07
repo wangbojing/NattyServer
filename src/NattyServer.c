@@ -64,7 +64,7 @@ int main() {
 	int i = 0, rc = -1;
 	pthread_t thread_id[PROTO_TYPE_COUNT] = {0}; 
 
-	ntylog(" ... Server Startup ...\n");
+	//ntylog(" ... Server Startup ...\n");
 	ntyDisplay();
 	ntyDaveMqStart();
 	ntylog(" ... Dave Message Queue Startup ... \n");

@@ -57,9 +57,10 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <poll.h>
-
+#include <ev.h>
 
 #include "NattyAbstractClass.h"
+#include "NattyConfig.h"
 
 
 #define NATTY_UDP_SERVER		8888
@@ -97,6 +98,8 @@ typedef struct _Client {
 	C_DEVID devId; //client id use for rb-tree key
 	U32 ackNum;
 	void *friends; //client id list for this key
+	TIMESTAMP stamp;
+	struct ev_io *watcher;
 	U8 clientType; //UDP / TCP
 } Client;
 

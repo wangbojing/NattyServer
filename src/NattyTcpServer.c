@@ -45,6 +45,8 @@
 #include "NattyThreadPool.h"
 #include "NattyFilter.h"
 #include "NattyHash.h"
+#include "NattyHBD.h"
+#include "NattyConfig.h"
 
 #include <fcntl.h>
 #include <string.h>
@@ -105,6 +107,12 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		// release client
 		// search hash table for client key
 		C_DEVID devid = ntySearchDevIdFromHashTable(&client_addr);
+		if (devid == NATTY_NULL_DEVID) {
+			ntylog(" DevID is not exist \n");
+			ntyReleaseClientNodeSocket(loop, watcher, watcher->fd);
+			return ;
+		}
+#if 0
 		int ret = ntyDeleteNodeFromHashTable(&client_addr, devid);
 		if (ret == -1) {
 			ntylog("Delete Node From Hash Table Parameter is Error");
@@ -126,6 +134,18 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		close(watcher->fd);
 		watcher->fd = -1;
 		free(watcher);
+#else
+		ntyBoardcastAllFriendsNotifyDisconnect(devid);
+
+		if (0 == ntyReleaseClientNodeByAddr(loop, &client_addr, watcher)) {
+			ntylog("Release Client Node Success\n");
+		} else {
+			ntylog("Release Client Node Failed\n");
+			ntyReleaseClientNodeSocket(loop, watcher, watcher->fd);
+		}
+
+		
+#endif
 	} else {
 		struct sockaddr_in client_addr;
 		int nSize = sizeof(struct sockaddr_in);	 
@@ -142,7 +162,9 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 				*((unsigned char*)(&req->client->addr.sin_addr.s_addr)+2), *((unsigned char*)(&req->client->addr.sin_addr.s_addr)+3),													
 				req->client->addr.sin_port, rLen, buffer[NTY_PROTO_TYPE_IDX], *(C_DEVID*)(&buffer[NTY_PROTO_DEVID_IDX]));	
 
+		req->client->devId = *(C_DEVID*)(&buffer[NTY_PROTO_DEVID_IDX]);
 		req->client->sockfd = watcher->fd;
+		req->client->watcher = watcher;
 		req->client->clientType = PROTO_TYPE_TCP;
 		req->length = (U16)rLen;
 		req->buffer = (U8*)malloc(rLen);
@@ -169,6 +191,18 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 
 	return ;
 }
+
+void ntyOnTimeoutEvent(struct ev_loop *loop, struct ev_timer *watcher, int revents) {
+	ntylog(" ntyOnTimeoutEvent --> Start\n");
+
+	if (EV_ERROR & revents) {
+		ntylog("error event in accept\n");
+		return ;
+	}
+
+	ntyHeartBeatDetectTraversal(loop);	
+}
+
 
 void ntyOnAcceptEvent(struct ev_loop *loop, struct ev_io *watcher, int revents){
 	int client_fd;
@@ -230,10 +264,18 @@ void *ntyTcpServerRelease(TcpServer *server) {
 	return server;
 }
 
+struct ev_loop *tcp_mainloop = NULL;
+
+void *ntyTcpServerGetMainloop(void) {
+	return tcp_mainloop;
+}
+
+
 int ntyTcpServerProcess(const void *_self) {
 	const TcpServer *server = _self;
 	int reuseaddr_on;
 	struct ev_io socket_accept;
+	struct ev_timer hb_timer; 
 	struct ev_loop *loop = ev_default_loop(0);
 	
 	if (listen(server->sockfd, NATTY_CONNECTION_BACKLOG) < 0) {
@@ -245,14 +287,28 @@ int ntyTcpServerProcess(const void *_self) {
 		ntylog("natty tcp set nonblock failed\n");
 		return -2;
 	}
-
+	
 	ev_io_init(&socket_accept, ntyOnAcceptEvent, server->sockfd, EV_READ);
 	ev_io_start(loop, &socket_accept);
+	
+#if (ENABLE_NATTY_TIME_STAMP&&ENABLE_NATTY_HEARTBEAT_DETECTER)
+	ev_timer_init(&hb_timer, ntyOnTimeoutEvent, NATTY_DURATION_EVENT, NATTY_DURATION_EVENT);
+	ev_timer_start(loop, &hb_timer);
+#else
+	ev_init(&hb_timer, ntyOnTimeoutEvent);
+	ev_timer_set(&hb_timer, NATTY_DURATION_EVENT, NATTY_DURATION_EVENT); 
+	ev_timer_start(loop, &hb_timer);
+#endif
 
+	tcp_mainloop = loop;
+
+#if 1
 	while (1) {
 		ev_loop(loop, 0);
 	}
-	
+#else
+	ev_run(loop, 0);
+#endif
 	return 0;
 }
 

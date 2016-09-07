@@ -65,8 +65,8 @@
 #define ntylog(format, ...) 		ntyLogInfo(format, ##__VA_ARGS__)
 #define ntydbg(format, ...) 		fprintf(stdout, format, ##__VA_ARGS__)
 #elif (NTY_DEBUG == 2) // Serial
-#define ntylog(format, ...)
-#define ntydbg(format, ...) 		
+#define ntylog(format, ...)			fprintf(stdout, format, ##__VA_ARGS__)
+#define ntydbg(format, ...) 		fprintf(stdout, format, ##__VA_ARGS__)
 #elif (NTY_DEBUG == 3) //Log file
 #define ntylog(format, ...)
 #define ntydbg(format, ...) 
@@ -82,6 +82,7 @@ typedef unsigned int U32;
 typedef unsigned short U16;
 typedef unsigned char U8;
 typedef long long C_DEVID;
+typedef long TIMESTAMP;
 
 typedef   signed char   int8_t;
 typedef unsigned char  uint8_t;
@@ -93,6 +94,8 @@ typedef unsigned int   uint32_t;
 typedef int (*HANDLE_CLIENTID)(void* client, C_DEVID id);
 typedef int (*HANDLE_NOTIFY)(C_DEVID from, C_DEVID to);
 typedef int (*HANDLE_MASS)(C_DEVID to, U8 *data, int length);
+typedef int (*HANDLE_BROADCAST)(void* client, C_DEVID to, U8 *data, int length);
+typedef int (*HANDLE_HEARTBEAT)(void* node, void *mainloop, TIMESTAMP stamp);
 
 
 typedef struct {

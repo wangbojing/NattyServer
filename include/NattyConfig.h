@@ -40,33 +40,17 @@
 
  *
  */
- 
 
-#ifndef __NATTY_SESSION_H__
-#define __NATTY_SESSION_H__
+#ifndef __NATTY_CONFIG_H__
+#define __NATTY_CONFIG_H__
 
-#include "NattyUdpServer.h"
-#include "NattyProtocol.h"
+#define ENABLE_NATTY_TIME_STAMP				1
 
-int ntySendFriendIpAddr(void* fTree, C_DEVID id);
-int ntyNotifyFriendConnect(void* fTree, C_DEVID id);
-int ntySendFriendsTreeIpAddr(void *fTree, U8 reqType);
-int ntyNotifyFriendMessage(C_DEVID fromId, C_DEVID toId);
-//int ntyRouteUserData(C_DEVID friendId, U8 *buffer);
-int ntySendDeviceRouterInfo(const Client *pClient, U8 *buffer, int length);
-int ntySendAppRouterInfo(const Client *pClient, C_DEVID fromId, U8 *buffer, int length);
-int ntyBoardcastAllFriends(const Client *self, U8 *buffer, int length);
-int ntyBoardcastAllFriendsById(C_DEVID fromId, U8 *buffer, int length);
-int ntyBoardcastAllFriendsNotifyDisconnect(C_DEVID selfId);
-void ntyProtoHttpProxyTransform(C_DEVID fromId, C_DEVID toId, U8 *buffer, int length);
-void ntyProtoHttpRetProxyTransform(C_DEVID toId, U8 *buffer, int length);
-
+#define ENABLE_NATTY_HEARTBEAT_DETECTER		1
 
 
 
 #endif
-
-
 
 
 

@@ -63,7 +63,7 @@ typedef long long C_DEVID;
 //typedef long long C_DEVID;
 #endif
 
-#define SERVER_NAME		"127.0.0.1" //"112.93.116.189" //"127.0.0.1" 
+#define SERVER_NAME		"112.93.116.188" //"112.93.116.189" //"127.0.0.1" 
 #define SERVER_PORT		8888
 #define RECV_BUFFER_SIZE	(1024+16)
 #define SENT_TIMEOUT	3
@@ -129,6 +129,8 @@ enum {
 #define P2P_HEARTBEAT_TIMEOUT_COUNTR	5
 
 typedef void (*PROXY_CALLBACK)(int len);
+typedef void (*PROXY_HANDLE_CB)(C_DEVID id, int len);
+
 
 
 typedef struct _NETWORK {

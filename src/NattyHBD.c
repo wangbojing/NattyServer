@@ -40,35 +40,75 @@
 
  *
  */
- 
 
-#ifndef __NATTY_SESSION_H__
-#define __NATTY_SESSION_H__
 
+#include "NattyHBD.h"
 #include "NattyUdpServer.h"
-#include "NattyProtocol.h"
+#include "NattyConfig.h"
+#include "NattyRBTree.h"
+#include "NattyFilter.h"
 
-int ntySendFriendIpAddr(void* fTree, C_DEVID id);
-int ntyNotifyFriendConnect(void* fTree, C_DEVID id);
-int ntySendFriendsTreeIpAddr(void *fTree, U8 reqType);
-int ntyNotifyFriendMessage(C_DEVID fromId, C_DEVID toId);
-//int ntyRouteUserData(C_DEVID friendId, U8 *buffer);
-int ntySendDeviceRouterInfo(const Client *pClient, U8 *buffer, int length);
-int ntySendAppRouterInfo(const Client *pClient, C_DEVID fromId, U8 *buffer, int length);
-int ntyBoardcastAllFriends(const Client *self, U8 *buffer, int length);
-int ntyBoardcastAllFriendsById(C_DEVID fromId, U8 *buffer, int length);
-int ntyBoardcastAllFriendsNotifyDisconnect(C_DEVID selfId);
-void ntyProtoHttpProxyTransform(C_DEVID fromId, C_DEVID toId, U8 *buffer, int length);
-void ntyProtoHttpRetProxyTransform(C_DEVID toId, U8 *buffer, int length);
+#include <sys/time.h>
 
+#if ENABLE_NATTY_TIME_STAMP
+extern pthread_mutex_t time_mutex;
+#endif
+int ntyHeartBeatDetectItem(void *node, void *mainloop, TIMESTAMP curStamp) {
+	Client *client = node;
+	struct ev_loop *loop = mainloop;
+	TIMESTAMP duration = curStamp - client->stamp;
 
+	if (client == NULL) {
+		ntylog(" ntyHeartBeatDetectItem --> client node is Null\n");
+		return -1;
+	}
 
-
+	ntylog(" ntyHeartBeatDetectItem --> client:%lld last connect:%ld, now:%ld\n", client->devId, client->stamp, curStamp);
+	if (duration >  NATTY_HEARTBEAT_THRESHOLD) { //release client
+		//U8 u8ResultBuffer[256] = {0};
+		ntylog(" ntyHeartBeatDetectItem --> client:%lld timeout\n", client->devId);
+#if 0
+		ntylog(" ntyHeartBeatDetectItem --> Notify All Friends\n");
+		sprintf(u8ResultBuffer, "Set Disconnect 1");
+		ntyBoardcastAllFriendsById(client->devId, u8ResultBuffer, strlen(u8ResultBuffer));
+#else
+		ntyBoardcastAllFriendsNotifyDisconnect(client->devId);
 #endif
 
+		ntylog(" ntyHeartBeatDetectItem --> Release Client Node Id: %lld\n", client->devId);
+		if (client->watcher == NULL) {
+			ntylog(" ntyHeartBeatDetectItem --> client->watcher is Null\n");
+		} 
+		if (mainloop == NULL) {
+			ntylog(" ntyHeartBeatDetectItem --> mainloop is Null\n");
+		}
+		if(0 == ntyReleaseClientNodeByAddr(mainloop, &client->addr, client->watcher)) {
+			ntylog("Release Client Node Success\n");
+		} else {
+			ntylog("Release Client Node Failed\n");
+		}
+	}
+
+	return 0;
+}
 
 
+void ntyHeartBeatDetectTraversal(void *mainloop) {
+	TIMESTAMP curStamp = 0;
+#if ENABLE_NATTY_TIME_STAMP
+	pthread_mutex_lock(&time_mutex);
+	curStamp = time(NULL);
+	pthread_mutex_unlock(&time_mutex);
+#endif
+	ntylog(" ntyHeartBeatDetectTraversal --> Start\n");
 
+	void *pTree = ntyRBTreeInstance();
+	if (curStamp == 0){ 
+		ntylog(" ntyHeartBeatDetectTraversal --> TimeStamp value is Error\n");
+		return ;
+	}
+	ntyRBTreeHeartBeatDetect(pTree, ntyHeartBeatDetectItem, mainloop, curStamp);
+}
 
 
 

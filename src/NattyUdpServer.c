@@ -170,6 +170,7 @@ int ntyUdpServerProcess(const void *_self) {
 				req->client->addr.sin_port, n, buf[NTY_PROTO_TYPE_IDX], *(C_DEVID*)(&buf[NTY_PROTO_DEVID_IDX]));	
 			// proccess
 			// i think process protocol and search client id from rb-tree
+			req->client->devId = *(C_DEVID*)(&buf[NTY_PROTO_DEVID_IDX]);
 			req->client->sockfd = self->sockfd;
 			req->client->clientType = PROTO_TYPE_UDP;
 			req->length = (U16)n;
@@ -240,6 +241,9 @@ int ntyClientCompare(const UdpClient *clientA, const UdpClient *clientB) {
 }
 
 int ntySendBuffer(const UdpClient *client, unsigned char *buffer, int length) {
+	if (client == NULL) return -1;
+	if (client->sockfd == 0) return -1;
+	
 	if (client->clientType == PROTO_TYPE_UDP) {
 		return sendto(client->sockfd, buffer, length, 0, (struct sockaddr *)&client->addr, sizeof(struct sockaddr_in));
 	} else if (client->clientType == PROTO_TYPE_TCP) {

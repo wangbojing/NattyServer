@@ -47,12 +47,12 @@
 
 
 
-void ntyUserRecvCb(int len) {
+void ntyUserRecvCb(C_DEVID devid, int len) {
 	//int i = 0;
 	U8 *buffer = ntyGetRecvBuffer();
 
 	//for (i = 0;i < len;i ++) {
-	ntydbg("len:%d, %s ", len, buffer);
+	ntydbg(" devid:%lld, len:%d, %s ", devid, len, buffer);
 	//}
 	ntydbg("\n");
 }
@@ -99,9 +99,18 @@ int main() {
 #if 1
 	while(1) {
 		ntydbg("Proxy Please send msg:");
-		//ch = getchar();
 		char *ptr = fgets(tempBuf, RECV_BUFFER_SIZE, stdin);
 
+		if (ntyGetNetworkStatus() == -1) {
+			ntydbg("Startup Client\n");
+			ntyStartupClient();
+			continue;
+		}
+		if (tempBuf[0] == 'c') {
+			ntydbg("Shutdown Client\n");
+			ntyShutdownClient();
+			continue;
+		}
 		//memset(tempBuf, 0, RECV_BUFFER_SIZE);
 		//memcpy(tempBuf, url, strlen(url));
 		int len = strlen(tempBuf);

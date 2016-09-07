@@ -63,6 +63,8 @@ typedef struct _RBTreeNode {
 	unsigned char color;
 } RBTreeNode;
 
+typedef RBTreeNode ClientTreeNode;
+
 typedef struct _RBTree {
 	const void *_;
 	RBTreeNode *root;
@@ -81,8 +83,9 @@ typedef struct _RBTreeOpera {
 	void (*traversal)(void *_self, HANDLE_CLIENTID handle_FN);
 	void (*notify)(void *_self, C_DEVID selfId, HANDLE_NOTIFY notify_FN);
 	void (*mass)(void *_self, HANDLE_MASS handle_FN, U8 *buf, int length);
+	void (*broadcast)(void *_self, HANDLE_BROADCAST handle_FN, void *client, U8 *buf, int length);
+	void (*heartbeat)(void *_self, HANDLE_HEARTBEAT handle_FN, void *mainloop, TIMESTAMP stamp);
 } RBTreeOpera;
-
 
 
 void* ntyRBTreeInstance(void);
@@ -106,12 +109,7 @@ C_DEVID* ntyFriendsTreeGetAllNodeList(const void *self);
 U16 ntyFriendsTreeGetNodeCount(const void *self);
 C_DEVID ntyFriendsTreeGetFristNodeKey(void *self);
 void ntyFriendsTreeMass(void *self, HANDLE_MASS handle_FN, U8 *buf, int length);
-
-
-
-
-
-
+void ntyRBTreeHeartBeatDetect(void *self, HANDLE_HEARTBEAT handle_FN, void *mainloop, TIMESTAMP stamp);
 
 
 #endif

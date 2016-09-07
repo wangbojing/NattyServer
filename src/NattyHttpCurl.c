@@ -45,17 +45,40 @@
 #include "NattyHttpCurl.h"
 #include "NattyDaveMQ.h"
 #include "NattyFilter.h"
+#include "NattyRBTree.h"
 
 #include <curl/curl.h>
 #include <string.h>
 #include <stdio.h>
 
+
+
 size_t ntyHttpQJKFallenHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
 	VALUE_TYPE *tag = stream;
+	U8 u8ResultBuffer[256] = {0};
 
-	printf("buffer:%s, %ld\n", (char*)buffer, size*nmemb);
+	ntylog("buffer:%s, %ld\n", (char*)buffer, size*nmemb);
+	sprintf(u8ResultBuffer, "Set Fall %d", 1);
+	//strcpy(u8ResultBuffer, "Set Fall 1", 10);
+#if 0
+	Client *cv = ntyRBTreeInterfaceSearch(tree, tag->fromId);
+	if (cv == NULL) { 
+		ntylog(" http qjk fallen fromId not exist\n");
+		goto exit;
+	}
+	
+	ntySendDeviceRouterInfo(cv, ack, strlen(ack));
+#else
+#if 0
+	ntyProtoHttpProxyTransform(tag->fromId, tag->toId, u8ResultBuffer, strlen(u8ResultBuffer+NTY_PROTO_DATAPACKET_CONTENT_IDX));
+#else
+	ntyBoardcastAllFriendsById(tag->fromId, u8ResultBuffer, strlen(u8ResultBuffer));
+#endif
+	ntyProtoHttpRetProxyTransform(tag->toId, u8ResultBuffer, strlen(u8ResultBuffer));
+#endif
+
+exit:	
 	free(tag);
-
 	return size*nmemb;
 }
 
@@ -135,6 +158,11 @@ size_t ntyHttpGaodeWifiCellAPIHandleResult(void* data, size_t size, size_t nmemb
 
 	if (start_matches[0] == 0) {
 		ntylog(" result failed: %s\n", buffer);
+
+		sprintf(u8ResultBuffer, "Set Location LatLonFailed");
+		ntyProtoHttpRetProxyTransform(tag->fromId, u8ResultBuffer, strlen(u8ResultBuffer));
+		
+		free(tag);
 		return size*nmemb;
 	}
 
@@ -153,9 +181,17 @@ size_t ntyHttpGaodeWifiCellAPIHandleResult(void* data, size_t size, size_t nmemb
 			
 			ntylog("lat:%s, lon:%s\n", u8Lat, u8Lon);
 			
-			sprintf(u8ResultBuffer+NTY_PROTO_DATAPACKET_CONTENT_IDX, "Set Location %s:%s:3", u8Lat, u8Lon);
-			ntyProtoHttpProxyTransform(tag->fromId, tag->toId, u8ResultBuffer, strlen(u8ResultBuffer+NTY_PROTO_DATAPACKET_CONTENT_IDX));
-
+			sprintf(u8ResultBuffer, "Set Location %s:%s:3", u8Lat, u8Lon);
+#if 0
+			if (tag->toId != 0x0) {
+				ntyProtoHttpProxyTransform(tag->fromId, tag->toId, u8ResultBuffer, strlen(u8ResultBuffer+NTY_PROTO_DATAPACKET_CONTENT_IDX));
+			}
+#else
+			ntylog("ntyHttpGaodeWifiCellAPIHandleResult --> Cmd : %s, length:%ld\n", u8ResultBuffer, strlen(u8ResultBuffer));
+			ntyBoardcastAllFriendsById(tag->fromId, u8ResultBuffer, strlen(u8ResultBuffer));
+#endif
+			ntyProtoHttpRetProxyTransform(tag->fromId, u8ResultBuffer, strlen(u8ResultBuffer));
+			//ntyProtoHttpProxyTransform(tag->toId, tag->fromId, u8ResultBuffer, strlen(u8ResultBuffer+NTY_PROTO_DATAPACKET_CONTENT_IDX));
 			break;
 		}
 	}
@@ -207,7 +243,8 @@ int ntyHttpGaodeWifiCellAPI(void *arg) {
 		}		
 		return -3;	
 	}	
-	
+
+	ntylog(" ntyHttpGaodeWifiCellAPI --> res:%d\n", res);
 	curl_easy_cleanup(curl);
 
 	return 0;
@@ -240,6 +277,10 @@ size_t ntyHttpMtkQuickLocationHandleResult(void* data, size_t size, size_t nmemb
 
 	if (start_matches[0] == 0) {
 		ntylog(" result failed: %s\n", buffer);
+		sprintf(u8ResultBuffer, "Set Location LatLonFailed");
+		ntyProtoHttpRetProxyTransform(tag->fromId, u8ResultBuffer, strlen(u8ResultBuffer));
+
+		free(tag);
 		return size*nmemb;
 	}
 
@@ -258,13 +299,16 @@ size_t ntyHttpMtkQuickLocationHandleResult(void* data, size_t size, size_t nmemb
 			memcpy(u8Lat, location+k, strlen(location)-k);
 			
 			ntylog("lat:%s, lon:%s\n", u8Lat, u8Lon);
-			sprintf(u8ResultBuffer+NTY_PROTO_DATAPACKET_CONTENT_IDX, "Set Location %s:%s:3", u8Lat, u8Lon);
-			ntyProtoHttpProxyTransform(tag->fromId, tag->toId, u8ResultBuffer, strlen(u8ResultBuffer+NTY_PROTO_DATAPACKET_CONTENT_IDX));
-
+			sprintf(u8ResultBuffer, "Set Location %s:%s:3", u8Lat, u8Lon);
+			//ntyProtoHttpProxyTransform(tag->fromId, tag->toId, u8ResultBuffer, strlen(u8ResultBuffer+NTY_PROTO_DATAPACKET_CONTENT_IDX));
+			ntylog("ntyHttpMtkQuickLocationHandleResult --> Cmd : %s, length:%ld\n", u8ResultBuffer, strlen(u8ResultBuffer));
+			ntyProtoHttpRetProxyTransform(tag->fromId, u8ResultBuffer, strlen(u8ResultBuffer));
 			break;
 		}
 	}
-
+#if 0
+	ntySendDeviceRouterInfo(cv, ack, strlen(ack));
+#endif
 	
 	free(tag);
 	return size*nmemb;

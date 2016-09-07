@@ -50,6 +50,12 @@
 #include "NattyProtocol.h"
 #include "NattyAbstractClass.h"
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <ev.h>
+
+
+
 typedef struct {
 	size_t size;
 	void* (*ctor)(void *_self, va_list *params);
@@ -74,6 +80,10 @@ void ntyGenCrcTable(void);
 U32 ntyGenCrcValue(U8 *buf, int length);
 
 void ntyProtoHttpProxyTransform(C_DEVID fromId, C_DEVID toId, U8 *buf, int length);
+int ntyReleaseClientNodeByAddr(struct ev_loop *loop, struct sockaddr_in *addr, struct ev_io *watcher);
+int ntyReleaseClientNodeSocket(struct ev_loop *loop, struct ev_io *watcher, int sockfd);
+int ntyReleaseClientNodeHashTable(struct sockaddr_in *addr);
+
 
 
 typedef struct _Node {

@@ -59,12 +59,14 @@ int ntySendDataPacket(C_DEVID toId, U8 *data, int length);
 int ntySendMassDataPacket(U8 *data, int length);
 void ntySetSendSuccessCallback(PROXY_CALLBACK cb);
 void ntySetSendFailedCallback(PROXY_CALLBACK cb);
-void ntySetProxyCallback(PROXY_CALLBACK cb);
+void ntySetProxyCallback(PROXY_HANDLE_CB cb);
 U8* ntyGetRecvBuffer(void);
 void ntySetDevId(C_DEVID id);
 int ntyGetRecvBufferSize(void);
 void ntyStartupClient(void);
 void ntyReleaseNetwork(void *network);
+int ntyGetNetworkStatus(void);
+void ntyShutdownClient(void);
 
 
 

@@ -53,6 +53,8 @@
 #define NATTY_SOCKET_READ_TIMEOUT		10
 #define NATTY_SOCKET_WRITE_TIMEOUT		10
 
+#define NATTY_NULL_DEVID				0x0
+
 typedef Client TcpClient;
 typedef Server TcpServer;
 typedef ServerHandle TcpServerHandle; 

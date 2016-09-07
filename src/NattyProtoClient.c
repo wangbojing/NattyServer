@@ -80,7 +80,7 @@ typedef struct _NATTYPROTOCOL {
 	U8 level;
 	U8 recvBuffer[RECV_BUFFER_SIZE];
 	U16 recvLen;
-	PROXY_CALLBACK onProxyCallback; //just for java
+	PROXY_HANDLE_CB onProxyCallback; //just for java
 	RECV_CALLBACK onRecvCallback; //recv
 	PROXY_CALLBACK onProxyFailed; //send data failed
 	PROXY_CALLBACK onProxySuccess; //send data success
@@ -88,6 +88,7 @@ typedef struct _NATTYPROTOCOL {
 	PROXY_CALLBACK onProxyReconnect;
 	U8 heartbeartRun;
 	U8 p2pHeartbeatRun;
+	U8 u8RecvExitFlag;
 	pthread_t heartbeatThread_id;
 	pthread_t recvThread_id;
 	struct sockaddr_in serveraddr;
@@ -129,6 +130,9 @@ void* ntyProtoClientCtor(void *_self, va_list *params) {
 	proto->heartbeartRun = 0;
 	proto->recvLen = 0;
 	proto->devid = 0;
+
+	proto->heartbeatThread_id = 0;
+	proto->recvThread_id = 0;
 
 #if 1 //server addr init
 #if 0 //android JNI don't support gethostbyname
@@ -294,6 +298,7 @@ void ntyProtoClientProxyReq(void *_self, C_DEVID toId, U8 *buf, int length) {
 	length += NTY_PROTO_DATAPACKET_CONTENT_IDX;
 	length += sizeof(U32);
 
+	ntydbg(" ntyProtoClientProxyReq \n");
 	void *pNetwork = ntyNetworkInstance();
 	n = ntySendFrame(pNetwork, &proto->serveraddr, buf, length);
 	
@@ -360,7 +365,11 @@ static void ntySetupHeartBeatThread(void* self) {
 	NattyProtoOpera * const * protoOpera = self;
 	int err;
 
-	if (self && (*protoOpera) && (*protoOpera)->heartbeat) {		
+	if (self && (*protoOpera) && (*protoOpera)->heartbeat) {
+		if (proto->heartbeatThread_id != 0) {
+			ntydbg(" heart beat thread is running \n");
+			return ;
+		}
 		err = pthread_create(&proto->heartbeatThread_id, NULL, (*protoOpera)->heartbeat, self);				
 		if (err != 0) { 				
 			ntydbg(" can't create thread:%s\n", strerror(err)); 
@@ -386,7 +395,12 @@ static void ntySetupRecvProcThread(void *self) {
 	int err;
 	pthread_t recvThread_id;
 
-	if (self && proto && proto->onRecvCallback) {		
+	if (self && proto && proto->onRecvCallback) {	
+		if (proto->recvThread_id != 0) {
+			ntydbg(" recv thread is running \n");
+			return ;
+		}
+		
 		err = pthread_create(&proto->recvThread_id, NULL, proto->onRecvCallback, self);				
 		if (err != 0) { 				
 			ntydbg(" can't create thread:%s\n", strerror(err)); 
@@ -465,7 +479,7 @@ void ntySetSendFailedCallback(PROXY_CALLBACK cb) {
 	}
 }
 
-void ntySetProxyCallback(PROXY_CALLBACK cb) {
+void ntySetProxyCallback(PROXY_HANDLE_CB cb) {
 	NattyProto* proto = ntyProtoInstance();
 	if (proto) {
 		proto->onProxyCallback = cb;
@@ -499,6 +513,11 @@ void ntySetDevId(C_DEVID id) {
 	}
 }
 
+int ntyGetNetworkStatus(void) {
+	void *network = ntyNetworkInstance();
+	return ntyGetSocket(network);
+}
+
 void ntyStartupClient(void) {
 	NattyProto* proto = ntyProtoInstance();
 	if (proto) {
@@ -506,6 +525,15 @@ void ntyStartupClient(void) {
 		ntySetupHeartBeatThread(proto); //setup heart proc
 		ntySetupRecvProcThread(proto); //setup recv proc
 	}
+}
+
+void ntyShutdownClient(void) {
+	NattyProto* proto = ntyProtoInstance();
+	void *pNetwork = ntyNetworkInstance();
+	ntyNetworkRelease(pNetwork);
+
+	proto->u8RecvExitFlag = 1;
+	proto->recvThread_id = 0;
 }
 
 U8* ntyGetRecvBuffer(void) {
@@ -580,6 +608,10 @@ static void* ntyRecvProc(void *arg) {
 
 	ntydbg(" ntyRecvProc %d\n", fds.fd);
 	while (1) {
+		if (proto->u8RecvExitFlag){ 
+			ntydbg(" ntyRecvProc Exist\n");
+			break;
+		}
 		ret = poll(&fds, 1, 5);
 		if (ret) {
 			bzero(buf, RECV_BUFFER_SIZE);
@@ -606,6 +638,7 @@ static void* ntyRecvProc(void *arg) {
 				int count = ntyU8ArrayToU16(&buf[NTY_PROTO_LOGIN_ACK_FRIENDS_COUNT_IDX]);
 				void *pTree = ntyRBTreeInstance();
 
+				
 				for (i = 0;i < count;i ++) {
 					//C_DEVID friendId = *(C_DEVID*)(&buf[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_DEVID_IDX(i)]);
 					C_DEVID friendId = ntyU8ArrayToU64(&buf[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_DEVID_IDX(i)]);
@@ -656,7 +689,7 @@ static void* ntyRecvProc(void *arg) {
 
 				if (proto->onProxyCallback) {
 					proto->recvLen -= (NTY_PROTO_DATAPACKET_CONTENT_IDX+sizeof(U32));
-					proto->onProxyCallback(proto->recvLen);
+					proto->onProxyCallback(friId, proto->recvLen);
 				}
 			} else if (buf[NTY_PROTO_TYPE_IDX] == NTY_PROTO_DATAPACKET_ACK) {
 				//ntydbg(" send success\n");

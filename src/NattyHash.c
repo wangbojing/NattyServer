@@ -333,10 +333,42 @@ void hash(const void *key, size_t len, const uint32_t seed, size_t r_hash[2])
 #endif
 }
 
-extern U32 ntyGenCrcValue(U8 *buf, int length);
+#define NTY_HASH_CRCTABLE_LENGTH			256
+#define NTY_HASH_CRC_KEY					0x12345678ul
+
+static U32 u32HashCrcTable[NTY_HASH_CRCTABLE_LENGTH] = {0};
+
+
+static void ntyGenHashCrcTable(void) {
+	U16 i,j;
+	U32 u32CrcNum = 0;
+
+	for (i = 0;i < NTY_HASH_CRCTABLE_LENGTH;i ++) {
+		U32 u32CrcNum = (i << 24);
+		for (j = 0;j < 8;j ++) {
+			if (u32CrcNum & 0x80000000L) {
+				u32CrcNum = (u32CrcNum << 1) ^ NTY_HASH_CRC_KEY;
+			} else {
+				u32CrcNum = (u32CrcNum << 1);
+			}
+		}
+		u32HashCrcTable[i] = u32CrcNum;
+	}
+}
+
+static U32 ntyGenHashCrcValue(U8 *buf, int length) {
+	U32 u32CRC = 0xFFFFFFFF;
+	
+	while (length -- > 0) {
+		u32CRC = (u32CRC << 8) ^ u32HashCrcTable[((u32CRC >> 24) ^ *buf++) & 0xFF];
+	}
+
+	return u32CRC;
+}
+
 
 U32 ntyHashCrcKey(U8 *buf, int length) {
-	U32 Crc = ntyGenCrcValue(buf, length);
+	U32 Crc = ntyGenHashCrcValue(buf, length);
 
 	ntylog(" CRC:%x, %x\n", Crc, (Crc & NATTY_DICTIONARY_MASK));
 	return (Crc & NATTY_DICTIONARY_MASK);
@@ -345,6 +377,10 @@ U32 ntyHashCrcKey(U8 *buf, int length) {
 U32 ntyHashKey(Payload *load) {
 	U32 Crc = 0x0;
 	if (load == NULL) return 0x0;
+
+	ntylog(" ntyHashKey --> %d.%d.%d.%d:%d \n", *(unsigned char*)(&load->srcip), *((unsigned char*)(&load->srcip)+1),													
+				*((unsigned char*)(&load->srcip)+2), *((unsigned char*)(&load->srcip)+3),													
+				load->sport);
 	
 	Crc = ntyHashCrcKey((U8*)load, sizeof(Payload));
 	return Crc;
@@ -361,6 +397,7 @@ U8 ntyPayloadCompare(Payload *a, Payload *b) {
 }
 
 void ntyPayloadValue(Payload *pLoad, struct sockaddr_in *addr) {
+	
 	pLoad->srcip = addr->sin_addr.s_addr;
 	pLoad->sport = addr->sin_port;
 	pLoad->dstip = inet_addr("127.0.0.1");
@@ -386,6 +423,8 @@ void* ntyHashInitialize(HashTable *table) {
 	table->Dictionary = (HashNode*)malloc(NATTY_DICTIONARY_LENGTH*sizeof(HashNode));
 	memset(table->Dictionary, 0, NATTY_DICTIONARY_LENGTH*sizeof(HashNode));
 #endif
+
+	ntyGenHashCrcTable();
 	return table;
 }
 
@@ -605,9 +644,13 @@ int ntyHashTableUpdate(void *self, U32 key, Payload* load, C_DEVID id) {
 
 
 C_DEVID ntySearchDevIdFromHashTable(struct sockaddr_in *addr) {
+	ntylog("ntySearchDevIdFromHashTable Start --> %d.%d.%d.%d:%d \n", *(unsigned char*)(&addr->sin_addr.s_addr), *((unsigned char*)(&addr->sin_addr.s_addr)+1),													
+				*((unsigned char*)(&addr->sin_addr.s_addr)+2), *((unsigned char*)(&addr->sin_addr.s_addr)+3),													
+				addr->sin_port);
 	int ret = 0;
 	void *pHash = ntyHashTableInstance();
-	
+
+	ntylog(" ntySearchDevIdFromHashTable --> Start\n");
 	Payload *pLoad = (Payload*)malloc(sizeof(Payload));
 	if (pLoad == NULL) {
 		ntylog("malloc payload is failed\n");
@@ -623,10 +666,15 @@ C_DEVID ntySearchDevIdFromHashTable(struct sockaddr_in *addr) {
 }
 
 int ntyDeleteNodeFromHashTable(struct sockaddr_in *addr, C_DEVID id) {
+	ntylog("ntyDeleteNodeFromHashTable Start --> %d.%d.%d.%d:%d \n", *(unsigned char*)(&addr->sin_addr.s_addr), *((unsigned char*)(&addr->sin_addr.s_addr)+1),													
+				*((unsigned char*)(&addr->sin_addr.s_addr)+2), *((unsigned char*)(&addr->sin_addr.s_addr)+3),													
+				addr->sin_port);
+	
 	int ret = 0;
 	void *pHash = ntyHashTableInstance();
 	if (addr == NULL) return -1;
 
+	ntylog(" ntyDeleteNodeFromHashTable --> Start\n");
 	Payload *pLoad = (Payload*)malloc(sizeof(Payload));
 	if (pLoad == NULL) {
 		ntylog("malloc payload is failed\n");
@@ -647,6 +695,7 @@ int ntyInsertNodeToHashTable(struct sockaddr_in *addr, C_DEVID id) {
 	ntylog("ntyInsertNodeToHashTable Start --> %d.%d.%d.%d:%d \n", *(unsigned char*)(&addr->sin_addr.s_addr), *((unsigned char*)(&addr->sin_addr.s_addr)+1),													
 				*((unsigned char*)(&addr->sin_addr.s_addr)+2), *((unsigned char*)(&addr->sin_addr.s_addr)+3),													
 				addr->sin_port);
+	
 	void *pHash = ntyHashTableInstance();
 
 	if (addr == NULL) return -1;

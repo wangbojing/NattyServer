@@ -141,8 +141,10 @@ void NattyRBTreeInsert(RBTree *T, RBTreeNode *z) {
 		y = x;
 		if (z->key < x->key) {
 			x = x->left;
-		} else {
+		} else if(z->key > x->key) {
 			x = x->right;
+		} else { //Exist
+			return ;
 		}
 	}
 
@@ -437,9 +439,35 @@ static void ntyInOrderMass(RBTree *T, RBTreeNode *node, HANDLE_MASS handle_FN, U
 	return ;
 }
 
+static void ntyInOrderBroadcast(RBTree *T, RBTreeNode *node, HANDLE_BROADCAST handle_FN, void *client, U8 *buf, int length) {
+	if (node != T->nil) {
+		Client *pClient = client;
+		//ntylog(" ntyInOrderBroadcast fromId \n");
+		ntyInOrderBroadcast(T, node->left, handle_FN, client, buf, length);
+		ntydbg(" ntyInOrderBroadcast :%lld, fromId:%lld, buffer:%s, length:%d\n", node->key, pClient->devId, buf, length);
+		handle_FN(client, node->key, buf, length);
+		//ntylog(" ntyInOrderBroadcast --> handle_FN :%lld, buffer:%s, length:%d\n", node->key, buf, length);
+		ntyInOrderBroadcast(T, node->right, handle_FN, client, buf, length);
+	}
+	return ;
+}
+
+static void ntyInOrderHeartBeat(RBTree *T, RBTreeNode *node, HANDLE_HEARTBEAT handle_FN, void *mainloop, TIMESTAMP stamp) {
+	if (node != T->nil) {		
+		ntyInOrderHeartBeat(T, node->left, handle_FN, mainloop, stamp);
+		ntydbg(" ntyInOrderHeartBeat :%lld, stamp:%ld\n", node->key, stamp);
+		
+		handle_FN(node->value, mainloop, stamp);
+		ntyInOrderHeartBeat(T, node->right, handle_FN, mainloop, stamp);
+	}
+	return ;
+}
+
+
+
 static void ntyPreOrderTraversal(RBTree *T, RBTreeNode *node) {
 	if (node != T->nil) {
-		ntylog(" %lld ", node->key);
+		ntydbg(" %lld ", node->key);
 		ntyPreOrderTraversal(T, node->left);
 		ntyPreOrderTraversal(T, node->right);
 	}
@@ -460,7 +488,7 @@ static void ntyPosOrderTraversal(RBTree *T, RBTreeNode *node) {
 	if (node != T->nil) {
 		ntyPosOrderTraversal(T, node->left);
 		ntyPosOrderTraversal(T, node->right);
-		ntylog(" %lld ", node->key);
+		ntydbg(" %lld ", node->key);
 	}
 	return ;
 }
@@ -470,7 +498,7 @@ static int ntyPrintTreeByLevel(RBTree *T, RBTreeNode *node, int level) {
 		return 0;
 	}
 	if (0 == level) {
-		ntylog(" %lld color:%d  %s\n", node->key, node->color, (char*)node->value);
+		ntydbg(" %lld color:%d  %s\n", node->key, node->color, (char*)node->value);
 		return 1;
 	}
 
@@ -505,6 +533,21 @@ void ntyRBTreeOperaMass(void *_self, HANDLE_MASS handle_FN, U8 *buf, int length)
 	return ntyInOrderMass(self, self->root, handle_FN, buf, length);
 }
 
+void ntyRBTreeOperaHeartBeat(void *_self, HANDLE_HEARTBEAT handle_FN, void *mainloop, TIMESTAMP stamp) {
+	RBTree *self = _self;
+
+	ntydbg("ntyRBTreeOperaHeartBeat\n");
+	return ntyInOrderHeartBeat(self, self->root, handle_FN, mainloop, stamp);
+}
+
+
+void ntyRBTreeOperaBroadcast(void *_self, HANDLE_BROADCAST handle_FN, void *client,  U8 *buf, int length) {
+	RBTree *self = _self;
+
+	ntydbg("ntyRBTreeOperaBroadcast\n");
+	return ntyInOrderBroadcast(self, self->root, handle_FN, client, buf, length);
+}
+
 
 static const RBTreeOpera ntyRBTreeOpera = {
 	sizeof(RBTree),
@@ -517,6 +560,8 @@ static const RBTreeOpera ntyRBTreeOpera = {
 	ntyRBTreeOperaTraversal,
 	ntyRBTreeOperaNotify,
 	ntyRBTreeOperaMass,
+	ntyRBTreeOperaBroadcast,
+	ntyRBTreeOperaHeartBeat,
 };
 
 const void *pNtyRBTreeOpera = &ntyRBTreeOpera;
@@ -633,6 +678,24 @@ void ntyFriendsTreeMass(void *self, HANDLE_MASS handle_FN, U8 *buf, int length) 
 		return (*pRBTreeOpera)->mass(self, handle_FN, buf, length);
 	}
 }
+
+void ntyFriendsTreeBroadcast(void *self, HANDLE_BROADCAST handle_FN, void *client, U8 *buf, int length) {
+	RBTreeOpera **pRBTreeOpera = self;
+	
+	if (self && (*pRBTreeOpera) && (*pRBTreeOpera)->broadcast) {
+		return (*pRBTreeOpera)->broadcast(self, handle_FN, client, buf, length);
+	}
+}
+
+void ntyRBTreeHeartBeatDetect(void *self, HANDLE_HEARTBEAT handle_FN, void *mainloop, TIMESTAMP stamp) {
+	RBTreeOpera **pRBTreeOpera = self;
+
+	if (self && (*pRBTreeOpera) && (*pRBTreeOpera)->heartbeat) {
+		return (*pRBTreeOpera)->heartbeat(self, handle_FN, mainloop, stamp);
+	}
+}
+
+
 
 
 /*
