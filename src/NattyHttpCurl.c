@@ -53,7 +53,7 @@
 
 
 
-size_t ntyHttpQJKFallenHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
+static size_t ntyHttpQJKFallenHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
 	VALUE_TYPE *tag = stream;
 	U8 u8ResultBuffer[256] = {0};
 
@@ -100,7 +100,7 @@ int ntyHttpQJKFallen(void *arg) {
 		return -2;	
 	}
 
-	ntydbg("QJK url:%s\n", tag->Tag);
+	ntylog("QJK url:%s\n", tag->Tag);
 
 	curl_easy_setopt(curl, CURLOPT_URL, tag->Tag); 
 	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L); 
@@ -131,7 +131,7 @@ int ntyHttpQJKFallen(void *arg) {
 
 //MSG_TYPE_GAODE_WIFI_CELL_API
 
-size_t ntyHttpGaodeWifiCellAPIHandleResult(void* data, size_t size, size_t nmemb, void *stream) {
+static size_t ntyHttpGaodeWifiCellAPIHandleResult(void* data, size_t size, size_t nmemb, void *stream) {
 	VALUE_TYPE *tag = stream;
 	const U8 *pattern_start = "<location>";
 	const U8 *pattern_end = "</location>";
@@ -181,7 +181,7 @@ size_t ntyHttpGaodeWifiCellAPIHandleResult(void* data, size_t size, size_t nmemb
 			
 			ntylog("lat:%s, lon:%s\n", u8Lat, u8Lon);
 			
-			sprintf(u8ResultBuffer, "Set Location %s:%s:3", u8Lat, u8Lon);
+			sprintf(u8ResultBuffer, "Set Location %s:%s:%d", u8Lat, u8Lon, tag->u8LocationType);
 #if 0
 			if (tag->toId != 0x0) {
 				ntyProtoHttpProxyTransform(tag->fromId, tag->toId, u8ResultBuffer, strlen(u8ResultBuffer+NTY_PROTO_DATAPACKET_CONTENT_IDX));
@@ -220,10 +220,11 @@ int ntyHttpGaodeWifiCellAPI(void *arg) {
 		return -2;	
 	}
 
-	ntydbg("GAODE url:%s\n", tag->Tag);
+	ntylog("GAODE url:%s\n", tag->Tag);
 
 	curl_easy_setopt(curl, CURLOPT_URL, tag->Tag); 
 	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L); 
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30); 
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ntyHttpGaodeWifiCellAPIHandleResult); 
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, tag); 
 
@@ -250,7 +251,7 @@ int ntyHttpGaodeWifiCellAPI(void *arg) {
 	return 0;
 }
 
-size_t ntyHttpMtkQuickLocationHandleResult(void* data, size_t size, size_t nmemb, void *stream) {
+static size_t ntyHttpMtkQuickLocationHandleResult(void* data, size_t size, size_t nmemb, void *stream) {
 	VALUE_TYPE *tag = stream;
 	const U8 *pattern_start = "<location>";
 	const U8 *pattern_end = "</location>";
@@ -333,7 +334,7 @@ int ntyHttpMtkQuickLocation(void *arg) {
 		return -2;	
 	}
 
-	ntydbg("GAODE url:%s\n", tag->Tag);
+	ntylog("GAODE url:%s\n", tag->Tag);
 
 	curl_easy_setopt(curl, CURLOPT_URL, tag->Tag); 
 	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L); 

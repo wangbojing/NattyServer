@@ -82,11 +82,19 @@ int ntyHeartBeatDetectItem(void *node, void *mainloop, TIMESTAMP curStamp) {
 		if (mainloop == NULL) {
 			ntylog(" ntyHeartBeatDetectItem --> mainloop is Null\n");
 		}
+#if 0
 		if(0 == ntyReleaseClientNodeByAddr(mainloop, &client->addr, client->watcher)) {
 			ntylog("Release Client Node Success\n");
 		} else {
 			ntylog("Release Client Node Failed\n");
 		}
+#else
+		if (0 == ntyReleaseClientNodeNyNode(mainloop, client)) {
+			ntylog("Release Client Node Success\n");
+		} else {
+			ntylog("Release Client Node Failed\n");
+		}
+#endif
 	}
 
 	return 0;

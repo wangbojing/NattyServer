@@ -165,7 +165,7 @@ int ntyUdpServerProcess(const void *_self) {
 			
 			bzero(buf, RECV_BUFFER_SIZE);    
 			n = recvfrom(self->sockfd, buf, RECV_BUFFER_SIZE, 0, (struct sockaddr *) &req->client->addr, &clientlen);    
-			ntylog("%d.%d.%d.%d:%d, length:%d --> %x, id:%lld\n", *(unsigned char*)(&req->client->addr.sin_addr.s_addr), *((unsigned char*)(&req->client->addr.sin_addr.s_addr)+1),													
+			ntylog("UdpRecv : %d.%d.%d.%d:%d, length:%d --> %x, id:%lld\n", *(unsigned char*)(&req->client->addr.sin_addr.s_addr), *((unsigned char*)(&req->client->addr.sin_addr.s_addr)+1),													
 				*((unsigned char*)(&req->client->addr.sin_addr.s_addr)+2), *((unsigned char*)(&req->client->addr.sin_addr.s_addr)+3),													
 				req->client->addr.sin_port, n, buf[NTY_PROTO_TYPE_IDX], *(C_DEVID*)(&buf[NTY_PROTO_DEVID_IDX]));	
 			// proccess

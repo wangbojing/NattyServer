@@ -72,6 +72,7 @@ typedef struct _MESSAGETAG {
 	int length;
 	C_DEVID fromId;
 	C_DEVID toId;
+	U8 u8LocationType;
 } MessageTag;
 
 //typedef int VALUE_TYPE;

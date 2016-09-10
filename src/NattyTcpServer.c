@@ -147,6 +147,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		
 #endif
 	} else {
+		int i = 0;
 		struct sockaddr_in client_addr;
 		int nSize = sizeof(struct sockaddr_in);	 
 		void* pThreadPool = ntyThreadPoolInstance();
@@ -158,9 +159,16 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		}
 			
 		getpeername(watcher->fd,(struct sockaddr*)&req->client->addr, &nSize);
-		ntylog(" %d.%d.%d.%d:%d, length:%ld --> %x, id:%lld\n", *(unsigned char*)(&req->client->addr.sin_addr.s_addr), *((unsigned char*)(&req->client->addr.sin_addr.s_addr)+1),													
+		ntylog(" TcpRecv : %d.%d.%d.%d:%d, length:%ld --> %x, id:%lld\n", *(unsigned char*)(&req->client->addr.sin_addr.s_addr), *((unsigned char*)(&req->client->addr.sin_addr.s_addr)+1),													
 				*((unsigned char*)(&req->client->addr.sin_addr.s_addr)+2), *((unsigned char*)(&req->client->addr.sin_addr.s_addr)+3),													
 				req->client->addr.sin_port, rLen, buffer[NTY_PROTO_TYPE_IDX], *(C_DEVID*)(&buffer[NTY_PROTO_DEVID_IDX]));	
+
+#if 0 //Update 
+		for (i = 0;i < rLen;i ++) {
+			ntylog("/x%x", buffer[i]);
+		}
+		ntylog("\n");
+#endif
 
 		req->client->devId = *(C_DEVID*)(&buffer[NTY_PROTO_DEVID_IDX]);
 		req->client->sockfd = watcher->fd;

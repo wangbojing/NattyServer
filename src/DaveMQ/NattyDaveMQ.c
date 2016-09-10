@@ -294,11 +294,28 @@ int ntyDaveMqEnQueue(void *Queue, C_DEVID fromId, C_DEVID toId, MESSAGE_TYPE typ
 	DaveQueueHandle * const * handle = Queue;
 
 	if (Queue && (*handle) && (*handle)->enqueue) {
-		
-		
+		int i = 0;
 		VALUE_TYPE *tag = (VALUE_TYPE*)malloc(sizeof(VALUE_TYPE));
+#if 1 //Update URL have space key
+		for (i = 0;i < length;i ++) {
+			if (data[i] == ' ' || data[i] >= 0x7F || data[i] <= 0x20) {
+				data[i] = '_';
+			}
+		}
+		if (type == MSG_TYPE_GAODE_WIFI_CELL_API) {
+			int matchs[3] = {0}, n = 0;
+			const char *pattern = "accesstype=1";
+			int len = strlen(pattern);
 
-		ntylog(" ntyDaveMqEnQueue --> length:%d, data.length:%d\n", length, strlen(data));
+			n = ntyKMP(data, length, pattern, len, matchs);
+			if (matchs[0] != 0) { //wifi location
+				tag->u8LocationType = 1;
+			} else { //cell location
+				tag->u8LocationType = 3;
+			}
+		}
+#endif
+		ntylog(" ntyDaveMqEnQueue --> length:%d, data.length:%ld\n", length, strlen(data));
 		memcpy(tag->Tag, data, length);
 		tag->length = length;
 		tag->Type = type;
@@ -346,7 +363,6 @@ int ntyClassifyMessageType(C_DEVID fromId, C_DEVID toId, U8 *data, int length) {
 		data[pattern_index[0]-1] = '\0';
 		length = pattern_index[0] - 1;
 	}
-	
 #endif
 	ntylog("fromId:%lld, toId:%lld, length:%d\n", fromId, toId, length);
 	if (0 == strncmp(NTY_HTTP_GET_HANDLE_STRING, data, 3)) {
