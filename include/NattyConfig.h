@@ -48,7 +48,7 @@
 
 #define ENABLE_NATTY_HEARTBEAT_DETECTER		1
 
-
+#define ENABLE_MAINLOOP_MUTEX				1
 
 #endif
 

@@ -296,6 +296,7 @@ int ntyDaveMqEnQueue(void *Queue, C_DEVID fromId, C_DEVID toId, MESSAGE_TYPE typ
 	if (Queue && (*handle) && (*handle)->enqueue) {
 		int i = 0;
 		VALUE_TYPE *tag = (VALUE_TYPE*)malloc(sizeof(VALUE_TYPE));
+		memset(tag, 0, sizeof(VALUE_TYPE));
 #if 1 //Update URL have space key
 		for (i = 0;i < length;i ++) {
 			if (data[i] == ' ' || data[i] >= 0x7F || data[i] <= 0x20) {
@@ -316,7 +317,10 @@ int ntyDaveMqEnQueue(void *Queue, C_DEVID fromId, C_DEVID toId, MESSAGE_TYPE typ
 		}
 #endif
 		ntylog(" ntyDaveMqEnQueue --> length:%d, data.length:%ld\n", length, strlen(data));
+		tag->Tag = (U8*)malloc(length+1);
+		memset(tag->Tag, 0, length+1);
 		memcpy(tag->Tag, data, length);
+		
 		tag->length = length;
 		tag->Type = type;
 		tag->fromId = fromId;

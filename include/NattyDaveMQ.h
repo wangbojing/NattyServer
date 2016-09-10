@@ -68,7 +68,11 @@ typedef enum {
 
 typedef struct _MESSAGETAG {
 	MESSAGE_TYPE Type;
+#if 0
 	U8 Tag[DAVE_MESSAGE_LENGTH];
+#else
+	U8 *Tag;
+#endif
 	int length;
 	C_DEVID fromId;
 	C_DEVID toId;

@@ -78,9 +78,33 @@ static void ntyTcpServerJob(Job *job) {
 	free(job);
 }
 
+static void ntyReleaseClient(Job *job) {
+	RequestPacket *req = (RequestPacket*)job->user_data;
+	struct ev_loop *loop = ntyTcpServerGetMainloop();
+
+	req->client->devId = ntySearchDevIdFromHashTable(&req->client->addr);
+	if (req->client->devId == NATTY_NULL_DEVID) {
+		ntylog(" DevID is not exist \n");
+		ntyReleaseClientNodeSocket(loop, req->client->watcher, req->client->sockfd);
+		return ;
+	} 
+
+	ntyBoardcastAllFriendsNotifyDisconnect(req->client->devId);
+
+	if (0 == ntyReleaseClientNodeNyNode(loop, req->client)) {
+		ntylog("Release Client Node Success\n");
+	} else {
+		ntylog("Release Client Node Failed\n");
+		ntyReleaseClientNodeSocket(loop, req->client->watcher, req->client->sockfd);
+	}
+
+	freeRequestPacket(req);
+	free(job);
+}
+
 
 void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
-	U8 buffer[RECV_BUFFER_SIZE];
+	U8 buffer[RECV_BUFFER_SIZE] = {0};
 	ssize_t rLen = 0;
 
 	if (EV_ERROR & revents) {
@@ -88,10 +112,12 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		return ;
 	}
 
+	memset(buffer, 0, RECV_BUFFER_SIZE);
 	rLen = recv(watcher->fd, buffer, RECV_BUFFER_SIZE, 0);
 	if (rLen < 0) {
 		ntylog("read error\n");
 	} else if (rLen == 0) {
+#if 0 // push to Thread pool
 		struct sockaddr_in client_addr;
 		int nSize = sizeof(struct sockaddr_in);
 #if 1
@@ -106,6 +132,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 				client_addr.sin_port);	
 		// release client
 		// search hash table for client key
+
 		C_DEVID devid = ntySearchDevIdFromHashTable(&client_addr);
 		if (devid == NATTY_NULL_DEVID) {
 			ntylog(" DevID is not exist \n");
@@ -146,6 +173,40 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 
 		
 #endif
+#else
+		void* pThreadPool = ntyThreadPoolInstance();
+		int nSize = sizeof(struct sockaddr_in);
+
+		RequestPacket *req = (RequestPacket*)allocRequestPacket();
+		if (req == NULL) {
+			freeRequestPacket(req);
+			return ;
+		}
+		
+		getpeername(watcher->fd,(struct sockaddr*)&req->client->addr, &nSize);
+		ntylog(" TcpRecv : %d.%d.%d.%d:%d, --> Client Disconnected\n", *(unsigned char*)(&req->client->addr.sin_addr.s_addr), *((unsigned char*)(&req->client->addr.sin_addr.s_addr)+1), 												
+				*((unsigned char*)(&req->client->addr.sin_addr.s_addr)+2), *((unsigned char*)(&req->client->addr.sin_addr.s_addr)+3),													
+				req->client->addr.sin_port);	
+
+		req->client->devId = 0x0;
+		req->client->sockfd = watcher->fd;
+		req->client->watcher = watcher;
+		req->client->clientType = PROTO_TYPE_TCP;
+		req->length = (U16)rLen;
+		req->buffer = NULL;
+
+		Job *job = (Job*)malloc(sizeof(*job));
+		if (job == NULL) {
+			ntylog("malloc Job failed\n");
+			freeRequestPacket(req);
+			return ;
+		}
+		
+		job->job_function  = ntyReleaseClient;
+		job->user_data = req;
+
+		ntyThreadPoolPush(pThreadPool, job);
+#endif
 	} else {
 		int i = 0;
 		struct sockaddr_in client_addr;
@@ -184,6 +245,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 			return;
 		}	
 
+		memset(req->buffer, 0, rLen);
 		memcpy(req->buffer, buffer, rLen);
 		Job *job = (Job*)malloc(sizeof(*job));
 		if (job == NULL) {

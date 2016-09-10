@@ -71,6 +71,7 @@ typedef struct _TcpClient {
 
 void* ntyTcpServerInstance(void);
 int ntyTcpServerRun(const void *arg);
+void *ntyTcpServerGetMainloop(void);
 
 
 

@@ -78,7 +78,11 @@ static size_t ntyHttpQJKFallenHandleResult(void* buffer, size_t size, size_t nme
 #endif
 
 exit:	
+
+#if 0
+	free(tag->Tag);
 	free(tag);
+#endif	
 	return size*nmemb;
 }
 
@@ -104,6 +108,7 @@ int ntyHttpQJKFallen(void *arg) {
 
 	curl_easy_setopt(curl, CURLOPT_URL, tag->Tag); 
 	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L); 
+	curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ntyHttpQJKFallenHandleResult); 
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, tag); 
 
@@ -125,7 +130,16 @@ int ntyHttpQJKFallen(void *arg) {
 	}	
 	
 	curl_easy_cleanup(curl);
-
+#if 1
+	if (tag->Tag != NULL) {
+		free(tag->Tag);
+		tag->Tag = NULL;
+	}
+	if (tag != NULL) {
+		free(tag);
+		tag = NULL;
+	}
+#endif
 	return 0;
 }
 
@@ -161,8 +175,10 @@ static size_t ntyHttpGaodeWifiCellAPIHandleResult(void* data, size_t size, size_
 
 		sprintf(u8ResultBuffer, "Set Location LatLonFailed");
 		ntyProtoHttpRetProxyTransform(tag->fromId, u8ResultBuffer, strlen(u8ResultBuffer));
-		
+#if 0
+		free(tag->Tag);
 		free(tag);
+#endif		
 		return size*nmemb;
 	}
 
@@ -195,9 +211,10 @@ static size_t ntyHttpGaodeWifiCellAPIHandleResult(void* data, size_t size, size_
 			break;
 		}
 	}
-
-	
+#if 0
+	free(tag->Tag);
 	free(tag);
+#endif
 	return size*nmemb;
 }
 
@@ -224,7 +241,7 @@ int ntyHttpGaodeWifiCellAPI(void *arg) {
 
 	curl_easy_setopt(curl, CURLOPT_URL, tag->Tag); 
 	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L); 
-	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30); 
+	curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ntyHttpGaodeWifiCellAPIHandleResult); 
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, tag); 
 
@@ -248,6 +265,18 @@ int ntyHttpGaodeWifiCellAPI(void *arg) {
 	ntylog(" ntyHttpGaodeWifiCellAPI --> res:%d\n", res);
 	curl_easy_cleanup(curl);
 
+#if 1
+	if (tag->Tag != NULL) {
+		free(tag->Tag);
+		tag->Tag = NULL;
+	}
+	if (tag != NULL) {
+		free(tag);
+		tag = NULL;
+	}
+#endif
+
+	
 	return 0;
 }
 
@@ -280,8 +309,10 @@ static size_t ntyHttpMtkQuickLocationHandleResult(void* data, size_t size, size_
 		ntylog(" result failed: %s\n", buffer);
 		sprintf(u8ResultBuffer, "Set Location LatLonFailed");
 		ntyProtoHttpRetProxyTransform(tag->fromId, u8ResultBuffer, strlen(u8ResultBuffer));
-
+#if 0
+		free(tag->Tag);
 		free(tag);
+#endif
 		return size*nmemb;
 	}
 
@@ -310,8 +341,10 @@ static size_t ntyHttpMtkQuickLocationHandleResult(void* data, size_t size, size_
 #if 0
 	ntySendDeviceRouterInfo(cv, ack, strlen(ack));
 #endif
-	
+#if 0
+	free(tag->Tag);
 	free(tag);
+#endif	
 	return size*nmemb;
 }
 
@@ -338,6 +371,7 @@ int ntyHttpMtkQuickLocation(void *arg) {
 
 	curl_easy_setopt(curl, CURLOPT_URL, tag->Tag); 
 	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L); 
+	curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ntyHttpMtkQuickLocationHandleResult); 
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, tag); 
 
@@ -359,6 +393,16 @@ int ntyHttpMtkQuickLocation(void *arg) {
 	}	
 	
 	curl_easy_cleanup(curl);
+#if 1
+	if (tag->Tag != NULL) {
+		free(tag->Tag);
+		tag->Tag = NULL;
+	}
+	if (tag != NULL) {
+		free(tag);
+		tag = NULL;
+	}
+#endif
 
 	return 0;
 }

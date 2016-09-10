@@ -644,7 +644,7 @@ int ntyHashTableUpdate(void *self, U32 key, Payload* load, C_DEVID id) {
 
 
 C_DEVID ntySearchDevIdFromHashTable(struct sockaddr_in *addr) {
-	ntylog("ntySearchDevIdFromHashTable Start --> %d.%d.%d.%d:%d \n", *(unsigned char*)(&addr->sin_addr.s_addr), *((unsigned char*)(&addr->sin_addr.s_addr)+1),													
+	ntylog(" ntySearchDevIdFromHashTable Start --> %d.%d.%d.%d:%d \n", *(unsigned char*)(&addr->sin_addr.s_addr), *((unsigned char*)(&addr->sin_addr.s_addr)+1),													
 				*((unsigned char*)(&addr->sin_addr.s_addr)+2), *((unsigned char*)(&addr->sin_addr.s_addr)+3),													
 				addr->sin_port);
 	int ret = 0;

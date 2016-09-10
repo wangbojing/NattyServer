@@ -61,6 +61,7 @@
 #if ENABLE_NATTY_TIME_STAMP
 #include <pthread.h>
 pthread_mutex_t time_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t loop_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 
@@ -838,8 +839,11 @@ static const ProtocolFilter ntyP2PAddrFilter = {
 
 void ntyUserDataPacketHandleRequest(const void *_self, unsigned char *buffer, int length,const void* obj) {
 	if (buffer[NTY_PROTO_TYPE_IDX] == NTY_PROTO_DATAPACKET_REQ) {
+#if 0
 		U8 data[RECV_BUFFER_SIZE] = {0};
-		
+#else
+		U8 *data = (U8*)malloc(RECV_BUFFER_SIZE*sizeof(U8));
+#endif		
 		C_DEVID destDevId = *(C_DEVID*)(&buffer[NTY_PROTO_DATAPACKET_DEST_DEVID_IDX]);
 		void *pRBTree = ntyRBTreeInstance();
 		UdpClient *destClient = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, destDevId);
@@ -899,6 +903,7 @@ void ntyUserDataPacketHandleRequest(const void *_self, unsigned char *buffer, in
 		}
 		ntydbg("ret : %d\n", ret);
 #endif
+		free(data);
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
@@ -1118,6 +1123,8 @@ void* ntyProtocolFilterInit(void) {
 #if ENABLE_NATTY_TIME_STAMP
 	pthread_mutex_t blank_mutex = PTHREAD_MUTEX_INITIALIZER;
 	memcpy(&time_mutex, &blank_mutex, sizeof(blank_mutex));
+
+	memcpy(&loop_mutex, &blank_mutex, sizeof(blank_mutex));
 #endif
 
 	return pHeartBeatFilter;
@@ -1303,8 +1310,13 @@ int ntyReleaseClientNodeSocket(struct ev_loop *loop, struct ev_io *watcher, int 
 		return -1;
 	}
 	if (sockfd < 0) return -2;
-
+	
+#if ENABLE_MAINLOOP_MUTEX //TIME Stamp 	
+	pthread_mutex_lock(&loop_mutex);
 	ev_io_stop(loop, watcher);
+	pthread_mutex_unlock(&loop_mutex);
+#endif
+
 	close(sockfd);
 	sockfd = -1;
 	free(watcher);
