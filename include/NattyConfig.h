@@ -50,6 +50,8 @@
 
 #define ENABLE_MAINLOOP_MUTEX				1
 
+#define ENABLE_RBTREE_MUTEX					1
+
 #endif
 
 

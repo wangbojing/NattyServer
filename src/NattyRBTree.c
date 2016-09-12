@@ -49,6 +49,9 @@
 #include "NattyUdpServer.h"
 
 
+//static pthread_mutex_t rbtree_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+
 void ntyRBTreeLeftRotate(RBTree *T, RBTreeNode *x) {
 	RBTreeNode *y = x->right;
 	x->right = y->left;
@@ -316,6 +319,9 @@ void* ntyRBTreeOperaCtor(void *_self, va_list *params) {
 	self->root = self->nil;
 	self->count = 0;
 
+	pthread_mutex_t blank_mutex = PTHREAD_MUTEX_INITIALIZER;
+	memcpy(&self->rbtree_mutex, &blank_mutex, sizeof(blank_mutex));
+		
 	return self;
 }
 
@@ -347,7 +353,13 @@ int ntyRBTreeOperaInsert(void *_self, C_DEVID key, void *value) {
 		node = (RBTreeNode*)malloc(sizeof(RBTreeNode));
 		node->key = key;
 		node->value = value;
+#if ENABLE_RBTREE_MUTEX	
+		pthread_mutex_lock(&self->rbtree_mutex);
 		NattyRBTreeInsert(self, node);
+		pthread_mutex_unlock(&self->rbtree_mutex);
+#else
+		NattyRBTreeInsert(self, node);
+#endif
 		self->count ++;
 		return 0;
 	}
@@ -369,8 +381,13 @@ int ntyRBTreeOperaDelete(void *_self, C_DEVID key) {
 
 	RBTreeNode *node = ntyRBTreeSearch(self , key);
 	if (node == self->nil) return 1;
-
+#if ENABLE_RBTREE_MUTEX	
+	pthread_mutex_lock(&self->rbtree_mutex);
 	node = ntyRBTreeDelete(self, node);
+	pthread_mutex_unlock(&self->rbtree_mutex);
+#else
+	node = ntyRBTreeDelete(self, node);
+#endif
 #if 1 //Release Friend list
 	if (node->value != NULL) {
 		UdpClient *client = node->value;
@@ -575,7 +592,7 @@ void* ntyRBTreeInstance(void) {
 		void *pTree = New(pNtyRBTreeOpera);
 		if ((unsigned long)NULL != cmpxchg((void*)(&pRBTree), (unsigned long)NULL, (unsigned long)pTree, WORD_WIDTH)) {
 			Delete(pTree);
-		}
+		} 
 	}
 	return pRBTree;
 }

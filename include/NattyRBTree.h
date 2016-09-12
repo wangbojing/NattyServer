@@ -48,6 +48,8 @@
 #ifndef __NATTY_RBTREE_H__
 #define __NATTY_RBTREE_H__
 
+#include <pthread.h>
+
 #include "NattyAbstractClass.h"
 
 #define RED		1
@@ -69,6 +71,7 @@ typedef struct _RBTree {
 	const void *_;
 	RBTreeNode *root;
 	RBTreeNode *nil;
+	pthread_mutex_t rbtree_mutex;
 	U16 count;
 } RBTree;
 
