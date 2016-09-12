@@ -66,6 +66,9 @@ int main() {
 
 	//ntylog(" ... Server Startup ...\n");
 	ntyDisplay();
+#if 1 //Curl init
+	ntyHttpCurlGlobalInit();
+#endif	
 	ntyDaveMqStart();
 	ntylog(" ... Dave Message Queue Startup ... \n");
 	void *pHash = ntyHashTableInstance();

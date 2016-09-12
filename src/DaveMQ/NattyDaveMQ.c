@@ -165,6 +165,7 @@ void *ntyDaveQueueInstance(void) {
 
 void ntyDaveQueueRelease(void *self) {	
 	Delete(self);
+	pDaveQueue = NULL;
 }
 
 static void* ntyEnQueueThread(void *arg) {
@@ -209,6 +210,7 @@ const void *pNtyDaveMqWorker = &ntyThreadPoolOpera;
 
 static void *pDaveMqWorker = NULL;
 void *ntyDaveMqWorkerInstance(void) {
+#if 1
 	if (pDaveMqWorker == NULL) {
 		void *pWorker = New(pNtyDaveMqWorker);
 		if ((unsigned long)NULL != cmpxchg((void*)(&pDaveMqWorker), (unsigned long)NULL, (unsigned long)pWorker, WORD_WIDTH)) {
@@ -216,10 +218,15 @@ void *ntyDaveMqWorkerInstance(void) {
 		}
 	}
 	return pDaveMqWorker;
+#else
+	return ntyThreadPoolInstance();
+#endif
 }
 
 void ntyDaveMqWorkerRelease(void) {
+#if 1
 	Delete(pDaveMqWorker);
+#endif
 }
 
 void ntyDaveMqStart(void) {
@@ -323,9 +330,13 @@ int ntyDaveMqEnQueue(void *Queue, C_DEVID fromId, C_DEVID toId, MESSAGE_TYPE typ
 		
 		tag->length = length;
 		tag->Type = type;
+		#if 0
 		tag->fromId = fromId;
 		tag->toId = toId;
-
+		#else
+		memcpy(&tag->fromId, &fromId, sizeof(C_DEVID));
+		memcpy(&tag->toId, &toId, sizeof(C_DEVID));
+		#endif
 		ntylog(" ntyDaveMqEnQueue --> fromId:%lld, toId:%lld, length:%d, type:%d\n", fromId, toId, length, type);
 		(*handle)->enqueue(Queue, tag);
 #if 0

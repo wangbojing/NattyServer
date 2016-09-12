@@ -51,6 +51,10 @@
 #include <string.h>
 #include <stdio.h>
 
+#define JEMALLOC_NO_DEMANGLE 1
+#define JEMALLOC_NO_RENAME	 1
+#include <jemalloc/jemalloc.h>
+
 
 
 static size_t ntyHttpQJKFallenHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
@@ -90,14 +94,14 @@ int ntyHttpQJKFallen(void *arg) {
 	CURL *curl;	
 	CURLcode res;	
 	VALUE_TYPE *tag = arg;
-
+#if 0
 	CURLcode return_code;
 	return_code = curl_global_init(CURL_GLOBAL_ALL);
 	if (CURLE_OK != return_code) {
 		ntylog("init libcurl failed.\n");		
 		return -1;
 	}
-
+#endif
 	curl = curl_easy_init();	
 	if (!curl)	{		
 		ntylog("curl init failed\n");		
@@ -108,7 +112,8 @@ int ntyHttpQJKFallen(void *arg) {
 
 	curl_easy_setopt(curl, CURLOPT_URL, tag->Tag); 
 	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L); 
-	curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
+	//curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5); 
+	//curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ntyHttpQJKFallenHandleResult); 
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, tag); 
 
@@ -223,14 +228,14 @@ int ntyHttpGaodeWifiCellAPI(void *arg) {
 	CURL *curl;	
 	CURLcode res;	
 	VALUE_TYPE *tag = arg;
-
+#if 0
 	CURLcode return_code;
 	return_code = curl_global_init(CURL_GLOBAL_ALL);
 	if (CURLE_OK != return_code) {
 		ntylog("init libcurl failed.\n");		
 		return -1;
 	}
-
+#endif
 	curl = curl_easy_init();	
 	if (!curl)	{		
 		ntylog("curl init failed\n");		
@@ -241,7 +246,8 @@ int ntyHttpGaodeWifiCellAPI(void *arg) {
 
 	curl_easy_setopt(curl, CURLOPT_URL, tag->Tag); 
 	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L); 
-	curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
+	//easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
+	//curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ntyHttpGaodeWifiCellAPIHandleResult); 
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, tag); 
 
@@ -354,13 +360,6 @@ int ntyHttpMtkQuickLocation(void *arg) {
 	CURLcode res;	
 	VALUE_TYPE *tag = arg;
 
-	CURLcode return_code;
-	return_code = curl_global_init(CURL_GLOBAL_ALL);
-	if (CURLE_OK != return_code) {
-		ntylog("init libcurl failed.\n");		
-		return -1;
-	}
-
 	curl = curl_easy_init();	
 	if (!curl)	{		
 		ntylog("curl init failed\n");		
@@ -371,7 +370,7 @@ int ntyHttpMtkQuickLocation(void *arg) {
 
 	curl_easy_setopt(curl, CURLOPT_URL, tag->Tag); 
 	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L); 
-	curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
+	//curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5); 
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ntyHttpMtkQuickLocationHandleResult); 
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, tag); 
 
@@ -407,7 +406,16 @@ int ntyHttpMtkQuickLocation(void *arg) {
 	return 0;
 }
 
-
+int ntyHttpCurlGlobalInit(void) {
+	
+	CURLcode return_code;
+	return_code = curl_global_init(CURL_GLOBAL_ALL);
+	if (CURLE_OK != return_code) {
+		ntylog("init libcurl failed.\n");		
+		return -1;
+	}
+	return 0;
+}
 
 
 #if 0

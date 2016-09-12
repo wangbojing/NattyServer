@@ -74,6 +74,9 @@ typedef struct _WorkQueue {
 	Job *waiting_jobs;
 	pthread_mutex_t jobs_mutex;
 	pthread_cond_t jobs_cond;
+#if 1
+	int counter;
+#endif
 } WorkQueue;
 
 typedef struct _ThreadPool {

@@ -76,6 +76,9 @@ static void *ntyRunner(void *arg) {
 		job = worker->workqueue->waiting_jobs;
 		if (job != NULL) {
 			QUEUE_REMOVE(job, worker->workqueue->waiting_jobs);
+#if 1
+			
+#endif
 		}
 		pthread_mutex_unlock(&worker->workqueue->jobs_mutex);
 
@@ -187,7 +190,8 @@ void *ntyThreadPoolInstance(void) {
 }
 
 void ntyThreadPoolRelease(void) {	
-	return Delete(pThreadPool);
+	Delete(pThreadPool);
+	pThreadPool = NULL;
 }
 
 int ntyThreadPoolPush(void *self, void *task) {

@@ -656,6 +656,7 @@ C_DEVID ntySearchDevIdFromHashTable(struct sockaddr_in *addr) {
 		ntylog("malloc payload is failed\n");
 		return -1;
 	}
+	memset(pLoad, 0, sizeof(Payload));
 	ntyPayloadValue(pLoad, addr);
 
 	U32 key = ntyHashKey(pLoad);
@@ -680,6 +681,7 @@ int ntyDeleteNodeFromHashTable(struct sockaddr_in *addr, C_DEVID id) {
 		ntylog("malloc payload is failed\n");
 		return -1;
 	}
+	memset(pLoad, 0, sizeof(Payload));
 	ntyPayloadValue(pLoad, addr);
 	U32 key = ntyHashKey(pLoad);
 	if (key == 0x0) return -1;
@@ -706,7 +708,6 @@ int ntyInsertNodeToHashTable(struct sockaddr_in *addr, C_DEVID id) {
 		return -1;
 	}
 	memset(pLoad, 0, sizeof(Payload));
-	
 	ntyPayloadValue(pLoad, addr);
 	U32 key = ntyHashKey(pLoad);
 	if (key == 0x0) return -1;

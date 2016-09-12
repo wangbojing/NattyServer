@@ -57,6 +57,7 @@ int ntyHttpMtkQuickLocation(void *arg);
 int ntyHttpGaodeWifiCellAPI(void *arg);
 int ntyHttpQJKFallen(void *arg);
 
+int ntyHttpCurlGlobalInit(void);
 
 
 

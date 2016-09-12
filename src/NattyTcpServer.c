@@ -117,7 +117,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 	if (rLen < 0) {
 		ntylog("read error\n");
 	} else if (rLen == 0) {
-#if 0 // push to Thread pool
+#if 1 // push to Thread pool
 		struct sockaddr_in client_addr;
 		int nSize = sizeof(struct sockaddr_in);
 #if 1
