@@ -647,7 +647,7 @@ C_DEVID ntySearchDevIdFromHashTable(struct sockaddr_in *addr) {
 	ntylog(" ntySearchDevIdFromHashTable Start --> %d.%d.%d.%d:%d \n", *(unsigned char*)(&addr->sin_addr.s_addr), *((unsigned char*)(&addr->sin_addr.s_addr)+1),													
 				*((unsigned char*)(&addr->sin_addr.s_addr)+2), *((unsigned char*)(&addr->sin_addr.s_addr)+3),													
 				addr->sin_port);
-	int ret = 0;
+	C_DEVID id = 0;
 	void *pHash = ntyHashTableInstance();
 
 	ntylog(" ntySearchDevIdFromHashTable --> Start\n");
@@ -660,10 +660,10 @@ C_DEVID ntySearchDevIdFromHashTable(struct sockaddr_in *addr) {
 	ntyPayloadValue(pLoad, addr);
 
 	U32 key = ntyHashKey(pLoad);
-	ret = ntyHashTableSearch(pHash, key, pLoad);
+	id = ntyHashTableSearch(pHash, key, pLoad);
 	free(pLoad);
 
-	return ret;
+	return id;
 }
 
 int ntyDeleteNodeFromHashTable(struct sockaddr_in *addr, C_DEVID id) {

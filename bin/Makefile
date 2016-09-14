@@ -3,7 +3,7 @@
 SERVER_OBJ = NattyAbstractClass.o NattyFilter.o NattyRBTree.o NattyServer.o \
 	NattyUdpServer.o NattyTcpServer.o NattyUtils.o NattyThreadPool.o NattyWorkQueue.o \
 	NattySession.o NattyDaveMQ.o NattyHttpCurl.o NattyLetter.o NattyLog.o NattyHash.o \
-	NattyHBD.o 
+	NattyHBD.o NattyDBOperator.o
 
 CLIENT_OBJ = NattyNetwork.o NattyRBTree.o NattyAbstractClass.o NattyTimer.o NattyProtoClient.o \
 	NattyClientMain.o NattyUtils.o NattyLetter.o 

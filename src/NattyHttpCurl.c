@@ -112,8 +112,6 @@ int ntyHttpQJKFallen(void *arg) {
 
 	curl_easy_setopt(curl, CURLOPT_URL, tag->Tag); 
 	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L); 
-	//curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5); 
-	//curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ntyHttpQJKFallenHandleResult); 
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, tag); 
 
@@ -150,8 +148,97 @@ int ntyHttpQJKFallen(void *arg) {
 
 //MSG_TYPE_GAODE_WIFI_CELL_API
 
+static int ntyHttpGaodeGetLocationInfo(U8 *buffer, int len, U8 *lng, U8 *lat) {
+	const U8 *pattern_start = "<location>";
+	const U8 *pattern_end = "</location>";
+
+	int len_start = strlen(pattern_start);
+	int len_end = strlen(pattern_end);
+
+	int i, j, k = 0;
+	
+#define PATTERN_COUNT 			16
+#define LOCATION_INFO_COUNT		64
+	
+	U32 start_matches[PATTERN_COUNT] = {0};
+	U32 end_matches[PATTERN_COUNT] = {0};
+	U8 location[LOCATION_INFO_COUNT] = {0};
+
+	if (len < len_start && len < len_end) return -1;
+
+	ntyKMP(buffer, len, pattern_start, len_start, start_matches);
+	ntyKMP(buffer, len, pattern_end, len_end, end_matches);
+
+	if (start_matches[0] == 0) {
+		return -2;
+	}
+
+	for (i = 0;i < PATTERN_COUNT;i ++) {
+		if (start_matches[i] != 0 && start_matches[i] < end_matches[i]) {
+			for (j = start_matches[i]+len_start ; j < end_matches[i] ; j ++) {
+				location[(k >= LOCATION_INFO_COUNT ? 0 : k++)] = buffer[j];
+			}
+			//ntylog("location:%s\n", location);
+
+			k = 0;
+			while (location[k++] != ',');
+				
+			memcpy(lng, location, k-1);
+			memcpy(lat, location+k, strlen(location)-k);
+			
+			ntylog("lat:%s, lon:%s\n", lat, lng);
+			
+			break;
+		}
+	}
+
+	return k;
+}
+
+static int ntyHttpGaodeGetDescInfo(U8 *buffer, int len, U8 *desc) {
+	const U8 *pattern_start = "<desc>";
+	const U8 *pattern_end = "</desc>";
+
+	int len_start = strlen(pattern_start);
+	int len_end = strlen(pattern_end);
+
+	int i, j, k = 0;
+	
+#define PATTERN_COUNT 			16
+#define DESC_INFO_COUNT			256
+	
+	U32 start_matches[PATTERN_COUNT] = {0};
+	U32 end_matches[PATTERN_COUNT] = {0};
+	//U8 desc[DESC_INFO_COUNT] = {0};
+
+	if (len < len_start && len < len_end) return -1;
+
+	ntyKMP(buffer, len, pattern_start, len_start, start_matches);
+	ntyKMP(buffer, len, pattern_end, len_end, end_matches);
+
+	if (start_matches[0] == 0) {
+		return -2;
+	}
+
+	for (i = 0;i < PATTERN_COUNT;i ++) {
+		if (start_matches[i] != 0 && start_matches[i] < end_matches[i]) {
+			for (j = start_matches[i]+len_start ; j < end_matches[i] ; j ++) {
+				desc[(k >= DESC_INFO_COUNT ? 0 : k++)] = buffer[j];
+			}
+			
+			ntylog("desc:%s\n", desc);
+			
+			break;
+		}
+	}
+
+	return k;
+}
+
+
 static size_t ntyHttpGaodeWifiCellAPIHandleResult(void* data, size_t size, size_t nmemb, void *stream) {
 	VALUE_TYPE *tag = stream;
+#if 0 //add desc kmp
 	const U8 *pattern_start = "<location>";
 	const U8 *pattern_end = "</location>";
 
@@ -219,6 +306,40 @@ static size_t ntyHttpGaodeWifiCellAPIHandleResult(void* data, size_t size, size_
 #if 0
 	free(tag->Tag);
 	free(tag);
+#endif
+#else
+
+#define PATTERN_COUNT 			16
+#define DESC_INFO_COUNT			256
+
+	U8 *buffer = data;
+	U8 u8Lat[PATTERN_COUNT] = {0};
+	U8 u8Lon[PATTERN_COUNT] = {0};
+	
+	U8 u8Desc[DESC_INFO_COUNT] = {0};
+	U8 u8ResultBuffer[DESC_INFO_COUNT] = {0};
+	
+	int len = size*nmemb;
+
+	if (0 > ntyHttpGaodeGetLocationInfo(buffer, len, u8Lon, u8Lat)) { //no exist 
+		ntylog(" result failed: %s\n", buffer);
+
+		sprintf(u8ResultBuffer, "Set Location LatLonFailed");
+		ntyProtoHttpRetProxyTransform(tag->fromId, u8ResultBuffer, strlen(u8ResultBuffer));
+
+	} else {
+		if (0 > ntyHttpGaodeGetDescInfo(buffer, len, u8Desc)) {
+			ntylog(" result failed: %s\n", buffer);
+		}
+#if ENABLE_CONNECTION_POOL
+		ntyExecuteLocationInsertHandle(tag->fromId, u8Lon, u8Lat, u8Desc);
+#endif
+		sprintf(u8ResultBuffer, "Set Location %s:%s:%d", u8Lat, u8Lon, tag->u8LocationType);
+		ntyBoardcastAllFriendsById(tag->fromId, u8ResultBuffer, strlen(u8ResultBuffer));
+		ntyProtoHttpRetProxyTransform(tag->fromId, u8ResultBuffer, strlen(u8ResultBuffer));
+			
+	}
+
 #endif
 	return size*nmemb;
 }
@@ -288,6 +409,7 @@ int ntyHttpGaodeWifiCellAPI(void *arg) {
 
 static size_t ntyHttpMtkQuickLocationHandleResult(void* data, size_t size, size_t nmemb, void *stream) {
 	VALUE_TYPE *tag = stream;
+#if 0
 	const U8 *pattern_start = "<location>";
 	const U8 *pattern_end = "</location>";
 
@@ -350,7 +472,41 @@ static size_t ntyHttpMtkQuickLocationHandleResult(void* data, size_t size, size_
 #if 0
 	free(tag->Tag);
 	free(tag);
-#endif	
+#endif
+#else
+	
+#define PATTERN_COUNT 			16
+#define DESC_INFO_COUNT			256
+
+	U8 *buffer = data;
+	U8 u8Lat[PATTERN_COUNT] = {0};
+	U8 u8Lon[PATTERN_COUNT] = {0};
+	
+	U8 u8Desc[DESC_INFO_COUNT] = {0};
+	U8 u8ResultBuffer[DESC_INFO_COUNT] = {0};
+	
+	int len = size*nmemb;
+
+	if (0 > ntyHttpGaodeGetLocationInfo(buffer, len, u8Lon, u8Lat)) { //no exist 
+		ntylog(" result failed: %s\n", buffer);
+
+		sprintf(u8ResultBuffer, "Set Location LatLonFailed");
+		ntyProtoHttpRetProxyTransform(tag->fromId, u8ResultBuffer, strlen(u8ResultBuffer));
+
+	} else {
+		if (0 > ntyHttpGaodeGetDescInfo(buffer, len, u8Desc)) {
+			ntylog(" result failed: %s\n", buffer);
+		}
+#if ENABLE_CONNECTION_POOL
+		ntyExecuteLocationInsertHandle(tag->fromId, u8Lon, u8Lat, u8Desc);
+#endif
+		sprintf(u8ResultBuffer, "Set Location %s:%s:3", u8Lat, u8Lon);
+		//ntyBoardcastAllFriendsById(tag->fromId, u8ResultBuffer, strlen(u8ResultBuffer));
+		ntyProtoHttpRetProxyTransform(tag->fromId, u8ResultBuffer, strlen(u8ResultBuffer));
+			
+	}
+
+#endif
 	return size*nmemb;
 }
 

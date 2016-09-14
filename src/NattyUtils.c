@@ -51,6 +51,7 @@
 
 #include "NattyUtils.h"
 #include "NattyProtocol.h"
+#include "NattyUdpServer.h"
 
 
 TimeStamp* ntyGetSystemTime(void) {
@@ -276,4 +277,19 @@ C_DEVID ntyU8ArrayToU64(U8 *buf) {
 
 #endif
 
+
+Client *ntyClientNodeCopy(Client *client) {
+	Client *pClient = (Client*)malloc(sizeof(Client));
+#if 0
+	pClient->sockfd = client->sockfd;
+	pClient->clientType = client->clientType;
+	pClient->addr.sin_addr.s_addr = client->addr.sin_addr.s_addr;
+	pClient->addr.sin_port = client->addr.sin_port;
+	pClient->ackNum = client->ackNum;
+	pClient->devId = client->devId;
+#else
+	memcpy(pClient, client, sizeof(Client));
+#endif
+	return pClient;
+}
 

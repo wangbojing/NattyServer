@@ -460,4 +460,69 @@ void ntyProtoHttpRetProxyTransform(C_DEVID toId, U8 *buffer, int length) {
 #endif
 
 
+/*
+ * result : 0 --> OK
+ *          1 --> AppId No Exist 
+ *          2 --> DevId No Exist
+ *          3 --> Have Bound
+ *		 4 --> DB Exception
+ */
+void ntyProtoBindAck(C_DEVID aid, C_DEVID did, int result) {
+	int length = 0;
+	U8 buf[NTY_HEARTBEAT_ACK_LENGTH] = {0};
+	
+	void *pRBTree = ntyRBTreeInstance();
+	Client *client = (Client*)ntyRBTreeInterfaceSearch(pRBTree, aid);
+	if (client == NULL) {
+		ntylog(" destClient is not exist proxy:%lld\n", aid);
+		return ;
+	}
+
+	buf[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_ACK;	
+	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_BIND_ACK;
+	*(C_DEVID*)(&buf[NTY_PROTO_BIND_ACK_DEVICEID_IDX]) = did;
+	*(int*)(&buf[NTY_PROTO_BIND_ACK_RESULT_IDX]) = result;
+
+	length = NTY_PROTO_BIND_ACK_CRC_IDX;
+	*(U32*)(&buf[length]) = ntyGenCrcValue(buf, length);
+	length += sizeof(U32);
+
+	ntySendBuffer(client, buf, length);
+}
+
+
+
+/*
+ * result : 0 --> OK
+ *          1 --> AppId No Exist 
+ *          2 --> DevId No Exist
+ *          3 --> Have Bound
+ *		 4 --> DB Exception
+ */
+ 
+void ntyProtoUnBindAck(C_DEVID aid, C_DEVID did, int result) {
+	int length = 0;
+	U8 buf[NTY_HEARTBEAT_ACK_LENGTH] = {0};
+	
+	void *pRBTree = ntyRBTreeInstance();
+	Client *client = (Client*)ntyRBTreeInterfaceSearch(pRBTree, aid);
+	if (client == NULL) {
+		ntylog(" destClient is not exist proxy:%lld\n", aid);
+		return ;
+	}
+
+	buf[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_ACK;	
+	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_UNBIND_ACK;
+	*(C_DEVID*)(&buf[NTY_PROTO_UNBIND_ACK_DEVICEID_IDX]) = did;
+	*(int*)(&buf[NTY_PROTO_UNBIND_ACK_RESULT_IDX]) = result;
+
+	length = NTY_PROTO_UNBIND_ACK_CRC_IDX;
+	*(U32*)(&buf[length]) = ntyGenCrcValue(buf, length);
+	length += sizeof(U32);
+
+	ntySendBuffer(client, buf, length);
+}
+
 

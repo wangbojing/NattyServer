@@ -232,6 +232,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 #endif
 
 		req->client->devId = *(C_DEVID*)(&buffer[NTY_PROTO_DEVID_IDX]);
+		req->client->ackNum = *(U32*)(buffer+NTY_PROTO_ACKNUM_IDX)+1;
 		req->client->sockfd = watcher->fd;
 		req->client->watcher = watcher;
 		req->client->clientType = PROTO_TYPE_TCP;

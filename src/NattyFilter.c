@@ -339,7 +339,22 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 			} else if (key == 3) {
 				ntyFriendsTreeInsert(pClient->friends, 1);
 			}
-#else
+#endif
+
+#if ENABLE_CONNECTION_POOL
+			if (buffer[NEY_PROTO_VERSION_IDX] == NTY_PROTO_APP_VERSION) { //App
+				if(-1 == ntyQueryWatchIDListSelectHandle(key, pClient->friends)) {
+					ntylog(" ntyQueryWatchIDListSelectHandle Failed \n");
+				}
+			} else if (buffer[NEY_PROTO_VERSION_IDX] == NTY_PROTO_DEVICE_VERSION) { //Device
+				if (-1 == ntyQueryAppIDListSelectHandle(key, pClient->friends)) {
+					ntylog(" ntyQueryAppIDListSelectHandle Failed \n");
+				}
+			} else {
+				ntylog(" Protocol Version is Error : %c\n", buffer[NEY_PROTO_VERSION_IDX]);
+				//free(pClient);
+				//return ;
+			}
 #endif
 			//insert rb-tree
 			ntylog(" New Client RBTREENODE --> %lld\n", key);
@@ -416,7 +431,6 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 					} else if (key == 3) {
 						ntyFriendsTreeInsert(pClient->friends, 1);
 					}
-#else
 #endif				
 				}	
 			} else {
@@ -430,8 +444,24 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 				} else if (key == 3) {
 					ntyFriendsTreeInsert(pClient->friends, 1);
 				}
-#else
 #endif
+
+#if ENABLE_CONNECTION_POOL
+				if (buffer[NEY_PROTO_VERSION_IDX] == NTY_PROTO_APP_VERSION) { //App
+					if(-1 == ntyQueryWatchIDListSelectHandle(key, pClient->friends)) {
+						ntylog(" ntyQueryWatchIDListSelectHandle Failed \n");
+					}
+				} else if (buffer[NEY_PROTO_VERSION_IDX] == NTY_PROTO_DEVICE_VERSION) { //Device
+					if (-1 == ntyQueryAppIDListSelectHandle(key, pClient->friends)) {
+						ntylog(" ntyQueryAppIDListSelectHandle Failed \n");
+					}
+				} else {
+					ntylog(" Protocol Version is Error : %c\n", buffer[NEY_PROTO_VERSION_IDX]);
+					//free(pClient);
+					//return ;
+				}
+#endif
+
 			}
 
 #if 1 //Insert Hash table
@@ -530,8 +560,24 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 			} else if (key == 3) {
 				ntyFriendsTreeInsert(pClient->friends, 1);
 			}
-#else
 #endif	
+
+#if ENABLE_CONNECTION_POOL
+			if (buffer[NEY_PROTO_VERSION_IDX] == NTY_PROTO_APP_VERSION) { //App
+				if(-1 == ntyQueryWatchIDListSelectHandle(key, pClient->friends)) {
+					ntylog(" ntyQueryWatchIDListSelectHandle Failed \n");
+				}
+			} else if (buffer[NEY_PROTO_VERSION_IDX] == NTY_PROTO_DEVICE_VERSION) { //Device
+				if (-1 == ntyQueryAppIDListSelectHandle(key, pClient->friends)) {
+					ntylog(" ntyQueryAppIDListSelectHandle Failed \n");
+				}
+			} else {
+				ntylog(" Protocol Version is Error : %c\n", buffer[NEY_PROTO_VERSION_IDX]);
+				//free(pClient);
+				//return ;
+			}
+#endif
+
 			ntylog("ntyHeartBeatPacketHandleRequest --> Insert New Client Node\n");
 			//insert rb-tree
 			if (ntyRBTreeInterfaceInsert(pRBTree, key, pClient)) {
@@ -609,7 +655,6 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 					} else if (key == 3) {
 						ntyFriendsTreeInsert(pClient->friends, 1);
 					}
-#else
 #endif				
 				}	
 			} else {
@@ -623,8 +668,25 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 				} else if (key == 3) {
 					ntyFriendsTreeInsert(pClient->friends, 1);
 				}
-#else
 #endif
+
+#if ENABLE_CONNECTION_POOL
+				if (buffer[NEY_PROTO_VERSION_IDX] == NTY_PROTO_APP_VERSION) { //App
+					if(-1 == ntyQueryWatchIDListSelectHandle(key, pClient->friends)) {
+						ntylog(" ntyQueryWatchIDListSelectHandle Failed \n");
+					}
+				} else if (buffer[NEY_PROTO_VERSION_IDX] == NTY_PROTO_DEVICE_VERSION) { //Device
+					if (-1 == ntyQueryAppIDListSelectHandle(key, pClient->friends)) {
+						ntylog(" ntyQueryAppIDListSelectHandle Failed \n");
+					}
+				} else {
+					ntylog(" Protocol Version is Error : %c\n", buffer[NEY_PROTO_VERSION_IDX]);
+					//free(pClient);
+					//return ;
+				}
+#endif
+
+
 			}
 
 #if 1 //Insert Hash table
@@ -865,6 +927,9 @@ void ntyUserDataPacketHandleRequest(const void *_self, unsigned char *buffer, in
 #endif
 		memcpy(data, buffer+NTY_PROTO_DATAPACKET_CONTENT_IDX, recByteCount);
 		//ntylog("data : %s\n", data);
+#if 1 //devId , data, recByteCount, token is set
+		
+#endif
 #if 1
 		if (destClient == NULL) {
 			if (destDevId == 0x0) { //destDevId == 0x0 boardcast all client
@@ -1059,6 +1124,107 @@ static const ProtocolFilter ntyTimeCheckFilter = {
 	ntyTimeCheckHandleRequest,
 };
 
+void ntyUnBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
+	const UdpClient *client = obj;
+	if (buffer[NTY_PROTO_TYPE_IDX] == NTY_PROTO_UNBIND_REQ && buffer[NEY_PROTO_VERSION_IDX] == NTY_PROTO_APP_VERSION) {
+		C_DEVID AppId = *(C_DEVID*)(buffer+NTY_PROTO_UNBIND_APPID_IDX);
+		C_DEVID DeviceId = *(C_DEVID*)(buffer+NTY_PROTO_UNBIND_DEVICEID_IDX);
+
+#if ENABLE_CONNECTION_POOL
+		int ret = ntyExecuteDevAppRelationDeleteHandle(AppId, DeviceId);
+		if (ret == -1) {
+			ntylog(" ntyUnBindDevicePacketHandleRequest --> DB Exception\n");
+			ret = 4;
+		} else if (ret == 0) {
+			void *pRBTree = ntyRBTreeInstance();
+			Client *aclient = (Client*)ntyRBTreeInterfaceSearch(pRBTree, AppId);
+			if (aclient != NULL) {
+				if (aclient->friends != NULL) {
+					ntyFriendsTreeDelete(aclient->friends, DeviceId);
+				}
+			}
+
+			Client *dclient = (Client*)ntyRBTreeInterfaceSearch(pRBTree, DeviceId);
+			if (dclient != NULL) {
+				if (dclient->friends != NULL) {
+					ntyFriendsTreeDelete(dclient->friends, AppId);
+				}
+			}
+		}
+		ntyProtoUnBindAck(AppId, DeviceId, ret);
+#endif		
+		
+		
+	} else if (ntyPacketGetSuccessor(_self) != NULL) {
+		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
+		(*succ)->handleRequest(succ, buffer, length, obj);
+	} else {
+		ntylog("Can't deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);
+	}
+
+}
+
+
+static const ProtocolFilter ntyUnBindDeviceFilter = {
+	sizeof(Packet),
+	ntyPacketCtor,
+	ntyPacketDtor,
+	ntyPacketSetSuccessor,
+	ntyPacketGetSuccessor,
+	ntyUnBindDevicePacketHandleRequest,
+};
+
+void ntyBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
+	const Client *client = obj;
+	if (buffer[NTY_PROTO_TYPE_IDX] == NTY_PROTO_BIND_REQ && buffer[NEY_PROTO_VERSION_IDX] == NTY_PROTO_APP_VERSION) {
+		C_DEVID AppId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_APPID_IDX);
+		C_DEVID DeviceId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_DEVICEID_IDX);
+
+#if ENABLE_CONNECTION_POOL
+		U8 DevImei[16] = {0};
+		sprintf(DevImei, "%llx", DeviceId);
+		int ret = ntyQueryDevAppRelationInsertHandle(AppId, DevImei);
+		if (ret == -1) {
+			ntylog(" ntyBindDevicePacketHandleRequest --> DB Exception\n");
+			ret = 4;
+		} else if (ret == 0) { //Bind Success Update RBTree
+			void *pRBTree = ntyRBTreeInstance();
+			Client *aclient = (Client*)ntyRBTreeInterfaceSearch(pRBTree, AppId);
+			if (aclient != NULL) {
+				if (aclient->friends != NULL) {
+					ntyFriendsTreeInsert(aclient->friends, DeviceId);
+				}
+			}
+
+			Client *dclient = (Client*)ntyRBTreeInterfaceSearch(pRBTree, DeviceId);
+			if (dclient != NULL) {
+				if (dclient->friends != NULL) {
+					ntyFriendsTreeInsert(dclient->friends, AppId);
+				}
+			}
+		}
+		ntyProtoBindAck(AppId, DeviceId, ret);
+#endif		
+		//if ()
+	} else if (ntyPacketGetSuccessor(_self) != NULL) {
+		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
+		(*succ)->handleRequest(succ, buffer, length, obj);
+	} else {
+		ntylog("Can't deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);
+	}
+
+}
+
+
+static const ProtocolFilter ntyBindDeviceFilter = {
+	sizeof(Packet),
+	ntyPacketCtor,
+	ntyPacketDtor,
+	ntyPacketSetSuccessor,
+	ntyPacketGetSuccessor,
+	ntyBindDevicePacketHandleRequest,
+};
+
 
 
 static void ntySetSuccessor(void *_filter, void *_succ) {
@@ -1086,6 +1252,8 @@ const void *pNtyUserDataPacketAckFilter = &ntyUserDataPacketAckFilter;
 const void *pNtyP2PConnectNotifyPacketFilter = &ntyP2PConnectNotifyPacketFilter;
 const void *pNtyP2PConnectNotifyPacketAckFilter = &ntyP2PConnectNotifyPacketAckFilter;
 const void *pNtyTimeCheckFilter = &ntyTimeCheckFilter;
+const void *pNtyUnBindDeviceFilter = &ntyUnBindDeviceFilter;
+const void *pNtyBindDeviceFilter = &ntyBindDeviceFilter;
 
 
 
@@ -1099,6 +1267,8 @@ void* ntyProtocolFilterInit(void) {
 	void *pP2PConnectNotifyPacketFilter = New(pNtyP2PConnectNotifyPacketFilter);
 	void *pP2PConnectNotifyPacketAckFilter = New(pNtyP2PConnectNotifyPacketAckFilter);
 	void *pTimeCheckFilter = New(pNtyTimeCheckFilter);
+	void *pUnBindDeviceFilter = New(pNtyUnBindDeviceFilter);
+	void *pBindDeviceFilter = New(pNtyBindDeviceFilter);
 
 	ntySetSuccessor(pHeartBeatFilter, pLoginFilter);
 	ntySetSuccessor(pLoginFilter, pLogoutFilter);
@@ -1108,7 +1278,10 @@ void* ntyProtocolFilterInit(void) {
 	ntySetSuccessor(pUserDataPacketFilter, pUserDataPacketAckFilter);
 	ntySetSuccessor(pUserDataPacketAckFilter, pP2PConnectNotifyPacketFilter);
 	ntySetSuccessor(pP2PConnectNotifyPacketFilter, pTimeCheckFilter);
-	ntySetSuccessor(pTimeCheckFilter, NULL);
+	ntySetSuccessor(pTimeCheckFilter, pUnBindDeviceFilter);
+	ntySetSuccessor(pUnBindDeviceFilter, pBindDeviceFilter);
+	
+	ntySetSuccessor(pBindDeviceFilter, NULL);
 
 	/*
 	 * add your Filter
@@ -1123,7 +1296,6 @@ void* ntyProtocolFilterInit(void) {
 #if ENABLE_NATTY_TIME_STAMP
 	pthread_mutex_t blank_mutex = PTHREAD_MUTEX_INITIALIZER;
 	memcpy(&time_mutex, &blank_mutex, sizeof(blank_mutex));
-
 	memcpy(&loop_mutex, &blank_mutex, sizeof(blank_mutex));
 #endif
 

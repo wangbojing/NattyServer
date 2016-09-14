@@ -171,7 +171,9 @@ int ntyUdpServerProcess(const void *_self) {
 			// proccess
 			// i think process protocol and search client id from rb-tree
 			req->client->devId = *(C_DEVID*)(&buf[NTY_PROTO_DEVID_IDX]);
+			req->client->ackNum = *(U32*)(buf+NTY_PROTO_ACKNUM_IDX)+1;
 			req->client->sockfd = self->sockfd;
+			req->client->watcher = NULL;
 			req->client->clientType = PROTO_TYPE_UDP;
 			req->length = (U16)n;
 			req->buffer = (U8*)malloc(n);
