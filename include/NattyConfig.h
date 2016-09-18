@@ -54,6 +54,15 @@
 
 #define ENABLE_CONNECTION_POOL				1
 
+#define ENABLE_NODE_AGENT_SAVE				1
+
+#if 1
+
+#define CUSTOM_JG			1
+#define CUSTOM_SELECT			CUSTOM_JG
+
+#endif
+
 #endif
 
 

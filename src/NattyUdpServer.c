@@ -170,8 +170,13 @@ int ntyUdpServerProcess(const void *_self) {
 				req->client->addr.sin_port, n, buf[NTY_PROTO_TYPE_IDX], *(C_DEVID*)(&buf[NTY_PROTO_DEVID_IDX]));	
 			// proccess
 			// i think process protocol and search client id from rb-tree
-			req->client->devId = *(C_DEVID*)(&buf[NTY_PROTO_DEVID_IDX]);
-			req->client->ackNum = *(U32*)(buf+NTY_PROTO_ACKNUM_IDX)+1;
+#if 0
+			req->client->devId = *(C_DEVID*)(&buffer[NTY_PROTO_DEVID_IDX]);
+			req->client->ackNum = *(U32*)(buffer+NTY_PROTO_ACKNUM_IDX)+1;
+#else
+			ntyU8ArrayToU64(&buf[NTY_PROTO_DEVID_IDX], &req->client->devId);
+			req->client->ackNum = ntyU8ArrayToU32(&buf[NTY_PROTO_ACKNUM_IDX])+1;
+#endif
 			req->client->sockfd = self->sockfd;
 			req->client->watcher = NULL;
 			req->client->clientType = PROTO_TYPE_UDP;

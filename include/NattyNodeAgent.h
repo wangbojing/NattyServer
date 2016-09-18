@@ -6,7 +6,7 @@
  *  This software is protected by Copyright and the information contained
  *  herein is confidential. The software may not be copied and the information
  *  contained herein may not be used or disclosed except with the written
- *  permission of NALEX Inc. (C) 2016
+ *  permission of Author. (C) 2016
  * 
  *
  
@@ -41,42 +41,69 @@
  *
  */
 
+#ifndef __NATTY_NODE_AGENT_H__
+#define __NATTY_NODE_AGENT_H__
 
-
-
-#ifndef __NTY_UTILS_H__
-#define __NTY_UTILS_H__
-
-#include "NattyLetter.h"
+#include "NattyConfig.h"
 #include "NattyAbstractClass.h"
-
-#define JEMALLOC_NO_DEMANGLE 1
-#define JEMALLOC_NO_RENAME	 1
-#include <jemalloc/jemalloc.h>
+#include "NattyFilter.h"
 
 
-typedef struct tm TimeStamp;
 
-void ntyDisplay(void);
+typedef struct NTYNODE {
+	const char *name;
+	int length;
+} ntyNode;
 
-void ntyFree(void *p);
-void *ntyMalloc(size_t size);
-void *ntyJeMalloc(size_t size);
+typedef struct {
+	size_t size;
+	void* (*ctor)(void *_self, va_list *params);
+	void* (*dtor)(void *_self);
+	void (*setSuccessor)(void *_self, void *succ);
+	void* (*getSuccessor)(const void *_self);
+	void (*handleRequest)(const void *_self, U8 **table, int count, C_DEVID id);
+} NodeFilter;
+
+typedef Packet	NodePacket;
+
+#define NTY_SEPARATOR_COMMAS		' '
+#define NTY_SEPARATOR_COLON			':'
 
 
-U32 ntyKMP(const char *text,const U32 text_length, const char *pattern,const U32 pattern_length, U32 *matches) ;
-TimeStamp* ntyGetSystemTime(void);
 
-U16 ntyU8ArrayToU16(U8 *buf);
-U32 ntyU8ArrayToU32(U8 *buf);
-void ntyU8ArrayToU64(U8 *buf, C_DEVID *id);
+#if (CUSTOM_SELECT == CUSTOM_JG)
+
+extern const ntyNode ntyNodeTable[];
 
 
-int ntySeparation(char ch,const char *sequence, int length, char ***pChTable, int *Count);
-void ntyFreeTable(unsigned char ***table, int count);
+enum ntyNode_Database {
+	DB_NODE_START = 0,
+	DB_NODE_POWER = DB_NODE_START,
+	DB_NODE_SIGNAL,
+	DB_NODE_PHONEBOOK,
+	DB_NODE_FAMILYNUMBER,
+	DB_NODE_FALLEN,
+	DB_NODE_GPS,
+	DB_NODE_WIFI,
+	DB_NODE_LAB,
+	DB_NODE_STEP,
+	DB_NODE_HEARTRATE,
+	DB_NODE_LOCATION,
+	DB_NODE_STATUS,
+	DB_NODE_END = DB_NODE_STATUS,
+};
 
-char ntyIsAvailableNum(char *phnum);
+#else
+
+#error "Please config custom."
+
+#endif
+
+
+int ntyNodeCompare(const U8 *taken);
+void ntyNodeAgentProcess(const U8 *buffer, int length, C_DEVID id);
 
 
 #endif
+
 

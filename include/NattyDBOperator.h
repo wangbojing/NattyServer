@@ -63,7 +63,7 @@
 
 #define NTY_DB_DEV_APP_DELETE_FORMAT		"CALL PROC_DEV_APP_RELATION_DELETE(%lld, %lld)"
 
-#define NTY_DB_LOCATION_INSERT_FORMAT		"CALL PROC_LOCATION_DID_INSERT(%lld, '%s', '%s', '%s')"				//CALL PROC_LOCATION_DID_INSERT(239307951255536007, '112.4563212', '23.3456321', '')
+#define NTY_DB_LOCATION_INSERT_FORMAT		"CALL PROC_LOCATION_DID_INSERT(%lld, '%s', '%s', '%d','%s')"				//CALL PROC_LOCATION_DID_INSERT(239307951255536007, '112.4563212', '23.3456321', '')
 
 #define NTY_DB_STEP_INSERT_FORMAT			"CALL PROC_STEP_DID_INSERT(%lld, %d)"
 
@@ -92,7 +92,7 @@ int ntyQueryAppIDListSelectHandle(C_DEVID did, void *tree);
 int ntyQueryWatchIDListSelectHandle(C_DEVID aid, void *tree);
 int ntyQueryDevAppRelationInsertHandle(C_DEVID aid, U8 *imei);
 int ntyExecuteDevAppRelationDeleteHandle(C_DEVID aid, C_DEVID did);
-int ntyExecuteLocationInsertHandle( C_DEVID did, U8 *lng, U8 *lat, U8 *info);
+int ntyExecuteLocationInsertHandle( C_DEVID did, U8 *lng, U8 *lat, U8 type, U8 *info);
 int ntyExecuteStepInsertHandle(C_DEVID did, int value);
 int ntyExecuteHeartRateInsertHandle(C_DEVID did, int value);
 

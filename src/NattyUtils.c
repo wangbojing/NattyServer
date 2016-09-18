@@ -262,18 +262,34 @@ U32 ntyU8ArrayToU32(U8 *buf) {
 
 	return dat2;
 }
-
+#if 0
 C_DEVID ntyU8ArrayToU64(U8 *buf) {
 	C_DEVID id = 0;
 	int i = 0;
 
+	ntylog(" ntyU8ArrayToU64 --> ");
+	for (i = 0;i < sizeof(C_DEVID);i ++) {
+		ntylog(" %2x", buf[i]);
+	}
+	ntylog("\n");
+#if 0
 	for (i = 0;i < sizeof(C_DEVID);i ++) {
 		id |= (buf[i] << 8*i);
 	}
-
+#elif 1
+	memcpy(&id, buf, sizeof(C_DEVID));
+#elif 0
+	id = *(C_DEVID*)buf;
+#endif
+	ntylog("ntyU8ArrayToU64 --> id : %lld\n", id);
 	return id;
 }
+#else
 
+void ntyU8ArrayToU64(U8 *buf, C_DEVID *id) {
+	memcpy(id, buf, sizeof(C_DEVID));
+}
+#endif
 
 #endif
 
@@ -292,4 +308,76 @@ Client *ntyClientNodeCopy(Client *client) {
 #endif
 	return pClient;
 }
+
+#if 1
+
+#define ITEM_SIZE		64
+
+int ntySeparation(char ch, const char *sequence, int length, char ***pChTable, int *Count) {
+	int i = 0, j = 0;
+	int len = length;
+	char ChArray[ITEM_SIZE] = {0};
+	char **pTable = *pChTable;
+	
+	*Count = 0;
+
+	for (i = 0;i < len;i ++) {
+		if (sequence[i] == ch) {
+			pTable[*Count] = (char*)malloc((j+1) * sizeof(char));
+			memcpy(pTable[*Count], ChArray, j+1);
+			(*Count) ++;
+
+			//OslMfree(pTable);
+			//pTable = (char**)OslMalloc((*Count+1) * sizeof(char**));
+			pTable = (char**)realloc(pTable, (*Count+1) * sizeof(char**));
+			j = 0;
+			memset(ChArray, 0, ITEM_SIZE);
+
+			continue;
+		} 
+		ChArray[j++] = sequence[i];
+	}
+	
+	pTable[*Count] = (char*)malloc((j+1) * sizeof(char));
+	memcpy(pTable[*Count], ChArray, j+1);
+	(*Count) ++;
+	
+	memset(ChArray, 0, ITEM_SIZE);
+
+	*pChTable = pTable;
+
+	return 0;
+}
+
+void ntyFreeTable(unsigned char ***table, int count) {
+	int i = 0;
+	unsigned char **pTable = *table;
+
+	for (i = 0;i < count;i ++) {
+		free(pTable[i]);
+	}
+	
+}
+#endif
+
+char ntyIsAvailableNum(char *phnum) {
+	while(*phnum != 0) 	{
+		if (   *phnum != '0'
+			&& *phnum != '1'
+			&& *phnum != '2'
+			&& *phnum != '3'
+			&& *phnum != '4'
+			&& *phnum != '5'
+			&& *phnum != '6'
+			&& *phnum != '7'
+			&& *phnum != '8'
+			&& *phnum != '9')
+		{
+			return 0;
+		}
+		phnum++;
+	}
+	return 1;
+}
+
 

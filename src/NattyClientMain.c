@@ -42,12 +42,13 @@
  */
 
 #include <string.h>
+#include <stdio.h>
 
 #include "NattyProtoClient.h"
 
 
 
-void ntyUserRecvCb(C_DEVID devid, int len) {
+void ntyUserRecvCb(DEVID devid, int len) {
 	//int i = 0;
 	U8 *buffer = ntyGetRecvBuffer();
 
@@ -76,12 +77,21 @@ void ntyReconnected(int arg) {
 	ntydbg("ntyReconnected\n");
 }
 
+void ntyBindResult(int arg) {
+	ntydbg(" ntyBindResult --> arg: %d", arg);
+}
+
+void ntyUnBindResult(int arg) {
+	ntydbg(" ntyUnBindResult --> arg: %d", arg);
+}
 
 int main() {
-	C_DEVID AppId = 0x352315052834187; //10794;
-	int n = 0, length;
+	DEVID AppId = 10794;
+	DEVID did = 0x352315052834187;
+	
+	int n = 0, length, i;
 	int ch;
-	U8 tempBuf[RECV_BUFFER_SIZE] = {0};
+	U8 tempBuf[CLIENT_BUFFER_SIZE] = {0};
 	const char *url =  "GET http://apilocate.amap.com/position?accesstype=1&imei=352315052834187&macs=30:FC:68:B9:E6:E6,-48,TP-LINK_E6E6_JUGUI|50:BD:5F:00:5F:62,-79,TP-LINK_5F62|28:10:7B:F6:E1:BA,-80,joshen?D|C0:61:18:90:1D:64,-86,ttt222????|D4:EE:07:3E:C8:8A,-87,HiWiFi_3EC88A|&output=xml&key=81040f256992a218a8a20ffb7f13ba9f HTTP/1.1";
 	
 	//ntydbg(" Press DevId <1 or 2>: ");   	
@@ -92,14 +102,27 @@ int main() {
 	ntySetSendSuccessCallback(ntySendSuccess);
 	ntySetProxyDisconnect(ntyDisconnect);
 	ntySetProxyReconnect(ntyReconnected);
-	ntySetDevId(AppId);
+	ntySetBindResult(ntyBindResult);
+	ntySetUnBindResult(ntyUnBindResult);
+	ntySetDevId(did);
 	
 	ntyStartupClient();
 	sleep(5);
+
+	//ntyUnBindClient(0xEDFF12342345613);
+
+	int count = 0;
+	DEVID *list = ntyGetFriendsList(&count);
+	for (i = 0;i < count;i ++) {
+		ntydbg(" %d --> %lld\n", i+1, *(list+i));
+	}
+	ntyReleaseFriendsList(&list);
+
+	//while(1);
 #if 1
 	while(1) {
 		ntydbg("Proxy Please send msg:");
-		char *ptr = fgets(tempBuf, RECV_BUFFER_SIZE, stdin);
+		char *ptr = fgets(tempBuf, CLIENT_BUFFER_SIZE, stdin);
 
 		if (ntyGetNetworkStatus() == -1) {
 			ntydbg("Startup Client\n");

@@ -224,15 +224,19 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 				*((unsigned char*)(&req->client->addr.sin_addr.s_addr)+2), *((unsigned char*)(&req->client->addr.sin_addr.s_addr)+3),													
 				req->client->addr.sin_port, rLen, buffer[NTY_PROTO_TYPE_IDX], *(C_DEVID*)(&buffer[NTY_PROTO_DEVID_IDX]));	
 
-#if 0 //Update 
+#if 1//Update 
 		for (i = 0;i < rLen;i ++) {
-			ntylog("/x%x", buffer[i]);
+			ntylog("0x%x,", buffer[i]);
 		}
 		ntylog("\n");
 #endif
-
+#if 0
 		req->client->devId = *(C_DEVID*)(&buffer[NTY_PROTO_DEVID_IDX]);
 		req->client->ackNum = *(U32*)(buffer+NTY_PROTO_ACKNUM_IDX)+1;
+#else
+		ntyU8ArrayToU64(&buffer[NTY_PROTO_DEVID_IDX], &req->client->devId);
+		req->client->ackNum = ntyU8ArrayToU32(&buffer[NTY_PROTO_ACKNUM_IDX])+1;
+#endif
 		req->client->sockfd = watcher->fd;
 		req->client->watcher = watcher;
 		req->client->clientType = PROTO_TYPE_TCP;

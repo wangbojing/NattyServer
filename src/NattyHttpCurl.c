@@ -332,7 +332,7 @@ static size_t ntyHttpGaodeWifiCellAPIHandleResult(void* data, size_t size, size_
 			ntylog(" result failed: %s\n", buffer);
 		}
 #if ENABLE_CONNECTION_POOL
-		ntyExecuteLocationInsertHandle(tag->fromId, u8Lon, u8Lat, u8Desc);
+		ntyExecuteLocationInsertHandle(tag->fromId, u8Lon, u8Lat, tag->u8LocationType, u8Desc);
 #endif
 		sprintf(u8ResultBuffer, "Set Location %s:%s:%d", u8Lat, u8Lon, tag->u8LocationType);
 		ntyBoardcastAllFriendsById(tag->fromId, u8ResultBuffer, strlen(u8ResultBuffer));
@@ -497,10 +497,10 @@ static size_t ntyHttpMtkQuickLocationHandleResult(void* data, size_t size, size_
 		if (0 > ntyHttpGaodeGetDescInfo(buffer, len, u8Desc)) {
 			ntylog(" result failed: %s\n", buffer);
 		}
-#if ENABLE_CONNECTION_POOL
-		ntyExecuteLocationInsertHandle(tag->fromId, u8Lon, u8Lat, u8Desc);
+#if 0 //ENABLE_CONNECTION_POOL
+		ntyExecuteLocationInsertHandle(tag->fromId, u8Lon, u8Lat, tag->u8LocationType, u8Desc);
 #endif
-		sprintf(u8ResultBuffer, "Set Location %s:%s:3", u8Lat, u8Lon);
+		sprintf(u8ResultBuffer, "Set Location %s:%s:%d", u8Lat, u8Lon, tag->u8LocationType);
 		//ntyBoardcastAllFriendsById(tag->fromId, u8ResultBuffer, strlen(u8ResultBuffer));
 		ntyProtoHttpRetProxyTransform(tag->fromId, u8ResultBuffer, strlen(u8ResultBuffer));
 			

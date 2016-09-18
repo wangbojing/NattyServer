@@ -48,6 +48,9 @@
 #include "NattyDaveMQ.h"
 #include "NattyConfig.h"
 #include "NattyHash.h"
+#include "NattyNodeAgent.h"
+
+
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -299,9 +302,13 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 	if (buffer[NTY_PROTO_TYPE_IDX] == NTY_PROTO_LOGIN_REQ) {
 		int i = 0;
 		void *pRBTree = ntyRBTreeInstance();
+#if 0
 		C_DEVID key = *(C_DEVID*)(buffer+NTY_PROTO_LOGIN_REQ_DEVID_IDX);
 		U32 ackNum = *(U32*)(buffer+NTY_PROTO_LOGIN_REQ_ACKNUM_IDX)+1;
-		
+#else
+		C_DEVID key = client->devId;
+		U32 ackNum = client->ackNum;
+#endif
 		U8 ack[NTY_LOGIN_ACK_LENGTH] = {0};
 
 		UdpClient *cliValue = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, key);
@@ -891,7 +898,7 @@ static const ProtocolFilter ntyP2PAddrFilter = {
  * DEVID					8			 BYTE (self devid)
  * ACKNUM					4			 BYTE (Network Module Set Value)
  * DEST DEVID				8			 BYTE (friend devid)
- * CONTENT COUNT				2			 BYTE 
+ * CONTENT COUNT			2			 BYTE 
  * CONTENT					*(CONTENT COUNT)	 BYTE 
  * CRC 				 	4			 BYTE (Network Module Set Value)
  * 
@@ -915,7 +922,9 @@ void ntyUserDataPacketHandleRequest(const void *_self, unsigned char *buffer, in
 #if 1
 		Client *selfNode = (Client*)ntyRBTreeInterfaceSearch(pRBTree, client->devId);
 		if (selfNode == NULL) { //devid not exist
-			ntylog(" ntyUserDataPacketHandleRequest --> selfNode is not Exist\n");
+			ntylog(" ntyUserDataPacketHandleRequest --> selfNode:%lld is not Exist\n", client->devId);
+
+			free(data);
 			return ;
 		}
 #if ENABLE_NATTY_TIME_STAMP //TIME Stamp 	
@@ -926,11 +935,8 @@ void ntyUserDataPacketHandleRequest(const void *_self, unsigned char *buffer, in
 #endif
 #endif
 		memcpy(data, buffer+NTY_PROTO_DATAPACKET_CONTENT_IDX, recByteCount);
-		//ntylog("data : %s\n", data);
-#if 1 //devId , data, recByteCount, token is set
-		
-#endif
-#if 1
+		ntylog("data : %s\n", data);
+
 		if (destClient == NULL) {
 			if (destDevId == 0x0) { //destDevId == 0x0 boardcast all client
 				int ret = -1;
@@ -961,13 +967,11 @@ void ntyUserDataPacketHandleRequest(const void *_self, unsigned char *buffer, in
 			}
 
 		}
-#else
-		int ret = ntyClassifyMessageType(client->devId, destClient->devId, data, recByteCount);
-		if (ret < 0) {
-			ntySendBuffer(destClient, buffer, length);
-		}
-		ntydbg("ret : %d\n", ret);
+
+#if ENABLE_NODE_AGENT_SAVE //devId , data, recByteCount, token is set
+		ntyNodeAgentProcess(data, recByteCount, selfNode->devId);
 #endif
+
 		free(data);
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);

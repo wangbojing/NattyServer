@@ -297,14 +297,14 @@ static int ntyExecuteDevAppRelationDelete(void *self, C_DEVID aid, C_DEVID did) 
 
 
 //NTY_DB_LOCATION_INSERT_FORMAT
-static int ntyExecuteLocationInsert(void *self, C_DEVID did, U8 *lng, U8 *lat, U8 *info) {
+static int ntyExecuteLocationInsert(void *self, C_DEVID did, U8 *lng, U8 *lat, U8 type,U8 *info) {
 	ConnectionPool *pool = self;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 
 	TRY 
 	{
-		Connection_execute(con, NTY_DB_LOCATION_INSERT_FORMAT, did, lng, lat, info);
+		Connection_execute(con, NTY_DB_LOCATION_INSERT_FORMAT, did, lng, lat, type,info);
 	} 
 	CATCH(SQLException) 
 	{
@@ -400,9 +400,9 @@ int ntyExecuteDevAppRelationDeleteHandle(C_DEVID aid, C_DEVID did) {
 }
 
 
-int ntyExecuteLocationInsertHandle( C_DEVID did, U8 *lng, U8 *lat, U8 *info) {
+int ntyExecuteLocationInsertHandle( C_DEVID did, U8 *lng, U8 *lat, U8 type, U8 *info) {
 	void *pool = ntyConnectionPoolInstance();
-	return ntyExecuteLocationInsert(pool, did, lng, lat, info);
+	return ntyExecuteLocationInsert(pool, did, lng, lat, type, info);
 }
 
 int ntyExecuteStepInsertHandle(C_DEVID did, int value) {
