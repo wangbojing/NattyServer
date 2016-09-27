@@ -53,6 +53,10 @@
 #include <assert.h>
 #include <stdarg.h>
 
+#define JEMALLOC_NO_DEMANGLE 1
+#define JEMALLOC_NO_RENAME	 1
+#include <jemalloc/jemalloc.h>
+
 
 #define BYTE_WIDTH				1
 #define WCHAR_WIDTH				2
@@ -60,7 +64,7 @@
 
 //ntyLogInfo(format, ##__VA_ARGS__)//
 //fprintf(stdout, format, ##__VA_ARGS__)
-#define NTY_DEBUG 	2
+#define NTY_DEBUG 	3
 #if (NTY_DEBUG == 1) //catcher 
 #define ntylog(format, ...) 		ntyLogInfo(format, ##__VA_ARGS__)
 #define ntydbg(format, ...) 		fprintf(stdout, format, ##__VA_ARGS__)
@@ -68,8 +72,11 @@
 #define ntylog(format, ...)			fprintf(stdout, format, ##__VA_ARGS__)
 #define ntydbg(format, ...) 		fprintf(stdout, format, ##__VA_ARGS__)
 #elif (NTY_DEBUG == 3) //Log file
-#define ntylog(format, ...)
-#define ntydbg(format, ...) 
+#define ntylog(format, ...)			do { \
+	ntyLogInfo(format, ##__VA_ARGS__);	 \
+	fprintf(stdout, format, ##__VA_ARGS__);	\
+	} while (0)
+#define ntydbg(format, ...) 		fprintf(stdout, format, ##__VA_ARGS__)
 #else
 #define ntylog(format, ...)
 #define ntydbg(format, ...) 

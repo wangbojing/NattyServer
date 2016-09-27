@@ -313,32 +313,35 @@ Client *ntyClientNodeCopy(Client *client) {
 
 #define ITEM_SIZE		64
 
-int ntySeparation(char ch, const char *sequence, int length, char ***pChTable, int *Count) {
+
+int ntySeparation(const U8 ch, const U8 *sequence, int length, U8 ***pChTable, int *Count) {
 	int i = 0, j = 0;
 	int len = length;
-	char ChArray[ITEM_SIZE] = {0};
-	char **pTable = *pChTable;
+	U8 ChArray[ITEM_SIZE] = {0};
+	U8 **pTable = *pChTable;
 	
 	*Count = 0;
 
 	for (i = 0;i < len;i ++) {
 		if (sequence[i] == ch) {
-			pTable[*Count] = (char*)malloc((j+1) * sizeof(char));
+			
+			pTable[*Count] = (U8*)malloc((j+1) * sizeof(U8));
 			memcpy(pTable[*Count], ChArray, j+1);
 			(*Count) ++;
 
 			//OslMfree(pTable);
 			//pTable = (char**)OslMalloc((*Count+1) * sizeof(char**));
-			pTable = (char**)realloc(pTable, (*Count+1) * sizeof(char**));
+			pTable = (U8**)realloc(pTable, (*Count+1) * sizeof(U8**));
 			j = 0;
 			memset(ChArray, 0, ITEM_SIZE);
 
 			continue;
 		} 
+		if (j >= ITEM_SIZE) return -1;
 		ChArray[j++] = sequence[i];
 	}
 	
-	pTable[*Count] = (char*)malloc((j+1) * sizeof(char));
+	pTable[*Count] = (char*)malloc((j+1) * sizeof(U8));
 	memcpy(pTable[*Count], ChArray, j+1);
 	(*Count) ++;
 	

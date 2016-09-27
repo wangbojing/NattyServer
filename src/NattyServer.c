@@ -44,8 +44,14 @@
 //#include "NattyUtils.h"
 #include "NattyTcpServer.h"
 #include "NattyUdpServer.h"
+#include "NattyMulticast.h"
 #include "NattyDaveMQ.h"
 #include "NattyHash.h"
+#include "NattyUtils.h"
+#include "NattyHttpCurl.h"
+#include "NattySignal.h"
+
+
 
 void *ntyStartupTcpServerThread(void *arg) {
 	if (arg == NULL) return NULL;
@@ -59,6 +65,13 @@ void *ntyStartupUdpServerThread(void *arg) {
 	ntyUdpServerRun(arg);
 } 
 
+void *ntyStartupMulticastServerThread(void *arg) {
+	if (arg == NULL) return NULL;
+	ntylog(" ... Multicast Server Startup ... \n");
+	ntyMulticastServerRun(arg);
+} 
+
+
 int main() {
 	//void* ntyServerInfo = New(ntyUdpServerInstance());
 	int i = 0, rc = -1;
@@ -66,8 +79,15 @@ int main() {
 
 	//ntylog(" ... Server Startup ...\n");
 	ntyDisplay();
+	
+#if ENABLE_SIGNAL_SUBSYSTEM
+	ntySignalRegister();
+#endif
+
 #if 1 //Curl init
 	ntyHttpCurlGlobalInit();
+	ntyThreadPoolInit();
+	ntyConnectionPoolInit();
 #endif	
 	ntyDaveMqStart();
 	ntylog(" ... Dave Message Queue Startup ... \n");
@@ -86,6 +106,13 @@ int main() {
 			void *server = ntyUdpServerInstance();
 			ntylog("ntyUdpServerInstance\n");
 			rc = pthread_create(&thread_id[i], NULL, ntyStartupUdpServerThread, server);
+			if (rc) {
+				ntylog("ERROR; return code is %d\n", rc);
+			}
+		} else if (i == PROTO_TYPE_MULTICAST) { //startup multicast server
+			void *server = ntyMulticastServerInstance();
+			ntylog("ntyMulticastServerInstance\n");
+			rc = pthread_create(&thread_id[i], NULL, ntyStartupMulticastServerThread, server);
 			if (rc) {
 				ntylog("ERROR; return code is %d\n", rc);
 			}

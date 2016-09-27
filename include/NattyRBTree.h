@@ -113,6 +113,7 @@ U16 ntyFriendsTreeGetNodeCount(const void *self);
 C_DEVID ntyFriendsTreeGetFristNodeKey(void *self);
 void ntyFriendsTreeMass(void *self, HANDLE_MASS handle_FN, U8 *buf, int length);
 void ntyRBTreeHeartBeatDetect(void *self, HANDLE_HEARTBEAT handle_FN, void *mainloop, TIMESTAMP stamp);
+void ntyFriendsTreeBroadcast(void *self, HANDLE_BROADCAST handle_FN, void *client, U8 *buf, int length);
 
 
 #endif

@@ -42,9 +42,11 @@
  */
 
  
-
+#include "NattyFilter.h"
 #include "NattySession.h"
 #include "NattyRBTree.h"
+#include "NattyUtils.h"
+#include "NattyMulticast.h"
 
 #undef offsetof
 #define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
@@ -348,9 +350,29 @@ static int ntyBoardcastItem(void* client, C_DEVID toId, U8 *data, int length) {
 	ntylog(" ntyBoardcastItem --> Start\n");
 	void *pRBTree = ntyRBTreeInstance();
 	Client *toClient = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, toId);
-	if (toClient == NULL) {
+	if (toClient == NULL) { //local have no client node and need to multicast 
 		ntylog(" ntyBoardcastItem --> toId:%lld is not Exist\n", toId);
-		return ;
+		
+#if ENABLE_MULTICAST_SYNC //multicast 
+		//data[NTY_PROTO_TYPE_IDX] = NTY_PROTO_MULTICAST_REQ;
+		int len = length;
+		U8 buffer[RECV_BUFFER_SIZE] = {0};
+
+		buffer[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+		buffer[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_REQ;	
+		buffer[NTY_PROTO_TYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
+		//buffer[NTY_PROTO_DEVID_IDX] = 
+		memcpy(buffer+NTY_PROTO_DEVID_IDX, &selfNode->devId, sizeof(C_DEVID));
+		memcpy(buffer+NTY_PROTO_DEST_DEVID_IDX, &toId, sizeof(C_DEVID));
+		*(U16*)(&buffer[NTY_PROTO_DATAPACKET_CONTENT_COUNT_IDX]) = (U16)len;
+		memcpy(buffer+NTY_PROTO_DATAPACKET_CONTENT_IDX, data, length);
+
+		len += NTY_PROTO_DATAPACKET_CONTENT_IDX;
+		len += sizeof(U32);
+		
+		ntyMulticastSend(buffer, len);
+#endif
+		return -1;
 	}
 
 	ntylog(" ntyBoardcastItem --> fromId:%lld, toId:%lld, data:%s, length:%d\n", selfNode->devId, toId, data, length);
@@ -524,5 +546,36 @@ void ntyProtoUnBindAck(C_DEVID aid, C_DEVID did, int result) {
 
 	ntySendBuffer(client, buf, length);
 }
+
+
+void ntyProtoICCIDAck(C_DEVID did, U8 *phnum, U16 length) {
+	U8 buf[NTY_HEARTBEAT_ACK_LENGTH*2] = {0};
+	void *pRBTree = ntyRBTreeInstance();
+	Client *client = (Client*)ntyRBTreeInterfaceSearch(pRBTree, did);
+	if (client == NULL) {
+		ntylog(" destClient is not exist proxy:%lld\n", did);
+		return ;
+	}
+
+	buf[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_ACK;	
+	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_ICCID_ACK;
+
+	memcpy(buf+NTY_PROTO_ICCIDACK_SLFID_IDX, &did, sizeof(C_DEVID));
+	memcpy(buf+NTY_PROTO_ICCIDACK_CONTENT_COUNT_IDX, &length, sizeof(U16));
+	memcpy(buf+NTY_PROTO_ICCIDACK_CONTENT_IDX, phnum, length);
+
+	length += NTY_PROTO_ICCIDACK_CONTENT_IDX;
+	*(U32*)(&buf[length]) = ntyGenCrcValue(buf, length);
+	length += sizeof(U32);
+
+	ntySendBuffer(client, buf, length);
+}
+
+
+
+
+
+
 
 

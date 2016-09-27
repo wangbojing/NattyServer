@@ -52,12 +52,14 @@
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <unistd.h>
 
 #define JEMALLOC_NO_DEMANGLE 1
 #define JEMALLOC_NO_RENAME	 1
 #include <jemalloc/jemalloc.h>
 
 
+static void ntyDaveMqPushWorker(void *arg);
 extern int ntyThreadPoolPush(void *self, void *task);
 
 DaveQueue* ntyDaveQueueInitialize(DaveQueue *Queue) {
@@ -90,7 +92,7 @@ void ntyDaveEnQueue(DaveQueue *Queue, VALUE_TYPE *val) {
 	while (1) {
 		//if (Queue->head == Queue->nil) Queue->head = node;
 		cmpxchg((void*)(&Queue->head), (unsigned long)Queue->nil, (unsigned long)node, WORD_WIDTH);
-		
+
 		tail = Queue->tail;
 		node->next = Queue->tail;
 		Queue->tail->prev = node;
@@ -204,34 +206,45 @@ static void* ntyDeQueueThread(void *arg) {
 	ntylog("\n");
 }
 
-extern const ThreadPoolOpera ntyThreadPoolOpera;
-const void *pNtyDaveMqWorker = &ntyThreadPoolOpera;
+const ThreadPoolOpera ntyThreadPoolHandle = {
+	sizeof(ThreadPool),
+	ntyThreadPoolCtor,
+	ntyThreadPoolDtor,
+	ntyThreadPoolAddJob,
+};
 
+
+//extern const ThreadPoolOpera ntyThreadPoolOpera;
+//const void *pNtyDaveMqWorker = &ntyThreadPoolOpera;
+const void *pNtyDaveMqWorker = &ntyThreadPoolHandle;
 
 static void *pDaveMqWorker = NULL;
 void *ntyDaveMqWorkerInstance(void) {
-#if 1
+
 	if (pDaveMqWorker == NULL) {
-		void *pWorker = New(pNtyDaveMqWorker);
+		int param = 0;
+		void *pWorker = New(pNtyDaveMqWorker, param);
 		if ((unsigned long)NULL != cmpxchg((void*)(&pDaveMqWorker), (unsigned long)NULL, (unsigned long)pWorker, WORD_WIDTH)) {
 			Delete(pWorker);
 		}
 	}
 	return pDaveMqWorker;
-#else
-	return ntyThreadPoolInstance();
-#endif
+
 }
 
 void ntyDaveMqWorkerRelease(void) {
 #if 1
 	Delete(pDaveMqWorker);
+	pDaveMqWorker = NULL;
 #endif
 }
 
 void ntyDaveMqStart(void) {
 	pthread_t thread;
 	int rc = -1;
+
+	void *worker =ntyDaveMqWorkerInstance();
+	
 	ntylog("\n ... Dave Message Queue Start ...\n");
 	void *Queue= ntyDaveQueueInstance();
 
@@ -271,11 +284,15 @@ static void ntyDaveMqHandleMTKQuickLocation(Job *job) {
 }
 
 
-void ntyDaveMqPushWorker(void *arg) {
+static void ntyDaveMqPushWorker(void *arg) {
 	VALUE_TYPE *tag = arg;
+	ntylog(" ntyDaveMqPushWorker --> start \n");
 	void *worker = ntyDaveMqWorkerInstance();
 	Job *job = (Job*)malloc(sizeof(Job));
-
+	if (job == NULL) {
+		ntylog(" job == NULL");
+		return ;
+	}
 	ntylog(" ntyDaveMqPushWorker --> type:%d\n", tag->Type);
 	if (MSG_TYPE_QJK_FALLEN == tag->Type) {
 		job->job_function = ntyDaveMqHandleQJKFallen;
@@ -324,13 +341,15 @@ int ntyDaveMqEnQueue(void *Queue, C_DEVID fromId, C_DEVID toId, MESSAGE_TYPE typ
 		}
 #endif
 		ntylog(" ntyDaveMqEnQueue --> length:%d, data.length:%ld\n", length, strlen(data));
-		tag->Tag = (U8*)malloc(length+1);
-		memset(tag->Tag, 0, length+1);
+#if ENABLE_DAVE_MSGQUEUE_MALLOC
+		tag->Tag = (U8*)malloc((length+1) * sizeof(U8));
+		memset(tag->Tag, 0, (length+1));
+#endif
 		memcpy(tag->Tag, data, length);
-		
+
 		tag->length = length;
 		tag->Type = type;
-		#if 0
+		#if 1
 		tag->fromId = fromId;
 		tag->toId = toId;
 		#else
@@ -338,10 +357,9 @@ int ntyDaveMqEnQueue(void *Queue, C_DEVID fromId, C_DEVID toId, MESSAGE_TYPE typ
 		memcpy(&tag->toId, &toId, sizeof(C_DEVID));
 		#endif
 		ntylog(" ntyDaveMqEnQueue --> fromId:%lld, toId:%lld, length:%d, type:%d\n", fromId, toId, length, type);
+		
 		(*handle)->enqueue(Queue, tag);
-#if 0
-		ntyDeQueueThread(Queue);
-#endif
+
 		return 0;
 	}
 	ntylog("enqueue is not exist\n");

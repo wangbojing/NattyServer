@@ -47,12 +47,15 @@
 #include "NattyHash.h"
 #include "NattyHBD.h"
 #include "NattyConfig.h"
+#include "NattyUtils.h"
+#include "NattySession.h"
 
 #include <fcntl.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <ev.h>
+#include <errno.h>
 
 #define JEMALLOC_NO_DEMANGLE 1
 #define JEMALLOC_NO_RENAME	 1
@@ -67,6 +70,22 @@ static int ntySetNonblock(int fd) {
 	flags |= O_NONBLOCK;
 	if (fcntl(fd, F_SETFL, flags) < 0) return -1;
 	return 0;
+}
+
+static int ntyTcpRecv(int fd, U8 *buffer, int length) {
+	int rLen = -1;
+	while (1) {
+		rLen = recv(fd, buffer, RECV_BUFFER_SIZE, 0);
+		if (rLen < 0) {
+			if (errno == EINTR) return -1;
+			if (errno == EAGAIN) {
+				usleep(100);
+				continue;
+			}
+			return -2;
+		} 
+		return rLen;
+	}
 }
 
 static void ntyTcpServerJob(Job *job) {
@@ -113,9 +132,14 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 	}
 
 	memset(buffer, 0, RECV_BUFFER_SIZE);
+#if 1
 	rLen = recv(watcher->fd, buffer, RECV_BUFFER_SIZE, 0);
+#else
+	rLen = ntyTcpRecv(watcher->fd, buffer, RECV_BUFFER_SIZE);
+#endif
 	if (rLen < 0) {
-		ntylog("read error\n");
+		if (errno == EAGAIN) return ;
+		ntylog("read error :%d :%s\n", errno, strerror(errno));
 	} else if (rLen == 0) {
 #if 1 // push to Thread pool
 		struct sockaddr_in client_addr;
@@ -224,7 +248,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 				*((unsigned char*)(&req->client->addr.sin_addr.s_addr)+2), *((unsigned char*)(&req->client->addr.sin_addr.s_addr)+3),													
 				req->client->addr.sin_port, rLen, buffer[NTY_PROTO_TYPE_IDX], *(C_DEVID*)(&buffer[NTY_PROTO_DEVID_IDX]));	
 
-#if 1//Update 
+#if 0//Update 
 		for (i = 0;i < rLen;i ++) {
 			ntylog("0x%x,", buffer[i]);
 		}
@@ -251,7 +275,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		}	
 
 		memset(req->buffer, 0, rLen);
-		memcpy(req->buffer, buffer, rLen);
+		memcpy(req->buffer, buffer, rLen); //xiao lv
 		Job *job = (Job*)malloc(sizeof(*job));
 		if (job == NULL) {
 			ntylog("malloc Job failed\n");
@@ -260,7 +284,6 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		}
 		job->job_function  = ntyTcpServerJob;
 		job->user_data = req;
-
 		ntyThreadPoolPush(pThreadPool, job);
 	}
 

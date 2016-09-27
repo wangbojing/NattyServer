@@ -56,6 +56,12 @@
 
 #define ENABLE_NODE_AGENT_SAVE				1
 
+#define ENABLE_MULTICAST_SYNC				1
+
+#define ENABLE_DAVE_MSGQUEUE_MALLOC			1
+
+#define ENABLE_SIGNAL_SUBSYSTEM				1
+
 #if 1
 
 #define CUSTOM_JG			1

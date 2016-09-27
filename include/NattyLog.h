@@ -57,7 +57,7 @@ typedef zlog_category_t nLogCategory;
 #define NATTY_LOG_OUTSTREAM	nCategory
 #define NATTY_LOG_CATEGORY	"nCategory"
 
-#define NATTY_LOG_BUFFER_LENGTH			256
+#define NATTY_LOG_BUFFER_LENGTH			1024
 
 //#define nLogInfo(format, ...)	zlog_info(NATTY_LOG_OUTSTREAM, format, ##__VA_ARGS__)
 

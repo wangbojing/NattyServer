@@ -83,6 +83,10 @@ void ntyReleaseNetwork(void);
 int ntyGetNetworkStatus(void);
 void ntySetBindResult(PROXY_CALLBACK_CLINET cb);
 void ntySetUnBindResult(PROXY_CALLBACK_CLINET cb);
+void ntySetProxyDisconnect(PROXY_CALLBACK_CLINET cb);
+void ntySetProxyReconnect(PROXY_CALLBACK_CLINET cb);
+
+
 
 void ntyBindClient(DEVID did);
 void ntyUnBindClient(DEVID did);

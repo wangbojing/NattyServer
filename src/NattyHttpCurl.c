@@ -46,6 +46,9 @@
 #include "NattyDaveMQ.h"
 #include "NattyFilter.h"
 #include "NattyRBTree.h"
+#include "NattyDBOperator.h"
+#include "NattySession.h"
+#include "NattyUtils.h"
 
 #include <curl/curl.h>
 #include <string.h>
@@ -112,6 +115,9 @@ int ntyHttpQJKFallen(void *arg) {
 
 	curl_easy_setopt(curl, CURLOPT_URL, tag->Tag); 
 	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L); 
+#if 1
+	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
+#endif
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ntyHttpQJKFallenHandleResult); 
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, tag); 
 
@@ -134,10 +140,12 @@ int ntyHttpQJKFallen(void *arg) {
 	
 	curl_easy_cleanup(curl);
 #if 1
+#if ENABLE_DAVE_MSGQUEUE_MALLOC
 	if (tag->Tag != NULL) {
 		free(tag->Tag);
 		tag->Tag = NULL;
 	}
+#endif
 	if (tag != NULL) {
 		free(tag);
 		tag = NULL;
@@ -367,8 +375,9 @@ int ntyHttpGaodeWifiCellAPI(void *arg) {
 
 	curl_easy_setopt(curl, CURLOPT_URL, tag->Tag); 
 	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L); 
-	//easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
-	//curl_easy_setopt(curl, CURLOPT_HEADER, 1L);
+#if 1
+	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
+#endif
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ntyHttpGaodeWifiCellAPIHandleResult); 
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, tag); 
 
@@ -393,10 +402,12 @@ int ntyHttpGaodeWifiCellAPI(void *arg) {
 	curl_easy_cleanup(curl);
 
 #if 1
+#if ENABLE_DAVE_MSGQUEUE_MALLOC
 	if (tag->Tag != NULL) {
 		free(tag->Tag);
 		tag->Tag = NULL;
 	}
+#endif
 	if (tag != NULL) {
 		free(tag);
 		tag = NULL;
@@ -526,7 +537,9 @@ int ntyHttpMtkQuickLocation(void *arg) {
 
 	curl_easy_setopt(curl, CURLOPT_URL, tag->Tag); 
 	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L); 
-	//curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5); 
+#if 1
+	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
+#endif
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ntyHttpMtkQuickLocationHandleResult); 
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, tag); 
 
@@ -549,10 +562,12 @@ int ntyHttpMtkQuickLocation(void *arg) {
 	
 	curl_easy_cleanup(curl);
 #if 1
+#if ENABLE_DAVE_MSGQUEUE_MALLOC
 	if (tag->Tag != NULL) {
 		free(tag->Tag);
 		tag->Tag = NULL;
 	}
+#endif
 	if (tag != NULL) {
 		free(tag);
 		tag = NULL;

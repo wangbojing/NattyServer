@@ -48,6 +48,9 @@
 #include <zdb.h>
 #include "NattyAbstractClass.h"
 
+#define CONNECTION_SIZE_THRESHOLD_RATIO			0.6			
+#define CONNECTION_SIZE_REAP_RATIO				0.1			
+
 
 
 #define MYSQL_DB_CONN_STRING				"mysql://112.93.116.188:3306/qjk?user=watch_server&password=123456"
@@ -69,6 +72,11 @@
 
 #define NTY_DB_HEARTRATE_INSERT_FORMAT		"CALL PROC_HEARTRATE_DID_INSERT(%lld, %d)"
 
+#define NTY_DB_DEVICELOGIN_UPDATE_FORMAT	"CALL PROC_DEVICE_STATUS_UPDATE(%lld, 1)"
+
+#define NTY_DB_DEVICELOGOUT_UPDATE_FORMAT	"CALL PROC_DEVICE_STATUS_UPDATE(%lld, 0)"
+
+#define NTY_DB_PHNUM_VALUE_SELECT_FORMAT	"CALL PROC_PHNUM_VALUE_RESULT(%lld, %s)"
 
 
 typedef struct _CONN_POOL {
@@ -97,8 +105,14 @@ int ntyExecuteStepInsertHandle(C_DEVID did, int value);
 int ntyExecuteHeartRateInsertHandle(C_DEVID did, int value);
 
 
+int ntyExecuteDeviceLoginUpdateHandle(C_DEVID did);
+int ntyExecuteDeviceLogoutUpdateHandle(C_DEVID did);
+
+int ntyQueryPhNumSelect(void *self, C_DEVID did, U8 *imei, U8 *phnum);
 
 
+int ntyConnectionPoolInit(void);
+void ntyConnectionPoolDeInit(void);
 
 
 

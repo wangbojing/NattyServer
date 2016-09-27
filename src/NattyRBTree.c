@@ -47,7 +47,7 @@
 
 #include "NattyRBTree.h"
 #include "NattyUdpServer.h"
-
+#include "NattyConfig.h"
 
 //static pthread_mutex_t rbtree_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -286,13 +286,27 @@ RBTreeNode* ntyRBTreeDelete(RBTree *T, RBTreeNode *z) {
 	}
 		
 	if (y != z) {
+#if ENABLE_RBTREE_MUTEX
+		pthread_mutex_lock(&T->rbtree_mutex);
 		z->key = y->key;
 		z->value = y->value;
+		pthread_mutex_unlock(&T->rbtree_mutex);
+#else
+		z->key = y->key;
+		z->value = y->value;
+#endif
 	}
-
+#if ENABLE_RBTREE_MUTEX
+	pthread_mutex_lock(&T->rbtree_mutex);
 	if (y->color == BLACK) {
 		ntyRBTreeDeleteFixup(T, x);
 	}
+	pthread_mutex_unlock(&T->rbtree_mutex);
+#else
+	if (y->color == BLACK) {
+		ntyRBTreeDeleteFixup(T, x);
+	}
+#endif
 	return y;
 }
 
@@ -356,11 +370,12 @@ int ntyRBTreeOperaInsert(void *_self, C_DEVID key, void *value) {
 #if ENABLE_RBTREE_MUTEX	
 		pthread_mutex_lock(&self->rbtree_mutex);
 		NattyRBTreeInsert(self, node);
+		self->count ++;
 		pthread_mutex_unlock(&self->rbtree_mutex);
 #else
 		NattyRBTreeInsert(self, node);
-#endif
 		self->count ++;
+#endif
 		return 0;
 	}
 	return 1; //exist
@@ -381,7 +396,7 @@ int ntyRBTreeOperaDelete(void *_self, C_DEVID key) {
 
 	RBTreeNode *node = ntyRBTreeSearch(self , key);
 	if (node == self->nil) return 1;
-#if ENABLE_RBTREE_MUTEX	
+#if 0
 	pthread_mutex_lock(&self->rbtree_mutex);
 	node = ntyRBTreeDelete(self, node);
 	pthread_mutex_unlock(&self->rbtree_mutex);
@@ -461,7 +476,7 @@ static void ntyInOrderBroadcast(RBTree *T, RBTreeNode *node, HANDLE_BROADCAST ha
 		Client *pClient = client;
 		//ntylog(" ntyInOrderBroadcast fromId \n");
 		ntyInOrderBroadcast(T, node->left, handle_FN, client, buf, length);
-		ntydbg(" ntyInOrderBroadcast :%lld, fromId:%lld, buffer:%s, length:%d\n", node->key, pClient->devId, buf, length);
+		//ntylog(" ntyInOrderBroadcast :%lld, fromId:%lld, buffer:%s, length:%d\n", node->key, pClient->devId, buf, length);
 		handle_FN(client, node->key, buf, length);
 		//ntylog(" ntyInOrderBroadcast --> handle_FN :%lld, buffer:%s, length:%d\n", node->key, buf, length);
 		ntyInOrderBroadcast(T, node->right, handle_FN, client, buf, length);
@@ -472,7 +487,7 @@ static void ntyInOrderBroadcast(RBTree *T, RBTreeNode *node, HANDLE_BROADCAST ha
 static void ntyInOrderHeartBeat(RBTree *T, RBTreeNode *node, HANDLE_HEARTBEAT handle_FN, void *mainloop, TIMESTAMP stamp) {
 	if (node != T->nil) {		
 		ntyInOrderHeartBeat(T, node->left, handle_FN, mainloop, stamp);
-		ntydbg(" ntyInOrderHeartBeat :%lld, stamp:%ld\n", node->key, stamp);
+		//ntylog(" ntyInOrderHeartBeat :%lld, stamp:%ld\n", node->key, stamp);
 		
 		handle_FN(node->value, mainloop, stamp);
 		ntyInOrderHeartBeat(T, node->right, handle_FN, mainloop, stamp);
@@ -484,7 +499,7 @@ static void ntyInOrderHeartBeat(RBTree *T, RBTreeNode *node, HANDLE_HEARTBEAT ha
 
 static void ntyPreOrderTraversal(RBTree *T, RBTreeNode *node) {
 	if (node != T->nil) {
-		ntydbg(" %lld ", node->key);
+		//ntylog(" %lld ", node->key);
 		ntyPreOrderTraversal(T, node->left);
 		ntyPreOrderTraversal(T, node->right);
 	}
@@ -505,7 +520,7 @@ static void ntyPosOrderTraversal(RBTree *T, RBTreeNode *node) {
 	if (node != T->nil) {
 		ntyPosOrderTraversal(T, node->left);
 		ntyPosOrderTraversal(T, node->right);
-		ntydbg(" %lld ", node->key);
+		//ntylog(" %lld ", node->key);
 	}
 	return ;
 }
@@ -515,7 +530,7 @@ static int ntyPrintTreeByLevel(RBTree *T, RBTreeNode *node, int level) {
 		return 0;
 	}
 	if (0 == level) {
-		ntydbg(" %lld color:%d  %s\n", node->key, node->color, (char*)node->value);
+		//ntylog(" %lld color:%d  %s\n", node->key, node->color, (char*)node->value);
 		return 1;
 	}
 
@@ -553,7 +568,7 @@ void ntyRBTreeOperaMass(void *_self, HANDLE_MASS handle_FN, U8 *buf, int length)
 void ntyRBTreeOperaHeartBeat(void *_self, HANDLE_HEARTBEAT handle_FN, void *mainloop, TIMESTAMP stamp) {
 	RBTree *self = _self;
 
-	ntydbg("ntyRBTreeOperaHeartBeat\n");
+	//ntylog("ntyRBTreeOperaHeartBeat\n");
 	return ntyInOrderHeartBeat(self, self->root, handle_FN, mainloop, stamp);
 }
 
@@ -561,7 +576,7 @@ void ntyRBTreeOperaHeartBeat(void *_self, HANDLE_HEARTBEAT handle_FN, void *main
 void ntyRBTreeOperaBroadcast(void *_self, HANDLE_BROADCAST handle_FN, void *client,  U8 *buf, int length) {
 	RBTree *self = _self;
 
-	ntydbg("ntyRBTreeOperaBroadcast\n");
+	//ntylog("ntyRBTreeOperaBroadcast\n");
 	return ntyInOrderBroadcast(self, self->root, handle_FN, client, buf, length);
 }
 

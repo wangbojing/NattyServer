@@ -63,7 +63,7 @@ typedef long long C_DEVID;
 //typedef long long C_DEVID;
 #endif
 
-#define SERVER_NAME		"127.0.0.1"  //"112.93.116.188" //"112.93.116.189" //"127.0.0.1" 
+#define SERVER_NAME		"112.93.116.189"   //"112.93.116.188" //"112.93.116.189" //"127.0.0.1" 
 #define SERVER_PORT		8888
 #define RECV_BUFFER_SIZE	(1024+16)
 #define NORMAL_BUFFER_SIZE	64
@@ -169,6 +169,7 @@ U8 ntyGetReqType(void *self);
 C_DEVID ntyGetDestDevId(void *self);
 void ntySetDevId(C_DEVID id);
 
+void ntyGenCrcTable(void);
 
 
 #endif

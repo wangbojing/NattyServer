@@ -47,6 +47,7 @@
 #include "NattyConfig.h"
 #include "NattyRBTree.h"
 #include "NattyFilter.h"
+#include "NattySession.h"
 
 #include <sys/time.h>
 

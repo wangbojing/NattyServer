@@ -43,6 +43,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "NattyProtoClient.h"
 
@@ -88,6 +89,7 @@ void ntyUnBindResult(int arg) {
 int main() {
 	DEVID AppId = 10794;
 	DEVID did = 0x352315052834187;
+	DEVID aid = 0;
 	
 	int n = 0, length, i;
 	int ch;
@@ -108,16 +110,18 @@ int main() {
 	
 	ntyStartupClient();
 	sleep(5);
-
+	
+	//ntyBindClient(0xEDFF12342345613);
 	//ntyUnBindClient(0xEDFF12342345613);
-
+#if 1
 	int count = 0;
 	DEVID *list = ntyGetFriendsList(&count);
 	for (i = 0;i < count;i ++) {
 		ntydbg(" %d --> %lld\n", i+1, *(list+i));
 	}
+	aid = *list;
 	ntyReleaseFriendsList(&list);
-
+#endif
 	//while(1);
 #if 1
 	while(1) {
@@ -138,7 +142,11 @@ int main() {
 		//memcpy(tempBuf, url, strlen(url));
 		int len = strlen(tempBuf);
 		ntydbg(" tempBuf:%s, len:%d\n", tempBuf, len);
+#if 0
 		ntySendMassDataPacket(tempBuf, len-1);
+#else
+		ntySendDataPacket(aid, tempBuf, len-1);
+#endif
 	}
 #endif
 }

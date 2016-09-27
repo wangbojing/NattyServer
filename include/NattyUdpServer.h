@@ -88,9 +88,18 @@ typedef enum _CLIENT_TYPE {
 	PROTO_TYPE_START = 0x0,
 	PROTO_TYPE_TCP = PROTO_TYPE_START,
 	PROTO_TYPE_UDP,
-	PROTO_TYPE_END = PROTO_TYPE_UDP,
+	PROTO_TYPE_MULTICAST,
+	PROTO_TYPE_END = PROTO_TYPE_MULTICAST,
 	PROTO_TYPE_COUNT
 } CLIENT_TYPE;
+
+typedef enum _DEVICE_TYPE {
+	DEVICE_TYPE_START = 0x0,
+	DEVICE_TYPE_APP = DEVICE_TYPE_START,
+	DEVICE_TYPE_WATCH,
+	DEVICE_TYPE_END = DEVICE_TYPE_WATCH,
+	DEVICE_TYPE_COUNT
+} DEVICE_TYPE;
 
 typedef struct _Client {
 	int sockfd;
@@ -101,6 +110,7 @@ typedef struct _Client {
 	TIMESTAMP stamp;
 	struct ev_io *watcher;
 	U8 clientType; //UDP / TCP
+	U8 deviceType; 
 } Client;
 
 typedef Client UdpClient;

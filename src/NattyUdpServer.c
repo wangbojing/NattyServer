@@ -46,6 +46,7 @@
 #include "NattyFilter.h"
 #include "NattyUdpServer.h"
 #include "NattyThreadPool.h"
+#include "NattyUtils.h"
 
 void error(char *msg) {  
 	perror(msg);  
@@ -147,7 +148,7 @@ int ntyUdpServerProcess(const void *_self) {
 
 	Job *job;
 	void* pThreadPool = ntyThreadPoolInstance();
-	void* pFilter = ntyProtocolFilterInstance();
+	//void* pFilter = ntyProtocolFilterInstance();
 
 	if (self->sockfd <= 0) {
 		error("Udp Server Socket no Initial");
@@ -212,7 +213,7 @@ int ntyUdpServerProcess(const void *_self) {
 		}
 	}
 
-	ntyProtocolFilterProcess(pFilter, req->buffer, req->length, req->client);
+	//ntyProtocolFilterProcess(pFilter, req->buffer, req->length, req->client);
 	//free(pClient);
 	//ntyProtocolFilterRelease(pFilter);
 	return 0;
@@ -250,7 +251,12 @@ int ntyClientCompare(const UdpClient *clientA, const UdpClient *clientB) {
 int ntySendBuffer(const UdpClient *client, unsigned char *buffer, int length) {
 	if (client == NULL) return -1;
 	if (client->sockfd == 0) return -1;
-	
+
+#if 1
+	U32 Crc = ntyGenCrcValue(buffer, length-sizeof(U32));
+	memcpy(buffer+length-sizeof(U32), &Crc, sizeof(U32));
+#endif
+		
 	if (client->clientType == PROTO_TYPE_UDP) {
 		return sendto(client->sockfd, buffer, length, 0, (struct sockaddr *)&client->addr, sizeof(struct sockaddr_in));
 	} else if (client->clientType == PROTO_TYPE_TCP) {

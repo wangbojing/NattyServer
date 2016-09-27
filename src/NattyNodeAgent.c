@@ -43,8 +43,14 @@
 
 
 #include "NattyNodeAgent.h"
+#include "NattyDBOperator.h"
+#include "NattyUtils.h"
 
 #include <string.h>
+
+#define JEMALLOC_NO_DEMANGLE 1
+#define JEMALLOC_NO_RENAME	 1
+#include <jemalloc/jemalloc.h>
 
 
 extern void *ntyPacketCtor(void *_self, va_list *params);
@@ -285,6 +291,9 @@ void* ntyNodeFilterInstance(void) {
 
 void ntyNodeAgentProcess(const U8 *buffer, int length, C_DEVID id) {
 	void *filter = ntyNodeFilterInstance();
+
+	if (length > 256) return ;
+	
 	U8 **pTable = (U8**)malloc(sizeof(U8**));
 	int Count = 0;
 

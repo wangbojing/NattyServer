@@ -76,9 +76,6 @@ static void *ntyRunner(void *arg) {
 		job = worker->workqueue->waiting_jobs;
 		if (job != NULL) {
 			QUEUE_REMOVE(job, worker->workqueue->waiting_jobs);
-#if 1
-			
-#endif
 		}
 		pthread_mutex_unlock(&worker->workqueue->jobs_mutex);
 
@@ -141,16 +138,22 @@ static void ntyWorkQueueAddJob(WorkQueue *wq, Job *job) {
 
 
 
-static void* ntyThreadPoolCtor(void *_self, va_list *params) {
+void* ntyThreadPoolCtor(void *_self, va_list *params) {
 	ThreadPool *pool = (ThreadPool*)_self;
 
 	pool->wq = (WorkQueue*)malloc(sizeof(WorkQueue));
-	ntyWorkQueueInit(pool->wq, NTY_THREAD_POOL_NUM);
+
+	int arg = va_arg(params, int);
+	if (arg == 1) {
+		ntyWorkQueueInit(pool->wq, NTY_THREAD_POOL_NUM / 2);
+	} else {
+		ntyWorkQueueInit(pool->wq, NTY_THREAD_POOL_NUM);
+	}
 
 	return pool;
 }
 
-static void* ntyThreadPoolDtor(void *_self) {
+void* ntyThreadPoolDtor(void *_self) {
 	ThreadPool *pool = (ThreadPool*)_self;
 
 	ntyWorkQueueShutdown(pool->wq);
@@ -160,7 +163,7 @@ static void* ntyThreadPoolDtor(void *_self) {
 }
 
 
-static void ntyThreadPoolAddJob(void *_self, void *task) {
+void ntyThreadPoolAddJob(void *_self, void *task) {
 	ThreadPool *pool = (ThreadPool*)_self;
 	Job *job = (Job*)task;
 	
@@ -181,12 +184,17 @@ static void *pThreadPool = NULL;
 
 void *ntyThreadPoolInstance(void) {
 	if (pThreadPool == NULL) {
-		void *pPool = New(pNtyThreadPoolOpera);
+		int param = 0;
+		void *pPool = New(pNtyThreadPoolOpera, param);
 		if ((unsigned long)NULL != cmpxchg((void*)(&pThreadPool), (unsigned long)NULL, (unsigned long)pPool, WORD_WIDTH)) {
 			Delete(pPool);
 		}
 	}
 	return pThreadPool;
+}
+
+void ntyThreadPoolInit(void) {
+	void* pool = ntyThreadPoolInstance();
 }
 
 void ntyThreadPoolRelease(void) {	

@@ -46,9 +46,12 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <netdb.h> 
 #include <string.h>
 #include <pthread.h>
+#include <unistd.h>
+
 
 #include "NattyProtoClient.h"
 #include "NattyTimer.h"
@@ -347,10 +350,10 @@ void ntyProtoClientProxyReq(void *_self, C_DEVID toId, U8 *buf, int length) {
 	length += NTY_PROTO_DATAPACKET_CONTENT_IDX;
 	length += sizeof(U32);
 
-	ntydbg(" ntyProtoClientProxyReq \n");
+	ntydbg(" ntyProtoClientProxyReq :%d\n", length);
 	void *pNetwork = ntyNetworkInstance();
 	n = ntySendFrame(pNetwork, &proto->serveraddr, buf, length);
-	
+	sleep(1);
 }
 
 void ntyProtoClientProxyAck(void *_self, C_DEVID toId, U32 ack) {
@@ -784,7 +787,8 @@ static void* ntyRecvProc(void *arg) {
 
 				memcpy(data, buf+NTY_PROTO_DATAPACKET_CONTENT_IDX, recByteCount);
 				//ntydbg(" recv:%s end\n", data);
-				
+
+				proto->devid = friId;
 				//sendProxyDataPacketAck(friId, ack);
 				if (buf[NTY_PROTO_MESSAGE_TYPE] == MSG_RET) {
 					if (proto->onProxyFailed)
