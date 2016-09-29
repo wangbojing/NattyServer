@@ -371,7 +371,7 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 			//insert rb-tree
 			ntylog(" New Client RBTREENODE --> %lld\n", key);
 			if (ntyRBTreeInterfaceInsert(pRBTree, key, pClient)) {
-				ntylog("Client is Exist\n");
+				ntylog("Client is Exist or conflict Handle\n");
 				free(pClient);
 				return ;
 			}
@@ -593,7 +593,7 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 			ntylog("ntyHeartBeatPacketHandleRequest --> Insert New Client Node\n");
 			//insert rb-tree
 			if (ntyRBTreeInterfaceInsert(pRBTree, key, pClient)) {
-				ntylog("Client is Exist\n");
+				ntylog("Client is Exist or conflict Handle\n");
 				free(pClient);
 				return ;
 			}
@@ -1446,7 +1446,7 @@ void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length, 
 		if (client->clientType == PROTO_TYPE_TCP) {
 			struct ev_loop *loop = ntyTcpServerGetMainloop();
 
-			ntydbg(" ntyProtocolFilterProcess --> Data Format is Error\n");
+			ntylog(" ntyProtocolFilterProcess --> Data Format is Error : %d\n", length);
 			ntyReleaseClientNodeSocket(loop, client->watcher, client->sockfd);
 		}
 #endif

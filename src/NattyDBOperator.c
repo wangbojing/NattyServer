@@ -46,7 +46,7 @@
 #include "NattyRBTree.h"
 
 #include <string.h>
-
+#include <wchar.h>
 
 void* ntyConnectionPoolInitialize(ConnectionPool *pool) {
 	pool->url = URL_new(MYSQL_DB_CONN_STRING);
@@ -178,16 +178,36 @@ int ntyConnectionPoolQuery(void *_self, U8 *sql, void ***result, int *length) {
 #endif
 
 
+Connection_T ntyCheckConnection(void *self, Connection_T con) {
+	ConnectionPool *pool = self;
+	if (con == NULL) {
+		int n = ConnectionPool_reapConnections(pool->nPool);
+		Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	}
+	return con;
+}
+
+void ntyConnectionClose(Connection_T con) {
+	if (con != NULL) {
+		Connection_close(con);
+	}
+}
+
 //NTY_DB_WATCH_INSERT_FORMAT
 
 static int ntyExecuteWatchInsert(void *self, U8 *imei) {
 	ConnectionPool *pool = self;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
-
+	
 	TRY 
 	{
-		Connection_execute(con, NTY_DB_WATCH_INSERT_FORMAT, imei);
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			Connection_execute(con, NTY_DB_WATCH_INSERT_FORMAT, imei);
+		}
 	} 
 	CATCH(SQLException) 
 	{
@@ -197,7 +217,7 @@ static int ntyExecuteWatchInsert(void *self, U8 *imei) {
 	FINALLY
 	{
 		ntylog(" %s --> Connection_close\n", __func__);
-		Connection_close(con);
+		ntyConnectionClose(con);
 	}
 	END_TRY;
 
@@ -213,12 +233,17 @@ static int ntyQueryAppIDListSelect(void *self, C_DEVID did, void *tree) {
 
 	TRY 
 	{
-		ResultSet_T r = Connection_executeQuery(con, NTY_DB_APPIDLIST_SELECT_FORMAT, did);
-		while (ResultSet_next(r)) {
-			C_DEVID id = ResultSet_getLLong(r, 1);
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_APPIDLIST_SELECT_FORMAT, did);
+			while (ResultSet_next(r)) {
+				C_DEVID id = ResultSet_getLLong(r, 1);
 #if 1
-			ntyFriendsTreeInsert(tree, id);
+				ntyFriendsTreeInsert(tree, id);
 #endif
+			}
 		}
 	} 
 	CATCH(SQLException) 
@@ -229,7 +254,7 @@ static int ntyQueryAppIDListSelect(void *self, C_DEVID did, void *tree) {
 	FINALLY
 	{
 		ntylog(" %s --> Connection_close\n", __func__);
-		Connection_close(con);
+		ntyConnectionClose(con);
 	}
 	END_TRY;
 
@@ -245,12 +270,17 @@ static int ntyQueryWatchIDListSelect(void *self, C_DEVID aid, void *tree) {
 
 	TRY 
 	{
-		ResultSet_T r = Connection_executeQuery(con, NTY_DB_WATCHIDLIST_SELECT_FORMAT, aid);
-		while (ResultSet_next(r)) {
-			C_DEVID id = ResultSet_getLLong(r, 1);
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_WATCHIDLIST_SELECT_FORMAT, aid);
+			while (ResultSet_next(r)) {
+				C_DEVID id = ResultSet_getLLong(r, 1);
 #if 1
-			ntyFriendsTreeInsert(tree, id);
+				ntyFriendsTreeInsert(tree, id);
 #endif
+			}
 		}
 	} 
 	CATCH(SQLException) 
@@ -261,7 +291,7 @@ static int ntyQueryWatchIDListSelect(void *self, C_DEVID aid, void *tree) {
 	FINALLY
 	{
 		ntylog(" %s --> Connection_close\n", __func__);
-		Connection_close(con);
+		ntyConnectionClose(con);
 	}
 	END_TRY;
 
@@ -276,9 +306,14 @@ static int ntyQueryDevAppRelationInsert(void *self, C_DEVID aid, U8 *imei) {
 
 	TRY 
 	{
-		ResultSet_T r = Connection_executeQuery(con, NTY_DB_DEV_APP_INSERT_FORMAT, aid, imei);
-		while (ResultSet_next(r)) {
-			ret = ResultSet_getInt(r, 1);
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_DEV_APP_INSERT_FORMAT, aid, imei);
+			while (ResultSet_next(r)) {
+				ret = ResultSet_getInt(r, 1);
+			}
 		}
 	} 
 	CATCH(SQLException) 
@@ -289,7 +324,7 @@ static int ntyQueryDevAppRelationInsert(void *self, C_DEVID aid, U8 *imei) {
 	FINALLY
 	{
 		ntylog(" %s --> Connection_close\n", __func__);
-		Connection_close(con);
+		ntyConnectionClose(con);
 	}
 	END_TRY;
 
@@ -304,7 +339,12 @@ static int ntyExecuteDevAppRelationDelete(void *self, C_DEVID aid, C_DEVID did) 
 
 	TRY 
 	{
-		Connection_execute(con, NTY_DB_DEV_APP_DELETE_FORMAT, aid, did);
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			Connection_execute(con, NTY_DB_DEV_APP_DELETE_FORMAT, aid, did);
+		}
 	} 
 	CATCH(SQLException) 
 	{
@@ -314,7 +354,7 @@ static int ntyExecuteDevAppRelationDelete(void *self, C_DEVID aid, C_DEVID did) 
 	FINALLY
 	{
 		ntylog(" %s --> Connection_close\n", __func__);
-		Connection_close(con);
+		ntyConnectionClose(con);
 	}
 	END_TRY;
 
@@ -323,14 +363,19 @@ static int ntyExecuteDevAppRelationDelete(void *self, C_DEVID aid, C_DEVID did) 
 
 
 //NTY_DB_LOCATION_INSERT_FORMAT
-static int ntyExecuteLocationInsert(void *self, C_DEVID did, U8 *lng, U8 *lat, U8 type,U8 *info) {
+static int ntyExecuteLocationInsert(void *self, C_DEVID did, U8 *lng, U8 *lat, U8 type, U8 *info) {
 	ConnectionPool *pool = self;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 
 	TRY 
 	{
-		Connection_execute(con, NTY_DB_LOCATION_INSERT_FORMAT, did, lng, lat, type,info);
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			Connection_execute(con, NTY_DB_LOCATION_INSERT_FORMAT, did, lng, lat, type, info);
+		}
 	} 
 	CATCH(SQLException) 
 	{
@@ -340,7 +385,7 @@ static int ntyExecuteLocationInsert(void *self, C_DEVID did, U8 *lng, U8 *lat, U
 	FINALLY
 	{
 		ntylog(" %s --> Connection_close\n", __func__);
-		Connection_close(con);
+		ntyConnectionClose(con);
 	}
 	END_TRY;
 
@@ -357,7 +402,12 @@ static int ntyExecuteStepInsert(void *self, C_DEVID did, int value) {
 
 	TRY 
 	{
-		Connection_execute(con, NTY_DB_STEP_INSERT_FORMAT, did, value);
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			Connection_execute(con, NTY_DB_STEP_INSERT_FORMAT, did, value);
+		}
 	} 
 	CATCH(SQLException) 
 	{
@@ -367,7 +417,7 @@ static int ntyExecuteStepInsert(void *self, C_DEVID did, int value) {
 	FINALLY
 	{
 		ntylog(" %s --> Connection_close\n", __func__);
-		Connection_close(con);
+		ntyConnectionClose(con);
 	}
 	END_TRY;
 
@@ -384,7 +434,12 @@ int ntyExecuteHeartRateInsert(void *self, C_DEVID did, int value) {
 
 	TRY 
 	{
-		Connection_execute(con, NTY_DB_HEARTRATE_INSERT_FORMAT, did, value);
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			Connection_execute(con, NTY_DB_HEARTRATE_INSERT_FORMAT, did, value);
+		}	
 	} 
 	CATCH(SQLException) 
 	{
@@ -394,7 +449,7 @@ int ntyExecuteHeartRateInsert(void *self, C_DEVID did, int value) {
 	FINALLY
 	{
 		ntylog(" %s --> Connection_close\n", __func__);
-		Connection_close(con);
+		ntyConnectionClose(con);
 	}
 	END_TRY;
 
@@ -410,7 +465,12 @@ int ntyExecuteDeviceLoginUpdate(void *self, C_DEVID did) {
 
 	TRY 
 	{
-		Connection_execute(con, NTY_DB_DEVICELOGIN_UPDATE_FORMAT, did);
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			Connection_execute(con, NTY_DB_DEVICELOGIN_UPDATE_FORMAT, did);
+		}
 	} 
 	CATCH(SQLException) 
 	{
@@ -420,7 +480,7 @@ int ntyExecuteDeviceLoginUpdate(void *self, C_DEVID did) {
 	FINALLY
 	{
 		ntylog(" %s --> Connection_close\n", __func__);
-		Connection_close(con);
+		ntyConnectionClose(con);
 	}
 	END_TRY;
 
@@ -435,7 +495,12 @@ int ntyExecuteDeviceLogoutUpdate(void *self, C_DEVID did) {
 
 	TRY 
 	{
-		Connection_execute(con, NTY_DB_DEVICELOGOUT_UPDATE_FORMAT, did);
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			Connection_execute(con, NTY_DB_DEVICELOGOUT_UPDATE_FORMAT, did);
+		}
 	} 
 	CATCH(SQLException) 
 	{
@@ -445,7 +510,7 @@ int ntyExecuteDeviceLogoutUpdate(void *self, C_DEVID did) {
 	FINALLY
 	{
 		ntylog(" %s --> Connection_close\n", __func__);
-		Connection_close(con);
+		ntyConnectionClose(con);
 	}
 	END_TRY;
 
@@ -461,15 +526,20 @@ int ntyQueryPhNumSelect(void *self, C_DEVID did, U8 *iccid, U8 *phnum) {
 
 	TRY 
 	{
-		ResultSet_T r = Connection_executeQuery(con, NTY_DB_PHNUM_VALUE_SELECT_FORMAT, did, iccid);
-		while (ResultSet_next(r)) {
-			const char *u8pNum = ResultSet_getString(r, 1);
-			int len = strlen(u8pNum);
-			ntylog(" ntyQueryPhNumSelect --> len:%d\n", len);
-			if (len < 20)
-				memcpy(u8PhNum, u8pNum, len);
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_PHNUM_VALUE_SELECT_FORMAT, did, iccid);
+			while (ResultSet_next(r)) {
+				const char *u8pNum = ResultSet_getString(r, 1);
+				int len = strlen(u8pNum);
+				ntylog(" ntyQueryPhNumSelect --> len:%d\n", len);
+				if (len < 20)
+					memcpy(u8PhNum, u8pNum, len);
+			}
+			strcpy(phnum, u8PhNum);
 		}
-		strcpy(phnum, u8PhNum);
 	} 
 	CATCH(SQLException) 
 	{
@@ -479,7 +549,7 @@ int ntyQueryPhNumSelect(void *self, C_DEVID did, U8 *iccid, U8 *phnum) {
 	FINALLY
 	{
 		ntylog(" %s --> Connection_close\n", __func__);
-		Connection_close(con);
+		ntyConnectionClose(con);
 	}
 	END_TRY;
 

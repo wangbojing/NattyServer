@@ -48,6 +48,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include <locale.h>
 
 #include "NattyUtils.h"
 #include "NattyProtocol.h"
@@ -382,5 +383,17 @@ char ntyIsAvailableNum(char *phnum) {
 	}
 	return 1;
 }
+
+int ntyCharToWchar(U8 *src, int length, wchar_t *dest) {
+	int w_size = 0;
+
+	setlocale(LC_ALL, "zh_CN.utf8");
+	w_size = mbstowcs(NULL, src, 0) + 1;
+
+	w_size = mbstowcs(dest, src, length);
+
+	return w_size;
+}
+
 
 

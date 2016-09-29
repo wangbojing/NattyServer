@@ -78,6 +78,7 @@
 
 #define NTY_DB_PHNUM_VALUE_SELECT_FORMAT	"CALL PROC_PHNUM_VALUE_RESULT(%lld, %s)"
 
+#define NTY_DB_NAMES_UTF8_SET_FORMAT		"SET NAMES UTF8;"
 
 typedef struct _CONN_POOL {
 	const void *_;
@@ -100,7 +101,7 @@ int ntyQueryAppIDListSelectHandle(C_DEVID did, void *tree);
 int ntyQueryWatchIDListSelectHandle(C_DEVID aid, void *tree);
 int ntyQueryDevAppRelationInsertHandle(C_DEVID aid, U8 *imei);
 int ntyExecuteDevAppRelationDeleteHandle(C_DEVID aid, C_DEVID did);
-int ntyExecuteLocationInsertHandle( C_DEVID did, U8 *lng, U8 *lat, U8 type, U8 *info);
+int ntyExecuteLocationInsertHandle(C_DEVID did, U8 *lng, U8 *lat, U8 type, U8 *info);
 int ntyExecuteStepInsertHandle(C_DEVID did, int value);
 int ntyExecuteHeartRateInsertHandle(C_DEVID did, int value);
 

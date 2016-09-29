@@ -100,6 +100,7 @@ void nLogInfoWithTimePrefix(nLogCategory *cat, const char *format) {
 
 	zlog_info(cat, "%s", buffer);
 
+	nLogFinally();
 }
 
 

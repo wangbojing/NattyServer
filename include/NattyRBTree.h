@@ -72,6 +72,7 @@ typedef struct _RBTree {
 	RBTreeNode *root;
 	RBTreeNode *nil;
 	pthread_mutex_t rbtree_mutex;
+	long rbtree_delete_lock;
 	U16 count;
 } RBTree;
 

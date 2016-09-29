@@ -50,12 +50,19 @@
 #include "NattySession.h"
 
 #include <sys/time.h>
+#include <unistd.h>
 
 #if ENABLE_NATTY_TIME_STAMP
 extern pthread_mutex_t time_mutex;
 #endif
 int ntyHeartBeatDetectItem(void *node, void *mainloop, TIMESTAMP curStamp) {
+#if 0
 	Client *client = node;
+#else
+	RBTreeNode *rNode = node;
+	Client *client = rNode->value; 
+#endif
+	
 	struct ev_loop *loop = mainloop;
 	TIMESTAMP duration = curStamp - client->stamp;
 
@@ -63,8 +70,14 @@ int ntyHeartBeatDetectItem(void *node, void *mainloop, TIMESTAMP curStamp) {
 		ntylog(" ntyHeartBeatDetectItem --> client node is Null\n");
 		return -1;
 	}
+	ntylog(" ntyHeartBeatDetectItem --> client:%lld,  rNode:%lld\n", client->devId, rNode->key);
+	if (client->devId != rNode->key) {
+		ntylog(" ntyHeartBeatDetectItem --> client->devId != rNode->key\n");
+#if 0 //RBTREE
+		rNode->key = client->devId;
+#endif
+	}
 
-	ntylog(" ntyHeartBeatDetectItem --> client:%lld last connect:%ld, now:%ld\n", client->devId, client->stamp, curStamp);
 	if (duration >  NATTY_HEARTBEAT_THRESHOLD) { //release client
 		//U8 u8ResultBuffer[256] = {0};
 		ntylog(" ntyHeartBeatDetectItem --> client:%lld timeout\n", client->devId);
@@ -98,6 +111,8 @@ int ntyHeartBeatDetectItem(void *node, void *mainloop, TIMESTAMP curStamp) {
 #endif
 	}
 
+	//usleep(1);
+	
 	return 0;
 }
 

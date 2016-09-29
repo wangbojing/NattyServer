@@ -47,11 +47,14 @@
 #include "NattyDBOperator.h"
 #include "NattyAbstractClass.h"
 
+#include <errno.h>
+
 
 #define SIGNAL_REGISTER(x)		signal(x, ntySignalProcess)
 
 static void ntySignalProcess(int sign_no) {
 	ntylog(" ntySignalProcess --> sign_no %d \n", sign_no);
+	ntylog(" ntySignalProcess --> errno %d \n", errno, strerror(errno));
 	switch (sign_no) {
 		case NTY_SIGNAL_INT: 
 		case NTY_SIGNAL_QUIT: 

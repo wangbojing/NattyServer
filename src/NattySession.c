@@ -348,6 +348,8 @@ static int ntyBoardcastItem(void* client, C_DEVID toId, U8 *data, int length) {
 	Client *selfNode = client;
 
 	ntylog(" ntyBoardcastItem --> Start\n");
+	if (selfNode->devId == toId) return -1;
+	
 	void *pRBTree = ntyRBTreeInstance();
 	Client *toClient = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, toId);
 	if (toClient == NULL) { //local have no client node and need to multicast 
@@ -403,6 +405,7 @@ int ntyBoardcastAllFriendsById(C_DEVID fromId, U8 *buffer, int length) {
 		RBTree *friends = (RBTree*)selfNode->friends;
 		if (friends != NULL) {
 			ntylog("ntyBoardcastAllFriendsById --> self devid:%lld, selfNode.id:%lld\n", fromId, selfNode->devId);
+			//if (fromId != selfNode->devId)
 			ntyFriendsTreeBroadcast(friends, ntyBoardcastItem, selfNode, buffer, length);
 		}
 	}
@@ -453,6 +456,7 @@ void ntyProtoHttpRetProxyTransform(C_DEVID toId, U8 *buffer, int length) {
 	int n = 0;
 	U8 buf[RECV_BUFFER_SIZE] = {0};
 	void *pRBTree = ntyRBTreeInstance();
+	if (pRBTree == NULL) return ;
 	UdpClient *destClient = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, toId);
 	if (destClient == NULL) {
 		ntylog(" destClient is not exist, toId:%lld\n", toId);

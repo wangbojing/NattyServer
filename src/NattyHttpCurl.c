@@ -53,6 +53,7 @@
 #include <curl/curl.h>
 #include <string.h>
 #include <stdio.h>
+#include <wchar.h>
 
 #define JEMALLOC_NO_DEMANGLE 1
 #define JEMALLOC_NO_RENAME	 1
@@ -86,10 +87,7 @@ static size_t ntyHttpQJKFallenHandleResult(void* buffer, size_t size, size_t nme
 
 exit:	
 
-#if 0
-	free(tag->Tag);
-	free(tag);
-#endif	
+
 	return size*nmemb;
 }
 
@@ -139,6 +137,7 @@ int ntyHttpQJKFallen(void *arg) {
 	}	
 	
 	curl_easy_cleanup(curl);
+	
 #if 1
 #if ENABLE_DAVE_MSGQUEUE_MALLOC
 	if (tag->Tag != NULL) {
@@ -151,6 +150,7 @@ int ntyHttpQJKFallen(void *arg) {
 		tag = NULL;
 	}
 #endif
+
 	return 0;
 }
 
@@ -202,8 +202,8 @@ static int ntyHttpGaodeGetLocationInfo(U8 *buffer, int len, U8 *lng, U8 *lat) {
 
 	return k;
 }
-
 static int ntyHttpGaodeGetDescInfo(U8 *buffer, int len, U8 *desc) {
+
 	const U8 *pattern_start = "<desc>";
 	const U8 *pattern_end = "</desc>";
 
@@ -217,7 +217,7 @@ static int ntyHttpGaodeGetDescInfo(U8 *buffer, int len, U8 *desc) {
 	
 	U32 start_matches[PATTERN_COUNT] = {0};
 	U32 end_matches[PATTERN_COUNT] = {0};
-	//U8 desc[DESC_INFO_COUNT] = {0};
+	//U8 u8Desc[DESC_INFO_COUNT] = {0};
 
 	if (len < len_start && len < len_end) return -1;
 
@@ -235,6 +235,7 @@ static int ntyHttpGaodeGetDescInfo(U8 *buffer, int len, U8 *desc) {
 			}
 			
 			ntylog("desc:%s\n", desc);
+			//wprintf(desc, "%ls", u8Desc);
 			
 			break;
 		}
@@ -323,8 +324,10 @@ static size_t ntyHttpGaodeWifiCellAPIHandleResult(void* data, size_t size, size_
 	U8 *buffer = data;
 	U8 u8Lat[PATTERN_COUNT] = {0};
 	U8 u8Lon[PATTERN_COUNT] = {0};
-	
+
 	U8 u8Desc[DESC_INFO_COUNT] = {0};
+	wchar_t wDesc[DESC_INFO_COUNT] = {0};
+
 	U8 u8ResultBuffer[DESC_INFO_COUNT] = {0};
 	
 	int len = size*nmemb;
@@ -340,6 +343,9 @@ static size_t ntyHttpGaodeWifiCellAPIHandleResult(void* data, size_t size, size_
 			ntylog(" result failed: %s\n", buffer);
 		}
 #if ENABLE_CONNECTION_POOL
+		//ntylog(" u8Desc : %s\n", u8Desc);
+		//int wLen = ntyCharToWchar(u8Desc, strlen(u8Desc), wDesc);
+		//ntylog(" wLen:%d wDesc:%ls\n", wLen, wDesc);
 		ntyExecuteLocationInsertHandle(tag->fromId, u8Lon, u8Lat, tag->u8LocationType, u8Desc);
 #endif
 		sprintf(u8ResultBuffer, "Set Location %s:%s:%d", u8Lat, u8Lon, tag->u8LocationType);
@@ -349,6 +355,7 @@ static size_t ntyHttpGaodeWifiCellAPIHandleResult(void* data, size_t size, size_
 	}
 
 #endif
+
 	return size*nmemb;
 }
 
@@ -400,7 +407,7 @@ int ntyHttpGaodeWifiCellAPI(void *arg) {
 
 	ntylog(" ntyHttpGaodeWifiCellAPI --> res:%d\n", res);
 	curl_easy_cleanup(curl);
-
+	
 #if 1
 #if ENABLE_DAVE_MSGQUEUE_MALLOC
 	if (tag->Tag != NULL) {
@@ -413,7 +420,6 @@ int ntyHttpGaodeWifiCellAPI(void *arg) {
 		tag = NULL;
 	}
 #endif
-
 	
 	return 0;
 }
@@ -518,6 +524,9 @@ static size_t ntyHttpMtkQuickLocationHandleResult(void* data, size_t size, size_
 	}
 
 #endif
+
+
+
 	return size*nmemb;
 }
 
@@ -561,6 +570,7 @@ int ntyHttpMtkQuickLocation(void *arg) {
 	}	
 	
 	curl_easy_cleanup(curl);
+	
 #if 1
 #if ENABLE_DAVE_MSGQUEUE_MALLOC
 	if (tag->Tag != NULL) {

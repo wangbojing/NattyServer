@@ -163,29 +163,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 			ntyReleaseClientNodeSocket(loop, watcher, watcher->fd);
 			return ;
 		}
-#if 0
-		int ret = ntyDeleteNodeFromHashTable(&client_addr, devid);
-		if (ret == -1) {
-			ntylog("Delete Node From Hash Table Parameter is Error");
-			return ;
-		} else if (ret == -2) {
-			ntylog("Hash Table Node is not Exist");
-		}
 
-		ntylog("Delete Node Success\n");
-		void *tree = ntyRBTreeInstance();
-		//ntyRBTreeOperaDelete
-		// delete rb-tree node
-		ntyRBTreeInterfaceDelete(tree, devid);
-
-		ntylog("RBTree Delete Node Success\n");
-		
-		
-		ev_io_stop(loop, watcher);
-		close(watcher->fd);
-		watcher->fd = -1;
-		free(watcher);
-#else
 		ntyBoardcastAllFriendsNotifyDisconnect(devid);
 
 		if (0 == ntyReleaseClientNodeByAddr(loop, &client_addr, watcher)) {
@@ -195,41 +173,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 			ntyReleaseClientNodeSocket(loop, watcher, watcher->fd);
 		}
 
-		
-#endif
-#else
-		void* pThreadPool = ntyThreadPoolInstance();
-		int nSize = sizeof(struct sockaddr_in);
 
-		RequestPacket *req = (RequestPacket*)allocRequestPacket();
-		if (req == NULL) {
-			freeRequestPacket(req);
-			return ;
-		}
-		
-		getpeername(watcher->fd,(struct sockaddr*)&req->client->addr, &nSize);
-		ntylog(" TcpRecv : %d.%d.%d.%d:%d, --> Client Disconnected\n", *(unsigned char*)(&req->client->addr.sin_addr.s_addr), *((unsigned char*)(&req->client->addr.sin_addr.s_addr)+1), 												
-				*((unsigned char*)(&req->client->addr.sin_addr.s_addr)+2), *((unsigned char*)(&req->client->addr.sin_addr.s_addr)+3),													
-				req->client->addr.sin_port);	
-
-		req->client->devId = 0x0;
-		req->client->sockfd = watcher->fd;
-		req->client->watcher = watcher;
-		req->client->clientType = PROTO_TYPE_TCP;
-		req->length = (U16)rLen;
-		req->buffer = NULL;
-
-		Job *job = (Job*)malloc(sizeof(*job));
-		if (job == NULL) {
-			ntylog("malloc Job failed\n");
-			freeRequestPacket(req);
-			return ;
-		}
-		
-		job->job_function  = ntyReleaseClient;
-		job->user_data = req;
-
-		ntyThreadPoolPush(pThreadPool, job);
 #endif
 	} else {
 		int i = 0;
@@ -310,16 +254,18 @@ void ntyOnAcceptEvent(struct ev_loop *loop, struct ev_io *watcher, int revents){
 	struct ev_io *ev_client = (struct ev_io *)malloc(sizeof(struct ev_io));
 	if (EV_ERROR & revents) {
 		ntylog("error event in accept\n");
+		ntylog("revents error :%d :%s\n", errno, strerror(errno));
 		return ;
 	}
 	
 	client_fd = accept(watcher->fd, (struct sockaddr*)&client_addr, &client_len);
 	if (client_fd == -1) {
-		ntylog("natty accept failed\n");
+		ntylog("accept error :%d :%s\n", errno, strerror(errno));
 		return ;
 	}
 	if (ntySetNonblock(client_fd) < 0) {
 		ntylog("failed to set client socket to non-blocking\n");
+		ntylog("ntySetNonblock error :%d :%s\n", errno, strerror(errno));
 		close(client_fd);
 		return ;
 	}

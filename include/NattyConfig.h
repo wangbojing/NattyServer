@@ -62,6 +62,8 @@
 
 #define ENABLE_SIGNAL_SUBSYSTEM				1
 
+#define ENABLE_ENCODE_WCHAR					1
+
 #if 1
 
 #define CUSTOM_JG			1

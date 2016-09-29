@@ -332,6 +332,7 @@ void* ntyRBTreeOperaCtor(void *_self, va_list *params) {
 	self->nil->color = BLACK;
 	self->root = self->nil;
 	self->count = 0;
+	self->rbtree_delete_lock = 0;
 
 	pthread_mutex_t blank_mutex = PTHREAD_MUTEX_INITIALIZER;
 	memcpy(&self->rbtree_mutex, &blank_mutex, sizeof(blank_mutex));
@@ -367,7 +368,15 @@ int ntyRBTreeOperaInsert(void *_self, C_DEVID key, void *value) {
 		node = (RBTreeNode*)malloc(sizeof(RBTreeNode));
 		node->key = key;
 		node->value = value;
-#if ENABLE_RBTREE_MUTEX	
+#if ENABLE_RBTREE_MUTEX
+		if(0 == cmpxchg(&self->rbtree_delete_lock, 0, 1, WORD_WIDTH)) {
+			NattyRBTreeInsert(self, node);
+			self->count ++;
+			self->rbtree_delete_lock = 0;
+		} else {
+			return 2;
+		}
+#elif 0
 		pthread_mutex_lock(&self->rbtree_mutex);
 		NattyRBTreeInsert(self, node);
 		self->count ++;
@@ -401,7 +410,13 @@ int ntyRBTreeOperaDelete(void *_self, C_DEVID key) {
 	node = ntyRBTreeDelete(self, node);
 	pthread_mutex_unlock(&self->rbtree_mutex);
 #else
-	node = ntyRBTreeDelete(self, node);
+	if(0 == cmpxchg(&self->rbtree_delete_lock, 0, 1, WORD_WIDTH)) {
+		node = ntyRBTreeDelete(self, node);
+		self->rbtree_delete_lock = 0;
+	} else {
+		ntydbg(" ntyRBTreeOperaDelete --> have delete node\n"); 
+		return 2;
+	}
 #endif
 #if 1 //Release Friend list
 	if (node->value != NULL) {
@@ -488,8 +503,11 @@ static void ntyInOrderHeartBeat(RBTree *T, RBTreeNode *node, HANDLE_HEARTBEAT ha
 	if (node != T->nil) {		
 		ntyInOrderHeartBeat(T, node->left, handle_FN, mainloop, stamp);
 		//ntylog(" ntyInOrderHeartBeat :%lld, stamp:%ld\n", node->key, stamp);
-		
+#if 0		
 		handle_FN(node->value, mainloop, stamp);
+#else
+		handle_FN(node, mainloop, stamp);
+#endif
 		ntyInOrderHeartBeat(T, node->right, handle_FN, mainloop, stamp);
 	}
 	return ;

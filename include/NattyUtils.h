@@ -78,6 +78,8 @@ int ntySeparation(const U8 ch, const U8 *sequence, int length, U8 ***pChTable, i
 void ntyFreeTable(unsigned char ***table, int count);
 
 char ntyIsAvailableNum(char *phnum);
+int ntyCharToWchar(U8 *src, int length, wchar_t *dest);
+
 
 #endif
 
