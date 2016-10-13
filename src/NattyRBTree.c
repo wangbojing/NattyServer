@@ -44,6 +44,7 @@
 
 
 #include <string.h>
+#include <ev.h>
 
 #include "NattyRBTree.h"
 #include "NattyUdpServer.h"
@@ -292,6 +293,13 @@ RBTreeNode* ntyRBTreeDelete(RBTree *T, RBTreeNode *z) {
 		#if 0
 		z->value = y->value;
 		#else
+		Client *pcz = z->value;
+		Client *pcy = y->value;
+		
+		//memcpy(pcz->friends, pcy->friends, sizeof(RBTree));
+		pcz->friends = pcy->friends;
+		pcz->watcher = pcy->watcher;
+		//memcpy(pcz->watcher, pcy->watcher, sizeof(struct ev_io));
 		memcpy(z->value, y->value, sizeof(Client));
 		#endif
 		pthread_mutex_unlock(&T->rbtree_mutex);
@@ -422,26 +430,23 @@ int ntyRBTreeOperaDelete(void *_self, C_DEVID key) {
 
 	RBTreeNode *node = ntyRBTreeSearch(self , key);
 	if (node == self->nil) return 1;
-#if 0
-	pthread_mutex_lock(&self->rbtree_mutex);
-	node = ntyRBTreeDelete(self, node);
-	pthread_mutex_unlock(&self->rbtree_mutex);
-#else
-	if(0 == cmpxchg(&self->rbtree_delete_lock, 0, 1, WORD_WIDTH)) {
-		node = ntyRBTreeDelete(self, node);
-		self->rbtree_delete_lock = 0;
-	} else {
-		ntydbg(" ntyRBTreeOperaDelete --> have delete node\n"); 
-		return 2;
-	}
-#endif
 #if 1 //Release Friend list
 	if (node->value != NULL) {
-		UdpClient *client = node->value;
-		if (client->friends != NULL) {
-			client->friends = ntyRBTreeOperaDtor(client->friends);
-			client->friends = NULL;
+#if 1
+		if(0 == cmpxchg(&self->rbtree_delete_lock, 0, 1, WORD_WIDTH)) {
+			UdpClient *client = node->value;
+			if (client->friends != NULL) {
+				client->friends = ntyRBTreeOperaDtor(client->friends);
+				client->friends = NULL;
+			}
+			
+			node = ntyRBTreeDelete(self, node);
+			self->rbtree_delete_lock = 0;
+		} else {
+			ntydbg(" ntyRBTreeOperaDelete --> have delete node\n"); 
+			return 2;
 		}
+#endif
 		free(node->value);
 	}
 #endif

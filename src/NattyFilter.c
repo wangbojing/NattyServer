@@ -507,12 +507,14 @@ void ntyLogoutPacketHandleRequest(const void *_self, U8 *buffer, int length, con
 		U32 ackNum = *(U32*)(buffer+NTY_PROTO_HEARTBEAT_ACKNUM_IDX)+1;
 		const UdpClient *client = obj;
 		unsigned char ack[NTY_HEARTBEAT_ACK_LENGTH] = {0};
-
+		struct ev_loop *loop = ntyTcpServerGetMainloop();
 
 		UdpClient *cliValue = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, key);
 		if (cliValue != NULL) {
 			Delete(cliValue->friends);
 		}
+
+		ntyReleaseClientNodeSocket(loop, cliValue->watcher, cliValue->sockfd);
 		
 		ntyRBTreeInterfaceDelete(pRBTree, key);
 		ntylog("Logout deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);
