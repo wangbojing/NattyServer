@@ -294,6 +294,141 @@ static void ntyClientFriendsList(UdpClient *client, U8 *ack) {
 }
 
 extern void *ntyTcpServerGetMainloop(void);
+
+
+static int ntyAddClientNodeToRBTree(unsigned char *buffer, int length, const void * obj) {
+	const Client *client = obj;
+	void *pRBTree = ntyRBTreeInstance();
+
+	Client *selfNode = ntyRBTreeInterfaceSearch(pRBTree, client->devId);
+	if (selfNode == NULL) {
+		Client *pClient = (Client*)malloc(sizeof(Client)); //new selfnode
+		pClient->sockfd = client->sockfd;
+		pClient->clientType = client->clientType;
+		pClient->addr.sin_addr.s_addr = client->addr.sin_addr.s_addr;
+		pClient->addr.sin_port = client->addr.sin_port;
+		pClient->ackNum = 0x0;
+		pClient->devId = client->devId;
+#if ENABLE_NATTY_TIME_STAMP //TIME Stamp 	
+		pClient->stamp = ntyTimeStampGenrator();
+#endif
+		if (client->clientType == PROTO_TYPE_TCP) {
+			pClient->watcher = client->watcher;
+		} else {
+			pClient->watcher = NULL;
+		}
+
+		pClient->friends = ntyFriendsTreeInstance(); //new friends tree
+#if ENABLE_CONNECTION_POOL
+		if (buffer[NEY_PROTO_VERSION_IDX] == NTY_PROTO_APP_VERSION) { //App
+			pClient->deviceType = DEVICE_TYPE_APP;
+			if(-1 == ntyQueryWatchIDListSelectHandle(client->devId, pClient->friends)) {
+				ntylog(" ntyQueryWatchIDListSelectHandle Failed \n");
+			}
+		} else if (buffer[NEY_PROTO_VERSION_IDX] == NTY_PROTO_DEVICE_VERSION) { //Device
+			pClient->deviceType = DEVICE_TYPE_WATCH;
+			if (-1 == ntyQueryAppIDListSelectHandle(client->devId, pClient->friends)) {
+				ntylog(" ntyQueryAppIDListSelectHandle Failed \n");
+			} else {
+				ntyExecuteDeviceLoginUpdateHandle(client->devId); //SYNC MYSQL
+			}
+		} else {
+			ntylog(" Protocol Version is Error : %c\n", buffer[NEY_PROTO_VERSION_IDX]);
+			//free(pClient);
+			//return ;
+		}
+#endif
+
+		//insert rb-tree
+		if (ntyRBTreeInterfaceInsert(pRBTree, pClient->devId, pClient)) {
+			ntylog("Client is Exist or conflict Handle\n");
+			ntyRBTreeRelease(pClient->friends);
+			
+			free(pClient);
+			return -1;
+		}
+		ntylog(" New Client RBTREENODE --> %lld\n", pClient->devId);	
+		
+#if 1 //Insert Hash table
+		int ret = ntyInsertNodeToHashTable(&pClient->addr, pClient->devId);
+		if (ret == 0) { 			
+			ntylog("Hash Table Node Insert Success\n");
+		}
+#endif
+#if 1
+		ntyBoardcastAllFriendsNotifyConnect(pClient->devId);
+#endif
+		return 1;
+	} else if (selfNode != NULL && (!ntyClientCompare (client, selfNode))) {
+		UdpClient *pClient = selfNode;//(UdpClient*)malloc(sizeof(UdpClient));
+#if 1
+		ntylog(" ntyAddClientNodeToRBTree --> client: %d.%d.%d.%d:%d --> cliValue: %d.%d.%d.%d:%d, ip have changed\n", 
+			*(unsigned char*)(&client->addr.sin_addr.s_addr), *((unsigned char*)(&client->addr.sin_addr.s_addr)+1),													
+			*((unsigned char*)(&client->addr.sin_addr.s_addr)+2), *((unsigned char*)(&client->addr.sin_addr.s_addr)+3),													
+			client->addr.sin_port, *(unsigned char*)(&selfNode->addr.sin_addr.s_addr), *((unsigned char*)(&selfNode->addr.sin_addr.s_addr)+1),													
+			*((unsigned char*)(&selfNode->addr.sin_addr.s_addr)+2), *((unsigned char*)(&selfNode->addr.sin_addr.s_addr)+3),													
+			selfNode->addr.sin_port);
+#endif
+		struct ev_loop *loop = ntyTcpServerGetMainloop();
+#if 1 //Release Before Node
+		if(0 == ntyReleaseClientNodeHashTable(&pClient->addr)) { //release before hash node
+			ntylog(" ntyAddClientNodeToRBTree --> Ip have changed and release hash table\n");
+		}
+		if(0 == ntyReleaseClientNodeSocket(loop, pClient->watcher, pClient->sockfd)) {
+			ntylog(" ntyAddClientNodeToRBTree --> Ip have changed and release client socket\n");
+		}
+#endif
+
+		pClient->sockfd = client->sockfd;
+		pClient->clientType = client->clientType;
+		pClient->addr.sin_addr.s_addr = client->addr.sin_addr.s_addr;
+		pClient->addr.sin_port = client->addr.sin_port;
+		pClient->ackNum = 0x0;
+		if (pClient->devId != client->devId) {
+			ntylog(" pClient->devId != client->devId \n");
+			//pClient->devId = client->devId;
+		}
+
+		if (pClient->friends == NULL) {
+			pClient->friends = ntyFriendsTreeInstance();
+			
+#if ENABLE_CONNECTION_POOL
+			if (buffer[NEY_PROTO_VERSION_IDX] == NTY_PROTO_APP_VERSION) { //App
+				if(-1 == ntyQueryWatchIDListSelectHandle(pClient->devId, pClient->friends)) {
+					ntylog(" ntyQueryWatchIDListSelectHandle Failed \n");
+				}
+			} else if (buffer[NEY_PROTO_VERSION_IDX] == NTY_PROTO_DEVICE_VERSION) { //Device
+				if (-1 == ntyQueryAppIDListSelectHandle(pClient->devId, pClient->friends)) {
+					ntylog(" ntyQueryAppIDListSelectHandle Failed \n");
+				}
+			} else {
+				ntylog(" Protocol Version is Error : %c\n", buffer[NEY_PROTO_VERSION_IDX]);
+				//free(pClient);
+				//return ;
+			}
+#endif
+
+#if 1 //Insert Hash table
+			int ret = ntyInsertNodeToHashTable(&pClient->addr, pClient->devId);
+			if (ret == 0) { 			
+				ntylog("Hash Table Node Insert Success");
+			}
+#endif
+
+		}
+
+
+		return 2;
+	}
+	
+#if ENABLE_NATTY_TIME_STAMP //TIME Stamp 	
+	selfNode->stamp = ntyTimeStampGenrator();
+#endif
+
+	return 0;
+}
+
+
 /*
  * Login Packet
  * Login Packet, HeartBeatPacket, LogoutPacket etc. should use templete designer pattern
@@ -303,209 +438,17 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 	if (buffer[NTY_PROTO_TYPE_IDX] == NTY_PROTO_LOGIN_REQ) {
 		int i = 0;
 		void *pRBTree = ntyRBTreeInstance();
-#if 0
-		C_DEVID key = *(C_DEVID*)(buffer+NTY_PROTO_LOGIN_REQ_DEVID_IDX);
-		U32 ackNum = *(U32*)(buffer+NTY_PROTO_LOGIN_REQ_ACKNUM_IDX)+1;
-#else
-		C_DEVID key = client->devId;
-		U32 ackNum = client->ackNum;
-#endif
-		U8 ack[NTY_LOGIN_ACK_LENGTH] = {0};
-
-		UdpClient *cliValue = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, key);
-		if (cliValue == NULL) {		
-			
-			UdpClient *pClient = (UdpClient*)malloc(sizeof(UdpClient));
-			pClient->sockfd = client->sockfd;
-			pClient->clientType = client->clientType;
-			pClient->addr.sin_addr.s_addr = client->addr.sin_addr.s_addr;
-			pClient->addr.sin_port = client->addr.sin_port;
-			pClient->ackNum = ackNum;
-			pClient->devId = key;
-
-#if ENABLE_NATTY_TIME_STAMP //TIME Stamp 	
-			pthread_mutex_lock(&time_mutex);
-			pClient->stamp = time(NULL);
-			pthread_mutex_unlock(&time_mutex);
-			if (client->clientType == PROTO_TYPE_TCP) {
-				pClient->watcher = client->watcher;
-			} else {
-				pClient->watcher = NULL;
-			}
-#endif
-			//new firends tree			
-			pClient->friends = ntyFriendsTreeInstance();
-			//read from disk friends and store in rb-tree
-#if 1	//just for debug		
-			ntylog(" key : %lld\n", key);
-			if (key == 1) {
-				ntyFriendsTreeInsert(pClient->friends, 2);
-				ntyFriendsTreeInsert(pClient->friends, 3);
-			} else if (key == 2) {
-				ntyFriendsTreeInsert(pClient->friends, 1);
-				//ntyFriendsTreeInsert(pClient->friends, 3);
-			} else if (key == 3) {
-				ntyFriendsTreeInsert(pClient->friends, 1);
-			}
-#endif
-
-#if ENABLE_CONNECTION_POOL
-			if (buffer[NEY_PROTO_VERSION_IDX] == NTY_PROTO_APP_VERSION) { //App
-				pClient->deviceType = DEVICE_TYPE_APP;
-				if(-1 == ntyQueryWatchIDListSelectHandle(key, pClient->friends)) {
-					ntylog(" ntyQueryWatchIDListSelectHandle Failed \n");
-				}
-			} else if (buffer[NEY_PROTO_VERSION_IDX] == NTY_PROTO_DEVICE_VERSION) { //Device
-				pClient->deviceType = DEVICE_TYPE_WATCH;
-				if (-1 == ntyQueryAppIDListSelectHandle(key, pClient->friends)) {
-					ntylog(" ntyQueryAppIDListSelectHandle Failed \n");
-				} else {
-					ntyExecuteDeviceLoginUpdateHandle(key); //SYNC MYSQL
-				}
-			} else {
-				ntylog(" Protocol Version is Error : %c\n", buffer[NEY_PROTO_VERSION_IDX]);
-				//free(pClient);
-				//return ;
-			}
-#endif
-			//insert rb-tree
-			ntylog(" New Client RBTREENODE --> %lld\n", key);
-			if (ntyRBTreeInterfaceInsert(pRBTree, key, pClient)) {
-				ntylog("Client is Exist or conflict Handle\n");
-				free(pClient);
-				return ;
-			}
-
-			//notify friends 	
-			// this step hive off
-			//ntyFriendsTreeTraversalNotify(pClient->friends, key, ntyNotifyFriendMessage);
-			//send friends list to this client.
-			//ntyFriendsTreeGetAllNodeList
+		
+		ntyAddClientNodeToRBTree(buffer, length, obj);
+		Client *pClient = (Client*)ntyRBTreeInterfaceSearch(pRBTree, client->devId);
+		if (pClient != NULL) {
 			ntySendFriendsTreeIpAddr(pClient, 1);
-#if 1 //Insert Hash table
-			ntylog("Insert Hash Table\n");
-			int ret = ntyInsertNodeToHashTable(&pClient->addr, key);
-			if (ret == 0) {				
-				ntylog("Hash Table Node Insert Success\n");
-			}
-#endif
-			ntySendDeviceTimeCheckAck(pClient, ackNum+1);
-			return ;
-		} else if ((cliValue != NULL) && (!ntyClientCompare (client, cliValue))) {
-			UdpClient *pClient = cliValue;//(UdpClient*)malloc(sizeof(UdpClient));
-#if 1
-			ntylog(" ntyLoginPacketHandleRequest --> client: %d.%d.%d.%d:%d --> cliValue: %d.%d.%d.%d:%d, ip have changed\n", 
-				*(unsigned char*)(&client->addr.sin_addr.s_addr), *((unsigned char*)(&client->addr.sin_addr.s_addr)+1),													
-				*((unsigned char*)(&client->addr.sin_addr.s_addr)+2), *((unsigned char*)(&client->addr.sin_addr.s_addr)+3),													
-				client->addr.sin_port, *(unsigned char*)(&cliValue->addr.sin_addr.s_addr), *((unsigned char*)(&cliValue->addr.sin_addr.s_addr)+1),													
-				*((unsigned char*)(&cliValue->addr.sin_addr.s_addr)+2), *((unsigned char*)(&cliValue->addr.sin_addr.s_addr)+3),													
-				cliValue->addr.sin_port);
-#endif
-			struct ev_loop *loop = ntyTcpServerGetMainloop();
-#if 1 //Release Before Node
-			if(0 == ntyReleaseClientNodeHashTable(&pClient->addr)) { //release before hash node
-				ntylog(" ntyLoginPacketHandleRequest --> Ip have changed and release hash table\n");
-			}
-			if(0 == ntyReleaseClientNodeSocket(loop, pClient->watcher, pClient->sockfd)) {
-				ntylog(" ntyLoginPacketHandleRequest --> Ip have changed and relase client socket\n");
-			}
-#endif
-
-			pClient->sockfd = client->sockfd;
-			pClient->clientType = client->clientType;
-			pClient->addr.sin_addr.s_addr = client->addr.sin_addr.s_addr;
-			pClient->addr.sin_port = client->addr.sin_port;
-			pClient->ackNum = ackNum;
-			pClient->devId = key;
-			
-#if ENABLE_NATTY_TIME_STAMP //TIME Stamp 	
-			pthread_mutex_lock(&time_mutex);
-			pClient->stamp = time(NULL);
-			pthread_mutex_unlock(&time_mutex);
-			if (client->clientType == PROTO_TYPE_TCP) {
-				pClient->watcher = client->watcher;
-			} else {
-				pClient->watcher = NULL;
-			}
-#endif
-			
-			//ntyClientFriendsList(pClient, ack);
-
-			//friends is null and update friends tree
-			if (pClient->friends != NULL) {
-				if (ntyFriendsTreeIsEmpty(pClient->friends)) {
-#if 1	//just for debug		
-					if (key == 1) {
-						ntyFriendsTreeInsert(pClient->friends, 2);
-						ntyFriendsTreeInsert(pClient->friends, 3);
-					} else if (key == 2) {
-						ntyFriendsTreeInsert(pClient->friends, 1);
-					} else if (key == 3) {
-						ntyFriendsTreeInsert(pClient->friends, 1);
-					}
-#endif				
-				}	
-			} else {
-				pClient->friends = ntyFriendsTreeInstance();
-#if 1	//just for debug		
-				if (key == 1) {
-					ntyFriendsTreeInsert(pClient->friends, 2);
-					ntyFriendsTreeInsert(pClient->friends, 3);
-				} else if (key == 2) {
-					ntyFriendsTreeInsert(pClient->friends, 1);
-				} else if (key == 3) {
-					ntyFriendsTreeInsert(pClient->friends, 1);
-				}
-#endif
-
-#if ENABLE_CONNECTION_POOL
-				if (buffer[NEY_PROTO_VERSION_IDX] == NTY_PROTO_APP_VERSION) { //App
-					if(-1 == ntyQueryWatchIDListSelectHandle(key, pClient->friends)) {
-						ntylog(" ntyQueryWatchIDListSelectHandle Failed \n");
-					}
-				} else if (buffer[NEY_PROTO_VERSION_IDX] == NTY_PROTO_DEVICE_VERSION) { //Device
-					if (-1 == ntyQueryAppIDListSelectHandle(key, pClient->friends)) {
-						ntylog(" ntyQueryAppIDListSelectHandle Failed \n");
-					}
-				} else {
-					ntylog(" Protocol Version is Error : %c\n", buffer[NEY_PROTO_VERSION_IDX]);
-					//free(pClient);
-					//return ;
-				}
-#endif
-
-			}
-
-#if 1 //Insert Hash table
-			ntylog("Insert Hash Table\n");
-			int ret = ntyInsertNodeToHashTable(&pClient->addr, key);
-			if (ret == 0) { 			
-				ntylog("Hash Table Node Insert Success");
-			}
-#endif
-
-			//ntylog(" keys : %d");
-			//notify friends 
-			//ntyFriendsTreeTraversalNotify(pClient->friends, key, ntyNotifyFriendMessage);
-			//send friends list to client
-			ntySendFriendsTreeIpAddr(pClient, 1);
-
-			ntySendDeviceTimeCheckAck(pClient, ackNum+1);
-
-			return ;
+			ntySendDeviceTimeCheckAck(pClient, client->ackNum+1);
 		}
+
 		//ntylog("Login deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);		
 		//send login ack
-#if 0
-		if (client->clientType == PROTO_TYPE_TCP) {
-			ack[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
-			ack[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_ACK;
-			ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_LOGIN_ACK;
-			//memcpy(ack+NTY_PROTO_LOGIN_ACK_ACKNUM_IDX, &ackNum, NTY_ACKNUM_LENGTH);
-			*(U32*)(&ack[NTY_PROTO_ACKNUM_IDX]) = ackNum;
-			ntySendBuffer(client, ack, length);
-		}
-#endif
+
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
@@ -531,218 +474,8 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 	const UdpClient *client = obj;
 	if (buffer[NTY_PROTO_TYPE_IDX] == NTY_PROTO_HEARTBEAT_REQ) {
 
-		void *pRBTree = ntyRBTreeInstance();
-		C_DEVID key = *(C_DEVID*)(buffer+NTY_PROTO_HEARTBEAT_DEVID_IDX);
-		U32 ackNum = *(U32*)(buffer+NTY_PROTO_HEARTBEAT_ACKNUM_IDX)+1;
-		const UdpClient *client = obj;
-		U8 ack[NTY_HEARTBEAT_ACK_LENGTH] = {0};
-		
-		UdpClient *cliValue = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, key);
-		if (cliValue == NULL) {			
-			UdpClient *pClient = (UdpClient*)malloc(sizeof(UdpClient));
-			pClient->sockfd = client->sockfd;
-			pClient->clientType = client->clientType;
-			pClient->addr.sin_addr.s_addr = client->addr.sin_addr.s_addr;
-			pClient->addr.sin_port = client->addr.sin_port;
-			pClient->ackNum = ackNum;
-			pClient->devId = key;
-			
-#if ENABLE_NATTY_TIME_STAMP //TIME Stamp 	
-			pthread_mutex_lock(&time_mutex);
-			pClient->stamp = time(NULL);
-			pthread_mutex_unlock(&time_mutex);
-			if (client->clientType == PROTO_TYPE_TCP) {
-				pClient->watcher = client->watcher;
-			} else {
-				pClient->watcher = NULL;
-			}
-#endif
+		ntyAddClientNodeToRBTree(buffer, length, obj);
 
-			//new firends tree			
-			pClient->friends = ntyFriendsTreeInstance();
-			//determine this key is available and read from disk friends 
-
-#if 1	//just for debug		
-			//if (key != 1 || key != 2) return ;
-			if (key == 1) {
-				ntyFriendsTreeInsert(pClient->friends, 2);
-				ntyFriendsTreeInsert(pClient->friends, 3);
-			} else if (key == 2) {
-				ntyFriendsTreeInsert(pClient->friends, 1);
-			} else if (key == 3) {
-				ntyFriendsTreeInsert(pClient->friends, 1);
-			}
-#endif	
-
-#if ENABLE_CONNECTION_POOL
-			if (buffer[NEY_PROTO_VERSION_IDX] == NTY_PROTO_APP_VERSION) { //App
-				if(-1 == ntyQueryWatchIDListSelectHandle(key, pClient->friends)) {
-					ntylog(" ntyQueryWatchIDListSelectHandle Failed \n");
-				}
-			} else if (buffer[NEY_PROTO_VERSION_IDX] == NTY_PROTO_DEVICE_VERSION) { //Device
-				if (-1 == ntyQueryAppIDListSelectHandle(key, pClient->friends)) {
-					ntylog(" ntyQueryAppIDListSelectHandle Failed \n");
-				}
-			} else {
-				ntylog(" Protocol Version is Error : %c\n", buffer[NEY_PROTO_VERSION_IDX]);
-				//free(pClient);
-				//return ;
-			}
-#endif
-
-			ntylog("ntyHeartBeatPacketHandleRequest --> Insert New Client Node\n");
-			//insert rb-tree
-			if (ntyRBTreeInterfaceInsert(pRBTree, key, pClient)) {
-				ntylog("Client is Exist or conflict Handle\n");
-				free(pClient);
-				return ;
-			}
-			
-			//notify friends 
-			//ntyFriendsTreeTraversal(pClient->friends, ntyNotifyFriendConnect);
-			//ntyFriendsTreeTraversalNotify(pClient->friends, key, ntyNotifyFriendMessage);
-#if 1 //Insert Hash table
-			ntylog("Insert Hash Table\n");
-			int ret = ntyInsertNodeToHashTable(&pClient->addr, key);
-			if (ret == 0) { 			
-				ntylog("Hash Table Node Insert Success");
-			}
-#endif
-
-			//send friends list to client 
-			//ntyFriendsTreeTraversal(pClient->friends, ntySendFriendIpAddr);
-			ntySendFriendsTreeIpAddr(pClient, 0);
-			
-			return ;
-		} else if ((cliValue != NULL) && !ntyClientCompare(client, cliValue)) {
-			int i = 0, length = 0;
-			UdpClient *pClient = cliValue;//(UdpClient*)malloc(sizeof(UdpClient));
-			
-#if 1
-			ntylog(" ntyHeartBeatPacketHandleRequest --> client: %d.%d.%d.%d:%d --> cliValue: %d.%d.%d.%d:%d, ip have changed\n", 
-				*(unsigned char*)(&client->addr.sin_addr.s_addr), *((unsigned char*)(&client->addr.sin_addr.s_addr)+1),													
-				*((unsigned char*)(&client->addr.sin_addr.s_addr)+2), *((unsigned char*)(&client->addr.sin_addr.s_addr)+3),													
-				client->addr.sin_port, *(unsigned char*)(&cliValue->addr.sin_addr.s_addr), *((unsigned char*)(&cliValue->addr.sin_addr.s_addr)+1),													
-				*((unsigned char*)(&cliValue->addr.sin_addr.s_addr)+2), *((unsigned char*)(&cliValue->addr.sin_addr.s_addr)+3),													
-				cliValue->addr.sin_port);
-#endif			
-#if 1 //Release Before Node
-			struct ev_loop *loop = ntyTcpServerGetMainloop();
-			if(0 == ntyReleaseClientNodeHashTable(&pClient->addr)) { //release before hash node
-				ntylog(" ntyHeartBeatPacketHandleRequest --> Ip have changed and release hash table\n");
-			}
-			if(0 == ntyReleaseClientNodeSocket(loop, pClient->watcher, pClient->sockfd)) {
-				ntylog(" ntyHeartBeatPacketHandleRequest --> Ip have changed and relase client socket\n");
-			}
-#endif
-
-			pClient->sockfd = client->sockfd;
-			pClient->clientType = client->clientType;
-			pClient->addr.sin_addr.s_addr = client->addr.sin_addr.s_addr;
-			pClient->addr.sin_port = client->addr.sin_port;
-			pClient->ackNum = ackNum;
-			pClient->devId = key;
-			
-#if ENABLE_NATTY_TIME_STAMP //TIME Stamp 	
-			pthread_mutex_lock(&time_mutex);
-			pClient->stamp = time(NULL);
-			pthread_mutex_unlock(&time_mutex);
-			if (client->clientType == PROTO_TYPE_TCP) {
-				pClient->watcher = client->watcher;
-			} else {
-				pClient->watcher = NULL;
-			}
-#endif
-			
-			ntylog("HeartBeat Update Info: %d\n", buffer[NTY_PROTO_TYPE_IDX]);
-
-			//friends is null and update friends tree
-			if (pClient->friends != NULL) {
-				if (ntyFriendsTreeIsEmpty(pClient->friends)) {
-#if 1	//just for debug		
-					if (key == 1) {
-						ntyFriendsTreeInsert(pClient->friends, 2);
-						ntyFriendsTreeInsert(pClient->friends, 3);
-					} else if (key == 2) {
-						ntyFriendsTreeInsert(pClient->friends, 1);
-					} else if (key == 3) {
-						ntyFriendsTreeInsert(pClient->friends, 1);
-					}
-#endif				
-				}	
-			} else {
-				pClient->friends = ntyFriendsTreeInstance();
-#if 1	//just for debug		
-				if (key == 1) {
-					ntyFriendsTreeInsert(pClient->friends, 2);
-					ntyFriendsTreeInsert(pClient->friends, 3);
-				} else if (key == 2) {
-					ntyFriendsTreeInsert(pClient->friends, 1);
-				} else if (key == 3) {
-					ntyFriendsTreeInsert(pClient->friends, 1);
-				}
-#endif
-
-#if ENABLE_CONNECTION_POOL
-				if (buffer[NEY_PROTO_VERSION_IDX] == NTY_PROTO_APP_VERSION) { //App
-					if(-1 == ntyQueryWatchIDListSelectHandle(key, pClient->friends)) {
-						ntylog(" ntyQueryWatchIDListSelectHandle Failed \n");
-					}
-				} else if (buffer[NEY_PROTO_VERSION_IDX] == NTY_PROTO_DEVICE_VERSION) { //Device
-					if (-1 == ntyQueryAppIDListSelectHandle(key, pClient->friends)) {
-						ntylog(" ntyQueryAppIDListSelectHandle Failed \n");
-					}
-				} else {
-					ntylog(" Protocol Version is Error : %c\n", buffer[NEY_PROTO_VERSION_IDX]);
-					//free(pClient);
-					//return ;
-				}
-#endif
-
-
-			}
-
-#if 1 //Insert Hash table
-			ntylog("Insert Hash Table\n");
-			int ret = ntyInsertNodeToHashTable(&pClient->addr, key);
-			if (ret == 0) { 			
-				ntylog("Hash Table Node Insert Success");
-			}
-#endif
-
-
-			//client dev ipaddr is changed
-			//notify its friends list, reset p2p
-			//ntyFriendsTreeTraversalNotify(pClient->friends, key, ntyNotifyFriendMessage);
-			//
-			//send friends list to client 
-			//ntyFriendsTreeTraversal(pClient->friends, ntySendFriendIpAddr);
-			ntySendFriendsTreeIpAddr(pClient, 0);
-			return ;
-		}
-		
-		ntylog("HeartBeat deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);
-		
-#if ENABLE_NATTY_TIME_STAMP //TIME Stamp 	
-		pthread_mutex_lock(&time_mutex);
-		cliValue->stamp = time(NULL);
-		pthread_mutex_unlock(&time_mutex);
-		if (client->clientType == PROTO_TYPE_TCP) {
-			cliValue->watcher = client->watcher;
-		} else {
-			cliValue->watcher = NULL;
-		}
-#endif
-		
-		//send heartbeat ack
-		if (client->clientType == PROTO_TYPE_UDP) {
-			ack[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
-			ack[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_ACK;
-			ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_HEARTBEAT_ACK;
-			*(U32*)(&ack[NTY_PROTO_ACKNUM_IDX]) = ackNum;
-			*(U32*)(&ack[NTY_PROTO_LOGIN_REQ_CRC_IDX]) = ntyGenCrcValue(ack, NTY_PROTO_LOGIN_REQ_CRC_IDX);
-			ntySendBuffer(client, ack, NTY_PROTO_LOGIN_REQ_CRC_IDX+sizeof(U32));
-		}
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
@@ -915,39 +648,31 @@ static const ProtocolFilter ntyP2PAddrFilter = {
 void ntyUserDataPacketHandleRequest(const void *_self, unsigned char *buffer, int length,const void* obj) {
 	if (buffer[NTY_PROTO_TYPE_IDX] == NTY_PROTO_DATAPACKET_REQ) {
 
-		C_DEVID destDevId = *(C_DEVID*)(&buffer[NTY_PROTO_DATAPACKET_DEST_DEVID_IDX]);
+		C_DEVID destDevId = 0;//*(C_DEVID*)(&buffer[NTY_PROTO_DATAPACKET_DEST_DEVID_IDX]);
+		ntyU8ArrayToU64(buffer+NTY_PROTO_DATAPACKET_DEST_DEVID_IDX, &destDevId);
 		void *pRBTree = ntyRBTreeInstance();
-		UdpClient *destClient = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, destDevId);
-		const UdpClient *client = obj;
+		const Client *client = obj;
 		
 		U16 recByteCount = *(U16*)(&buffer[NTY_PROTO_DATAPACKET_CONTENT_COUNT_IDX]);
-#if 1
-		Client *selfNode = (Client*)ntyRBTreeInterfaceSearch(pRBTree, client->devId);
-		if (selfNode == NULL) { //devid not exist
-			ntylog(" ntyUserDataPacketHandleRequest --> selfNode:%lld is not Exist\n", client->devId);
+		ntylog(" ntyUserDataPacketHandleRequest --> recByteCount:%d, destDevId:%lld\n", recByteCount, destDevId);
 
-			//free(data);
-			return ;
-		}
-#if ENABLE_NATTY_TIME_STAMP //TIME Stamp 	
-		pthread_mutex_lock(&time_mutex);
-		selfNode->stamp = time(NULL);
-		pthread_mutex_unlock(&time_mutex);
-		//pClient->watcher = client->watcher;
-#endif
-#endif
+		ntyAddClientNodeToRBTree(buffer, length, obj);
+
+
 		U8 *data = (U8*)malloc((recByteCount+1)*sizeof(U8));
 		memset(data, 0, (recByteCount+1));
 		memcpy(data, buffer+NTY_PROTO_DATAPACKET_CONTENT_IDX, recByteCount);
-		//ntylog("data : %s\n", data);
+		ntylog("data : %s\n", data);
 
-		if (destClient == NULL) {
-			if (destDevId == 0x0) { //destDevId == 0x0 boardcast all client
+		Client *destClient = (Client*)ntyRBTreeInterfaceSearch(pRBTree, destDevId);
+		//ntylog(" destClient ... %llx\n", destDevId);
+		if (destClient == NULL) {			
+			if (destDevId == NTY_PROTO_MULTICAST_DEVID) { //destDevId == 0x0 boardcast all client
 				int ret = -1;
 				ntylog("destClient broadcast :%d, id:%lld\n", length, client->devId);
-				//C_DEVID selfDevId = *(C_DEVID*)(&buffer[NTY_PROTO_DEVID_IDX]);
+
 				buffer[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_RET;
-				if (0 > (ret = ntyClassifyMessageType(client->devId, 0x0, data, recByteCount))) {
+				if (0 > (ret = ntyClassifyMessageType(client->devId, NTY_PROTO_MULTICAST_DEVID, data, recByteCount))) {
 					ntylog(" ret : %d\n", ret);
 					#if 0 //boardcast all client
 					ntySendBuffer(client, buffer, length);
@@ -957,7 +682,7 @@ void ntyUserDataPacketHandleRequest(const void *_self, unsigned char *buffer, in
 
 				}
 			} else {
-				ntylog("destClient is no exist :%d, id:%lld\n", length, client->devId);
+				ntylog("destClient is no exist :%d, destId:%lld, id:%lld\n", length, destDevId, client->devId);
 				
 #if ENABLE_MULTICAST_SYNC //multicast 
 				//buffer[NTY_PROTO_TYPE_IDX] = NTY_PROTO_MULTICAST_REQ;
@@ -969,10 +694,12 @@ void ntyUserDataPacketHandleRequest(const void *_self, unsigned char *buffer, in
 			}
 		} else {
 			int ret = -1;
+#if 1
 			ntylog(" Proxy data: %s, destDevId:%lld %d.%d.%d.%d:%d\n", data, destDevId, *(unsigned char*)(&destClient->addr.sin_addr.s_addr),
 				*((unsigned char*)(&destClient->addr.sin_addr.s_addr)+1), *((unsigned char*)(&destClient->addr.sin_addr.s_addr)+2), 
 				*((unsigned char*)(&destClient->addr.sin_addr.s_addr)+3), destClient->addr.sin_port);
-		
+			
+#endif
 			if (0 > (ret = ntyClassifyMessageType(client->devId, destClient->devId, data, recByteCount))) {
 				ntylog(" ret : %d\n", ret);
 				ntySendBuffer(destClient, buffer, length);
@@ -981,7 +708,7 @@ void ntyUserDataPacketHandleRequest(const void *_self, unsigned char *buffer, in
 		}
 		
 #if ENABLE_NODE_AGENT_SAVE //devId , data, recByteCount, token is set
-		ntyNodeAgentProcess(data, recByteCount, selfNode->devId);
+		ntyNodeAgentProcess(data, recByteCount, client->devId);
 #endif
 		free(data);
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
@@ -990,6 +717,8 @@ void ntyUserDataPacketHandleRequest(const void *_self, unsigned char *buffer, in
 	} else {
 		ntylog("Can't deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);
 	}
+
+	return ;
 }
 
 
@@ -1279,11 +1008,9 @@ void ntyMulticastAckPacketHandleRequest(const void *_self, unsigned char *buffer
 	const Client *client = obj;
 	if (buffer[NTY_PROTO_TYPE_IDX] == NTY_PROTO_MULTICAST_ACK && client->clientType == PROTO_TYPE_MULTICAST) {
 		C_DEVID fromId = 0;
-		
-		
+			
 		ntyU8ArrayToU64(buffer+NTY_PROTO_DEST_DEVID_IDX, &fromId);
 
-		
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
@@ -1439,15 +1166,21 @@ void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length, 
 	U32 u32ClientCrc = *((U32*)(buffer+length-4));
 
 	//ntydbg(" client:%x, server:%x, length:%d", u32ClientCrc, u32Crc, length);
-	if (u32Crc != u32ClientCrc) {
+	if (u32Crc != u32ClientCrc || length < NTY_PROTO_MIN_LENGTH) {
 #if 1 
 		ntylog(" ntyProtocolFilterProcess --> client:%x, server:%x, length:%d\n", u32ClientCrc, u32Crc, length);
 		const Client *client = obj;
 		if (client->clientType == PROTO_TYPE_TCP) {
-			struct ev_loop *loop = ntyTcpServerGetMainloop();
-
+			//Hash table have no Node that client addr
 			ntylog(" ntyProtocolFilterProcess --> Data Format is Error : %d\n", length);
-			ntyReleaseClientNodeSocket(loop, client->watcher, client->sockfd);
+			struct sockaddr_in addr;
+			memcpy(&addr, &client->addr, sizeof(struct sockaddr_in));
+			if(ntySearchDevIdFromHashTable(&addr) == 0) {
+				ntylog(" ntyProtocolFilterProcess --> Release Client\n");
+				struct ev_loop *loop = ntyTcpServerGetMainloop();
+				ntyReleaseClientNodeSocket(loop, client->watcher, client->sockfd);
+			}
+
 		}
 #endif
 		return ;
@@ -1511,7 +1244,7 @@ U32 ntyGenCrcValue(U8 *buf, int length) {
 
 #if 1
 
-int ntyReleaseClientNodeNyNode(struct ev_loop *loop, void *node) {
+int ntyReleaseClientNodeByNode(struct ev_loop *loop, void *node) {
 	Client *client = node;
 
 	int ret = ntyDeleteNodeFromHashTable(&client->addr, client->devId);
@@ -1533,10 +1266,10 @@ int ntyReleaseClientNodeNyNode(struct ev_loop *loop, void *node) {
 	void *tree = ntyRBTreeInstance();
 	ret = ntyRBTreeInterfaceDelete(tree, client->devId);
 	if (ret == 1) {
-		ntylog(" ntyReleaseClientNodeNyNode --> RBTree Node Not Exist\n");
+		ntylog(" ntyReleaseClientNodeByNode --> RBTree Node Not Exist\n");
 		return -2;
 	} else if (ret == -1) {
-		ntylog(" ntyReleaseClientNodeNyNode --> RBTree Node Parameter is Error\n");
+		ntylog(" ntyReleaseClientNodeByNode --> RBTree Node Parameter is Error\n");
 		return -3;
 	}
 
@@ -1556,6 +1289,11 @@ int ntyReleaseClientNodeByDevID(struct ev_loop *loop, struct sockaddr_in *addr, 
 	} else if (ret == -2) {
 		ntylog("Hash Table Node is not Exist\n");
 	}
+
+#if 1 //Update Login info
+	ntyExecuteDeviceLogoutUpdateHandle(devid);
+#endif
+
 
 	ntyReleaseClientNodeSocket(loop, watcher, watcher->fd);
 
@@ -1587,6 +1325,10 @@ int ntyReleaseClientNodeByAddr(struct ev_loop *loop, struct sockaddr_in *addr, s
 	} else if (ret == -2) {
 		ntylog("Hash Table Node is not Exist\n");
 	}
+
+#if 1 //Update Login info
+	ntyExecuteDeviceLogoutUpdateHandle(devid);
+#endif
 
 	ntylog("Delete Node Success devid : %lld\n", devid);
 	ntyReleaseClientNodeSocket(loop, watcher, watcher->fd);

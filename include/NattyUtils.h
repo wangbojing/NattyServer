@@ -79,6 +79,7 @@ void ntyFreeTable(unsigned char ***table, int count);
 
 char ntyIsAvailableNum(char *phnum);
 int ntyCharToWchar(U8 *src, int length, wchar_t *dest);
+TIMESTAMP ntyTimeStampGenrator(void);
 
 
 #endif

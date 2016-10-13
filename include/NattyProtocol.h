@@ -52,6 +52,7 @@
 
 #define NTY_PROTO_DEVICE_VERSION	'A'
 #define NTY_PROTO_APP_VERSION		'B'
+#define NTY_PROTO_MULTICAST_DEVID	0x0
 
 /* ** **** ********  ****************  Length  ****************  ******** **** ** */
 #define NTY_DEVID_LENGTH				8
@@ -59,6 +60,7 @@
 #define NTY_IPADDR_LENGTH				4
 #define NTY_IPPORT_LENGTH				2
 #define NTY_RESULT_LENGTH				4
+#define NTY_PROTO_MIN_LENGTH			16
 
 #define NTY_HEARTBEAT_ACK_LENGTH		32
 #define NTY_LOGOUT_ACK_LENGTH			5

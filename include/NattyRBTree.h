@@ -73,6 +73,7 @@ typedef struct _RBTree {
 	RBTreeNode *nil;
 	pthread_mutex_t rbtree_mutex;
 	long rbtree_delete_lock;
+	int heap_flag;
 	U16 count;
 } RBTree;
 
@@ -90,6 +91,9 @@ typedef struct _RBTreeOpera {
 	void (*broadcast)(void *_self, HANDLE_BROADCAST handle_FN, void *client, U8 *buf, int length);
 	void (*heartbeat)(void *_self, HANDLE_HEARTBEAT handle_FN, void *mainloop, TIMESTAMP stamp);
 } RBTreeOpera;
+
+#define TREE_DATA_FRIENDS 		0
+#define TREE_DATA_HEAP			1
 
 
 void* ntyRBTreeInstance(void);

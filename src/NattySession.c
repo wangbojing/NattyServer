@@ -168,11 +168,11 @@ int ntyNotifyFriendMessage(C_DEVID fromId, C_DEVID toId) {
 /*
  * send friends list to client
  */
-int ntySendFriendsTreeIpAddr(void *client, U8 reqType) {
+int ntySendFriendsTreeIpAddr(const void *client, U8 reqType) {
 	int i = 0, length;
 	U8 ack[NTY_LOGIN_ACK_LENGTH] = {0};
 	
-	UdpClient *pClient = client;
+	const UdpClient *pClient = client;
 	void *pRBTree = ntyRBTreeInstance();
 
 	C_DEVID *friends = ntyFriendsTreeGetAllNodeList(pClient->friends);
@@ -420,6 +420,17 @@ int ntyBoardcastAllFriendsNotifyDisconnect(C_DEVID selfId) {
 
 	return 0;
 }
+
+int ntyBoardcastAllFriendsNotifyConnect(C_DEVID selfId) {
+	U8 u8ResultBuffer[256] = {0};
+	
+	ntylog(" ntyBoardcastAllFriendsNotifyConnect --> Notify All Friends\n");
+	sprintf(u8ResultBuffer, "Set Connect 1");
+	ntyBoardcastAllFriendsById(selfId, u8ResultBuffer, strlen(u8ResultBuffer));
+
+	return 0;
+}
+
 
 #if 1
 void ntyProtoHttpProxyTransform(C_DEVID fromId, C_DEVID toId, U8 *buffer, int length) {

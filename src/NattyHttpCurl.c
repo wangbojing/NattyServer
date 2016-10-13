@@ -65,8 +65,10 @@ static size_t ntyHttpQJKFallenHandleResult(void* buffer, size_t size, size_t nme
 	VALUE_TYPE *tag = stream;
 	U8 u8ResultBuffer[256] = {0};
 
-	ntylog("buffer:%s, %ld\n", (char*)buffer, size*nmemb);
+	ntylog("ntyHttpQJKFallenHandleResult --> length:%ld\n", size*nmemb);
+	//ntylog("buffer:%s, %ld\n", (char*)buffer, size*nmemb);
 	sprintf(u8ResultBuffer, "Set Fall %d", 1);
+	if (tag == NULL) goto exit; 
 	//strcpy(u8ResultBuffer, "Set Fall 1", 10);
 #if 0
 	Client *cv = ntyRBTreeInterfaceSearch(tree, tag->fromId);
@@ -247,6 +249,7 @@ static int ntyHttpGaodeGetDescInfo(U8 *buffer, int len, U8 *desc) {
 
 static size_t ntyHttpGaodeWifiCellAPIHandleResult(void* data, size_t size, size_t nmemb, void *stream) {
 	VALUE_TYPE *tag = stream;
+	if (tag == NULL) return size*nmemb; 
 #if 0 //add desc kmp
 	const U8 *pattern_start = "<location>";
 	const U8 *pattern_end = "</location>";
@@ -426,6 +429,7 @@ int ntyHttpGaodeWifiCellAPI(void *arg) {
 
 static size_t ntyHttpMtkQuickLocationHandleResult(void* data, size_t size, size_t nmemb, void *stream) {
 	VALUE_TYPE *tag = stream;
+	if (tag == NULL) return size*nmemb; 
 #if 0
 	const U8 *pattern_start = "<location>";
 	const U8 *pattern_end = "</location>";
@@ -519,6 +523,7 @@ static size_t ntyHttpMtkQuickLocationHandleResult(void* data, size_t size, size_
 #endif
 		sprintf(u8ResultBuffer, "Set Location %s:%s:%d", u8Lat, u8Lon, tag->u8LocationType);
 		//ntyBoardcastAllFriendsById(tag->fromId, u8ResultBuffer, strlen(u8ResultBuffer));
+		ntylog(" fromId:%lld, %s\n", tag->fromId, u8ResultBuffer);
 		ntyProtoHttpRetProxyTransform(tag->fromId, u8ResultBuffer, strlen(u8ResultBuffer));
 			
 	}

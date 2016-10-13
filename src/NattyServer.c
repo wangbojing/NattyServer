@@ -110,12 +110,14 @@ int main() {
 				ntylog("ERROR; return code is %d\n", rc);
 			}
 		} else if (i == PROTO_TYPE_MULTICAST) { //startup multicast server
+#if ENABLE_MULTICAST_SYNC
 			void *server = ntyMulticastServerInstance();
 			ntylog("ntyMulticastServerInstance\n");
 			rc = pthread_create(&thread_id[i], NULL, ntyStartupMulticastServerThread, server);
 			if (rc) {
 				ntylog("ERROR; return code is %d\n", rc);
 			}
+#endif
 		}
 	}
 

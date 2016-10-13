@@ -73,8 +73,8 @@ int ntyHeartBeatDetectItem(void *node, void *mainloop, TIMESTAMP curStamp) {
 	ntylog(" ntyHeartBeatDetectItem --> client:%lld,  rNode:%lld\n", client->devId, rNode->key);
 	if (client->devId != rNode->key) {
 		ntylog(" ntyHeartBeatDetectItem --> client->devId != rNode->key\n");
-#if 0 //RBTREE
-		rNode->key = client->devId;
+#if 1 //RBTREE after before
+		client->devId = rNode->key;
 #endif
 	}
 
@@ -103,7 +103,7 @@ int ntyHeartBeatDetectItem(void *node, void *mainloop, TIMESTAMP curStamp) {
 			ntylog("Release Client Node Failed\n");
 		}
 #else
-		if (0 == ntyReleaseClientNodeNyNode(mainloop, client)) {
+		if (0 == ntyReleaseClientNodeByNode(mainloop, client)) {
 			ntylog("Release Client Node Success\n");
 		} else {
 			ntylog("Release Client Node Failed\n");
@@ -120,9 +120,13 @@ int ntyHeartBeatDetectItem(void *node, void *mainloop, TIMESTAMP curStamp) {
 void ntyHeartBeatDetectTraversal(void *mainloop) {
 	TIMESTAMP curStamp = 0;
 #if ENABLE_NATTY_TIME_STAMP
+#if 0
 	pthread_mutex_lock(&time_mutex);
 	curStamp = time(NULL);
 	pthread_mutex_unlock(&time_mutex);
+#else
+	curStamp = ntyTimeStampGenrator();
+#endif
 #endif
 	ntylog(" ntyHeartBeatDetectTraversal --> Start\n");
 

@@ -50,7 +50,7 @@
 
 int ntySendFriendIpAddr(void* fTree, C_DEVID id);
 int ntyNotifyFriendConnect(void* fTree, C_DEVID id);
-int ntySendFriendsTreeIpAddr(void *fTree, U8 reqType);
+int ntySendFriendsTreeIpAddr(const void *client, U8 reqType);
 int ntyNotifyFriendMessage(C_DEVID fromId, C_DEVID toId);
 int ntySendIpAddrFriendsList(void *client, C_DEVID *friends, U16 Count);
 

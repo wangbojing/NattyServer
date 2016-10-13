@@ -375,7 +375,7 @@ int ntyPushDaveMessageQueue(MESSAGE_TYPE type, C_DEVID fromId, C_DEVID toId, U8 
 
 
 int ntyClassifyMessageType(C_DEVID fromId, C_DEVID toId, U8 *data, int length) {
-	int i = 0;
+	int i = 0, n = 0;
 
 	ntylog("ntyClassifyMessageType --> fromId:%lld, toId:%lld, length:%d\n", fromId, toId, length);
 	if (length <= 4) return -5;
@@ -391,8 +391,8 @@ int ntyClassifyMessageType(C_DEVID fromId, C_DEVID toId, U8 *data, int length) {
 	const char *http_key = "HTTP/1.1";
 	int pattern_len = strlen(http_key);
 	U32 pattern_index[5] = {0};
-	ntyKMP(data, length, http_key, pattern_len, pattern_index);
-	if (pattern_index[0] != 0) {
+	n = ntyKMP(data, length, http_key, pattern_len, pattern_index);
+	if (n != 0) {
 		data[pattern_index[0]-1] = '\0';
 		length = pattern_index[0] - 1;
 	}

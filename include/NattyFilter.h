@@ -84,7 +84,7 @@ int ntyReleaseClientNodeByAddr(struct ev_loop *loop, struct sockaddr_in *addr, s
 int ntyReleaseClientNodeSocket(struct ev_loop *loop, struct ev_io *watcher, int sockfd);
 int ntyReleaseClientNodeHashTable(struct sockaddr_in *addr);
 int ntyReleaseClientNodeByDevID(struct ev_loop *loop, struct sockaddr_in *addr, struct ev_io *watcher, C_DEVID devid);
-int ntyReleaseClientNodeNyNode(struct ev_loop *loop, void *node);
+int ntyReleaseClientNodeByNode(struct ev_loop *loop, void *node);
 
 
 

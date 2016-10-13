@@ -289,11 +289,16 @@ RBTreeNode* ntyRBTreeDelete(RBTree *T, RBTreeNode *z) {
 #if ENABLE_RBTREE_MUTEX
 		pthread_mutex_lock(&T->rbtree_mutex);
 		z->key = y->key;
+		#if 0
 		z->value = y->value;
+		#else
+		memcpy(z->value, y->value, sizeof(Client));
+		#endif
 		pthread_mutex_unlock(&T->rbtree_mutex);
 #else
 		z->key = y->key;
-		z->value = y->value;
+		//z->value = y->value;
+		memcpy(z->value, y->value, sizeof(Client));
 #endif
 	}
 #if ENABLE_RBTREE_MUTEX
@@ -334,6 +339,13 @@ void* ntyRBTreeOperaCtor(void *_self, va_list *params) {
 	self->count = 0;
 	self->rbtree_delete_lock = 0;
 
+	int arg = va_arg(params, int);
+	if (arg == 1) {
+		self->heap_flag = 1; //data heap;
+	} else {
+		self->heap_flag = 0; //friend heap
+	}
+
 	pthread_mutex_t blank_mutex = PTHREAD_MUTEX_INITIALIZER;
 	memcpy(&self->rbtree_mutex, &blank_mutex, sizeof(blank_mutex));
 		
@@ -369,13 +381,18 @@ int ntyRBTreeOperaInsert(void *_self, C_DEVID key, void *value) {
 		node->key = key;
 		node->value = value;
 #if ENABLE_RBTREE_MUTEX
+		//if (self->heap_flag == TREE_DATA_HEAP) {
 		if(0 == cmpxchg(&self->rbtree_delete_lock, 0, 1, WORD_WIDTH)) {
 			NattyRBTreeInsert(self, node);
 			self->count ++;
 			self->rbtree_delete_lock = 0;
 		} else {
+			free(node);
 			return 2;
 		}
+		//} else if (self->heap_flag == TREE_DATA_FRIENDS) {
+			
+		//}
 #elif 0
 		pthread_mutex_lock(&self->rbtree_mutex);
 		NattyRBTreeInsert(self, node);
@@ -622,7 +639,8 @@ static void *pRBTree = NULL; //Singleton
 
 void* ntyRBTreeInstance(void) {
 	if (pRBTree == NULL) {
-		void *pTree = New(pNtyRBTreeOpera);
+		int arg = 1;
+		void *pTree = New(pNtyRBTreeOpera, arg);
 		if ((unsigned long)NULL != cmpxchg((void*)(&pRBTree), (unsigned long)NULL, (unsigned long)pTree, WORD_WIDTH)) {
 			Delete(pTree);
 		} 
@@ -683,7 +701,9 @@ void ntyRBTreeRelease(void *self) {
  */
 
 void *ntyFriendsTreeInstance(void) {
-	void *pFriends = New(pNtyRBTreeOpera);
+	int arg = 0;
+
+	void *pFriends = New(pNtyRBTreeOpera, arg);
 	return pFriends;
 }
 

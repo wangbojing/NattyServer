@@ -71,6 +71,7 @@ const ntyNode ntyNodeTable[] = {
 	{"HeartRate", 9},
 	{"Location", 8},
 	{"Status", 6},
+	{"Config", 6},
 };
 
 

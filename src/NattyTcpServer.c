@@ -110,7 +110,7 @@ static void ntyReleaseClient(Job *job) {
 
 	ntyBoardcastAllFriendsNotifyDisconnect(req->client->devId);
 
-	if (0 == ntyReleaseClientNodeNyNode(loop, req->client)) {
+	if (0 == ntyReleaseClientNodeByNode(loop, req->client)) {
 		ntylog("Release Client Node Success\n");
 	} else {
 		ntylog("Release Client Node Failed\n");
@@ -139,6 +139,9 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 #endif
 	if (rLen < 0) {
 		if (errno == EAGAIN) return ;
+		if (errno == ETIMEDOUT) {
+			ntyReleaseClientNodeSocket(loop, watcher, watcher->fd);
+		}
 		ntylog("read error :%d :%s\n", errno, strerror(errno));
 	} else if (rLen == 0) {
 #if 1 // push to Thread pool

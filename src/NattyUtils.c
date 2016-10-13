@@ -395,5 +395,17 @@ int ntyCharToWchar(U8 *src, int length, wchar_t *dest) {
 	return w_size;
 }
 
+TIMESTAMP ntyTimeStampGenrator(void) {
+	static TIMESTAMP lTimeStamp = 0;
+	static long timeStampMutex = 0;
+
+	if(0 == cmpxchg(&timeStampMutex, 0, 1, WORD_WIDTH)) {
+		lTimeStamp = time(NULL);
+		timeStampMutex = 0;
+	}
+
+	return lTimeStamp;
+}
+
 
 

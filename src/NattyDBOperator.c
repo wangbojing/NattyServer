@@ -374,6 +374,10 @@ static int ntyExecuteLocationInsert(void *self, C_DEVID did, U8 *lng, U8 *lat, U
 		if (con == NULL) {
 			ret = -1;
 		} else {
+			U8 sql[256];
+			Connection_execute(con, NTY_DB_NAMES_UTF8_SET_FORMAT);
+			sprintf(sql, NTY_DB_LOCATION_INSERT_FORMAT, did, lng, lat, type, info);
+			ntylog("%s", sql);
 			Connection_execute(con, NTY_DB_LOCATION_INSERT_FORMAT, did, lng, lat, type, info);
 		}
 	} 
