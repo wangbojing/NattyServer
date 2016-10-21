@@ -56,6 +56,9 @@
 #include <sys/socket.h>
 #include <ev.h>
 #include <errno.h>
+#include <netinet/tcp.h> 
+#include <time.h>
+
 
 #define JEMALLOC_NO_DEMANGLE 1
 #define JEMALLOC_NO_RENAME	 1
@@ -65,27 +68,73 @@
 static int ntySetNonblock(int fd) {
 	int flags;
 
-	flags = fcntl(fd, F_GETFL);
+	flags = fcntl(fd, F_GETFL, 0);
 	if (flags < 0) return flags;
 	flags |= O_NONBLOCK;
 	if (fcntl(fd, F_SETFL, flags) < 0) return -1;
 	return 0;
 }
 
-static int ntyTcpRecv(int fd, U8 *buffer, int length) {
-	int rLen = -1;
+static int ntyTcpRecv(int fd, U8 *buffer, int length, struct ev_io *watcher, struct ev_loop *loop) {
+	
+	int rLen = 0;
+
 	while (1) {
-		rLen = recv(fd, buffer, RECV_BUFFER_SIZE, 0);
+#if 1
+		rLen = recv(fd, buffer, length, 0);
+#else
+		rLen = read(fd, buffer, length);
+#endif
+		ntylog(" recv rLen:%d\n", rLen);
+		
 		if (rLen < 0) {
 			if (errno == EINTR) return -1;
 			if (errno == EAGAIN) {
 				usleep(100);
 				continue;
 			}
-			return -2;
-		} 
-		return rLen;
+			break;
+		} else if (rLen == 0) {
+
+			struct sockaddr_in client_addr;
+			int nSize = sizeof(struct sockaddr_in);
+
+			extern void* ntyRBTreeInstance(void);
+			extern int ntyRBTreeInterfaceDelete(void *self, C_DEVID key);
+		
+			getpeername(watcher->fd,(struct sockaddr*)&client_addr, &nSize); 
+			
+			ntylog(" %d.%d.%d.%d:%d --> Client Disconnected\n", *(unsigned char*)(&client_addr.sin_addr.s_addr), *((unsigned char*)(&client_addr.sin_addr.s_addr)+1),													
+					*((unsigned char*)(&client_addr.sin_addr.s_addr)+2), *((unsigned char*)(&client_addr.sin_addr.s_addr)+3),													
+					client_addr.sin_port);	
+			// release client
+			// search hash table for client key
+	
+			C_DEVID devid = ntySearchDevIdFromHashTable(&client_addr);
+			if (devid == NATTY_NULL_DEVID) {
+				ntylog(" DevID is not exist \n");
+				ntyReleaseClientNodeSocket(loop, watcher, watcher->fd);
+				return ;
+			}
+	
+			ntyBoardcastAllFriendsNotifyDisconnect(devid);
+	
+			if (0 == ntyReleaseClientNodeByAddr(loop, &client_addr, watcher)) {
+				ntylog("Release Client Node Success\n");
+			} else {
+				ntylog("Release Client Node Failed\n");
+				ntyReleaseClientNodeSocket(loop, watcher, watcher->fd);
+			}
+	
+			break;
+		} else {
+			//time_t cTime = time(NULL);
+			//recvLen += rLen;
+			ntylog("ntyTcpRecv --> rLen : %d\n", rLen);
+			return rLen;
+		}
 	}
+	return rLen;
 }
 
 static void ntyTcpServerJob(Job *job) {
@@ -124,7 +173,7 @@ static void ntyReleaseClient(Job *job) {
 
 void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 	U8 buffer[RECV_BUFFER_SIZE] = {0};
-	ssize_t rLen = 0;
+	int rLen = 0;
 
 	if (EV_ERROR & revents) {
 		ntylog("error event in read");
@@ -132,10 +181,10 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 	}
 
 	memset(buffer, 0, RECV_BUFFER_SIZE);
-#if 1
+#if 0
 	rLen = recv(watcher->fd, buffer, RECV_BUFFER_SIZE, 0);
 #else
-	rLen = ntyTcpRecv(watcher->fd, buffer, RECV_BUFFER_SIZE);
+	rLen = ntyTcpRecv(watcher->fd, buffer, RECV_BUFFER_SIZE, watcher, loop);
 #endif
 	if (rLen < 0) {
 		if (errno == EAGAIN) return ;
@@ -144,40 +193,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		}
 		ntylog("read error :%d :%s\n", errno, strerror(errno));
 	} else if (rLen == 0) {
-#if 1 // push to Thread pool
-		struct sockaddr_in client_addr;
-		int nSize = sizeof(struct sockaddr_in);
-#if 1
-		extern void* ntyRBTreeInstance(void);
-		extern int ntyRBTreeInterfaceDelete(void *self, C_DEVID key);
-#endif
 	
-		getpeername(watcher->fd,(struct sockaddr*)&client_addr, &nSize); 
-		
-		ntylog(" %d.%d.%d.%d:%d --> Client Disconnected\n", *(unsigned char*)(&client_addr.sin_addr.s_addr), *((unsigned char*)(&client_addr.sin_addr.s_addr)+1),													
-				*((unsigned char*)(&client_addr.sin_addr.s_addr)+2), *((unsigned char*)(&client_addr.sin_addr.s_addr)+3),													
-				client_addr.sin_port);	
-		// release client
-		// search hash table for client key
-
-		C_DEVID devid = ntySearchDevIdFromHashTable(&client_addr);
-		if (devid == NATTY_NULL_DEVID) {
-			ntylog(" DevID is not exist \n");
-			ntyReleaseClientNodeSocket(loop, watcher, watcher->fd);
-			return ;
-		}
-
-		ntyBoardcastAllFriendsNotifyDisconnect(devid);
-
-		if (0 == ntyReleaseClientNodeByAddr(loop, &client_addr, watcher)) {
-			ntylog("Release Client Node Success\n");
-		} else {
-			ntylog("Release Client Node Failed\n");
-			ntyReleaseClientNodeSocket(loop, watcher, watcher->fd);
-		}
-
-
-#endif
 	} else {
 		int i = 0;
 		struct sockaddr_in client_addr;
@@ -191,7 +207,8 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		}
 			
 		getpeername(watcher->fd,(struct sockaddr*)&req->client->addr, &nSize);
-		ntylog(" TcpRecv : %d.%d.%d.%d:%d, length:%ld --> %x, id:%lld\n", *(unsigned char*)(&req->client->addr.sin_addr.s_addr), *((unsigned char*)(&req->client->addr.sin_addr.s_addr)+1),													
+
+		ntylog(" TcpRecv : %d.%d.%d.%d:%d, length:%d --> %x, id:%lld\n", *(unsigned char*)(&req->client->addr.sin_addr.s_addr), *((unsigned char*)(&req->client->addr.sin_addr.s_addr)+1),													
 				*((unsigned char*)(&req->client->addr.sin_addr.s_addr)+2), *((unsigned char*)(&req->client->addr.sin_addr.s_addr)+3),													
 				req->client->addr.sin_port, rLen, buffer[NTY_PROTO_TYPE_IDX], *(C_DEVID*)(&buffer[NTY_PROTO_DEVID_IDX]));	
 
@@ -272,7 +289,7 @@ void ntyOnAcceptEvent(struct ev_loop *loop, struct ev_io *watcher, int revents){
 		close(client_fd);
 		return ;
 	}
-
+	
 	ntylog(" %d.%d.%d.%d:%d --> New Client Connected \n", 
 		*(unsigned char*)(&client_addr.sin_addr.s_addr), *((unsigned char*)(&client_addr.sin_addr.s_addr)+1),													
 		*((unsigned char*)(&client_addr.sin_addr.s_addr)+2), *((unsigned char*)(&client_addr.sin_addr.s_addr)+3),													

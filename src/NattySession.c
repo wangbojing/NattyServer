@@ -172,20 +172,21 @@ int ntySendFriendsTreeIpAddr(const void *client, U8 reqType) {
 	int i = 0, length;
 	U8 ack[NTY_LOGIN_ACK_LENGTH] = {0};
 	
-	const UdpClient *pClient = client;
+	const Client *pClient = client;
 	void *pRBTree = ntyRBTreeInstance();
 
 	C_DEVID *friends = ntyFriendsTreeGetAllNodeList(pClient->friends);
 	U16 Count = ntyFriendsTreeGetNodeCount(pClient->friends);
 	ntylog("Count : %d, type:%d\n", Count, pClient->clientType);
 	for (i = 0;i < Count;i ++) {
-		UdpClient *cliValue = ntyRBTreeInterfaceSearch(pRBTree, *(friends+i));
+		Client *cliValue = ntyRBTreeInterfaceSearch(pRBTree, *(friends+i));
 		if (cliValue != NULL) {
 			*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_ADDR_IDX(i)]) = (U32)(cliValue->addr.sin_addr.s_addr);
 			*(U16*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_PORT_IDX(i)]) = (U16)(cliValue->addr.sin_port);
 		}
 		*(C_DEVID*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_DEVID_IDX(i)]) = *(friends+i);
 	}
+	free(friends);
 
 	ack[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
 	ack[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_UPDATE;
@@ -394,6 +395,7 @@ int ntyBoardcastAllFriends(const Client *self, U8 *buffer, int length) {
 			ntyFriendsTreeBroadcast(friends, ntyBoardcastItem, selfNode, buffer, length);
 		}
 	}
+	return 0;
 }
 
 int ntyBoardcastAllFriendsById(C_DEVID fromId, U8 *buffer, int length) {

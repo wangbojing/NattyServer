@@ -74,7 +74,7 @@ typedef struct _RBTree {
 	pthread_mutex_t rbtree_mutex;
 	long rbtree_delete_lock;
 	int heap_flag;
-	U16 count;
+	int count;
 } RBTree;
 
 typedef struct _RBTreeOpera {

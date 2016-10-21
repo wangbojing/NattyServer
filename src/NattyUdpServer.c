@@ -48,6 +48,8 @@
 #include "NattyThreadPool.h"
 #include "NattyUtils.h"
 
+#include <errno.h>
+
 void error(char *msg) {  
 	perror(msg);  
 	exit(1);
@@ -261,7 +263,11 @@ int ntySendBuffer(const UdpClient *client, unsigned char *buffer, int length) {
 		return sendto(client->sockfd, buffer, length, 0, (struct sockaddr *)&client->addr, sizeof(struct sockaddr_in));
 	} else if (client->clientType == PROTO_TYPE_TCP) {
 		int ret = send(client->sockfd, buffer, length, 0);
-		ntylog(" tcp send success : %d\n", ret);
+		if (ret == -1) {
+			ntylog(" tcp send errno : %d\n", errno);
+		} else {
+			ntylog(" tcp send success : %d\n", ret);
+		}
 		return ret;
 	}
 	return -1;

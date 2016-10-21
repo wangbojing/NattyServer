@@ -407,5 +407,16 @@ TIMESTAMP ntyTimeStampGenrator(void) {
 	return lTimeStamp;
 }
 
+int ntyWriteDat(const char *filename, const char *data, int len) {
+	FILE *pAMRFile = fopen(filename, "w+b");
+	int size = 0;
+
+	size = fwrite(data, 1, len, pAMRFile);
+	fflush(pAMRFile);
+
+	fclose(pAMRFile);
+
+	return size;
+}
 
 

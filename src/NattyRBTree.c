@@ -434,7 +434,7 @@ int ntyRBTreeOperaDelete(void *_self, C_DEVID key) {
 	if (node->value != NULL) {
 #if 1
 		if(0 == cmpxchg(&self->rbtree_delete_lock, 0, 1, WORD_WIDTH)) {
-			UdpClient *client = node->value;
+			Client *client = node->value;
 			if (client->friends != NULL) {
 				client->friends = ntyRBTreeOperaDtor(client->friends);
 				client->friends = NULL;
@@ -807,8 +807,14 @@ C_DEVID* ntyFriendsTreeGetAllNodeList(const void *self) {
 	memset(list, 0, count*sizeof(C_DEVID));
 	
 	list = ntyPreOrderTraversalForList(tree, tree->root, list);
+#if 0
+	ntydbg(" %d, count:%d\n", list-friends, count);
+#else
+	int c = list-friends;
+	ntydbg(" %d, count:%d\n", c, count);
+#endif
 	assert((list-friends) == count);
-
+	
 	return friends;
 }
 
