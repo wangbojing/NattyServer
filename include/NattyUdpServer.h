@@ -58,13 +58,16 @@
 #include <arpa/inet.h>
 #include <poll.h>
 #include <ev.h>
+#include <pthread.h>
 
 #include "NattyAbstractClass.h"
 #include "NattyConfig.h"
 
 
 #define NATTY_UDP_SERVER		8888
-#define RECV_BUFFER_SIZE 		1024
+
+#define RECV_BUFFER_SIZE 		1436
+#define PACKET_BUFFER_SIZE		1024
 #define NATTY_UDP_SERVER_PORT	NATTY_UDP_SERVER
 
 #if 0
@@ -111,6 +114,9 @@ typedef struct _Client {
 	struct ev_io *watcher;
 	U8 clientType; //UDP / TCP
 	U8 deviceType; 
+	U16 rLength; //recv length
+	U8 *recvBuffer; //recvBuffer
+	pthread_mutex_t buffer_mutex;
 } Client;
 
 typedef Client UdpClient;

@@ -84,6 +84,7 @@ typedef struct _Payload {
 typedef struct _HashNode {
 	Payload *info;
 	C_DEVID devid;
+	int sockfd;
 	struct _HashNode *list;
 } HashNode;
 /*
@@ -99,10 +100,11 @@ typedef struct _HashTableHandle {
 	size_t size;
 	void* (*ctor)(void *_self, va_list *params);
 	void* (*dtor)(void *_self);
-	int (*insert)(void *_self, U32 key, Payload* load, C_DEVID id);
-	C_DEVID (*search)(void *_self, U32 key, Payload* load);
+	int (*insert)(void *_self, U32 key, Payload* load, C_DEVID id, int fd);
+	C_DEVID (*searchId)(void *_self, U32 key, Payload* load);
+	int (*searchFd)(void *_self, U32 key, Payload* load);
 	int (*delete)(void *_self, U32 key, Payload* load);
-	int (*update)(void *_self, U32 key, Payload* load, C_DEVID id);
+	int (*update)(void *_self, U32 key, Payload* load, C_DEVID id, int fd);
 } HashTableHandle;
 
 
@@ -111,15 +113,16 @@ U32 ntyHashKey(Payload *load);
 
 void *ntyHashTableInstance(void);
 void *ntyHashTableRelease(void);
-int ntyHashTableInsert(void *self, U32 key, Payload* load, C_DEVID id);
+int ntyHashTableInsert(void *self, U32 key, Payload* load, C_DEVID id, int fd);
 C_DEVID ntyHashTableSearch(void *self, U32 key, Payload* load) ;
 int ntyHashTableDelete(void *self, U32 key, Payload* load);
-int ntyHashTableUpdate(void *self, U32 key, Payload* load, C_DEVID id);
+int ntyHashTableUpdate(void *self, U32 key, Payload* load, C_DEVID id, int fd);
 
 
 C_DEVID ntySearchDevIdFromHashTable(struct sockaddr_in *addr);
 int ntyDeleteNodeFromHashTable(struct sockaddr_in *addr, C_DEVID id);
 int ntyInsertNodeToHashTable(struct sockaddr_in *addr, C_DEVID id);
+int ntyUpdateNodeToHashTable(struct sockaddr_in *addr, C_DEVID id, int fd);
 
 
 

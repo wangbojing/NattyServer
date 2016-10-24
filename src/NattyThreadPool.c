@@ -81,6 +81,7 @@ static void *ntyRunner(void *arg) {
 
 		if (job == NULL) continue;
 		job->job_function(job);
+		//usleep(1);
 	}
 	free(worker);
 	pthread_exit(NULL);

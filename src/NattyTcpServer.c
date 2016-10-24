@@ -91,8 +91,9 @@ static int ntyTcpRecv(int fd, U8 *buffer, int length, struct ev_io *watcher, str
 			if (errno == EINTR) return -1;
 			if (errno == EAGAIN) {
 				usleep(100);
-				continue;
+				break;
 			}
+			ntylog(" ntyTcpRecv --> errno:%d\n", errno);
 			break;
 		} else if (rLen == 0) {
 
@@ -181,7 +182,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 	}
 
 	memset(buffer, 0, RECV_BUFFER_SIZE);
-#if 0
+#if 1
 	rLen = recv(watcher->fd, buffer, RECV_BUFFER_SIZE, 0);
 #else
 	rLen = ntyTcpRecv(watcher->fd, buffer, RECV_BUFFER_SIZE, watcher, loop);
@@ -194,6 +195,36 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		ntylog("read error :%d :%s\n", errno, strerror(errno));
 	} else if (rLen == 0) {
 	
+		struct sockaddr_in client_addr;
+		int nSize = sizeof(struct sockaddr_in);
+
+		extern void* ntyRBTreeInstance(void);
+		extern int ntyRBTreeInterfaceDelete(void *self, C_DEVID key);
+	
+		getpeername(watcher->fd,(struct sockaddr*)&client_addr, &nSize); 
+		
+		ntylog(" %d.%d.%d.%d:%d --> Client Disconnected\n", *(unsigned char*)(&client_addr.sin_addr.s_addr), *((unsigned char*)(&client_addr.sin_addr.s_addr)+1),													
+				*((unsigned char*)(&client_addr.sin_addr.s_addr)+2), *((unsigned char*)(&client_addr.sin_addr.s_addr)+3),													
+				client_addr.sin_port);	
+		// release client
+		// search hash table for client key
+
+		C_DEVID devid = ntySearchDevIdFromHashTable(&client_addr);
+		if (devid == NATTY_NULL_DEVID) {
+			ntylog(" DevID is not exist \n");
+			ntyReleaseClientNodeSocket(loop, watcher, watcher->fd);
+			return ;
+		}
+
+		ntyBoardcastAllFriendsNotifyDisconnect(devid);
+
+		if (0 == ntyReleaseClientNodeByAddr(loop, &client_addr, watcher)) {
+			ntylog("Release Client Node Success\n");
+		} else {
+			ntylog("Release Client Node Failed\n");
+			ntyReleaseClientNodeSocket(loop, watcher, watcher->fd);
+		}
+
 	} else {
 		int i = 0;
 		struct sockaddr_in client_addr;
@@ -212,19 +243,10 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 				*((unsigned char*)(&req->client->addr.sin_addr.s_addr)+2), *((unsigned char*)(&req->client->addr.sin_addr.s_addr)+3),													
 				req->client->addr.sin_port, rLen, buffer[NTY_PROTO_TYPE_IDX], *(C_DEVID*)(&buffer[NTY_PROTO_DEVID_IDX]));	
 
-#if 0//Update 
-		for (i = 0;i < rLen;i ++) {
-			ntylog("0x%x,", buffer[i]);
-		}
-		ntylog("\n");
-#endif
-#if 0
-		req->client->devId = *(C_DEVID*)(&buffer[NTY_PROTO_DEVID_IDX]);
-		req->client->ackNum = *(U32*)(buffer+NTY_PROTO_ACKNUM_IDX)+1;
-#else
+
 		ntyU8ArrayToU64(&buffer[NTY_PROTO_DEVID_IDX], &req->client->devId);
 		req->client->ackNum = ntyU8ArrayToU32(&buffer[NTY_PROTO_ACKNUM_IDX])+1;
-#endif
+
 		req->client->sockfd = watcher->fd;
 		req->client->watcher = watcher;
 		req->client->clientType = PROTO_TYPE_TCP;
@@ -249,6 +271,8 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		job->job_function  = ntyTcpServerJob;
 		job->user_data = req;
 		ntyThreadPoolPush(pThreadPool, job);
+
+		
 	}
 
 	return ;
@@ -296,6 +320,14 @@ void ntyOnAcceptEvent(struct ev_loop *loop, struct ev_io *watcher, int revents){
 		client_addr.sin_port);
 
 	// insert search hash table
+	
+#if 1 //Insert Hash table
+	int ret = ntyInsertNodeToHashTable(&client_addr, 0x1);
+	if (ret == 0) { 			
+		ntylog("Hash Table Node Insert Success\n");
+	}
+#endif
+
 
 	ev_io_init(ev_client, ntyOnReadEvent, client_fd, EV_READ);
 	ev_io_start(loop, ev_client);

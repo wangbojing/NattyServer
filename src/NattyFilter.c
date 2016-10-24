@@ -309,6 +309,11 @@ static int ntyAddClientNodeToRBTree(unsigned char *buffer, int length, const voi
 		pClient->addr.sin_port = client->addr.sin_port;
 		pClient->ackNum = 0x0;
 		pClient->devId = client->devId;
+		pClient->rLength = 0;
+		pClient->recvBuffer = malloc(PACKET_BUFFER_SIZE);
+		
+		pthread_mutex_t blank_mutex = PTHREAD_MUTEX_INITIALIZER;
+		memcpy(&pClient->buffer_mutex, &blank_mutex, sizeof(pClient->buffer_mutex));
 #if ENABLE_NATTY_TIME_STAMP //TIME Stamp 	
 		pClient->stamp = ntyTimeStampGenrator();
 #endif
@@ -349,12 +354,7 @@ static int ntyAddClientNodeToRBTree(unsigned char *buffer, int length, const voi
 		}
 		ntylog(" New Client RBTREENODE --> %lld\n", pClient->devId);	
 		
-#if 1 //Insert Hash table
-		int ret = ntyInsertNodeToHashTable(&pClient->addr, pClient->devId);
-		if (ret == 0) { 			
-			ntylog("Hash Table Node Insert Success\n");
-		}
-#endif
+		ntyUpdateNodeToHashTable(&pClient->addr, pClient->devId, pClient->sockfd);
 #if 1
 		ntyBoardcastAllFriendsNotifyConnect(pClient->devId);
 #endif
@@ -384,6 +384,21 @@ static int ntyAddClientNodeToRBTree(unsigned char *buffer, int length, const voi
 		pClient->addr.sin_addr.s_addr = client->addr.sin_addr.s_addr;
 		pClient->addr.sin_port = client->addr.sin_port;
 		pClient->ackNum = 0x0;
+		if (pClient->recvBuffer != NULL) {
+			free(pClient->recvBuffer);
+			
+			pClient->rLength = 0;
+			pClient->recvBuffer = NULL;
+		}
+#if ENABLE_NATTY_TIME_STAMP //TIME Stamp 	
+		pClient->stamp = ntyTimeStampGenrator();
+#endif
+		if (client->clientType == PROTO_TYPE_TCP) {
+			pClient->watcher = client->watcher;
+		} else {
+			pClient->watcher = NULL;
+		}
+		
 		if (pClient->devId != client->devId) {
 			ntylog(" pClient->devId != client->devId \n");
 			//pClient->devId = client->devId;
@@ -408,8 +423,13 @@ static int ntyAddClientNodeToRBTree(unsigned char *buffer, int length, const voi
 			}
 #endif
 
-#if 1 //Insert Hash table
+#if 0 //Insert Hash table
 			int ret = ntyInsertNodeToHashTable(&pClient->addr, pClient->devId);
+			if (ret == 0) { 			
+				ntylog("Hash Table Node Insert Success");
+			}
+#else
+			int ret = ntyUpdateNodeToHashTable(&pClient->addr, pClient->devId, pClient->sockfd);
 			if (ret == 0) { 			
 				ntylog("Hash Table Node Insert Success");
 			}
@@ -1102,6 +1122,7 @@ void ntyVoiceReqPacketHandleRequest(const void *_self, unsigned char *buffer, in
 		if (index == Count-1) {
 			U32 dataLength = NTY_VOICEREQ_DATA_LENGTH*(Count-1) + pktLength;
 			ntyWriteDat("./rVoice.amr", u8VoicePacket, dataLength);
+
 		}
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
@@ -1208,33 +1229,101 @@ void* ntyProtocolFilterInit(void) {
 	return pHeartBeatFilter;
 }
 
+static void ntyClientBufferRelease(Client *client) {
+	pthread_mutex_lock(&client->buffer_mutex);
+#if 0
+	free(client->recvBuffer);
+	client->recvBuffer = NULL;
+	client->rLength = 0;
+#else
+	memset(client->recvBuffer, 0, PACKET_BUFFER_SIZE);
+	client->rLength = 0;
+#endif
+	pthread_mutex_unlock(&client->buffer_mutex);
+}
+
 void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length, const void *obj) {
 	
 	//data crc is right, and encryto
 	U32 u32Crc = ntyGenCrcValue(buffer, length-4);
 	U32 u32ClientCrc = *((U32*)(buffer+length-4));
+	const Client *client = obj;
+	struct sockaddr_in addr;
+	memcpy(&addr, &client->addr, sizeof(struct sockaddr_in));
 
+	C_DEVID id = ntySearchDevIdFromHashTable(&addr);
+	if (id == 0) return ;
+	
+	void *pRBTree = ntyRBTreeInstance();
+	Client *pClient = (Client*)ntyRBTreeInterfaceSearch(pRBTree, id);
+	
 	//ntydbg(" client:%x, server:%x, length:%d", u32ClientCrc, u32Crc, length);
 	if (u32Crc != u32ClientCrc || length < NTY_PROTO_MIN_LENGTH) {
 #if 1 
 		ntylog(" ntyProtocolFilterProcess --> client:%x, server:%x, length:%d\n", u32ClientCrc, u32Crc, length);
-		const Client *client = obj;
+		//const Client *client = obj;
+		if (pClient == NULL) return ;
 		if (client->clientType == PROTO_TYPE_TCP) {
 			//Hash table have no Node that client addr
-			ntylog(" ntyProtocolFilterProcess --> Data Format is Error : %d\n", length);
-			struct sockaddr_in addr;
-			memcpy(&addr, &client->addr, sizeof(struct sockaddr_in));
-			if(ntySearchDevIdFromHashTable(&addr) == 0) {
+			//struct sockaddr_in addr;
+			//memcpy(&addr, &client->addr, sizeof(struct sockaddr_in));
+			
+			ntylog(" ntyProtocolFilterProcess --> Data Format is Error : %d, DeId:%lld\n", length, id);
+			
+			if(id == 0) { //have no client id
 				ntylog(" ntyProtocolFilterProcess --> Release Client\n");
 				struct ev_loop *loop = ntyTcpServerGetMainloop();
 				ntyReleaseClientNodeSocket(loop, client->watcher, client->sockfd);
+
+				return ;
+			} else { //have part data
+				//void *pRBTree = ntyRBTreeInstance();
+				//Client *pClient = (Client*)ntyRBTreeInterfaceSearch(pRBTree, id);
+				
+				ntylog("111111111 pClient->rLength:%d, length:%d\n", pClient->rLength, length);
+
+				int bCopy = 0;
+				int bIndex = 0, bLength = 0;
+				U8 bBuffer[PACKET_BUFFER_SIZE] = {0};
+
+				do {
+					bCopy = (length > PACKET_BUFFER_SIZE ? PACKET_BUFFER_SIZE : length);
+					bCopy = (((pClient->rLength + bCopy) > PACKET_BUFFER_SIZE) ? (PACKET_BUFFER_SIZE - pClient->rLength) : bCopy);
+					
+					pthread_mutex_lock(&pClient->buffer_mutex);
+					memcpy(pClient->recvBuffer+pClient->rLength, buffer+bIndex, bCopy);
+					pClient->rLength += bCopy;
+					memcpy(bBuffer, pClient->recvBuffer, pClient->rLength);
+					bLength = pClient->rLength;
+					pthread_mutex_unlock(&pClient->buffer_mutex);
+
+					U32 uCrc = ntyGenCrcValue(bBuffer, bLength-4);
+					U32 uClientCrc = *((U32*)(bBuffer+bLength-4));
+
+					if (uCrc == uClientCrc)	 {
+						ntylog(" CMD:%x, Version:[%c]\n", bBuffer[NTY_PROTO_TYPE_IDX], bBuffer[NEY_PROTO_VERSION_IDX]);
+						ntyHandleRequest(_filter, bBuffer, bLength, obj);
+
+						ntyClientBufferRelease(pClient);
+					} 
+					
+					length -= bCopy;
+					bIndex += bCopy;
+					
+				} while (length);
+
+				return ;
+
 			}
 
 		}
 #endif
-		return ;
+		
 	}
-	
+
+	if (pClient != NULL) {
+		pClient->rLength = 0;
+	}
 	return ntyHandleRequest(_filter, buffer, length, obj);
 }
 

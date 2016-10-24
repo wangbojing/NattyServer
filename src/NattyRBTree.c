@@ -397,15 +397,7 @@ int ntyRBTreeOperaInsert(void *_self, C_DEVID key, void *value) {
 		} else {
 			free(node);
 			return 2;
-		}
-		//} else if (self->heap_flag == TREE_DATA_FRIENDS) {
-			
-		//}
-#elif 0
-		pthread_mutex_lock(&self->rbtree_mutex);
-		NattyRBTreeInsert(self, node);
-		self->count ++;
-		pthread_mutex_unlock(&self->rbtree_mutex);
+		}		
 #else
 		NattyRBTreeInsert(self, node);
 		self->count ++;
@@ -803,7 +795,11 @@ C_DEVID* ntyFriendsTreeGetAllNodeList(const void *self) {
 	//C_DEVID *list = (C_DEVID*)malloc(count*sizeof(C_DEVID));
 	C_DEVID *list = (C_DEVID*)malloc(count*sizeof(C_DEVID));
 	C_DEVID *friends = list;
-	assert(list);
+	//assert(list);
+	if (list == NULL) { 
+		ntydbg(" ntyFriendsTreeGetAllNodeList --> Malloc Error\n");
+		return NULL;
+	}
 	memset(list, 0, count*sizeof(C_DEVID));
 	
 	list = ntyPreOrderTraversalForList(tree, tree->root, list);
