@@ -370,7 +370,6 @@ static U32 ntyGenHashCrcValue(U8 *buf, int length) {
 U32 ntyHashCrcKey(U8 *buf, int length) {
 	U32 Crc = ntyGenHashCrcValue(buf, length);
 
-	ntylog(" CRC:%x, %x\n", Crc, (Crc & NATTY_DICTIONARY_MASK));
 	return (Crc & NATTY_DICTIONARY_MASK);
 }
 
@@ -378,10 +377,6 @@ U32 ntyHashKey(Payload *load) {
 	U32 Crc = 0x0;
 	if (load == NULL) return 0x0;
 
-	ntylog(" ntyHashKey --> %d.%d.%d.%d:%d \n", *(unsigned char*)(&load->srcip), *((unsigned char*)(&load->srcip)+1),													
-				*((unsigned char*)(&load->srcip)+2), *((unsigned char*)(&load->srcip)+3),													
-				load->sport);
-	
 	Crc = ntyHashCrcKey((U8*)load, sizeof(Payload));
 	return Crc;
 }
@@ -462,7 +457,7 @@ int ntyHashInsert(void *_self, U32 key, Payload* load, C_DEVID id, int fd) {
 	} else { //exist hash node
 	
 		HashNode *iter = table->Dictionary[key].list;
-		HashNode *node = (HashNode*)malloc(sizeof(HashNode));
+		node = (HashNode*)malloc(sizeof(HashNode));
 		node->devid = id;
 		node->info = load;
 		node->sockfd = fd;
@@ -472,6 +467,8 @@ int ntyHashInsert(void *_self, U32 key, Payload* load, C_DEVID id, int fd) {
 		node->list = iter;
 	}
 #endif
+	ntylog(" ntyHashInsert --> %lx\n", (long)node);
+
 	return 0;
 }
 
@@ -489,7 +486,6 @@ HashNode* ntyHashSearchNode(void *_self, U32 key, Payload* load) {
 		return NULL;
 	} else {
 		if (ntyPayloadCompare(node->info, load)) { //
-			ntylog("ntyHashSearchNode port:%d\n", node->info->sport);
 			return node;
 		} else {
 			HashNode *iter = node->list;
@@ -507,14 +503,12 @@ HashNode* ntyHashSearchNode(void *_self, U32 key, Payload* load) {
 }
 
 C_DEVID ntyHashSearchId(void *_self, U32 key, Payload* load) {
-	ntylog("ntyHashSearch \n");
 	HashNode *node = ntyHashSearchNode(_self, key, load);
 	if (node == NULL) return 0x0;
 	return node->devid;
 }
 
 int ntyHashSearchFd(void *_self, U32 key, Payload* load) {
-	ntylog("ntyHashSearch \n");
 	HashNode *node = ntyHashSearchNode(_self, key, load);
 	if (node == NULL) return 0x0;
 	return node->sockfd;
@@ -574,6 +568,8 @@ int ntyHashUpdate(void *_self, U32 key, Payload* load, C_DEVID id, int fd) {
 	if (node == NULL) {
 		return -1;
 	}
+
+	ntylog(" ntyHashUpdate --> %lx\n", (long)node);
 	
 	node->devid = id;
 	node->sockfd = fd;
@@ -598,7 +594,6 @@ static void *pHashTableHandle = NULL;
 
 void *ntyHashTableInstance(void) {
 	if (pHashTableHandle == NULL) {
-		ntylog("ntyHashTableInstance\n");
 		void *pHashTable = New(pNtyHashTableHandle);
 		if ((unsigned long)NULL != cmpxchg((void*)(&pHashTableHandle), (unsigned long)NULL, (unsigned long)pHashTable, WORD_WIDTH)) {
 			Delete(pHashTable);
@@ -671,11 +666,10 @@ C_DEVID ntySearchDevIdFromHashTable(struct sockaddr_in *addr) {
 	C_DEVID id = 0;
 	void *pHash = ntyHashTableInstance();
 
-	ntylog(" ntySearchDevIdFromHashTable --> Start\n");
 	Payload *pLoad = (Payload*)malloc(sizeof(Payload));
 	if (pLoad == NULL) {
 		ntylog("malloc payload is failed\n");
-		return -1;
+		return 0;
 	}
 	memset(pLoad, 0, sizeof(Payload));
 	ntyPayloadValue(pLoad, addr);
@@ -697,7 +691,6 @@ int ntyDeleteNodeFromHashTable(struct sockaddr_in *addr, C_DEVID id) {
 	void *pHash = ntyHashTableInstance();
 	if (addr == NULL) return -1;
 
-	ntylog(" ntyDeleteNodeFromHashTable --> Start\n");
 	Payload *pLoad = (Payload*)malloc(sizeof(Payload));
 	if (pLoad == NULL) {
 		ntylog("malloc payload is failed\n");
@@ -713,6 +706,8 @@ int ntyDeleteNodeFromHashTable(struct sockaddr_in *addr, C_DEVID id) {
 
 	ret = ntyHashTableDelete(pHash, key, pLoad);
 	free(pLoad);
+
+	ntylog("ntyDeleteNodeFromHashTable --> %d\n", ret);
 
 	return ret;
 }
@@ -756,7 +751,7 @@ int ntyUpdateNodeToHashTable(struct sockaddr_in *addr, C_DEVID id, int fd) {
 	memset(pLoad, 0, sizeof(Payload));
 	ntyPayloadValue(pLoad, addr);
 	U32 key = ntyHashKey(pLoad);
-	
+#if 0
 	HashNode *node = ntyHashSearchNode(pHash, key, pLoad);
 	if (node == NULL) {
 		ntylog("Error Hash Key is not Exist\n");
@@ -766,9 +761,14 @@ int ntyUpdateNodeToHashTable(struct sockaddr_in *addr, C_DEVID id, int fd) {
 
 	node->devid = id;
 	node->sockfd = fd;
+#else
 
+	int ret = ntyHashTableUpdate(pHash, key, pLoad, id, fd);
+
+	ntylog(" ret : %d", ret);
+#endif
 	free(pLoad);
-	return 0;
+	return ret;
 }
 
 #if 0

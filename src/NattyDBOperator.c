@@ -560,6 +560,168 @@ int ntyQueryPhNumSelect(void *self, C_DEVID did, U8 *iccid, U8 *phnum) {
 	return ret;
 }
 
+//NTY_DB_DEVICE_STATUS_RESET_FORMAT
+int ntyExecuteDeviceStatusReset(void *self) {
+	ConnectionPool *pool = self;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+	U8 u8PhNum[20] = {0};
+
+	TRY 
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			Connection_execute(con, NTY_DB_DEVICE_STATUS_RESET_FORMAT);
+		}
+	} 
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+
+//NTY_DB_APPLOGIN_UPDATE_FORMAT
+int ntyExecuteAppLoginUpdate(void *self, C_DEVID aid) {
+	ConnectionPool *pool = self;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+	U8 u8PhNum[20] = {0};
+
+	TRY 
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			Connection_execute(con, NTY_DB_APPLOGIN_UPDATE_FORMAT, aid);
+		}
+	} 
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+//NTY_DB_APPLOGOUT_UPDATE_FORMAT
+int ntyExecuteAppLogoutUpdate(void *self, C_DEVID aid) {
+	ConnectionPool *pool = self;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+	U8 u8PhNum[20] = {0};
+
+	TRY 
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			Connection_execute(con, NTY_DB_APPLOGOUT_UPDATE_FORMAT, aid);
+		}
+	} 
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+//NTY_DB_DEVICE_STATUS_RESET_FORMAT
+int ntyQueryDeviceOnlineStatus(void *self, C_DEVID did, int *online) {
+	ConnectionPool *pool = self;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+	U8 u8PhNum[20] = {0};
+
+	TRY 
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_DEVICE_STATUS_SELECT_FORMAT, did);
+			while (ResultSet_next(r)) {
+				*online = ResultSet_getInt(r, 1);				
+			}
+		}
+	} 
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+//NTY_DB_DEVICE_STATUS_RESET_FORMAT
+int ntyQueryAppOnlineStatus(void *self, C_DEVID aid, int *online) {
+	ConnectionPool *pool = self;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+	U8 u8PhNum[20] = {0};
+
+	TRY 
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_APP_STATUS_SELECT_FORMAT, aid);
+			while (ResultSet_next(r)) {
+				*online = ResultSet_getInt(r, 1);				
+			}
+		}
+	} 
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
 
 
 int ntyExecuteWatchInsertHandle(U8 *imei) {
@@ -588,7 +750,6 @@ int ntyExecuteDevAppRelationDeleteHandle(C_DEVID aid, C_DEVID did) {
 	return ntyExecuteDevAppRelationDelete(pool, aid, did);
 }
 
-
 int ntyExecuteLocationInsertHandle( C_DEVID did, U8 *lng, U8 *lat, U8 type, U8 *info) {
 	void *pool = ntyConnectionPoolInstance();
 	return ntyExecuteLocationInsert(pool, did, lng, lat, type, info);
@@ -609,10 +770,19 @@ int ntyExecuteDeviceLoginUpdateHandle(C_DEVID did) {
 	return ntyExecuteDeviceLoginUpdate(pool, did);
 }
 
-
 int ntyExecuteDeviceLogoutUpdateHandle(C_DEVID did) {
 	void *pool = ntyConnectionPoolInstance();
 	return ntyExecuteDeviceLogoutUpdate(pool, did);
+}
+
+int ntyExecuteAppLoginUpdateHandle(C_DEVID aid) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteAppLoginUpdate(pool, aid);
+}
+
+int ntyExecuteAppLogoutUpdateHandle(C_DEVID aid) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteAppLogoutUpdate(pool, aid);
 }
 
 
@@ -622,9 +792,25 @@ int ntyQueryPhNumSelectHandle(C_DEVID did, U8 *iccid, U8 *phnum) {
 	return ntyQueryPhNumSelect(pool, did, iccid, phnum);
 }
 
+int ntyExecuteDeviceStatusResetHandle(void) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteDeviceStatusReset(pool);
+}
+
+int ntyQueryDeviceOnlineStatusHandle(C_DEVID did, int *online) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyQueryDeviceOnlineStatus(pool, did, online);
+}
+
+int ntyQueryAppOnlineStatusHandle(C_DEVID aid, int *online) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyQueryAppOnlineStatus(pool, aid, online);
+}
+
 
 int ntyConnectionPoolInit(void) {
-	void *pool = ntyConnectionPoolInstance();
+	//void *pool = ntyConnectionPoolInstance();
+	ntyExecuteDeviceStatusResetHandle();
 }
 
 void ntyConnectionPoolDeInit(void) {

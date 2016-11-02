@@ -76,7 +76,18 @@
 
 #define NTY_DB_DEVICELOGOUT_UPDATE_FORMAT	"CALL PROC_DEVICE_STATUS_UPDATE(%lld, 0)"
 
+#define NTY_DB_APPLOGIN_UPDATE_FORMAT		"CALL PROC_APP_STATUS_UPDATE(%lld, 1)"
+
+#define NTY_DB_APPLOGOUT_UPDATE_FORMAT		"CALL PROC_APP_STATUS_UPDATE(%lld, 0);"
+
 #define NTY_DB_PHNUM_VALUE_SELECT_FORMAT	"CALL PROC_PHNUM_VALUE_RESULT(%lld, %s)"
+
+#define NTY_DB_DEVICE_STATUS_RESET_FORMAT	"CALL PROC_DEVICE_STATUS_RESET()"
+
+#define NTY_DB_DEVICE_STATUS_SELECT_FORMAT	"CALL PROC_DEVICE_STATUS_SELECT(%lld)"
+
+#define NTY_DB_APP_STATUS_SELECT_FORMAT		"CALL PROC_APP_STATUS_SELECT(%lld)"
+
 
 #define NTY_DB_NAMES_UTF8_SET_FORMAT		"SET NAMES UTF8;"
 
@@ -109,7 +120,19 @@ int ntyExecuteHeartRateInsertHandle(C_DEVID did, int value);
 int ntyExecuteDeviceLoginUpdateHandle(C_DEVID did);
 int ntyExecuteDeviceLogoutUpdateHandle(C_DEVID did);
 
+int ntyExecuteAppLoginUpdateHandle(C_DEVID aid);
+int ntyExecuteAppLogoutUpdateHandle(C_DEVID aid);
+
+
+
 int ntyQueryPhNumSelect(void *self, C_DEVID did, U8 *imei, U8 *phnum);
+
+
+int ntyQueryAppOnlineStatusHandle(C_DEVID did, int *online);
+int ntyQueryDeviceOnlineStatusHandle(C_DEVID did, int *online);
+
+
+
 
 
 int ntyConnectionPoolInit(void);

@@ -82,6 +82,7 @@
 #define ntydbg(format, ...) 
 #endif
 
+#define ASSERT(x)			assert(x)
 
 typedef unsigned long long U64;
 typedef signed long long S64;

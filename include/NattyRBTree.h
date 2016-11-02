@@ -71,10 +71,10 @@ typedef struct _RBTree {
 	const void *_;
 	RBTreeNode *root;
 	RBTreeNode *nil;
+	int count;
 	pthread_mutex_t rbtree_mutex;
 	long rbtree_delete_lock;
 	int heap_flag;
-	int count;
 } RBTree;
 
 typedef struct _RBTreeOpera {

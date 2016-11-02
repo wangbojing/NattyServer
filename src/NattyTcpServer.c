@@ -189,9 +189,10 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 #endif
 	if (rLen < 0) {
 		if (errno == EAGAIN) return ;
-		if (errno == ETIMEDOUT) {
+		if (errno == ETIMEDOUT || errno == EBADF) {
 			ntyReleaseClientNodeSocket(loop, watcher, watcher->fd);
 		}
+		
 		ntylog("read error :%d :%s\n", errno, strerror(errno));
 	} else if (rLen == 0) {
 	
@@ -200,6 +201,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 
 		extern void* ntyRBTreeInstance(void);
 		extern int ntyRBTreeInterfaceDelete(void *self, C_DEVID key);
+		extern void* ntyRBTreeInterfaceSearch(void *self, C_DEVID key);
 	
 		getpeername(watcher->fd,(struct sockaddr*)&client_addr, &nSize); 
 		
@@ -210,21 +212,26 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		// search hash table for client key
 
 		C_DEVID devid = ntySearchDevIdFromHashTable(&client_addr);
-		if (devid == NATTY_NULL_DEVID) {
-			ntylog(" DevID is not exist \n");
+		if (devid == NATTY_NULL_DEVID || devid == NATTY_HOLDER_DEVID) {
+			
 			ntyReleaseClientNodeSocket(loop, watcher, watcher->fd);
+
+			int ret = ntyDeleteNodeFromHashTable(&client_addr, devid);
+			// read error :104 :Connection reset by peer
+			// 0.0.0.0:0
+			ntylog(" DevID is not exist Or Devid  ret:%d\n", ret);
+			
 			return ;
+		} else { //devid Exist
+			int ret = ntyDeleteNodeFromHashTable(&client_addr, devid);
+			ASSERT(ret == 0);
+
+			ret = ntyReleaseClientNodeByDevID(loop, watcher, devid);
+			ASSERT(ret == 0);
 		}
+
 
 		ntyBoardcastAllFriendsNotifyDisconnect(devid);
-
-		if (0 == ntyReleaseClientNodeByAddr(loop, &client_addr, watcher)) {
-			ntylog("Release Client Node Success\n");
-		} else {
-			ntylog("Release Client Node Failed\n");
-			ntyReleaseClientNodeSocket(loop, watcher, watcher->fd);
-		}
-
 	} else {
 		int i = 0;
 		struct sockaddr_in client_addr;
@@ -242,7 +249,6 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		ntylog(" TcpRecv : %d.%d.%d.%d:%d, length:%d --> %x, id:%lld\n", *(unsigned char*)(&req->client->addr.sin_addr.s_addr), *((unsigned char*)(&req->client->addr.sin_addr.s_addr)+1),													
 				*((unsigned char*)(&req->client->addr.sin_addr.s_addr)+2), *((unsigned char*)(&req->client->addr.sin_addr.s_addr)+3),													
 				req->client->addr.sin_port, rLen, buffer[NTY_PROTO_TYPE_IDX], *(C_DEVID*)(&buffer[NTY_PROTO_DEVID_IDX]));	
-
 
 		ntyU8ArrayToU64(&buffer[NTY_PROTO_DEVID_IDX], &req->client->devId);
 		req->client->ackNum = ntyU8ArrayToU32(&buffer[NTY_PROTO_ACKNUM_IDX])+1;

@@ -388,8 +388,7 @@ int ntyRBTreeOperaInsert(void *_self, C_DEVID key, void *value) {
 		node = (RBTreeNode*)malloc(sizeof(RBTreeNode));
 		node->key = key;
 		node->value = value;
-#if ENABLE_RBTREE_MUTEX
-		//if (self->heap_flag == TREE_DATA_HEAP) {
+#if ENABLE_RBTREE_MUTEX		
 		if(0 == cmpxchg(&self->rbtree_delete_lock, 0, 1, WORD_WIDTH)) {
 			NattyRBTreeInsert(self, node);
 			self->count ++;
