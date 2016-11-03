@@ -443,7 +443,8 @@ static int ntyAddClientNodeToRBTree(unsigned char *buffer, int length, const voi
 #endif
 
 		return 2;
-	}
+	} 
+	
 	
 #if ENABLE_NATTY_TIME_STAMP //TIME Stamp 	
 	selfNode->stamp = ntyTimeStampGenrator();
