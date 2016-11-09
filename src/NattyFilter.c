@@ -468,7 +468,9 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 		Client *pClient = (Client*)ntyRBTreeInterfaceSearch(pRBTree, client->devId);
 		if (pClient != NULL) {
 			ntySendFriendsTreeIpAddr(pClient, 1);
-			ntySendDeviceTimeCheckAck(pClient, client->ackNum+1);
+			
+			if (buffer[NEY_PROTO_VERSION_IDX] == NTY_PROTO_DEVICE_VERSION)
+				ntySendDeviceTimeCheckAck(pClient, client->ackNum+1);
 		}
 
 		//ntylog("Login deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);		
@@ -527,6 +529,7 @@ void ntyLogoutPacketHandleRequest(const void *_self, U8 *buffer, int length, con
 	const UdpClient *client = obj;
 	if (buffer[NTY_PROTO_TYPE_IDX] == NTY_PROTO_LOGOUT_REQ) {
 		//delete key
+#if 0
 		void *pRBTree = ntyRBTreeInstance();
 		C_DEVID key = *(C_DEVID*)(buffer+NTY_PROTO_HEARTBEAT_DEVID_IDX);
 		U32 ackNum = *(U32*)(buffer+NTY_PROTO_HEARTBEAT_ACKNUM_IDX)+1;
@@ -548,6 +551,21 @@ void ntyLogoutPacketHandleRequest(const void *_self, U8 *buffer, int length, con
 		ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_LOGOUT_ACK;
 		memcpy(ack+1, &ackNum, NTY_ACKNUM_LENGTH);
 		ntySendBuffer(client, ack, NTY_LOGOUT_ACK_LENGTH+4);
+#else
+		ntylog("ntyLogoutPacketHandleRequest --> ");
+		U32 ackNum = *(U32*)(buffer+NTY_PROTO_ACKNUM_IDX)+1;
+		struct ev_loop *loop = ntyTcpServerGetMainloop();
+
+		struct sockaddr_in addr;
+		memcpy(&addr, &client->addr, sizeof(struct sockaddr_in));
+
+		int ret = ntyDeleteNodeFromHashTable(&addr, client->devId);
+		ASSERT(ret == 0);
+
+		ret = ntyReleaseClientNodeByDevID(loop, client->watcher, client->devId);
+		ASSERT(ret == 0);
+
+#endif
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);

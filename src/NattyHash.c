@@ -410,6 +410,49 @@ U8 ntyHashNodeClear(HashNode *node) {
 	return 0;
 }
 
+
+U8 ntyHashDictionaryClear(HashNode *node) {
+	if (node->list != NULL) {
+		HashNode *Link = node->list;
+		node->devid = Link->devid;
+		memset(node->info, 0, sizeof(Payload));
+		memcpy(node->info, Link->info, sizeof(Payload));
+		node->sockfd = Link->sockfd;
+		node->list = Link->list;
+
+		ntyHashNodeClear(Link);
+		Link = NULL;
+	} else {
+		node->devid = 0x0;
+		node->info = NULL;
+		node->sockfd = 0;
+		node->list = NULL;
+	}
+}
+
+U8 ntyHashLinkClear(HashNode *node) {
+	if (node->list != NULL) {
+		HashNode *Link = node->list;
+		node->devid = Link->devid;		
+		memcpy(node->info, Link->info, sizeof(HashNode));
+
+		node->sockfd = Link->sockfd;
+		node->list = Link->list;
+
+		ntyHashNodeClear(Link);
+	} else {
+	// node
+		node->devid = 0x0;
+		node->info = NULL;
+		node->sockfd = 0;
+		node->list = NULL;
+
+		free(node);
+	}
+}
+
+
+
 void* ntyHashInitialize(HashTable *table) {
 #if 0
 	table->Dictionary = (HashNode*)malloc(NATTY_DICTIONARY_LENGTH*sizeof(HashNode));
@@ -528,30 +571,21 @@ int ntyHashDelete(void *_self, U32 key, Payload* load) {
 		ntylog("ntyHashDelete");
 		return -2;
 	} else {
-		if (ntyPayloadCompare(node->info, load)) {
-			//delete node
-#if 0
-			memset(table->Dictionary[key], 0, sizeof(HashNode));
-#elif 0
-			table->Dictionary[key].devid = 0x0;
-			table->Dictionary[key].list = NULL;
 			
-			free(table->Dictionary[key].info);
-			table->Dictionary[key].info = NULL;
+		if (ntyPayloadCompare(node->info, load)) {
+			ntylog(" Delete Hash Table, ip:%d,port%d\n", load->srcip, load->sport);
+			//delete node
+			ntyHashDictionaryClear(node);
+			return 0;
 
-			return 0;
-#else
-			ntyHashNodeClear(node);
-			return 0;
-#endif
 		} else {
 			HashNode *iter = node->list;
 			HashNode *pre = node;
-
+				
 			while (iter != NULL) {
 				if (ntyPayloadCompare(iter->info, load)) {
-					pre->list = iter->list;
-					ntyHashNodeClear(iter);
+					ntyHashLinkClear(iter);
+					pre->list = NULL;
 					return 0;
 				}
 				pre = iter;
