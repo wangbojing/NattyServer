@@ -100,7 +100,7 @@ void nLogInfoWithTimePrefix(nLogCategory *cat, const char *format) {
 
 	zlog_info(cat, "%s", buffer);
 
-	nLogFinally();
+	//nLogFinally();
 }
 
 
@@ -173,6 +173,7 @@ void ntyLogInfo(const char *format, ...) {
 	
 	va_end(params);
 }
+
 
 //#define ntylog(format, ...) 		fprintf(stdout, format, ##__VA_ARGS__)
 
