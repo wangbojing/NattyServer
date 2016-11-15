@@ -1267,6 +1267,142 @@ static const ProtocolFilter ntyVoiceAckFilter = {
 	ntyVoiceAckPacketHandleRequest,
 };
 
+#if 0
+void ntyEFenceDataReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
+	const Client *client = obj;
+	if (buffer[NTY_PROTO_TYPE_IDX] == NTY_PROTO_EFENCE_DATA_REQ) {
+		
+		
+	} else if (ntyPacketGetSuccessor(_self) != NULL) {
+		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
+		(*succ)->handleRequest(succ, buffer, length, obj);
+	} else {
+		ntylog("Can't deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);
+	}
+}
+
+static const ProtocolFilter ntyEFenceDataReqFilter = {
+	sizeof(Packet),
+	ntyPacketCtor,
+	ntyPacketDtor,
+	ntyPacketSetSuccessor,
+	ntyPacketGetSuccessor,
+	ntyEFenceDataReqPacketHandleRequest,
+};
+
+
+
+void ntyEFenceDataAckPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
+	const Client *client = obj;
+	if (buffer[NTY_PROTO_TYPE_IDX] == NTY_PROTO_EFENCE_DATA_ACK) {
+		
+		
+	} else if (ntyPacketGetSuccessor(_self) != NULL) {
+		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
+		(*succ)->handleRequest(succ, buffer, length, obj);
+	} else {
+		ntylog("Can't deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);
+	}
+}
+
+static const ProtocolFilter ntyEFenceDataAckFilter = {
+	sizeof(Packet),
+	ntyPacketCtor,
+	ntyPacketDtor,
+	ntyPacketSetSuccessor,
+	ntyPacketGetSuccessor,
+	ntyEFenceDataAckPacketHandleRequest,
+};
+#endif
+
+//Set EFence 1:4:lng1|lat1;lng2|lat2;lng3|lat3;lng4|lat4:Efence1
+//Set EFenceList 1:4:lng1|lat1;lng2|lat2;lng3|lat3;lng4|lat4:Efence1#2:4:lng1|lat1;lng2|lat2;lng3|lat3;lng4|lat4:Efence1:appid:startTime:endTime
+void ntyEFenceReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
+	const Client *client = obj;
+	if (buffer[NTY_PROTO_TYPE_IDX] == NTY_PROTO_EFENCE_REQ) {
+		C_DEVID toId = 0, fromId = 0;
+		
+		ntyU8ArrayToU64(buffer+NTY_PROTO_EFENCE_SLEFID_IDX, &fromId);
+		ntyU8ArrayToU64(buffer+NTY_PROTO_EFENCE_DESTID_IDX, &toId);
+
+		if (toId == NTY_PROTO_MULTICAST_DEVID) {
+			U16 recByteCount = *(U16*)(&buffer[NTY_PROTO_EFENCE_CONTENT_COUNT_IDX]);
+			U8 *data = (U8*)malloc((recByteCount+1)*sizeof(U8));
+			
+			memset(data, 0, (recByteCount+1));
+			memcpy(data, buffer+NTY_PROTO_EFENCE_CONTENT_IDX, recByteCount);
+			ntylog("data : %s\n", data);
+
+			ntyBoardcastAllFriends(client, data, recByteCount); //mulcast all client
+
+			free(data);
+			return ;
+		}
+
+		void *pRBTree = ntyRBTreeInstance();
+		Client *toClient = (Client*)ntyRBTreeInterfaceSearch(pRBTree, toId);
+		if (toClient == NULL) { //no Exist
+			//device is not exist
+			ntySendBuffer(client, buffer, length);
+			return ;
+		} 
+
+		ntySendBuffer(toClient, buffer, length);
+		
+	} else if (ntyPacketGetSuccessor(_self) != NULL) {
+		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
+		(*succ)->handleRequest(succ, buffer, length, obj);
+	} else {
+		ntylog("Can't deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);
+	}
+}
+
+static const ProtocolFilter ntyEFenceReqFilter = {
+	sizeof(Packet),
+	ntyPacketCtor,
+	ntyPacketDtor,
+	ntyPacketSetSuccessor,
+	ntyPacketGetSuccessor,
+	ntyEFenceReqPacketHandleRequest,
+};
+
+
+void ntyEFenceAckPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
+	const Client *client = obj;
+	if (buffer[NTY_PROTO_TYPE_IDX] == NTY_PROTO_EFENCE_ACK) {
+		C_DEVID toId = 0, fromId = 0;
+		
+		ntyU8ArrayToU64(buffer+NTY_PROTO_EFENCE_SLEFID_IDX, &fromId);
+		ntyU8ArrayToU64(buffer+NTY_PROTO_EFENCE_DESTID_IDX, &toId);
+
+		void *pRBTree = ntyRBTreeInstance();
+		Client *toClient = (Client*)ntyRBTreeInterfaceSearch(pRBTree, toId);
+		if (toClient == NULL) { //no Exist
+			//device is not exist
+			ntySendBuffer(client, buffer, length);
+			return ;
+		} 
+
+		ntySendBuffer(toClient, buffer, length);
+		
+	} else if (ntyPacketGetSuccessor(_self) != NULL) {
+		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
+		(*succ)->handleRequest(succ, buffer, length, obj);
+	} else {
+		ntylog("Can't deal with: %d\n", buffer[NTY_PROTO_TYPE_IDX]);
+	}
+}
+
+static const ProtocolFilter ntyEFenceAckFilter = {
+	sizeof(Packet),
+	ntyPacketCtor,
+	ntyPacketDtor,
+	ntyPacketSetSuccessor,
+	ntyPacketGetSuccessor,
+	ntyEFenceAckPacketHandleRequest,
+};
+
+
 
 static void ntySetSuccessor(void *_filter, void *_succ) {
 	ProtocolFilter **filter = _filter;
@@ -1301,25 +1437,42 @@ const void *pNtyICCIDReqFilter = &ntyICCIDReqFilter;
 const void *pNtyVoiceReqFilter = &ntyVoiceReqFilter;
 const void *pNtyVoiceAckFilter = &ntyVoiceAckFilter;
 
+//const void *pNtyEFenceDataReqFilter = &ntyEFenceDataReqFilter;
+//const void *pNtyEFenceDataAckFilter = &ntyEFenceDataAckFilter;
+
+const void *pNtyEFenceReqFilter = &ntyEFenceReqFilter;
+const void *pNtyEFenceAckFilter = &ntyEFenceAckFilter;
 
 
 void* ntyProtocolFilterInit(void) {
 	void *pHeartBeatFilter = New(pNtyHeartBeatFilter);
 	void *pLoginFilter = New(pNtyLoginFilter);
 	void *pLogoutFilter = New(pNtyLogoutFilter);
+	
 	void *pP2PAddrReqFilter = New(pNtyP2PAddrReqFilter);
+	
 	void *pUserDataPacketFilter = New(pNtyUserDataPacketFilter);
 	void *pUserDataPacketAckFilter = New(pNtyUserDataPacketAckFilter);
+	
 	void *pP2PConnectNotifyPacketFilter = New(pNtyP2PConnectNotifyPacketFilter);
 	void *pP2PConnectNotifyPacketAckFilter = New(pNtyP2PConnectNotifyPacketAckFilter);
 	void *pTimeCheckFilter = New(pNtyTimeCheckFilter);
+	
 	void *pUnBindDeviceFilter = New(pNtyUnBindDeviceFilter);
 	void *pBindDeviceFilter = New(pNtyBindDeviceFilter);
+	
 	void *pMutlcastReqFilter = New(pNtyMutlcastReqFilter);
 	void *pMutlcastAckFilter = New(pNtyMutlcastAckFilter);
 	void *pICCIDReqFilter = New(pNtyICCIDReqFilter);
+	
 	void *pVoiceReqFilter = New(pNtyVoiceReqFilter);
 	void *pVoiceAckFilter = New(pNtyVoiceAckFilter);
+
+	//void *pEFenceDataReqFilter = New(pNtyEFenceDataReqFilter);
+	//void *pEFenceDataAckFilter = New(pNtyEFenceDataAckFilter);
+
+	void *pEFenceReqFilter = New(pNtyEFenceReqFilter);
+	void *pEFenceAckFilter = New(pNtyEFenceAckFilter);
 
 	ntySetSuccessor(pHeartBeatFilter, pLoginFilter);
 	ntySetSuccessor(pLoginFilter, pLogoutFilter);
@@ -1335,10 +1488,15 @@ void* ntyProtocolFilterInit(void) {
 	ntySetSuccessor(pBindDeviceFilter, pMutlcastReqFilter);
 	ntySetSuccessor(pMutlcastReqFilter, pMutlcastAckFilter);
 	ntySetSuccessor(pMutlcastAckFilter, pICCIDReqFilter);
+	
 	ntySetSuccessor(pICCIDReqFilter, pVoiceReqFilter);
 	ntySetSuccessor(pVoiceReqFilter, pVoiceAckFilter);
-	ntySetSuccessor(pVoiceAckFilter, NULL);
+	
+	ntySetSuccessor(pVoiceAckFilter, pEFenceReqFilter);
+	ntySetSuccessor(pEFenceReqFilter, pEFenceAckFilter);
+	ntySetSuccessor(pEFenceAckFilter, NULL);
 
+	
 	/*
 	 * add your Filter
 	 * for example:

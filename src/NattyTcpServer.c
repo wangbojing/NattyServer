@@ -75,6 +75,11 @@ static int ntySetNonblock(int fd) {
 	return 0;
 }
 
+static int ntySetReUseAddr(int fd) {
+	int reuse = 1;
+	return setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse));
+}
+
 static int ntyTcpRecv(int fd, U8 *buffer, int length, struct ev_io *watcher, struct ev_loop *loop) {
 	
 	int rLen = 0;
@@ -319,6 +324,8 @@ void ntyOnAcceptEvent(struct ev_loop *loop, struct ev_io *watcher, int revents){
 		close(client_fd);
 		return ;
 	}
+
+	ntySetReUseAddr(client_fd);
 	
 	ntylog(" %d.%d.%d.%d:%d --> New Client Connected \n", 
 		*(unsigned char*)(&client_addr.sin_addr.s_addr), *((unsigned char*)(&client_addr.sin_addr.s_addr)+1),													
@@ -389,6 +396,7 @@ int ntyTcpServerProcess(const void *_self) {
 		ntylog("natty tcp set nonblock failed\n");
 		return -2;
 	}
+	ntySetReUseAddr(server->sockfd);
 	
 	ev_io_init(&socket_accept, ntyOnAcceptEvent, server->sockfd, EV_READ);
 	ev_io_start(loop, &socket_accept);

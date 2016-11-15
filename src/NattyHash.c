@@ -404,8 +404,11 @@ U8 ntyHashNodeClear(HashNode *node) {
 	node->devid = 0x0;
 	node->list = NULL;
 
+	ntylog("ntyHashNodeClear --> node\n");
 	free(node->info);
 	node->info = NULL;
+	free(node);
+	ntylog("ntyHashNodeClear --> end\n");
 
 	return 0;
 }
