@@ -1,0 +1,87 @@
+# Travis CI script
+
+language: c
+
+os:
+- linux
+- osx
+
+sudo: false
+
+compiler:
+- gcc
+
+env:
+  global:
+    # Note: Secure variables must be global!
+    #
+    # Bintray upload credentials. (BINTRAY_USER and BINTRAY_KEY are encrypted!)
+    # These are used to publish the czmq jni bindings to bintray when the deploy
+    # step is triggered.
+    - secure: "ZMvDhR/PxayFeHd70j8J5f260ydu4pSkMV4HFAjRd1e0YuYCy5PUCFIbXWpZ8XujlxcFVSOkfaekIvs4P5KejkKNxoJM+caJ4DAUW/zwtsrHhL1jT7HsCFdEpL2vcOZFXsfWBXkniVU800vgaV+YK4jfewyv0rPTQaImuMlrgRU="
+    - secure: "Tc1HPM1HnWr4ZwtPKFMasrLLFgW0WHMZs6ncBFZMhKVKTjUnBO7zdKw4ZXvSEaa1pxqvJhuQRjcbmVL2H8NmT3IdWg7ToSTuDHazUP03QBGvXVKMxIhnPI9cOzsz6LQUklNY4WihairAwlt8hnD+85pU1vl0hEhMNmHLJ7RiT+4="
+    - BINTRAY_USER_ORG=zeromq
+  matrix:
+    - BUILD_TYPE=default
+    - BUILD_TYPE=stable_zmq ZMQ_REPO=zeromq2-x
+    - BUILD_TYPE=stable_zmq ZMQ_REPO=zeromq3-x
+    - BUILD_TYPE=stable_zmq ZMQ_REPO=zeromq4-x
+    - BUILD_TYPE=stable_zmq ZMQ_REPO=zeromq4-1
+    - BUILD_TYPE=cmake
+    - BUILD_TYPE=bindings BINDING=python
+
+matrix:
+  include:
+  - env: BUILD_TYPE=valgrind
+    os: linux
+    compiler: gcc
+    addons:
+      apt:
+        packages:
+        - valgrind
+  - env: BUILD_TYPE=android
+    os: osx
+    compiler: clang
+  - env: BUILD_TYPE=android
+    os: linux
+    compiler: clang
+  - env: BUILD_TYPE=bindings BINDING=jni
+    os: linux
+    compiler: clang
+    addons:
+      apt:
+        packages:
+        - openjdk-7-jdk
+
+addons:
+  apt:
+    packages:
+    - uuid-dev
+
+before_install:
+- if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew reinstall ossp-uuid binutils ; fi
+# workaround for Travis OSX CI bug, hasn't been fixed in a month so time for a hack
+- if [ $TRAVIS_OS_NAME == "osx" ] ; then brew uninstall libtool && brew install libtool ; fi
+
+# ZMQ stress tests need more open socket (files) than the usual default
+# On OSX, it seems the way to set the max files limit is constantly changing, so
+# try to use all known knobs to ensure compatibility across various versions
+before_script:
+- if [ $TRAVIS_OS_NAME == "osx" ] ; then sudo sysctl -w kern.maxfiles=64000 ; sudo sysctl -w kern.maxfilesperproc=64000 ; sudo launchctl limit maxfiles 64000 64000 ; ulimit -n 64000 ; fi
+- if [ $BUILD_TYPE != "valgrind" ] ; then ulimit -n 64000; fi
+- ./autogen.sh
+
+# Build and check this project according to the BUILD_TYPE
+script: ./ci_build.sh
+before_deploy: . ./ci_deploy.sh
+deploy:
+  provider: releases
+  api_key:
+    secure: mmpmM0uhaMIKjL7ZkZduDOHkhAWA4Ngaq2FtjQVnUXrsCelSObSLe6BwcvvPp7yYGW44mAmoYPEPWAADatt+6bdVCcf0hgSJS02G4EiuxRAOiZ/ffTaAOhaqfmjuwmZ1cftFUFwehS9JEE9Be59Hv+tGnOOZSkxMWhkQ7xTvidQ=
+  file_glob: true
+  file: ${CZMQ_DEPLOYMENT}
+  skip_cleanup: true
+  on:
+    branch: master
+    tags: true
+    condition: $TRAVIS_OS_NAME =~ (linux) && ($BUILD_TYPE =~ (default) || ($BUILD_TYPE =~ (bindings) && $BINDING =~ (jni)))

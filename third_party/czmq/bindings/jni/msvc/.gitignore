@@ -1,0 +1,8 @@
+*.opensdf
+*.suo
+*.sdf
+*.user
+*.aps
+*.log
+*.tlog
+ipch/

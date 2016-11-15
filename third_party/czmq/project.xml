@@ -1,0 +1,82 @@
+<project
+    name = "CZMQ"
+    description = "The high-level C binding for 0MQ"
+    script = "zproject.gsl"
+    email = "zeromq-dev@lists.zeromq.org"
+    license = "MPLv2"
+    url = "https://github.com/zeromq/czmq"
+    repository = "https://github.com/zeromq/czmq"
+    >
+    <include filename = "license.xml" />
+    <version major = "4" minor = "0" patch = "2" />
+    <use project = "libzmq" />
+    <use project = "uuid" optional = "1" implied = "1" />
+    <use project = "systemd" optional = "1" implied = "1" min_major = "200" />
+    <target name = "*" />
+
+    <!-- These classes have an API model -->
+    <class name = "zactor" />
+    <class name = "zarmour" />
+    <class name = "zcert" />
+    <class name = "zcertstore" />
+    <class name = "zchunk" />
+    <class name = "zclock" />
+    <class name = "zconfig" />
+    <class name = "zdigest" />
+    <class name = "zdir" />
+    <class name = "zdir_patch" />
+    <class name = "zfile" />
+    <class name = "zframe" />
+    <class name = "zhash" />
+    <class name = "zhashx" />
+    <class name = "ziflist" />
+    <class name = "zlist" />
+    <class name = "zlistx" />
+    <class name = "zloop" />
+    <class name = "zmsg" />
+    <class name = "zpoller" />
+    <class name = "zproc" />
+    <class name = "zsock" />
+    <class name = "zstr" />
+    <class name = "ztimerset" />
+    <class name = "ztrie" />
+    <class name = "zuuid" />
+
+    <!-- These classes have no API model -->
+    <class name = "zauth" state = "stable" />
+    <class name = "zbeacon" state = "stable" />
+    <class name = "zgossip" state = "stable" />
+    <class name = "zmonitor" state = "stable" />
+    <class name = "zproxy" state = "stable" />
+    <class name = "zrex" state = "stable" />
+    <class name = "zsys" state = "stable" />
+
+    <!-- Models that we build using GSL -->
+    <model name = "sockopts" />
+    <model name = "zgossip" />
+    <model name = "zgossip_msg" />
+    <class name = "zgossip_msg" private = "1" />
+
+    <!-- Other source files in src that we need to package -->
+    <extra name = "zsock_option.inc" />
+    <extra name = "zgossip_engine.inc" />
+    <extra name = "zhash_primes.inc" />
+    <extra name = "foreign/sha1/sha1.inc_c" />
+    <extra name = "foreign/sha1/sha1.h" />
+    <extra name = "foreign/slre/slre.inc_c" />
+    <extra name = "foreign/slre/slre.h" />
+    <extra name = "foreign/slre/readme.txt" />
+
+    <!-- Command-line utilities -->
+    <main name = "zmakecert" />
+
+    <!-- target configuration -->
+    <target name = "nuget">
+        <option name = "id" value = "czmq_vc120" />
+        <option name = "platformtoolset" value = "v120" />
+        <option name = "dependency">
+            <item name = "libzmq_vc120" value = "4.2.0.0" />
+        </option>
+    </target>
+
+</project>
