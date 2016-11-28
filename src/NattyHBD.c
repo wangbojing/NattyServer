@@ -43,7 +43,8 @@
 
 
 #include "NattyHBD.h"
-#include "NattyUdpServer.h"
+//#include "NattyUdpServer.h"
+#include "NattyTcpServer.h"
 #include "NattyConfig.h"
 #include "NattyRBTree.h"
 #include "NattyFilter.h"
@@ -71,11 +72,21 @@ int ntyHeartBeatDetectItem(void *node, void *mainloop, TIMESTAMP curStamp) {
 		return -1;
 	}
 	ntylog(" ntyHeartBeatDetectItem --> client:%lld,  rNode:%lld\n", client->devId, rNode->key);
+#if 0
 	if (client->devId != rNode->key) {
 		ntylog(" ntyHeartBeatDetectItem --> client->devId != rNode->key\n");
 #if 1 //RBTREE after before
 		client->devId = rNode->key;
 #endif
+	}
+#endif
+	if (client->devId == NATTY_NULL_DEVID) {
+		
+		ntylog("Client DevID == 0 ---> Addr : %d.%d.%d.%d:%d \n", *(unsigned char*)(&client->addr.sin_addr.s_addr), *((unsigned char*)(&client->addr.sin_addr.s_addr)+1),													
+				*((unsigned char*)(&client->addr.sin_addr.s_addr)+2), *((unsigned char*)(&client->addr.sin_addr.s_addr)+3),													
+				client->addr.sin_port);	
+		
+		return 0;
 	}
 
 	if (duration >  NATTY_HEARTBEAT_THRESHOLD) { //release client

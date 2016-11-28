@@ -300,10 +300,12 @@ static int ntyAddClientNodeToRBTree(unsigned char *buffer, int length, const voi
 	const Client *client = obj;
 	void *pRBTree = ntyRBTreeInstance();
 
+	ntylog(" DevId :%lld\n", client->devId);
+	if (client->devId == NATTY_NULL_DEVID) return -1;
+
 	Client *selfNode = ntyRBTreeInterfaceSearch(pRBTree, client->devId);
 	if (selfNode == NULL) {
 		Client *pClient = (Client*)malloc(sizeof(Client)); //new selfnode
-		pClient->sockfd = client->sockfd;
 		pClient->clientType = client->clientType;
 		pClient->addr.sin_addr.s_addr = client->addr.sin_addr.s_addr;
 		pClient->addr.sin_port = client->addr.sin_port;
@@ -317,6 +319,7 @@ static int ntyAddClientNodeToRBTree(unsigned char *buffer, int length, const voi
 #if ENABLE_NATTY_TIME_STAMP //TIME Stamp 	
 		pClient->stamp = ntyTimeStampGenrator();
 #endif
+		pClient->sockfd = client->sockfd;
 		if (client->clientType == PROTO_TYPE_TCP) {
 			pClient->watcher = client->watcher;
 		} else {
@@ -374,12 +377,11 @@ static int ntyAddClientNodeToRBTree(unsigned char *buffer, int length, const voi
 		if(0 == ntyReleaseClientNodeHashTable(&pClient->addr)) { //release before hash node
 			ntylog(" ntyAddClientNodeToRBTree --> Ip have changed and release hash table\n");
 		}
-		if(0 == ntyReleaseClientNodeSocket(loop, pClient->watcher, pClient->sockfd)) {
+		if(0 == ntyReleaseClientNodeSocket(loop, pClient->watcher, pClient->watcher->fd)) {
 			ntylog(" ntyAddClientNodeToRBTree --> Ip have changed and release client socket\n");
 		}
 #endif
 
-		pClient->sockfd = client->sockfd;
 		pClient->clientType = client->clientType;
 		pClient->addr.sin_addr.s_addr = client->addr.sin_addr.s_addr;
 		pClient->addr.sin_port = client->addr.sin_port;
@@ -396,6 +398,7 @@ static int ntyAddClientNodeToRBTree(unsigned char *buffer, int length, const voi
 #if ENABLE_NATTY_TIME_STAMP //TIME Stamp 	
 		pClient->stamp = ntyTimeStampGenrator();
 #endif
+		pClient->sockfd = client->sockfd;
 		if (client->clientType == PROTO_TYPE_TCP) {
 			pClient->watcher = client->watcher;
 		} else {
@@ -468,7 +471,8 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 		Client *pClient = (Client*)ntyRBTreeInterfaceSearch(pRBTree, client->devId);
 		if (pClient != NULL) {
 			ntySendFriendsTreeIpAddr(pClient, 1);
-			
+
+			ntylog(" Buffer Version : %x\n", buffer[NEY_PROTO_VERSION_IDX]);
 			if (buffer[NEY_PROTO_VERSION_IDX] == NTY_PROTO_DEVICE_VERSION)
 				ntySendDeviceTimeCheckAck(pClient, client->ackNum+1);
 		}
@@ -1561,7 +1565,7 @@ void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length, 
 			if(id == 0) { //have no client id
 				ntylog(" ntyProtocolFilterProcess --> Release Client\n");
 				struct ev_loop *loop = ntyTcpServerGetMainloop();
-				ntyReleaseClientNodeSocket(loop, client->watcher, client->sockfd);
+				ntyReleaseClientNodeSocket(loop, client->watcher, client->watcher->fd);
 
 				return ;
 			} else { //have part data
@@ -1672,6 +1676,7 @@ U32 ntyGenCrcValue(U8 *buf, int length) {
 
 #if 1
 
+
 int ntyReleaseClientNodeByNode(struct ev_loop *loop, void *node) {
 	Client *client = node;
 	if (client == NULL) return -4;
@@ -1686,7 +1691,7 @@ int ntyReleaseClientNodeByNode(struct ev_loop *loop, void *node) {
 	}
 #endif
 
-	ret = ntyReleaseClientNodeSocket(loop, client->watcher, client->sockfd);
+	ret = ntyReleaseClientNodeSocket(loop, client->watcher, client->watcher->fd);
 	ASSERT(ret == 0);
 
 	void *tree = ntyRBTreeInstance();
@@ -1705,7 +1710,7 @@ int ntyReleaseClientNodeByDevID(struct ev_loop *loop, struct ev_io *watcher, C_D
 		ntylog(" ntyReleaseClientNodeByDevID --> Client == NULL\n");
 		return -1;
 	}
-	ntyReleaseClientNodeSocket(loop, client->watcher, client->sockfd);
+	ntyReleaseClientNodeSocket(loop, client->watcher, client->watcher->fd);
 	
 	ret = ntyRBTreeInterfaceDelete(tree, devid);
 	ASSERT(ret == 0);

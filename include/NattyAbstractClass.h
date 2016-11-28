@@ -84,6 +84,11 @@
 
 #define ASSERT(x)			assert(x)
 
+
+#define NATTY_NULL_DEVID				0x0
+#define NATTY_HOLDER_DEVID				0x1
+
+
 typedef unsigned long long U64;
 typedef signed long long S64;
 typedef unsigned int U32;

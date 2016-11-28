@@ -252,7 +252,7 @@ int ntyClientCompare(const UdpClient *clientA, const UdpClient *clientB) {
 
 int ntySendBuffer(const UdpClient *client, unsigned char *buffer, int length) {
 	if (client == NULL) return -1;
-	if (client->sockfd == 0) return -1;
+	//if (client->sockfd == 0) return -1; //socket stored in watcher so delete it.
 
 #if 1
 	U32 Crc = ntyGenCrcValue(buffer, length-sizeof(U32));
@@ -262,7 +262,11 @@ int ntySendBuffer(const UdpClient *client, unsigned char *buffer, int length) {
 	if (client->clientType == PROTO_TYPE_UDP) {
 		return sendto(client->sockfd, buffer, length, 0, (struct sockaddr *)&client->addr, sizeof(struct sockaddr_in));
 	} else if (client->clientType == PROTO_TYPE_TCP) {
+#if 0
 		int ret = send(client->sockfd, buffer, length, 0);
+#else
+		int ret = send(client->watcher->fd, buffer, length, 0);
+#endif
 		if (ret == -1) {
 			ntylog(" tcp send errno : %d\n", errno);
 		} else {
