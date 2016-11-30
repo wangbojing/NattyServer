@@ -124,14 +124,20 @@ static int ntyTcpRecv(int fd, U8 *buffer, int length, struct ev_io *watcher, str
 			}
 	
 			ntyBoardcastAllFriendsNotifyDisconnect(devid);
-	
+#if 0	
 			if (0 == ntyReleaseClientNodeByAddr(loop, &client_addr, watcher)) {
 				ntylog("Release Client Node Success\n");
 			} else {
 				ntylog("Release Client Node Failed\n");
 				ntyReleaseClientNodeSocket(loop, watcher, watcher->fd);
 			}
-	
+#else
+			int ret = ntyReleaseClientNodeByDevID(loop, watcher, devid);
+			ASSERT(ret == 0);
+
+			ret = ntyDeleteNodeFromHashTable(&client_addr, devid);
+			ASSERT(ret == 0);
+#endif
 			break;
 		} else {
 			//time_t cTime = time(NULL);
@@ -341,7 +347,7 @@ void ntyOnAcceptEvent(struct ev_loop *loop, struct ev_io *watcher, int revents){
 	int ret = ntyInsertNodeToHashTable(&client_addr, 0x1);
 	if (ret == 0) { 			
 		ntylog("Hash Table Node Insert Success\n");
-	}
+	} 
 #endif
 
 

@@ -337,6 +337,7 @@ void hash(const void *key, size_t len, const uint32_t seed, size_t r_hash[2])
 #define NTY_HASH_CRC_KEY					0x12345678ul
 
 static U32 u32HashCrcTable[NTY_HASH_CRCTABLE_LENGTH] = {0};
+HashNode* ntyHashSearchNode(void *_self, U32 key, Payload* load);
 
 
 static void ntyGenHashCrcTable(void) {
@@ -492,7 +493,13 @@ int ntyHashInsert(void *_self, U32 key, Payload* load, C_DEVID id, int fd) {
 	if (load == NULL) return -1;
 	if (id == 0x0) return -1;
 
-	HashNode *node = &table->Dictionary[key];
+	HashNode *node = ntyHashSearchNode(table, key, load);
+	if (node != NULL) {
+		ntylog(" Ip Addr conflict , node id --> %lld, please check app ip addr\n", node->devid);
+		return -2;
+	}
+
+	node = &table->Dictionary[key];
 	//ntylog("ntyHashInsert\n");
 #if 1
 	if (node->devid == 0x0) { //no exist hash node
@@ -571,7 +578,7 @@ int ntyHashDelete(void *_self, U32 key, Payload* load) {
 	
 	HashNode *node = &table->Dictionary[key];
 	if (node->info == NULL) {
-		ntylog("ntyHashDelete");
+		ntylog("ntyHashDelete\n");
 		return -2;
 	} else {
 			
@@ -605,8 +612,10 @@ int ntyHashUpdate(void *_self, U32 key, Payload* load, C_DEVID id, int fd) {
 	if (node == NULL) {
 		return -1;
 	}
-
-	ntylog(" ntyHashUpdate --> %lx\n", (long)node);
+	if ((node->devid != NATTY_NULL_DEVID) && (node->devid != NATTY_HOLDER_DEVID)) {
+		ntylog(" ntyHashUpdate --> %lld\n", node->devid);
+		return -2;
+	}
 	
 	node->devid = id;
 	node->sockfd = fd;

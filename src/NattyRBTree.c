@@ -435,16 +435,24 @@ int ntyRBTreeOperaDelete(void *_self, C_DEVID key) {
 #if 1
 			self->count --;
 #endif
+#if 1
+			free(node->value);
+			free(node);
+#endif
 			self->rbtree_delete_lock = 0;
 		} else {
 			ntydbg(" ntyRBTreeOperaDelete --> have delete node\n"); 
 			return 2;
 		}
 #endif
+#if 0
 		free(node->value);
+#endif
 	}
 #endif
+#if 0
 	free(node);
+#endif
 #if 0 //Update Assertion `(list-friends) == count' failed. 
 	self->count --;
 #endif

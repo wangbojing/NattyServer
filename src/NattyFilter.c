@@ -302,9 +302,17 @@ static int ntyAddClientNodeToRBTree(unsigned char *buffer, int length, const voi
 
 	ntylog(" DevId :%lld\n", client->devId);
 	if (client->devId == NATTY_NULL_DEVID) return -1;
+	
+	struct sockaddr_in addr;
+	memcpy(&addr, &client->addr, sizeof(struct sockaddr_in));
 
 	Client *selfNode = ntyRBTreeInterfaceSearch(pRBTree, client->devId);
 	if (selfNode == NULL) {
+		if (0 != ntyUpdateNodeToHashTable(&addr, client->devId, client->sockfd)) {
+			ntylog(" ntyAddClientNodeToRBTree --> HashTable Node Id is Conflict\n");
+			return -2;
+		}
+		
 		Client *pClient = (Client*)malloc(sizeof(Client)); //new selfnode
 		pClient->clientType = client->clientType;
 		pClient->addr.sin_addr.s_addr = client->addr.sin_addr.s_addr;
@@ -346,7 +354,7 @@ static int ntyAddClientNodeToRBTree(unsigned char *buffer, int length, const voi
 			//return ;
 		}
 #endif
-
+		
 		//insert rb-tree
 		if (ntyRBTreeInterfaceInsert(pRBTree, pClient->devId, pClient)) {
 			ntylog("Client is Exist or conflict Handle\n");
@@ -357,7 +365,6 @@ static int ntyAddClientNodeToRBTree(unsigned char *buffer, int length, const voi
 		}
 		ntylog(" New Client RBTREENODE --> %lld\n", pClient->devId);	
 		
-		ntyUpdateNodeToHashTable(&pClient->addr, pClient->devId, pClient->sockfd);
 #if 1
 		ntyBoardcastAllFriendsNotifyConnect(pClient->devId);
 #endif
@@ -372,6 +379,13 @@ static int ntyAddClientNodeToRBTree(unsigned char *buffer, int length, const voi
 			*((unsigned char*)(&selfNode->addr.sin_addr.s_addr)+2), *((unsigned char*)(&selfNode->addr.sin_addr.s_addr)+3),													
 			selfNode->addr.sin_port);
 #endif
+
+		int ret = ntyUpdateNodeToHashTable(&addr, client->devId, client->sockfd);
+		if (ret != 0) { 			
+			ntylog(" ntyAddClientNodeToRBTree --> HashTable Node Id is Conflict\n");
+			return -2;
+		}
+		
 		struct ev_loop *loop = ntyTcpServerGetMainloop();
 #if 1 //Release Before Node
 		if(0 == ntyReleaseClientNodeHashTable(&pClient->addr)) { //release before hash node
@@ -429,21 +443,7 @@ static int ntyAddClientNodeToRBTree(unsigned char *buffer, int length, const voi
 			}
 #endif
 
-
 		}
-
-		
-#if 0 //Insert Hash table
-		int ret = ntyInsertNodeToHashTable(&pClient->addr, pClient->devId);
-		if (ret == 0) { 			
-			ntylog("Hash Table Node Insert Success");
-		}
-#else
-		int ret = ntyUpdateNodeToHashTable(&pClient->addr, pClient->devId, pClient->sockfd);
-		if (ret == 0) { 			
-			ntylog("Hash Table Node Insert Success");
-		}
-#endif
 
 		return 2;
 	} 
@@ -556,6 +556,7 @@ void ntyLogoutPacketHandleRequest(const void *_self, U8 *buffer, int length, con
 		memcpy(ack+1, &ackNum, NTY_ACKNUM_LENGTH);
 		ntySendBuffer(client, ack, NTY_LOGOUT_ACK_LENGTH+4);
 #else
+#if 0
 		ntylog("ntyLogoutPacketHandleRequest --> ");
 		U32 ackNum = *(U32*)(buffer+NTY_PROTO_ACKNUM_IDX)+1;
 		struct ev_loop *loop = ntyTcpServerGetMainloop();
@@ -563,11 +564,12 @@ void ntyLogoutPacketHandleRequest(const void *_self, U8 *buffer, int length, con
 		struct sockaddr_in addr;
 		memcpy(&addr, &client->addr, sizeof(struct sockaddr_in));
 
-		int ret = ntyDeleteNodeFromHashTable(&addr, client->devId);
+		int ret = ntyReleaseClientNodeByDevID(loop, client->watcher, client->devId);
 		ASSERT(ret == 0);
 
-		ret = ntyReleaseClientNodeByDevID(loop, client->watcher, client->devId);
-		ASSERT(ret == 0);
+		ret = ntyDeleteNodeFromHashTable(&addr, client->devId);
+		//ASSERT(ret == 0);
+#endif
 
 #endif
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
@@ -1680,7 +1682,11 @@ U32 ntyGenCrcValue(U8 *buf, int length) {
 int ntyReleaseClientNodeByNode(struct ev_loop *loop, void *node) {
 	Client *client = node;
 	if (client == NULL) return -4;
-
+#if 0
+	ntylog("ntyDeleteNodeFromHashTable Start --> %d.%d.%d.%d:%d \n", *(unsigned char*)(&client->addr.sin_addr.s_addr), *((unsigned char*)(&client->addr.sin_addr.s_addr)+1),													
+				*((unsigned char*)(&client->addr.sin_addr.s_addr)+2), *((unsigned char*)(&client->addr.sin_addr.s_addr)+3),													
+				client.addr->sin_port);
+#endif
 	int ret = ntyDeleteNodeFromHashTable(&client->addr, client->devId);
 	ASSERT(ret == 0);
 
