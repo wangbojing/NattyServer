@@ -181,7 +181,7 @@ int ntyMulticastServerSend(const void *_self, U8 *data, int length) {
 	
 	U32 Crc = ntyGenCrcValue(data, length-sizeof(U32));
 	memcpy(buffer, data, length);
-	buffer[NTY_PROTO_TYPE_IDX] = NTY_PROTO_MULTICAST_REQ;
+	buffer[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_MULTICAST_REQ;
 	memcpy(buffer+length-sizeof(U32), &Crc, sizeof(U32));
 	
 	return sendto(self->sockfd, data, length, 0, (struct sockaddr *)&self->addr, sizeof(struct sockaddr_in));

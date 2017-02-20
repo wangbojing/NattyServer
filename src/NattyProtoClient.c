@@ -217,8 +217,8 @@ static int ntyHeartBeatCb (NITIMER_ID id, void *user_data, int len) {
 	}
 	
 	buffer[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;	
-	buffer[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_REQ;	
-	buffer[NTY_PROTO_TYPE_IDX] = NTY_PROTO_HEARTBEAT_REQ;	
+	buffer[NTY_PROTO_PROTOTYPE_IDX] = (U8) MSG_REQ;	
+	buffer[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_HEARTBEAT_REQ;	
 #if 0
 	*(C_DEVID*)(&buffer[NTY_PROTO_DEVID_IDX]) = proto->devid;
 #else
@@ -249,8 +249,8 @@ void ntyProtoClientLogin(void *_self) {
 	U8 buffer[RECV_BUFFER_SIZE] = {0};	
 
 	buffer[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;	
-	buffer[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_REQ;	
-	buffer[NTY_PROTO_TYPE_IDX] = NTY_PROTO_LOGIN_REQ;
+	buffer[NTY_PROTO_PROTOTYPE_IDX] = (U8) MSG_REQ;	
+	buffer[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_LOGIN_REQ;
 #if 0
 	*(C_DEVID*)(&buffer[NTY_PROTO_DEVID_IDX]) = proto->devid;
 #else
@@ -271,8 +271,8 @@ void ntyProtoClientBind(void *_self, C_DEVID did) {
 	U8 buf[NORMAL_BUFFER_SIZE] = {0};	
 
 	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;	
-	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_REQ;	
-	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_BIND_REQ;
+	buf[NTY_PROTO_PROTOTYPE_IDX] = (U8) MSG_REQ;	
+	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_BIND_REQ;
 
 	memcpy(buf+NTY_PROTO_DEVID_IDX, &proto->selfId, sizeof(C_DEVID));
 	*(C_DEVID*)(&buf[NTY_PROTO_BIND_DEVICEID_IDX]) = did;
@@ -291,8 +291,8 @@ void ntyProtoClientUnBind(void *_self, C_DEVID did) {
 	U8 buf[NORMAL_BUFFER_SIZE] = {0};	
 
 	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;	
-	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_REQ;	
-	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_UNBIND_REQ;
+	buf[NTY_PROTO_PROTOTYPE_IDX] = (U8) MSG_REQ;	
+	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_UNBIND_REQ;
 
 	memcpy(buf+NTY_PROTO_DEVID_IDX, &proto->selfId, sizeof(C_DEVID));
 	memcpy(buf+NTY_PROTO_UNBIND_DEVICEID_IDX, &did, sizeof(C_DEVID));
@@ -311,8 +311,8 @@ void ntyProtoClientLogout(void *_self) {
 	U8 buf[RECV_BUFFER_SIZE] = {0};	
 
 	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;	
-	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_REQ;	
-	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_LOGOUT_REQ;
+	buf[NTY_PROTO_PROTOTYPE_IDX] = (U8) MSG_REQ;	
+	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_LOGOUT_REQ;
 	memcpy(buf+NTY_PROTO_DEVID_IDX, &proto->selfId, sizeof(C_DEVID));
 	
 	len = NTY_PROTO_LOGIN_REQ_CRC_IDX+sizeof(U32);				
@@ -342,8 +342,8 @@ void ntyProtoClientProxyReq(void *_self, C_DEVID toId, U8 *buf, int length) {
 	NattyProto *proto = _self;
 
 	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
-	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_REQ;	
-	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
+	buf[NTY_PROTO_PROTOTYPE_IDX] = (U8) MSG_REQ;	
+	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
 #if 0	
 	*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEVID_IDX]) = (C_DEVID) proto->devid;
 	*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEST_DEVID_IDX]) = toId;
@@ -367,8 +367,8 @@ void ntyProtoClientProxyAck(void *_self, C_DEVID toId, U32 ack) {
 	U8 buf[RECV_BUFFER_SIZE] = {0}; 
 	
 	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
-	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_DATAPACKET_ACK;
-	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_ACK; 
+	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_DATAPACKET_ACK;
+	buf[NTY_PROTO_PROTOTYPE_IDX] = (U8) MSG_ACK; 
 #if 0
 	*(C_DEVID*)(&buf[NTY_PROTO_DEVID_IDX]) = (C_DEVID) proto->devid;
 	*(C_DEVID*)(&buf[NTY_PROTO_DEST_DEVID_IDX]) = toId;		
@@ -390,8 +390,8 @@ void ntyProtoClientEfenceReq(void *_self, C_DEVID toId, U8 *buf, int length) {
 	NattyProto *proto = _self;
 
 	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
-	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_REQ;	
-	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_EFENCE_REQ;
+	buf[NTY_PROTO_PROTOTYPE_IDX] = (U8) MSG_REQ;	
+	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_EFENCE_REQ;
 
 	LOG("ntyProtoClientProxyReq");
 #if 1
@@ -418,8 +418,8 @@ void ntyProtoClientEfenceAck(void *_self, C_DEVID toId, U32 ack) {
 	U8 buf[RECV_BUFFER_SIZE] = {0}; 
 	
 	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
-	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_EFENCE_ACK;
-	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_ACK; 
+	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_EFENCE_ACK;
+	buf[NTY_PROTO_PROTOTYPE_IDX] = (U8) MSG_ACK; 
 #if 0
 	*(C_DEVID*)(&buf[NTY_PROTO_DEVID_IDX]) = (C_DEVID) proto->devid;		
 	*(U32*)(&buf[NTY_PROTO_ACKNUM_IDX]) = ack+1;
@@ -554,8 +554,8 @@ int ntySendDataPacket(C_DEVID toId, U8 *data, int length) {
 	
 #if 0
 	buf[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
-	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_REQ;	
-	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
+	buf[NTY_PROTO_PROTOTYPE_IDX] = (U8) MSG_REQ;	
+	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
 	*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEVID_IDX]) = (C_DEVID) proto->devid;
 	*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEST_DEVID_IDX]) = toId;
 	
@@ -815,7 +815,7 @@ int ntySendVoicePacket(U8 *buffer, int length, C_DEVID toId) {
 
 		pkt[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
 		pkt[NTY_PROTO_DEVTYPE_IDX] = NTY_PROTO_CLIENT_ANDROID;
-		pkt[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_REQ;	
+		pkt[NTY_PROTO_PROTOTYPE_IDX] = (U8) MSG_REQ;	
 		pkt[NTY_PROTO_VOICEREQ_TYPE_IDX] = NTY_PROTO_VOICE_REQ;
 
 		memcpy(pkt+NTY_PROTO_VOICEREQ_SELFID_IDX, &proto->selfId, sizeof(C_DEVID));
@@ -953,7 +953,7 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 	NattyProtoOpera * const *protoOpera = arg;
 	Network *pNetwork = ntyNetworkInstance();
 	
-	if (buf[NTY_PROTO_TYPE_IDX] == NTY_PROTO_LOGIN_ACK) {
+	if (buf[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_LOGIN_ACK) {
 		int i = 0;
 		
 		int count = ntyU8ArrayToU16(&buf[NTY_PROTO_LOGIN_ACK_FRIENDS_COUNT_IDX]);
@@ -999,7 +999,7 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 
 #endif
 		
-	} else if (buf[NTY_PROTO_TYPE_IDX] == NTY_PROTO_DATAPACKET_REQ) {
+	} else if (buf[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_DATAPACKET_REQ) {
 		//U16 cliCount = *(U16*)(&buf[NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_COUNT_IDX]);
 		U8 data[RECV_BUFFER_SIZE] = {0};//NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_IDX
 		U16 recByteCount = ntyU8ArrayToU16(&buf[NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_COUNT_IDX]);
@@ -1011,7 +1011,7 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 		LOG(" recv:%s end\n", data);
 
 		memcpy(&proto->fromId, &friId, sizeof(C_DEVID));
-		if (buf[NTY_PROTO_MESSAGE_TYPE] == MSG_RET) {
+		if (buf[NTY_PROTO_PROTOTYPE_IDX] == MSG_RET) {
 			if (proto->onProxyFailed)
 				proto->onProxyFailed(STATUS_NOEXIST);
 			
@@ -1029,12 +1029,12 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 		}
 		LOG("onProxyCallback end");
 		
-	} else if (buf[NTY_PROTO_TYPE_IDX] == NTY_PROTO_DATAPACKET_ACK) {
+	} else if (buf[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_DATAPACKET_ACK) {
 		LOG(" send success\n");
 		if (proto->onProxySuccess) {
 			proto->onProxySuccess(0);
 		}
-	} else if (buf[NTY_PROTO_TYPE_IDX] == NTY_PROTO_BIND_ACK) {
+	} else if (buf[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_BIND_ACK) {
 #if 0
 		int result = ntyU8ArrayToU32(&buf[NTY_PROTO_BIND_ACK_RESULT_IDX]);
 #else
@@ -1045,7 +1045,7 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 			proto->onBindResult(result);
 		}
 		ntydbg(" NTY_PROTO_BIND_ACK\n");
-	} else if (buf[NTY_PROTO_TYPE_IDX] == NTY_PROTO_UNBIND_ACK) {
+	} else if (buf[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_UNBIND_ACK) {
 #if 0
 		int result = ntyU8ArrayToU32(&buf[NTY_PROTO_BIND_ACK_RESULT_IDX]);
 #else
@@ -1056,7 +1056,7 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 			proto->onUnBindResult(result);
 		}
 		ntydbg(" NTY_PROTO_UNBIND_ACK\n");
-	} else if (buf[NTY_PROTO_TYPE_IDX] == NTY_PROTO_VOICE_REQ) {
+	} else if (buf[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_VOICE_REQ) {
 		int ret = ntyAudioRecodeDepacket(buf, length);
 		if (ret == 1) { //the end
 			C_DEVID friId = 0;
@@ -1067,7 +1067,7 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 				proto->onPacketRecv(u32DataLength);
 			}
 		}		
-	} else if (buf[NTY_PROTO_TYPE_IDX] == NTY_PROTO_VOICE_ACK) {
+	} else if (buf[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_VOICE_ACK) {
 #if 0
 		if (tBigTimer != -1) {
 			del_timer(tBigTimer);
@@ -1078,7 +1078,7 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 		if (proto->onPacketSuccess) {
 			proto->onPacketSuccess(0); //Success
 		}
-	} else if (buf[NTY_PROTO_TYPE_IDX] == NTY_PROTO_EFENCE_REQ) {
+	} else if (buf[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_EFENCE_REQ) {
 		
 		U8 data[RECV_BUFFER_SIZE] = {0};//NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_IDX
 		U16 recByteCount = ntyU8ArrayToU16(&buf[NTY_PROTO_EFENCE_CONTENT_COUNT_IDX]);
@@ -1090,7 +1090,7 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 		LOG(" efence recv:%s end\n", data);
 
 		memcpy(&proto->fromId, &friId, sizeof(C_DEVID));
-		if (buf[NTY_PROTO_MESSAGE_TYPE] == MSG_RET) {
+		if (buf[NTY_PROTO_PROTOTYPE_IDX] == MSG_RET) {
 			if (proto->onProxyFailed)
 				proto->onProxyFailed(STATUS_NOEXIST);
 			
@@ -1106,7 +1106,7 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 			proto->onProxyCallback(proto->recvLen);
 		}
 		LOG(" efence onProxyCallback end");
-	} else if (buf[NTY_PROTO_TYPE_IDX] == NTY_PROTO_EFENCE_ACK) {
+	} else if (buf[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_EFENCE_ACK) {
 		LOG(" efence send success\n");
 #if 0
 		if (tEfenceTimer != -1) {
@@ -1146,7 +1146,7 @@ int ntyPacketValidator(void *self, U8 *buffer, int length) {
 
 			LOG("uCrc:%x  uClientCrc:%x", uCrc, uClientCrc);
 			if (uCrc == uClientCrc)	 {
-				LOG(" CMD:%x, Version:[%d]\n", rBuffer[NTY_PROTO_TYPE_IDX], rBuffer[NTY_PROTO_VERSION_IDX]);
+				LOG(" CMD:%x, Version:[%d]\n", rBuffer[NTY_PROTO_MSGTYPE_IDX], rBuffer[NTY_PROTO_VERSION_IDX]);
 				
 				ntyPacketClassifier(self, rBuffer, rLength);
 
@@ -1219,7 +1219,7 @@ static void* ntyRecvProc(void *arg) {
 			getpeername(nServFd,(struct sockaddr*)&addr, &nSize);
 			ntydbg("\n%d.%d.%d.%d:%d, length:%d --> %x, id:%lld\n", *(unsigned char*)(&addr.sin_addr.s_addr), *((unsigned char*)(&addr.sin_addr.s_addr)+1),													
 				*((unsigned char*)(&addr.sin_addr.s_addr)+2), *((unsigned char*)(&addr.sin_addr.s_addr)+3),													
-				addr.sin_port, proto->recvLen, buf[NTY_PROTO_TYPE_IDX], *(C_DEVID*)(&buf[NTY_PROTO_DEVID_IDX]));	
+				addr.sin_port, proto->recvLen, buf[NTY_PROTO_MSGTYPE_IDX], *(C_DEVID*)(&buf[NTY_PROTO_DEVID_IDX]));	
 
 			ntyPacketValidator(arg, buf, proto->recvLen);
 

@@ -355,7 +355,7 @@ int ntyGetSocket(void *self) {
 
 U8 ntyGetReqType(void *self) {
 	Network *network = self;
-	//return network->buffer[NTY_PROTO_TYPE_IDX];
+	//return network->buffer[NTY_PROTO_MSGTYPE_IDX];
 	return NTY_PROTO_VERSION;
 }
 

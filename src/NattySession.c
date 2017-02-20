@@ -68,7 +68,7 @@
 int ntyNotifyClient(UdpClient *client, U8 *notify) {
 	int length = 0;
 	
-	notify[NTY_PROTO_TYPE_IDX] = NTY_PROTO_P2P_NOTIFY_REQ;
+	notify[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_P2P_NOTIFY_REQ;
 	
 	length = NTY_PROTO_P2P_NOTIFY_CRC_IDX;
 	*(U32*)(&notify[length]) = ntyGenCrcValue(notify, length);
@@ -98,8 +98,8 @@ int ntyNotifyFriendConnect(void* fTree, C_DEVID id) {
 
 
 	notify[NTY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
-	notify[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_REQ;
-	notify[NTY_PROTO_TYPE_IDX] = NTY_PROTO_P2P_NOTIFY_REQ;
+	notify[NTY_PROTO_PROTOTYPE_IDX] = (U8)MSG_REQ;
+	notify[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_P2P_NOTIFY_REQ;
 
 
 	*(C_DEVID*)(&notify[NTY_PROTO_P2P_NOTIFY_DEVID_IDX]) = ntyClientGetDevId(pClient);
@@ -123,8 +123,8 @@ int ntyNotifyFriendMessage(C_DEVID fromId, C_DEVID toId) {
 	if (fromClient == NULL) return -1;
 
 	notify[NTY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
-	notify[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_REQ;
-	notify[NTY_PROTO_TYPE_IDX] = NTY_PROTO_P2P_NOTIFY_REQ;
+	notify[NTY_PROTO_PROTOTYPE_IDX] = (U8)MSG_REQ;
+	notify[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_P2P_NOTIFY_REQ;
 
 	
 	*(C_DEVID*)(&notify[NTY_PROTO_P2P_NOTIFY_DEVID_IDX]) = fromId;
@@ -177,11 +177,11 @@ int ntySendFriendsTreeIpAddr(const void *client, U8 reqType) {
 	
 #endif
 	ack[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
-	ack[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_UPDATE;
+	ack[NTY_PROTO_PROTOTYPE_IDX] = (U8)MSG_UPDATE;
 	if (reqType) {
-		ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_LOGIN_ACK;
+		ack[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_LOGIN_ACK;
 	} else {
-		ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_HEARTBEAT_ACK;
+		ack[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_HEARTBEAT_ACK;
 	}
 	//*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_ACKNUM_IDX]) = pClient->ackNum;
 	*(U16*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDS_COUNT_IDX]) = Count;
@@ -214,8 +214,8 @@ int ntySendIpAddrFriendsList(void *client, C_DEVID *friends, U16 Count) {
 	}
 
 	ack[NTY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
-	ack[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_ACK;
-	ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_P2P_ADDR_ACK;
+	ack[NTY_PROTO_PROTOTYPE_IDX] = (U8)MSG_ACK;
+	ack[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_P2P_ADDR_ACK;
 	//*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_ACKNUM_IDX]) = pClient->ackNum;
 	*(U16*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDS_COUNT_IDX]) = Count;
 	*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_CRC_IDX(Count)]) = ntyGenCrcValue(ack, NTY_PROTO_LOGIN_ACK_CRC_IDX(Count));
@@ -252,7 +252,7 @@ int ntyRouteUserData(C_DEVID friendId, U8 *buffer) {
 	if (pClient == NULL) return -1;
 	
 	notify[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
-	notify[NTY_PROTO_TYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
+	notify[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
 
 	*(C_DEVID*)(&notify[NTY_PROTO_DATAPACKET_NOTIFY_DEVID_IDX]) = *(C_DEVID*)(&buffer[NTY_PROTO_DATAPACKET_DEVID_IDX]); //friendId;
 	*(U32*)(&notify[NTY_PROTO_DATAPACKET_ACKNUM_IDX]) = *(U32*)(buffer+NTY_PROTO_DATAPACKET_ACKNUM_IDX);
@@ -276,8 +276,8 @@ int ntySendDeviceTimeCheckAck(const Client *pClient, U32 ackNum) {
 
 	
 	ack[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
-	ack[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_ACK;
-	ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_TIME_CHECK_ACK;
+	ack[NTY_PROTO_PROTOTYPE_IDX] = (U8)MSG_ACK;
+	ack[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_TIME_CHECK_ACK;
 #if 0
 	ack[NTY_PROTO_DEVID_IDX] = pClient->devId;
 #else
@@ -301,8 +301,8 @@ int ntySendDeviceRouterInfo(const Client *pClient, U8 *buffer, int length) {
 	U8 buf[RECV_BUFFER_SIZE] = {0};
 	
 	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
-	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_UPDATE;	
-	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
+	buf[NTY_PROTO_PROTOTYPE_IDX] = (U8) MSG_UPDATE;	
+	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
 	*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEVID_IDX]) = pClient->devId;
 	*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEST_DEVID_IDX]) = pClient->devId;
 
@@ -324,8 +324,8 @@ int ntySendAppRouterInfo(const Client *pClient, C_DEVID fromId, U8 *buffer, int 
 	int i = 0;
 	
 	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
-	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_REQ;	
-	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
+	buf[NTY_PROTO_PROTOTYPE_IDX] = (U8) MSG_REQ;	
+	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
 #if 0
 	*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEVID_IDX]) = fromId;
 	*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEST_DEVID_IDX]) = pClient->devId;
@@ -337,7 +337,7 @@ int ntySendAppRouterInfo(const Client *pClient, C_DEVID fromId, U8 *buffer, int 
 	memcpy(tempBuf, buffer, length);
 
 	ntylog(" ntySendAppRouterInfo --> fromId:%lld, toId:%lld, cmd:%s, length:%d, type:%x\n", *(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEVID_IDX]),
-		*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEST_DEVID_IDX]), tempBuf, length, buf[NTY_PROTO_TYPE_IDX]);
+		*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEST_DEVID_IDX]), tempBuf, length, buf[NTY_PROTO_MSGTYPE_IDX]);
 	
 	*(U16*)(&buf[NTY_PROTO_DATAPACKET_CONTENT_COUNT_IDX]) = (U16)length;
 	length += NTY_PROTO_DATAPACKET_CONTENT_IDX;
@@ -362,13 +362,13 @@ static int ntyBoardcastItem(void* client, C_DEVID toId, U8 *data, int length) {
 		ntylog(" ntyBoardcastItem --> toId:%lld is not Exist\n", toId);
 		
 #if ENABLE_MULTICAST_SYNC //multicast 
-		//data[NTY_PROTO_TYPE_IDX] = NTY_PROTO_MULTICAST_REQ;
+		//data[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_MULTICAST_REQ;
 		int len = length;
 		U8 buffer[RECV_BUFFER_SIZE] = {0};
 
 		buffer[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
-		buffer[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_REQ;	
-		buffer[NTY_PROTO_TYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
+		buffer[NTY_PROTO_PROTOTYPE_IDX] = (U8) MSG_REQ;	
+		buffer[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
 		//buffer[NTY_PROTO_DEVID_IDX] = 
 		memcpy(buffer+NTY_PROTO_DEVID_IDX, &selfNode->devId, sizeof(C_DEVID));
 		memcpy(buffer+NTY_PROTO_DEST_DEVID_IDX, &toId, sizeof(C_DEVID));
@@ -445,8 +445,8 @@ void ntyProtoHttpProxyTransform(C_DEVID fromId, C_DEVID toId, U8 *buffer, int le
 	U8 buf[RECV_BUFFER_SIZE] = {0};
 
 	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
-	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_REQ;	
-	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
+	buf[NTY_PROTO_PROTOTYPE_IDX] = (U8) MSG_REQ;	
+	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
 	*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEVID_IDX]) = fromId;
 	*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEST_DEVID_IDX]) = toId;
 	
@@ -482,8 +482,8 @@ void ntyProtoHttpRetProxyTransform(C_DEVID toId, U8 *buffer, int length) {
 
 #endif
 	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
-	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_REQ;	
-	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_ROUTERDATA_REQ;
+	buf[NTY_PROTO_PROTOTYPE_IDX] = (U8) MSG_REQ;	
+	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_ROUTERDATA_REQ;
 	//*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEVID_IDX]) = fromId;
 	*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEST_DEVID_IDX]) = toId;
 	
@@ -527,8 +527,8 @@ void ntyProtoBindAck(C_DEVID aid, C_DEVID did, int result) {
 	}
 
 	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
-	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_ACK;	
-	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_BIND_ACK;
+	buf[NTY_PROTO_PROTOTYPE_IDX] = (U8) MSG_ACK;	
+	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_BIND_ACK;
 	*(C_DEVID*)(&buf[NTY_PROTO_BIND_ACK_DEVICEID_IDX]) = did;
 	*(int*)(&buf[NTY_PROTO_BIND_ACK_RESULT_IDX]) = result;
 
@@ -566,8 +566,8 @@ void ntyProtoUnBindAck(C_DEVID aid, C_DEVID did, int result) {
 	}
 
 	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
-	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_ACK;	
-	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_UNBIND_ACK;
+	buf[NTY_PROTO_PROTOTYPE_IDX] = (U8) MSG_ACK;	
+	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_UNBIND_ACK;
 	*(C_DEVID*)(&buf[NTY_PROTO_UNBIND_ACK_DEVICEID_IDX]) = did;
 	*(int*)(&buf[NTY_PROTO_UNBIND_ACK_RESULT_IDX]) = result;
 
@@ -594,8 +594,8 @@ void ntyProtoICCIDAck(C_DEVID did, U8 *phnum, U16 length) {
 	}
 
 	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
-	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_ACK;	
-	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_ICCID_ACK;
+	buf[NTY_PROTO_PROTOTYPE_IDX] = (U8) MSG_ACK;	
+	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_ICCID_ACK;
 
 	memcpy(buf+NTY_PROTO_ICCIDACK_SLFID_IDX, &did, sizeof(C_DEVID));
 	memcpy(buf+NTY_PROTO_ICCIDACK_CONTENT_COUNT_IDX, &length, sizeof(U16));
@@ -609,7 +609,7 @@ void ntyProtoICCIDAck(C_DEVID did, U8 *phnum, U16 length) {
 }
 
 void ntySelfLogoutPacket(C_DEVID id, U8 *buffer) {
-	buffer[NTY_PROTO_TYPE_IDX] = NTY_PROTO_LOGOUT_REQ;
+	buffer[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_LOGOUT_REQ;
 	memcpy(buffer+NTY_PROTO_DEVID_IDX, &id, sizeof(C_DEVID));
 
 	//*rLen = NTY_PROTO_MIN_LENGTH;
