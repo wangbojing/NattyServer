@@ -60,22 +60,23 @@ typedef void (*PROXY_CALLBACK_CLINET)(int len);
 typedef void (*PROXY_HANDLE_CLIENT)(DEVID id, int len);
 
 #define CLIENT_BUFFER_SIZE		1024
+#define NTY_BIGBUFFER_SIZE		30*1024
+#define NTY_TIMER_SIZE			32
 
 #ifndef ntydbg
 #define ntydbg(format, ...) 		fprintf(stdout, format, ##__VA_ARGS__)
 #endif
 
-
 int ntySendDataPacket(DEVID toId, U8 *data, int length);
 int ntySendMassDataPacket(U8 *data, int length);
 
-int ntyStartupClient(void);
+void* ntyStartupClient(int *status);
 void ntyShutdownClient(void);
 
 
 void ntySetSendSuccessCallback(PROXY_CALLBACK_CLINET cb);
 void ntySetSendFailedCallback(PROXY_CALLBACK_CLINET cb);
-void ntySetProxyCallback(PROXY_HANDLE_CLIENT cb);
+void ntySetProxyCallback(PROXY_CALLBACK_CLINET cb);
 U8* ntyGetRecvBuffer(void);
 void ntySetDevId(DEVID id);
 int ntyGetRecvBufferSize(void);
@@ -85,6 +86,9 @@ void ntySetBindResult(PROXY_CALLBACK_CLINET cb);
 void ntySetUnBindResult(PROXY_CALLBACK_CLINET cb);
 void ntySetProxyDisconnect(PROXY_CALLBACK_CLINET cb);
 void ntySetProxyReconnect(PROXY_CALLBACK_CLINET cb);
+
+void ntySetPacketRecv(PROXY_CALLBACK_CLINET cb);
+void ntySetPacketSuccess(PROXY_CALLBACK_CLINET cb);
 
 
 

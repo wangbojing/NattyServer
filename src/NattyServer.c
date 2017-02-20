@@ -91,7 +91,7 @@ int main() {
 #endif	
 	ntyDaveMqStart();
 	ntylog(" ... Dave Message Queue Startup ... \n");
-	void *pHash = ntyHashTableInstance();
+	//void *pHash = ntyHashTableInstance();
 
 	ntylog(" ... Hash Table Startup ... \n");
 	for (i = 0;i < PROTO_TYPE_COUNT;i ++) {

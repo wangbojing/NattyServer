@@ -52,7 +52,7 @@
 
 #include "NattyAbstractClass.h"
 
-#define RED		1
+#define RED			1
 #define BLACK		2
 
 
@@ -119,6 +119,20 @@ C_DEVID ntyFriendsTreeGetFristNodeKey(void *self);
 void ntyFriendsTreeMass(void *self, HANDLE_MASS handle_FN, U8 *buf, int length);
 void ntyRBTreeHeartBeatDetect(void *self, HANDLE_HEARTBEAT handle_FN, void *mainloop, TIMESTAMP stamp);
 void ntyFriendsTreeBroadcast(void *self, HANDLE_BROADCAST handle_FN, void *client, U8 *buf, int length);
+
+
+void* ntyMapInstance(void);
+int ntyMapInsert(void *self, C_DEVID key, void *value);
+void* ntyMapSearch(void *self, C_DEVID key);
+int ntyMapDelete(void *self, C_DEVID key);
+int ntyMapUpdate(void *self, C_DEVID key, void *value);
+void ntyMapRelease(void *self);
+
+
+
+
+
+
 
 
 #endif

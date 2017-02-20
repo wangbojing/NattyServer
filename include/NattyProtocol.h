@@ -48,11 +48,17 @@
 #ifndef __NATTY_PROTOCOL_H__
 #define __NATTY_PROTOCOL_H__
 
-#define NEY_PROTO_VERSION	'A'
+#define NTY_PROTO_VERSION				'A'
 
-#define NTY_PROTO_DEVICE_VERSION	'A'
-#define NTY_PROTO_APP_VERSION		'B'
-#define NTY_PROTO_MULTICAST_DEVID	0x0
+#define NTY_PROTO_CLIENT_WATCH			'D'
+#define NTY_PROTO_CLIENT_ANDROID		'A'
+#define NTY_PROTO_CLIENT_IOS			'I'
+#define NTY_PROTO_CLIENT_WEB			'W'
+#define NTY_PROTO_CLIENT_PC				'P'
+
+#define NTY_PROTO_SELFTYPE				NTY_PROTO_CLIENT_WATCH
+
+#define NTY_PROTO_MULTICAST_DEVID		0x0
 
 /* ** **** ********  ****************  Length  ****************  ******** **** ** */
 #define NTY_DEVID_LENGTH				8
@@ -81,8 +87,9 @@
 //#define NTY_PROTO_DATAPACKET_ACK_LENGTH	32
 
 /* ** **** ********  ****************  Index  ****************  ******** **** ** */
-#define NEY_PROTO_VERSION_IDX					0  //'A' is device and 'B' is app
-#define NTY_PROTO_MESSAGE_TYPE					(NEY_PROTO_VERSION_IDX+1)
+#define NTY_PROTO_VERSION_IDX					0  //'A' is device and 'B' is app
+#define NTY_PROTO_DEVTYPE_IDX					(NTY_PROTO_VERSION_IDX+1)
+#define NTY_PROTO_MESSAGE_TYPE					(NTY_PROTO_DEVTYPE_IDX+1)
 #define NTY_PROTO_TYPE_IDX						(NTY_PROTO_MESSAGE_TYPE+1)
 #define NTY_PROTO_DEVID_IDX						(NTY_PROTO_TYPE_IDX+1)
 #define NTY_PROTO_ACKNUM_IDX					(NTY_PROTO_DEVID_IDX+NTY_DEVID_LENGTH)

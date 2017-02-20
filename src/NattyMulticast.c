@@ -126,23 +126,24 @@ int ntyMulticastServerProcess(const void *_self) {
 	while(1) {
 		ret = poll(&fds, 1, 5);
 		if (ret) { //data is comming
+			struct sockaddr_in addr;
 			RequestPacket *req = (RequestPacket*)allocRequestPacket();
 			if (req == NULL) {
 				freeRequestPacket(req);
 				return -1;
 			}
-			n = recvfrom(self->sockfd, recvmsg, RECV_BUFFER_SIZE, 0, (struct sockaddr *) &req->client->addr, &clientlen);
+			n = recvfrom(self->sockfd, recvmsg, RECV_BUFFER_SIZE, 0, (struct sockaddr *) &addr, &clientlen);
 			if (n < 0) {
 				printf("recvfrom error in udptalk!\n");
 				freeRequestPacket(req);
 				continue;
 			} else {
 				ntyU8ArrayToU64(&recvmsg[NTY_PROTO_DEVID_IDX], &req->client->devId);
-				req->client->ackNum = ntyU8ArrayToU32(&recvmsg[NTY_PROTO_ACKNUM_IDX])+1;
+				//req->client->ackNum = ntyU8ArrayToU32(&recvmsg[NTY_PROTO_ACKNUM_IDX])+1;
 
-				req->client->sockfd = self->sockfd;
-				req->client->watcher = NULL;
-				req->client->clientType = PROTO_TYPE_MULTICAST;
+				req->sockfd = self->sockfd;
+				//req->client->watcher = NULL;
+				req->connectType = PROTO_TYPE_MULTICAST;
 				req->length = (U16)n;
 				req->buffer = (U8*)malloc(n);
 				if (req->buffer == NULL) {

@@ -48,6 +48,9 @@
 #include "NattyUtils.h"
 #include "NattyMulticast.h"
 
+#include "NattyVector.h"
+#include "NattyResult.h"
+
 #undef offsetof
 #define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
 
@@ -58,41 +61,10 @@
  
 
 /*
- * send Friend Ip to client
- * heart beat
- * 
- */
-int ntySendFriendIpAddr(void* fTree, C_DEVID id) {
-	int i = 0, length;
-	U8 ack[NTY_LOGIN_ACK_LENGTH] = {0};
-	
-	UdpClient *pClient = container_of(fTree, UdpClient, friends);
-	void *pRBTree = ntyRBTreeInstance();
-
-	UdpClient *client = ntyRBTreeInterfaceSearch(pRBTree, id);
-	if (client == NULL) return -1;
-	
-	ack[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
-	ack[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_ACK;
-	ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_HEARTBEAT_ACK;
-	*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_ACKNUM_IDX]) = pClient->ackNum;
-	*(U16*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDS_COUNT_IDX]) = (U16)1;
-
-	*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_ADDR_IDX(0)]) = (U32)(client->addr.sin_addr.s_addr);
-	*(U16*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_PORT_IDX(0)]) = (U16)(client->addr.sin_port);
-	*(C_DEVID*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_DEVID_IDX(0)]) = id;
-
-	*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_CRC_IDX(1)]) = ntyGenCrcValue(ack, NTY_PROTO_LOGIN_ACK_CRC_IDX(1));
-	length += NTY_PROTO_LOGIN_ACK_CRC_IDX(1)+sizeof(U32);
-
-	return ntySendBuffer(pClient, ack,length);
-}
-
-/*
  * send friends list to client
  */
 
-
+#if 0
 int ntyNotifyClient(UdpClient *client, U8 *notify) {
 	int length = 0;
 	
@@ -125,17 +97,18 @@ int ntyNotifyFriendConnect(void* fTree, C_DEVID id) {
 	if (client == NULL) return -1;
 
 
-	notify[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+	notify[NTY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
 	notify[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_REQ;
 	notify[NTY_PROTO_TYPE_IDX] = NTY_PROTO_P2P_NOTIFY_REQ;
 
 
 	*(C_DEVID*)(&notify[NTY_PROTO_P2P_NOTIFY_DEVID_IDX]) = ntyClientGetDevId(pClient);
+#if 0
 	*(U32*)(&notify[NTY_PROTO_P2P_NOTIFY_ACKNUM_IDX]) = pClient->ackNum;
 			
 	*(U32*)(&notify[NTY_PROTO_P2P_NOTIFY_IPADDR_IDX]) = pClient->addr.sin_addr.s_addr;
 	*(U16*)(&notify[NTY_PROTO_P2P_NOTIFY_IPPORT_IDX]) = pClient->addr.sin_port;
-
+#endif
 	return ntyNotifyClient(client, notify);
 }
 
@@ -149,20 +122,21 @@ int ntyNotifyFriendMessage(C_DEVID fromId, C_DEVID toId) {
 	UdpClient *fromClient = ntyRBTreeInterfaceSearch(pRBTree, fromId);
 	if (fromClient == NULL) return -1;
 
-	notify[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+	notify[NTY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
 	notify[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_REQ;
 	notify[NTY_PROTO_TYPE_IDX] = NTY_PROTO_P2P_NOTIFY_REQ;
 
 	
 	*(C_DEVID*)(&notify[NTY_PROTO_P2P_NOTIFY_DEVID_IDX]) = fromId;
-	*(U32*)(&notify[NTY_PROTO_P2P_NOTIFY_ACKNUM_IDX]) = fromClient->ackNum;
 	*(C_DEVID*)(&notify[NTY_PROTO_P2P_NOTIFY_DEST_DEVID_IDX]) = toId;
+#if 0
+	*(U32*)(&notify[NTY_PROTO_P2P_NOTIFY_ACKNUM_IDX]) = fromClient->ackNum;
 	*(U32*)(&notify[NTY_PROTO_P2P_NOTIFY_IPADDR_IDX]) = fromClient->addr.sin_addr.s_addr;
 	*(U16*)(&notify[NTY_PROTO_P2P_NOTIFY_IPPORT_IDX]) = fromClient->addr.sin_port;
-
+#endif
 	return ntyNotifyClient(toClient, notify);
 }
-
+#endif
 
 
 /*
@@ -171,39 +145,53 @@ int ntyNotifyFriendMessage(C_DEVID fromId, C_DEVID toId) {
 int ntySendFriendsTreeIpAddr(const void *client, U8 reqType) {
 	int i = 0, length;
 	U8 ack[NTY_LOGIN_ACK_LENGTH] = {0};
-	
+#if 0	
 	const Client *pClient = client;
 	void *pRBTree = ntyRBTreeInstance();
 
 	C_DEVID *friends = ntyFriendsTreeGetAllNodeList(pClient->friends);
 	U16 Count = ntyFriendsTreeGetNodeCount(pClient->friends);
-	ntylog("Count : %d, type:%d\n", Count, pClient->clientType);
+	//ntylog("Count : %d, type:%d\n", Count, pClient->connectType);
 	for (i = 0;i < Count;i ++) {
 		Client *cliValue = ntyRBTreeInterfaceSearch(pRBTree, *(friends+i));
-		if (cliValue != NULL) {
-			*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_ADDR_IDX(i)]) = (U32)(cliValue->addr.sin_addr.s_addr);
-			*(U16*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_PORT_IDX(i)]) = (U16)(cliValue->addr.sin_port);
-		}
 		*(C_DEVID*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_DEVID_IDX(i)]) = *(friends+i);
 	}
 	free(friends);
+#else
 
-	ack[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+	const Client *pClient = client;
+
+	void *map = ntyMapInstance();
+	ClientSocket *toClient = ntyMapSearch(map, pClient->devId);
+
+	//NVector *vector = pClient->friends;
+	int Count = 0;
+	C_DEVID *friends = ntyVectorGetNodeList(pClient->friends, &Count);
+	if (friends != NULL) {
+		for (i = 0;i < Count;i ++) {
+			*(C_DEVID*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_DEVID_IDX(i)]) = *(friends+i);
+		}
+		free(friends);
+	}
+	
+	
+#endif
+	ack[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
 	ack[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_UPDATE;
 	if (reqType) {
 		ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_LOGIN_ACK;
 	} else {
 		ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_HEARTBEAT_ACK;
 	}
-	*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_ACKNUM_IDX]) = pClient->ackNum;
+	//*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_ACKNUM_IDX]) = pClient->ackNum;
 	*(U16*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDS_COUNT_IDX]) = Count;
 	*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_CRC_IDX(Count)]) = ntyGenCrcValue(ack, NTY_PROTO_LOGIN_ACK_CRC_IDX(Count));
 	length += NTY_PROTO_LOGIN_ACK_CRC_IDX(Count)+sizeof(U32);
 
-	return ntySendBuffer(pClient, ack, length);
+	return ntySendBuffer(toClient, ack, length);
 }
 
-
+#if 0
 int ntySendIpAddrFriendsList(void *client, C_DEVID *friends, U16 Count) {
 	int i = 0, length;
 	U8 ack[NTY_LOGIN_ACK_LENGTH] = {0};
@@ -217,22 +205,26 @@ int ntySendIpAddrFriendsList(void *client, C_DEVID *friends, U16 Count) {
 	for (i = 0;i < Count;i ++) {
 		UdpClient *cliValue = ntyRBTreeInterfaceSearch(pRBTree, *(friends+i));
 		if (cliValue != NULL) {
+#if 0
 			*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_ADDR_IDX(i)]) = (U32)(cliValue->addr.sin_addr.s_addr);
 			*(U16*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_PORT_IDX(i)]) = (U16)(cliValue->addr.sin_port);
+#endif
 		}
 		*(C_DEVID*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_DEVID_IDX(i)]) = *(friends+i);
 	}
 
-	ack[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+	ack[NTY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
 	ack[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_ACK;
 	ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_P2P_ADDR_ACK;
-	*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_ACKNUM_IDX]) = pClient->ackNum;
+	//*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_ACKNUM_IDX]) = pClient->ackNum;
 	*(U16*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDS_COUNT_IDX]) = Count;
 	*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_CRC_IDX(Count)]) = ntyGenCrcValue(ack, NTY_PROTO_LOGIN_ACK_CRC_IDX(Count));
 	length += NTY_PROTO_LOGIN_ACK_CRC_IDX(Count)+sizeof(U32);
 
 	return ntySendBuffer(pClient, ack, length);
 }
+#endif
+
 
 /*
  * transparent transport data
@@ -278,30 +270,37 @@ int ntyRouteUserData(C_DEVID friendId, U8 *buffer) {
 #endif
 
 
-int ntySendDeviceTimeCheckAck(const UdpClient *pClient, U32 ackNum) {
+int ntySendDeviceTimeCheckAck(const Client *pClient, U32 ackNum) {
 	int length = 0;
 	U8 ack[RECV_BUFFER_SIZE] = {0};
 
 	
-	ack[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+	ack[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
 	ack[NTY_PROTO_MESSAGE_TYPE] = (U8)MSG_ACK;
 	ack[NTY_PROTO_TYPE_IDX] = NTY_PROTO_TIME_CHECK_ACK;
+#if 0
 	ack[NTY_PROTO_DEVID_IDX] = pClient->devId;
-	
+#else
+	memcpy(ack+NTY_PROTO_DEVID_IDX, &pClient->devId, sizeof(C_DEVID));
+#endif
 	*(U32*)(&ack[NTY_PROTO_ACKNUM_IDX]) = ackNum;
 
 	ntyTimeCheckStamp(ack);
 	
-	*(U32*)(&ack[NTY_PROTO_TIMECHECK_CRC_IDX]) = ntyGenCrcValue(ack, NTY_PROTO_LOGIN_REQ_CRC_IDX);
+	//*(U32*)(&ack[NTY_PROTO_TIMECHECK_CRC_IDX]) = ntyGenCrcValue(ack, NTY_PROTO_LOGIN_REQ_CRC_IDX);
 	length = NTY_PROTO_TIMECHECK_CRC_IDX+sizeof(U32);
+
+	void *map = ntyMapInstance();
+	ClientSocket *nSocket = ntyMapSearch(map, pClient->devId);
 	
-	return ntySendBuffer(pClient, ack, length);
+	return ntySendBuffer(nSocket, ack, length);
+	
 }
 
 int ntySendDeviceRouterInfo(const Client *pClient, U8 *buffer, int length) {
 	U8 buf[RECV_BUFFER_SIZE] = {0};
 	
-	buf[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
 	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_UPDATE;	
 	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
 	*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEVID_IDX]) = pClient->devId;
@@ -314,14 +313,17 @@ int ntySendDeviceRouterInfo(const Client *pClient, U8 *buffer, int length) {
 	length += NTY_PROTO_DATAPACKET_CONTENT_IDX;
 	length += sizeof(U32);
 
-	return ntySendBuffer(pClient, buf, length);
+	void *map = ntyMapInstance();
+	ClientSocket *nSocket = ntyMapSearch(map, pClient->devId);
+
+	return ntySendBuffer(nSocket, buf, length);
 }
 
 int ntySendAppRouterInfo(const Client *pClient, C_DEVID fromId, U8 *buffer, int length) {
 	U8 buf[RECV_BUFFER_SIZE] = {0};
 	int i = 0;
 	
-	buf[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
 	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_REQ;	
 	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
 #if 0
@@ -341,7 +343,10 @@ int ntySendAppRouterInfo(const Client *pClient, C_DEVID fromId, U8 *buffer, int 
 	length += NTY_PROTO_DATAPACKET_CONTENT_IDX;
 	length += sizeof(U32);
 
-	return ntySendBuffer(pClient, buf, length);
+	void *map = ntyMapInstance();
+	ClientSocket *nSocket = ntyMapSearch(map, pClient->devId);
+
+	return ntySendBuffer(nSocket, buf, length);
 }
 
 
@@ -361,7 +366,7 @@ static int ntyBoardcastItem(void* client, C_DEVID toId, U8 *data, int length) {
 		int len = length;
 		U8 buffer[RECV_BUFFER_SIZE] = {0};
 
-		buffer[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+		buffer[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
 		buffer[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_REQ;	
 		buffer[NTY_PROTO_TYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
 		//buffer[NTY_PROTO_DEVID_IDX] = 
@@ -438,14 +443,8 @@ int ntyBoardcastAllFriendsNotifyConnect(C_DEVID selfId) {
 void ntyProtoHttpProxyTransform(C_DEVID fromId, C_DEVID toId, U8 *buffer, int length) {
 	int n = 0;
 	U8 buf[RECV_BUFFER_SIZE] = {0};
-	void *pRBTree = ntyRBTreeInstance();
-	UdpClient *destClient = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, toId);
-	if (destClient == NULL) {
-		ntylog(" destClient is not exist proxy:%lld\n", toId);
-		return ;
-	}
 
-	buf[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
 	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_REQ;	
 	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
 	*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEVID_IDX]) = fromId;
@@ -455,19 +454,21 @@ void ntyProtoHttpProxyTransform(C_DEVID fromId, C_DEVID toId, U8 *buffer, int le
 	memcpy(buf+NTY_PROTO_DATAPACKET_CONTENT_IDX, buffer, length);
 	ntylog(" ntyProtoHttpProxyTransform ---> %s\n", buf+NTY_PROTO_DATAPACKET_CONTENT_IDX);
 	
-	
 	length += NTY_PROTO_DATAPACKET_CONTENT_IDX;
 
 	*(U32*)(&buf[length]) = ntyGenCrcValue(buf, length);
 	length += sizeof(U32);
 
-	ntySendBuffer(destClient, buf, length);
+	void *map = ntyMapInstance();
+	ClientSocket *nSocket = ntyMapSearch(map, toId);
+	ntySendBuffer(nSocket, buf, length);
 	
 }
 
 void ntyProtoHttpRetProxyTransform(C_DEVID toId, U8 *buffer, int length) {
 	int n = 0;
 	U8 buf[RECV_BUFFER_SIZE] = {0};
+#if 0
 	void *pRBTree = ntyRBTreeInstance();
 	if (pRBTree == NULL) return ;
 	UdpClient *destClient = (UdpClient*)ntyRBTreeInterfaceSearch(pRBTree, toId);
@@ -475,8 +476,12 @@ void ntyProtoHttpRetProxyTransform(C_DEVID toId, U8 *buffer, int length) {
 		ntylog(" destClient is not exist, toId:%lld\n", toId);
 		return ;
 	}
+#else
+	void *map = ntyMapInstance();
+	ClientSocket *nSocket = ntyMapSearch(map, toId);
 
-	buf[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+#endif
+	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
 	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_REQ;	
 	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_ROUTERDATA_REQ;
 	//*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEVID_IDX]) = fromId;
@@ -491,7 +496,7 @@ void ntyProtoHttpRetProxyTransform(C_DEVID toId, U8 *buffer, int length) {
 	*(U32*)(&buf[length]) = ntyGenCrcValue(buf, length);
 	length += sizeof(U32);
 
-	ntySendBuffer(destClient, buf, length);
+	ntySendBuffer(nSocket, buf, length);
 	
 }
 
@@ -509,25 +514,29 @@ void ntyProtoHttpRetProxyTransform(C_DEVID toId, U8 *buffer, int length) {
 void ntyProtoBindAck(C_DEVID aid, C_DEVID did, int result) {
 	int length = 0;
 	U8 buf[NTY_HEARTBEAT_ACK_LENGTH] = {0};
-	
+#if 0	
 	void *pRBTree = ntyRBTreeInstance();
 	Client *client = (Client*)ntyRBTreeInterfaceSearch(pRBTree, aid);
-	if (client == NULL) {
+#else
+	void *map = ntyMapInstance();
+	ClientSocket *nSocket = ntyMapSearch(map, aid);
+#endif
+	if (nSocket == NULL) {
 		ntylog(" destClient is not exist proxy:%lld\n", aid);
 		return ;
 	}
 
-	buf[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
 	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_ACK;	
 	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_BIND_ACK;
 	*(C_DEVID*)(&buf[NTY_PROTO_BIND_ACK_DEVICEID_IDX]) = did;
 	*(int*)(&buf[NTY_PROTO_BIND_ACK_RESULT_IDX]) = result;
 
 	length = NTY_PROTO_BIND_ACK_CRC_IDX;
-	*(U32*)(&buf[length]) = ntyGenCrcValue(buf, length);
+	//*(U32*)(&buf[length]) = ntyGenCrcValue(buf, length);
 	length += sizeof(U32);
 
-	ntySendBuffer(client, buf, length);
+	ntySendBuffer(nSocket, buf, length);
 }
 
 
@@ -544,37 +553,47 @@ void ntyProtoUnBindAck(C_DEVID aid, C_DEVID did, int result) {
 	int length = 0;
 	U8 buf[NTY_HEARTBEAT_ACK_LENGTH] = {0};
 	
+#if 0	
 	void *pRBTree = ntyRBTreeInstance();
 	Client *client = (Client*)ntyRBTreeInterfaceSearch(pRBTree, aid);
-	if (client == NULL) {
+#else
+	void *map = ntyMapInstance();
+	ClientSocket *nSocket = ntyMapSearch(map, aid);
+#endif
+	if (nSocket == NULL) {
 		ntylog(" destClient is not exist proxy:%lld\n", aid);
 		return ;
 	}
 
-	buf[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
 	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_ACK;	
 	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_UNBIND_ACK;
 	*(C_DEVID*)(&buf[NTY_PROTO_UNBIND_ACK_DEVICEID_IDX]) = did;
 	*(int*)(&buf[NTY_PROTO_UNBIND_ACK_RESULT_IDX]) = result;
 
 	length = NTY_PROTO_UNBIND_ACK_CRC_IDX;
-	*(U32*)(&buf[length]) = ntyGenCrcValue(buf, length);
+	//*(U32*)(&buf[length]) = ntyGenCrcValue(buf, length);
 	length += sizeof(U32);
 
-	ntySendBuffer(client, buf, length);
+	ntySendBuffer(nSocket, buf, length);
 }
 
 
 void ntyProtoICCIDAck(C_DEVID did, U8 *phnum, U16 length) {
 	U8 buf[NTY_HEARTBEAT_ACK_LENGTH*2] = {0};
+#if 0	
 	void *pRBTree = ntyRBTreeInstance();
 	Client *client = (Client*)ntyRBTreeInterfaceSearch(pRBTree, did);
-	if (client == NULL) {
+#else
+	void *map = ntyMapInstance();
+	ClientSocket *nSocket = ntyMapSearch(map, did);
+#endif
+	if (nSocket == NULL) {
 		ntylog(" destClient is not exist proxy:%lld\n", did);
 		return ;
 	}
 
-	buf[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
+	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
 	buf[NTY_PROTO_MESSAGE_TYPE] = (U8) MSG_ACK;	
 	buf[NTY_PROTO_TYPE_IDX] = NTY_PROTO_ICCID_ACK;
 
@@ -583,14 +602,34 @@ void ntyProtoICCIDAck(C_DEVID did, U8 *phnum, U16 length) {
 	memcpy(buf+NTY_PROTO_ICCIDACK_CONTENT_IDX, phnum, length);
 
 	length += NTY_PROTO_ICCIDACK_CONTENT_IDX;
-	*(U32*)(&buf[length]) = ntyGenCrcValue(buf, length);
+	//*(U32*)(&buf[length]) = ntyGenCrcValue(buf, length);
 	length += sizeof(U32);
 
-	ntySendBuffer(client, buf, length);
+	ntySendBuffer(nSocket, buf, length);
+}
+
+void ntySelfLogoutPacket(C_DEVID id, U8 *buffer) {
+	buffer[NTY_PROTO_TYPE_IDX] = NTY_PROTO_LOGOUT_REQ;
+	memcpy(buffer+NTY_PROTO_DEVID_IDX, &id, sizeof(C_DEVID));
+
+	//*rLen = NTY_PROTO_MIN_LENGTH;
+	U32 u32Crc = ntyGenCrcValue(buffer, NTY_PROTO_MIN_LENGTH-4);
+	memcpy(buffer+NTY_PROTO_MIN_LENGTH-4, &u32Crc, sizeof(U32));
+	
 }
 
 
+int ntyIterFriendsMessage(void *self, void *arg) {
+	C_DEVID *pId = self;
+	InterMsg *msg = arg;
 
+	Client *client = msg->self;
+	void *map = ntyMapInstance();
+	ClientSocket *nSocket = ntyMapSearch(map, client->devId);
+	if (nSocket == NULL)  return  NTY_RESULT_NOEXIST;
+
+	return ntyProxyBuffer(nSocket, msg->buffer, msg->length);
+}
 
 
 

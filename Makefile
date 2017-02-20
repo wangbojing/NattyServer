@@ -36,7 +36,7 @@ $(CUR_OBJS) : %.o : %.c
 
 clean : 
 	rm -rf $(BIN_DIR)/*.o
-#	rm ssl/*.o
+	rm -rf $(BIN_DIR)/Natty*
 #	rm src/*.o
 #	@rm -rf $(BIN_DIR)/*
 

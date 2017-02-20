@@ -48,7 +48,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "NattyAbstractClass.h"
+#include "../include/NattyAbstractClass.h"
 
 void *New(const void *_class, ...) {
 	const AbstractClass *class = _class;

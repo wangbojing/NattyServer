@@ -48,11 +48,20 @@
 #include "NattyUdpServer.h"
 #include "NattyProtocol.h"
 
-int ntySendFriendIpAddr(void* fTree, C_DEVID id);
-int ntyNotifyFriendConnect(void* fTree, C_DEVID id);
+
+
+typedef struct _INTER_MSG {
+	void *self;
+	U8 *buffer;
+	int length;
+} InterMsg;
+
+
+
 int ntySendFriendsTreeIpAddr(const void *client, U8 reqType);
-int ntyNotifyFriendMessage(C_DEVID fromId, C_DEVID toId);
+#if 0
 int ntySendIpAddrFriendsList(void *client, C_DEVID *friends, U16 Count);
+#endif
 
 //int ntyRouteUserData(C_DEVID friendId, U8 *buffer);
 int ntySendDeviceRouterInfo(const Client *pClient, U8 *buffer, int length);
@@ -67,6 +76,8 @@ int ntySendDeviceTimeCheckAck(const UdpClient *pClient, U32 ackNum);
 void ntyProtoUnBindAck(C_DEVID aid, C_DEVID did, int result);
 void ntyProtoBindAck(C_DEVID aid, C_DEVID did, int result);
 
+void ntySelfLogoutPacket(C_DEVID id, U8 *buffer);
+int ntyIterFriendsMessage(void *self, void *arg);
 
 
 #endif

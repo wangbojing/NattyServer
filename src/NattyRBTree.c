@@ -137,7 +137,7 @@ void ntyRBTreeInsertFixup(RBTree *T, RBTreeNode *z) {
 	T->root->color = BLACK;
 }
 
-void NattyRBTreeInsert(RBTree *T, RBTreeNode *z) {
+void ntyRBTreeInsert(RBTree *T, RBTreeNode *z) {
 	RBTreeNode *y = T->nil;
 	RBTreeNode *x = T->root;
 
@@ -298,7 +298,7 @@ RBTreeNode* ntyRBTreeDelete(RBTree *T, RBTreeNode *z) {
 		
 		//memcpy(pcz->friends, pcy->friends, sizeof(RBTree));
 		pcz->friends = pcy->friends;
-		pcz->watcher = pcy->watcher;
+		//pcz->watcher = pcy->watcher;
 		//memcpy(pcz->watcher, pcy->watcher, sizeof(struct ev_io));
 		memcpy(z->value, y->value, sizeof(Client));
 		#endif
@@ -390,7 +390,7 @@ int ntyRBTreeOperaInsert(void *_self, C_DEVID key, void *value) {
 		node->value = value;
 #if ENABLE_RBTREE_MUTEX		
 		if(0 == cmpxchg(&self->rbtree_delete_lock, 0, 1, WORD_WIDTH)) {
-			NattyRBTreeInsert(self, node);
+			ntyRBTreeInsert(self, node);
 			self->count ++;
 			self->rbtree_delete_lock = 0;
 		} else {
@@ -398,7 +398,7 @@ int ntyRBTreeOperaInsert(void *_self, C_DEVID key, void *value) {
 			return 2;
 		}		
 #else
-		NattyRBTreeInsert(self, node);
+		ntyRBTreeInsert(self, node);
 		self->count ++;
 #endif
 		return 0;
@@ -420,7 +420,7 @@ int ntyRBTreeOperaDelete(void *_self, C_DEVID key) {
 	RBTree *self = _self;
 
 	RBTreeNode *node = ntyRBTreeSearch(self , key);
-	if (node == self->nil) return 1;
+	if (node == self->nil) return 3;
 #if 1 //Release Friend list
 	if (node->value != NULL) {
 #if 1
@@ -435,10 +435,11 @@ int ntyRBTreeOperaDelete(void *_self, C_DEVID key) {
 #if 1
 			self->count --;
 #endif
-#if 1
+#if 0
 			free(node->value);
-			free(node);
 #endif
+			free(node);
+
 			self->rbtree_delete_lock = 0;
 		} else {
 			ntydbg(" ntyRBTreeOperaDelete --> have delete node\n"); 
@@ -849,6 +850,65 @@ C_DEVID ntyFriendsTreeGetFristNodeKey(void *self) {
 
 //int nty
 
+static void *pMap = NULL;
+void* ntyMapInstance(void) {
+	if (pMap == NULL) {
+		int arg = 1;
+		void *pTree = New(pNtyRBTreeOpera, arg);
+		if ((unsigned long)NULL != cmpxchg((void*)(&pMap), (unsigned long)NULL, (unsigned long)pTree, WORD_WIDTH)) {
+			Delete(pTree);
+		} 
+	}
+	return pMap;
+}
+
+int ntyMapInsert(void *self, C_DEVID key, void *value) {
+	RBTreeOpera **pRBTreeOpera = self;
+
+	if (self && (*pRBTreeOpera) && (*pRBTreeOpera)->insert) {
+		return (*pRBTreeOpera)->insert(self, key, value);
+	}
+	return -1;
+}
+
+//return node->value : UdpClient
+void* ntyMapSearch(void *self, C_DEVID key) {
+	RBTreeOpera **pRBTreeOpera = self;
+
+	if (self && (*pRBTreeOpera) && (*pRBTreeOpera)->search) {
+		RBTreeNode* node = (*pRBTreeOpera)->search(self, key);
+		if (node != NULL) {
+			return node->value; //UdpClient
+ 		} else {
+			return NULL;
+		}
+	}
+	return NULL;
+}
+
+int ntyMapDelete(void *self, C_DEVID key) {
+	RBTreeOpera **pRBTreeOpera = self;
+
+	if (self && (*pRBTreeOpera) && (*pRBTreeOpera)->delete) {
+		return (*pRBTreeOpera)->delete(self, key);
+	}
+	return -1;
+}
+
+int ntyMapUpdate(void *self, C_DEVID key, void *value) {
+	RBTreeOpera **pRBTreeOpera = self;
+
+	if (self && (*pRBTreeOpera) && (*pRBTreeOpera)->update) {
+		return (*pRBTreeOpera)->update(self, key, value);
+	}
+	return -1;
+}
+
+
+void ntyMapRelease(void *self) {
+	return Delete(self);
+}
+
 
 #if 0
 int main() {
@@ -872,7 +932,7 @@ int main() {
 		node->key = keyArray[i];
 		node->value = NULL;
 				
-		NattyRBTreeInsert(T, node);
+		ntyRBTreeInsert(T, node);
 	}
 
 	ntylog("\n");

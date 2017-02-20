@@ -64,7 +64,7 @@
 
 //ntyLogInfo(format, ##__VA_ARGS__)//
 //fprintf(stdout, format, ##__VA_ARGS__)
-#define NTY_DEBUG 	3
+#define NTY_DEBUG 	2
 #if (NTY_DEBUG == 1) //catcher 
 #define ntylog(format, ...) 		ntyLogInfo(format, ##__VA_ARGS__)
 #define ntydbg(format, ...) 		fprintf(stdout, format, ##__VA_ARGS__)
@@ -96,6 +96,7 @@ typedef unsigned short U16;
 typedef unsigned char U8;
 typedef long long C_DEVID;
 typedef long TIMESTAMP;
+//typedef C_DEVID NTY_ID;
 
 typedef   signed char   int8_t;
 typedef unsigned char  uint8_t;
@@ -110,7 +111,13 @@ typedef int (*HANDLE_MASS)(C_DEVID to, U8 *data, int length);
 typedef int (*HANDLE_BROADCAST)(void* client, C_DEVID to, U8 *data, int length);
 typedef int (*HANDLE_HEARTBEAT)(void* node, void *mainloop, TIMESTAMP stamp);
 
-
+/*
+ * AbstractClass
+ * three layer to implement Object Oriented by C
+ * 1. implement layer	: 
+ * 2. Abstract layer: xxHandle Class defined
+ * 3. interface layer: 
+ */
 typedef struct {
 	size_t size;
 	void* (*ctor)(void *_self, va_list *params);

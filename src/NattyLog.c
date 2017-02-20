@@ -111,7 +111,7 @@ void* ntyLogInitialize(nLog *log) {
 
 	rc = nLogInit(NATTY_LOG_CONF);
 	if (rc) {
-		printf("init failed\n");
+		printf("init failed : %d\n", rc);
 		return NULL;
 	}
 

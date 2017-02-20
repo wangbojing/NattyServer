@@ -226,7 +226,7 @@ static int ntyExecuteWatchInsert(void *self, U8 *imei) {
 
 
 //NTY_DB_APPIDLIST_SELECT_FORMAT
-static int ntyQueryAppIDListSelect(void *self, C_DEVID did, void *tree) {
+static int ntyQueryAppIDListSelect(void *self, C_DEVID did, void *container) {
 	ConnectionPool *pool = self;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
@@ -241,6 +241,8 @@ static int ntyQueryAppIDListSelect(void *self, C_DEVID did, void *tree) {
 			while (ResultSet_next(r)) {
 				C_DEVID id = ResultSet_getLLong(r, 1);
 #if 1
+				ntyVectorAdd(container, &id, sizeof(C_DEVID));
+#else
 				ntyFriendsTreeInsert(tree, id);
 #endif
 			}
@@ -263,7 +265,7 @@ static int ntyQueryAppIDListSelect(void *self, C_DEVID did, void *tree) {
 
 
 //NTY_DB_WATCHIDLIST_SELECT_FORMAT
-static int ntyQueryWatchIDListSelect(void *self, C_DEVID aid, void *tree) {
+static int ntyQueryWatchIDListSelect(void *self, C_DEVID aid, void *container) {
 	ConnectionPool *pool = self;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
@@ -278,6 +280,9 @@ static int ntyQueryWatchIDListSelect(void *self, C_DEVID aid, void *tree) {
 			while (ResultSet_next(r)) {
 				C_DEVID id = ResultSet_getLLong(r, 1);
 #if 1
+				ntylog(" ntyQueryWatchIDListSelect : %lld\n", id);
+				ntyVectorAdd(container, &id, sizeof(C_DEVID));
+#else
 				ntyFriendsTreeInsert(tree, id);
 #endif
 			}
@@ -722,22 +727,20 @@ int ntyQueryAppOnlineStatus(void *self, C_DEVID aid, int *online) {
 	return ret;
 }
 
-
-
 int ntyExecuteWatchInsertHandle(U8 *imei) {
 	void *pool = ntyConnectionPoolInstance();
 	return ntyExecuteWatchInsert(pool, imei);
 }
 
-int ntyQueryAppIDListSelectHandle(C_DEVID did, void *tree) {
+int ntyQueryAppIDListSelectHandle(C_DEVID did, void *container) {
 	void *pool = ntyConnectionPoolInstance();
-	return ntyQueryAppIDListSelect(pool, did, tree);
+	return ntyQueryAppIDListSelect(pool, did, container);
 }
 
 
-int ntyQueryWatchIDListSelectHandle(C_DEVID aid, void *tree) {
+int ntyQueryWatchIDListSelectHandle(C_DEVID aid, void *container) {
 	void *pool = ntyConnectionPoolInstance();
-	return ntyQueryWatchIDListSelect(pool, aid, tree);
+	return ntyQueryWatchIDListSelect(pool, aid, container);
 }
 
 int ntyQueryDevAppRelationInsertHandle(C_DEVID aid, U8 *imei) {

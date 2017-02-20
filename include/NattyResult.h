@@ -41,44 +41,21 @@
  *
  */
 
-#ifndef __NATTY_CONFIG_H__
-#define __NATTY_CONFIG_H__
 
-#define __NATTY_CLOUD_VERSION				2
+#ifndef __NATTY_RESULT_H__
+#define __NATTY_RESULT_H__
 
-#define ENABLE_NATTY_TIME_STAMP				1
-
-#define ENABLE_NATTY_HEARTBEAT_DETECTER		1
-
-#define ENABLE_MAINLOOP_MUTEX				1
-
-#define ENABLE_RBTREE_MUTEX					1
-
-#define ENABLE_CONNECTION_POOL				1
-
-#define ENABLE_NODE_AGENT_SAVE				1
-
-#define ENABLE_MULTICAST_SYNC				1
-
-#define ENABLE_DAVE_MSGQUEUE_MALLOC			1
-
-#define ENABLE_SIGNAL_SUBSYSTEM				0
-
-#define ENABLE_ENCODE_WCHAR					1
-
-
-
-#if 1
-
-#define CUSTOM_JG			1
-#define CUSTOM_SELECT			CUSTOM_JG
+typedef enum _NRESULT {
+	NTY_RESULT_ERROR = -2, //param error
+	NTY_RESULT_FAILED = -1, //param failed
+	NTY_RESULT_SUCCESS = 0,
+	NTY_RESULT_EXIST = 1,
+	NTY_RESULT_PROCESS = 2,
+	NTY_RESULT_NOEXIST = 3,
+	NTY_RESULT_NEEDINSERT = 4,
+	
+} NResult;
 
 #endif
-
-#endif
-
-
-
-
 
 

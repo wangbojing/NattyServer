@@ -70,27 +70,22 @@
 #define NATTY_DICTIONARY_MASK			(NATTY_DICTIONARY_LENGTH-1)
 #define NATTY_POLY						0x01101
 
+/*
+ * implement <key, value> -- <socket, userid>   O(1)
+ */
 
 typedef RBTree Tree;
 
 typedef struct _Payload {
-	unsigned short proto;
-	unsigned int dstip;
-	unsigned short dport;
-	unsigned int srcip;
-	unsigned short sport;
+	C_DEVID	id;
 } Payload;
 
 typedef struct _HashNode {
 	Payload *info;
-	C_DEVID devid;
 	int sockfd;
 	struct _HashNode *list;
 } HashNode;
-/*
- * if ip and port 
- * port 
- */
+
 typedef struct _HashTable {
 	const void *_;
 	HashNode *Dictionary;
@@ -100,29 +95,21 @@ typedef struct _HashTableHandle {
 	size_t size;
 	void* (*ctor)(void *_self, va_list *params);
 	void* (*dtor)(void *_self);
-	int (*insert)(void *_self, U32 key, Payload* load, C_DEVID id, int fd);
-	C_DEVID (*searchId)(void *_self, U32 key, Payload* load);
-	int (*searchFd)(void *_self, U32 key, Payload* load);
-	int (*delete)(void *_self, U32 key, Payload* load);
-	int (*update)(void *_self, U32 key, Payload* load, C_DEVID id, int fd);
+	int (*insert)(void *_self, U32 key, Payload* load);
+	Payload* (*search)(void *_self, U32 key);
+	int (*delete)(void *_self, U32 key);
+	int (*update)(void *_self, U32 key, Payload* load);
 } HashTableHandle;
 
+void *ntyHashTableInstance(void);
 
 U32 ntyHashKey(Payload *load);
+int ntyHashTableInsert(void *self, U32 key, Payload* load);
+int ntyHashTableDelete(void *self, U32 key);
+
+Payload* ntyHashTableSearch(void *self, U32 key);
 
 
-void *ntyHashTableInstance(void);
-void *ntyHashTableRelease(void);
-int ntyHashTableInsert(void *self, U32 key, Payload* load, C_DEVID id, int fd);
-C_DEVID ntyHashTableSearch(void *self, U32 key, Payload* load) ;
-int ntyHashTableDelete(void *self, U32 key, Payload* load);
-int ntyHashTableUpdate(void *self, U32 key, Payload* load, C_DEVID id, int fd);
-
-
-C_DEVID ntySearchDevIdFromHashTable(struct sockaddr_in *addr);
-int ntyDeleteNodeFromHashTable(struct sockaddr_in *addr, C_DEVID id);
-int ntyInsertNodeToHashTable(struct sockaddr_in *addr, C_DEVID id);
-int ntyUpdateNodeToHashTable(struct sockaddr_in *addr, C_DEVID id, int fd);
 
 
 

@@ -42,229 +42,236 @@
  */
 
 
-
-#include <signal.h>
-#include <sys/time.h>
-#include <string.h>
-
 #include "NattyTimer.h"
+#include "NattyResult.h"
+
+static NSTimerList *nGlobalTimer;
 
 
-static void* ntyTimerCtor(void *_self, va_list *params) {
-	NetworkTimer *timer = _self;
-	pthread_mutex_t blank_mutex = PTHREAD_MUTEX_INITIALIZER;
-	pthread_cond_t blank_cond = PTHREAD_COND_INITIALIZER;
-	
-	timer->sigNum = SIGALRM;
-	timer->timerProcess = 0;
-	memcpy(&timer->timer_mutex, &blank_mutex, sizeof(timer->timer_mutex));
-	memcpy(&timer->timer_cond, &blank_cond, sizeof(timer->timer_cond));
+static void ntySignalAlarmCb(int signo) {
+	NSTimer *node = nGlobalTimer->header.lh_first;
 
-	return timer;
-}
+	while (node != NULL) {
+		NSTimer *cnode = node;
+		node = node->entries.le_next;
 
-static void* ntyTimerDtor(void *_self) {
-	return _self;
-}
+		cnode->elapse++;
+		if (cnode->enable == 0) {
+			LIST_REMOVE(cnode, entries);
+			nGlobalTimer->num--;
+#if 1 //user_data store in memory addr
+			if (cnode->user_data != NULL)
+				free(cnode->user_data);
+#endif			
+			free(cnode);
+			continue;
+		}
 
-static int ntyStartTimerOpera(void *_self, HANDLE_TIMER fun) {
-	NetworkTimer *timer = _self;
-	struct itimerval tick;
-	timer->timerFunc = fun;
-
-	signal(timer->sigNum, timer->timerFunc);
-	memset(&tick, 0, sizeof(tick));
-
-	tick.it_value.tv_sec = 0;
-	tick.it_value.tv_usec = MS(TIMER_TICK);
-
-	tick.it_interval.tv_sec = 0;
-	tick.it_interval.tv_usec = MS(TIMER_TICK);
-
-	
-	pthread_mutex_lock(&timer->timer_mutex);
-	while (timer->timerProcess) {
-		pthread_cond_wait(&timer->timer_cond, &timer->timer_mutex);
+		if(cnode->elapse >= cnode->interval) {
+			cnode->elapse = 0;
+			cnode->cb(cnode->id, (void*)cnode->user_data, cnode->len);
+		}
 	}
-	timer->timerProcess = 1;
-	if (setitimer(ITIMER_REAL, &tick, NULL) < 0) {
-		ntydbg("Set timer failed!\n");
-	}
-	pthread_mutex_unlock(&timer->timer_mutex);
-	
-	return 0;
+
 }
 
 
-static int ntyStopTimerOpera(void *_self) {
-	NetworkTimer *timer = _self;
+static int ntyWheelTimerInitialize(NSTimerList *nTimerList, int count)
+{
+	int ret = 0;
+	//NSTimerList 
+	
+	if(count <= 0 || count > NTY_MAX_TIMER_NUM) {
+		printf("the timer max number MUST less than %d.\n", NTY_MAX_TIMER_NUM);
+		return -1;
+	}
+	
+	memset(nTimerList, 0, sizeof(NSTimerList));
+	LIST_INIT(&nTimerList->header);
+	nTimerList->max_num = count;	
 
-	struct itimerval tick;
+	/* Register our internal signal handler and store old signal handler */
+	if ((nTimerList->old_sigfunc = signal(SIGALRM, ntySignalAlarmCb)) == SIG_ERR) {
+		return -1;
+	}
+	nTimerList->new_sigfunc = ntySignalAlarmCb;
+	//pthread_mutex_t blank_mutex = PTHREAD_MUTEX_INITIALIZER;
+	//memcpy(&nTimerList->timer_mutex, &blank_mutex, sizeof(nTimerList->timer_mutex));
 
-	signal(timer->sigNum, timer->timerFunc);
-	memset(&tick, 0, sizeof(tick));
+	/* Setting our interval timer for driver our mutil-timer and store old timer value */
+	nTimerList->value.it_value.tv_sec = NTY_TIMER_START;
+	nTimerList->value.it_value.tv_usec = 0;
+	nTimerList->value.it_interval.tv_sec = NTY_TIMER_TICK;
+	nTimerList->value.it_interval.tv_usec = 0;
+	ret = setitimer(ITIMER_REAL, &nTimerList->value, &nTimerList->ovalue);
 
-	tick.it_value.tv_sec = 0;
-	tick.it_value.tv_usec = 0;//MS(TIMER_TICK);
+	return ret;
+}
 
-	tick.it_interval.tv_sec = 0;
-	tick.it_interval.tv_usec = 0;//MS(TIMER_TICK);
+static int ntyWheelTimerDestroy(NSTimerList *nTimerList)
+{
+	NSTimer *node = NULL;
+	
+	if ((signal(SIGALRM, nTimerList->old_sigfunc)) == SIG_ERR) {
+		return -1;
+	}
 
-	pthread_mutex_lock(&timer->timer_mutex);
-	timer->timerProcess = 0;
-#if 0 //mac os don't support
-	pthread_cond_broadcast(&timer->timer_cond);
-#else
-	pthread_cond_signal(&timer->timer_cond);
+	if((setitimer(ITIMER_REAL, &nTimerList->ovalue, &nTimerList->value)) < 0) {
+		return -1;
+	}
+	
+	while (!LIST_EMPTY(&nTimerList->header)) {/* Delete. */
+		node = LIST_FIRST(&nTimerList->header);
+		LIST_REMOVE(node, entries);
+		/* Free node */
+		printf("Remove id %d\n", node->id);
+#if 1
+		free(node->user_data);
 #endif
-	if (setitimer(ITIMER_REAL, &tick, NULL) < 0) {
-		ntydbg("Set timer failed!\n");	
+		free(node);
 	}
-	pthread_mutex_unlock(&timer->timer_mutex);
 	
+	memset(nTimerList, 0, sizeof(NSTimerList));
+
 	return 0;
 }
 
 
+static NSTimer* ntyWheelTimerAdd(NSTimerList *nTimerList, int interval, NFTIMER_EXPIRY_FUNC *cb, void *user_data, int len)
+{
+	NSTimer *node = NULL;	
+	pthread_mutex_t blank_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+	if (cb == NULL || interval <= 0) {
+		return NULL;
+	}
+
+	if(nTimerList->num < nTimerList->max_num) {
+		nTimerList->num++;
+	} else {
+		return NULL;
+	} 
+	
+	if((node = malloc(sizeof(NSTimer))) == NULL) {
+		return NULL;
+	}
+	if(user_data != NULL) {
+#if 1
+		node->user_data = malloc(len);
+		memcpy(node->user_data, user_data, len);
+		node->len = len;
+#else
+		node->user_data = (unsigned long)user_data;
+		node->len = sizeof(void*);
+#endif
+	} else {
+		node->user_data = NULL;
+		node->len = 0;
+	}
+
+	node->cb = cb;
+	node->interval = interval;
+	node->elapse = 0;
+	node->id = nTimerList->num;
+	node->enable = 1;
+	//memcpy(&timer_mutex[node->id], &blank_mutex, sizeof(timer_mutex[node->id]));
+	
+	LIST_INSERT_HEAD(&nTimerList->header, node, entries);
+	
+	return node;
+}
+
+static int ntyWheelTimerDel(NSTimerList *nTimerList, NSTimer *node) {
+	ASSERT(node != NULL);
+	if (node->id <0 || node->id > nTimerList->max_num) {
+		return NTY_RESULT_FAILED;
+	}
+	node->enable = 0;
+	
+	return NTY_RESULT_SUCCESS;
+}
 
 
-static const TimerOpera ntyTimerOpera = {
-	sizeof(NetworkTimer),
+static void* ntyTimerCtor(void *self, va_list *params) {
+	NWTimer* nTimer = self;
+	nTimer->nContainer = (NSTimerList*)malloc(sizeof(NSTimerList));
+	
+	ntyWheelTimerInitialize(nTimer->nContainer, NTY_MAX_TIMER_NUM);
+
+	nGlobalTimer = nTimer->nContainer;
+
+	return nTimer;
+}
+
+static void* ntyTimerDtor(void *self) {
+	NWTimer* nTimer = self;
+	ntyWheelTimerDestroy(nTimer->nContainer);
+
+	free(nTimer->nContainer);
+	nTimer->nContainer = NULL;
+
+	return nTimer;
+}
+
+static void* ntyTimerAddHandle(void *self, int interval, NFTIMER_EXPIRY_FUNC *cb, void *user_data, int len) {
+	NWTimer* nTimer = self;
+
+	return ntyWheelTimerAdd(nTimer->nContainer, interval, cb, user_data, len);
+}
+
+static int ntyTimerDelHandle(void *self, void *timer) {
+	NWTimer* nTimer = self;
+
+	return ntyWheelTimerDel(nTimer->nContainer, timer);
+}
+
+static const NWTimerHandle ntyTimerHandle  = {
+	sizeof(NWTimer),
 	ntyTimerCtor,
 	ntyTimerDtor,
-	ntyStartTimerOpera,
-	ntyStopTimerOpera,
+	ntyTimerAddHandle,
+	ntyTimerDelHandle,
 };
 
-const void *pNtyTimerOpera = &ntyTimerOpera;
+const void *pNtyTimerHandle = &ntyTimerHandle;
 
-static void* pNetworkTimer = NULL;
-void *ntyNetworkTimerInstance(void) {
-	if (pNetworkTimer == NULL) {
-		pNetworkTimer = New(pNtyTimerOpera);
+static void *pWheelTimer = NULL; //Singleton
+
+void* ntyTimerInstance(void) {
+	if (pWheelTimer == NULL) {
+		int arg = 1;
+		void *pTimer = New(pNtyTimerHandle, arg);
+		if ((unsigned long)NULL != cmpxchg((void*)(&pWheelTimer), (unsigned long)NULL, (unsigned long)pTimer, WORD_WIDTH)) {
+			Delete(pTimer);
+		} 
 	}
-	return pNetworkTimer;
+	return pWheelTimer;
 }
 
-int ntyStartTimer(void *self,  HANDLE_TIMER func) {
-	const TimerOpera* const *handle = self;
-	if (self && (*handle) && (*handle)->start) {
-		return (*handle)->start(self, func);
+void ntyTimerRelease(void) {
+	if (pWheelTimer != NULL) {
+		Delete(pWheelTimer);
+		pWheelTimer = NULL;
 	}
-	return -2;
 }
 
-int ntyStopTimer(void *self) {
-	const TimerOpera* const *handle = self;
-	if (self && (*handle) && (*handle)->stop) {
-		return (*handle)->stop(self);
+void* ntyTimerAdd(void *self, int interval, NFTIMER_EXPIRY_FUNC *cb, void *user_data, int len) {
+	NWTimerHandle * const * pTimerHandle = self;
+
+	if (self && *pTimerHandle && (*pTimerHandle)->add) {
+		return (*pTimerHandle)->add(self, interval, cb, user_data, len);
 	}
-	return -2;
+	return NULL;
 }
 
-void ntyNetworkTimerRelease(void *self) {
-	
-	return Delete(self);
-}
+int ntyTimerDel(void *self, void *timer) {
+	NWTimerHandle * const * pTimerHandle = self;
 
-
-static void* ntyReconnTimerCtor(void *_self, va_list *params) {
-	NetworkTimer *timer = _self;
-	pthread_mutex_t blank_mutex = PTHREAD_MUTEX_INITIALIZER;
-	pthread_cond_t blank_cond = PTHREAD_COND_INITIALIZER;
-	
-	timer->sigNum = SIGALRM;
-	timer->timerProcess = 0;
-	memcpy(&timer->timer_mutex, &blank_mutex, sizeof(timer->timer_mutex));
-	memcpy(&timer->timer_cond, &blank_cond, sizeof(timer->timer_cond));
-
-	return timer;
-}
-
-static void* ntyReconnTimerDtor(void *_self) {
-	return _self;
-}
-
-static int ntyStartReconnTimerHandle(void *_self, HANDLE_TIMER fun) {
-	NetworkTimer *timer = _self;
-	struct itimerval tick;
-	timer->timerFunc = fun;
-
-	signal(timer->sigNum, timer->timerFunc);
-	memset(&tick, 0, sizeof(tick));
-
-	tick.it_value.tv_sec = RECONNECT_TICK;
-	tick.it_value.tv_usec = 0;
-
-	tick.it_interval.tv_sec = RECONNECT_TICK;
-	tick.it_interval.tv_usec = 0;
-
-#if 0	
-	pthread_mutex_lock(&timer->timer_mutex);
-	while (timer->timerProcess) {
-		pthread_cond_wait(&timer->timer_cond, &timer->timer_mutex);
+	if (self && *pTimerHandle && (*pTimerHandle)->del) {
+		return (*pTimerHandle)->del(self, timer);
 	}
-	timer->timerProcess = 1;
-#endif
-	if (setitimer(ITIMER_REAL, &tick, NULL) < 0) {
-		ntydbg("Set timer failed!\n");
-	}
-#if 0
-	pthread_mutex_unlock(&timer->timer_mutex);
-#endif	
-	return 0;
+	return NTY_RESULT_FAILED;
 }
 
-
-static int ntyStopReconnTimerHandle(void *_self) {
-	NetworkTimer *timer = _self;
-
-	struct itimerval tick;
-
-	signal(timer->sigNum, timer->timerFunc);
-	memset(&tick, 0, sizeof(tick));
-
-	tick.it_value.tv_sec = 0;
-	tick.it_value.tv_usec = 0;//MS(TIMER_TICK);
-
-	tick.it_interval.tv_sec = 0;
-	tick.it_interval.tv_usec = 0;//MS(TIMER_TICK);
-#if 0
-	pthread_mutex_lock(&timer->timer_mutex);
-	timer->timerProcess = 0;
-#if 0 //mac os don't support
-	pthread_cond_broadcast(&timer->timer_cond);
-#else
-	pthread_cond_signal(&timer->timer_cond);
-#endif
-#endif
-	if (setitimer(ITIMER_REAL, &tick, NULL) < 0) {
-		ntydbg("Set timer failed!\n");	
-	}
-#if 0
-	pthread_mutex_unlock(&timer->timer_mutex);
-#endif
-	return 0;
-}
-
-
-
-static const TimerOpera ntyReconnectTimerHandle = {
-	sizeof(NetworkTimer),
-	ntyReconnTimerCtor,
-	ntyReconnTimerDtor,
-	ntyStartReconnTimerHandle,
-	ntyStopReconnTimerHandle,
-};
-
-const void *pNtyReconnectTimerHandle = &ntyReconnectTimerHandle;
-static void* pReconnectTimer = NULL;
-
-void *ntyReconnectTimerInstance(void) {
-	if (pReconnectTimer == NULL) {
-		pReconnectTimer = New(pNtyReconnectTimerHandle);
-	}
-	return pReconnectTimer;
-}
 
 

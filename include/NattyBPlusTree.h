@@ -41,44 +41,82 @@
  *
  */
 
-#ifndef __NATTY_CONFIG_H__
-#define __NATTY_CONFIG_H__
 
-#define __NATTY_CLOUD_VERSION				2
-
-#define ENABLE_NATTY_TIME_STAMP				1
-
-#define ENABLE_NATTY_HEARTBEAT_DETECTER		1
-
-#define ENABLE_MAINLOOP_MUTEX				1
-
-#define ENABLE_RBTREE_MUTEX					1
-
-#define ENABLE_CONNECTION_POOL				1
-
-#define ENABLE_NODE_AGENT_SAVE				1
-
-#define ENABLE_MULTICAST_SYNC				1
-
-#define ENABLE_DAVE_MSGQUEUE_MALLOC			1
-
-#define ENABLE_SIGNAL_SUBSYSTEM				0
-
-#define ENABLE_ENCODE_WCHAR					1
+#ifndef __NATTY_BPLUS_TREE_H__
+#define __NATTY_BPLUS_TREE_H__
 
 
+#include "NattyAbstractClass.h"
+#include "NattyResult.h"
+#include "NattyTimer.h"
 
-#if 1
+#include <stdio.h>
+#include <stdlib.h>
 
-#define CUSTOM_JG			1
-#define CUSTOM_SELECT			CUSTOM_JG
-
+#ifndef bool
+#define bool 	char
 #endif
 
+#define false 	0
+#define true 	1
+
+
+#define DEFAULT_ORDER			7
+#define NTY_BPLUSTREE_ORDER		DEFAULT_ORDER
+
+typedef unsigned long long NTY_ID;
+
+
+typedef struct _BPNode {
+	void **pointers;
+	NTY_ID *keys;
+	struct _BPNode *parent;
+	bool isLeaf;
+	int nKeys;
+	struct _BPNode *next;
+} BPNode;
+
+typedef BPNode		NBPNode;
+typedef void*	RECORDTYPE;
+
+typedef struct _Record {
+	RECORDTYPE value;
+} NRecord;
+
+typedef struct _BPTreeHeap {
+	const void *_;
+	NBPNode *root;
+	int count;
+} BPTreeHeap;
+
+typedef struct _BPTreeHeapHandle {
+	size_t size;
+	void* (*ctor)(void *_self, va_list *params);
+	void* (*dtor)(void *_self);
+	int (*insert)(void *_self, NTY_ID key, RECORDTYPE value);
+	int (*delete)(void *_self, NTY_ID key);
+	int (*update)(void *_self, NTY_ID key, RECORDTYPE value, size_t size);
+	void* (*select)(void *_self, NTY_ID key);
+} BPTreeHeapHandle;
+
+typedef BPTreeHeap NBHeap;
+typedef BPTreeHeapHandle NBHeapHandle;
+
+
+void* ntyBHeapInstance(void);
+void ntyBHeaRelease(void *self);
+int ntyBHeapInsert(void *self, NTY_ID key, RECORDTYPE value);
+int ntyBHeapDelete(void *self, NTY_ID key);
+void* ntyBHeapSelect(void *self, NTY_ID key);
+int ntyBHeapUpdate(void *self, NTY_ID key, RECORDTYPE value, size_t size);
+
+
+
+
+
+
+
+
 #endif
-
-
-
-
 
 

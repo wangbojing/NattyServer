@@ -41,44 +41,59 @@
  *
  */
 
-#ifndef __NATTY_CONFIG_H__
-#define __NATTY_CONFIG_H__
-
-#define __NATTY_CLOUD_VERSION				2
-
-#define ENABLE_NATTY_TIME_STAMP				1
-
-#define ENABLE_NATTY_HEARTBEAT_DETECTER		1
-
-#define ENABLE_MAINLOOP_MUTEX				1
-
-#define ENABLE_RBTREE_MUTEX					1
-
-#define ENABLE_CONNECTION_POOL				1
-
-#define ENABLE_NODE_AGENT_SAVE				1
-
-#define ENABLE_MULTICAST_SYNC				1
-
-#define ENABLE_DAVE_MSGQUEUE_MALLOC			1
-
-#define ENABLE_SIGNAL_SUBSYSTEM				0
-
-#define ENABLE_ENCODE_WCHAR					1
 
 
+#ifndef __NATTY_VECTOR_H__
+#define __NATTY_VECTOR_H__
 
-#if 1
+#include <sys/queue.h>
+#include <string.h>
+#include <stdlib.h>
 
-#define CUSTOM_JG			1
-#define CUSTOM_SELECT			CUSTOM_JG
+#include "NattyAbstractClass.h"
+
+#define NTY_VECTOR_MAX_COUNT		4096
+
+typedef int NVECTOR_CB(void *self, void *arg);
+
+typedef struct nKnot {
+	LIST_ENTRY(nKnot) entries;
+	void *data;
+	int len;
+} NKnot;
+
+typedef struct nVector {
+	const void *_;
+	LIST_HEAD(vectorheader, nKnot) header;
+	int num;
+	int max_num;	
+} NVector;
+
+
+typedef struct nVectorHandle {
+	size_t size;
+	void* (*ctor)(void *_self, va_list *params);
+	void* (*dtor)(void *_self);
+	void* (*add)(void *_self, void *data, int len);
+	int (*del)(void *_self, void *timer);
+	void (*iter)(void *_self, NVECTOR_CB *cb, void *arg);
+} NVectorHandle;
+
+
+void* ntyVectorCreator(void);
+void* ntyVectorDestory(void *self);
+void* ntyVectorInsert(void *self, void *data, int len);
+int ntyVectorDelete(void *self, void *data);
+void ntyVectorIterator(void *self, NVECTOR_CB *cb, void *arg);
+
+
+void *ntyVectorGetNodeList(void *self, int *num);
+
+
+
+
+
 
 #endif
-
-#endif
-
-
-
-
 
 

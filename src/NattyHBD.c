@@ -44,11 +44,6 @@
 
 #include "NattyHBD.h"
 //#include "NattyUdpServer.h"
-#include "NattyTcpServer.h"
-#include "NattyConfig.h"
-#include "NattyRBTree.h"
-#include "NattyFilter.h"
-#include "NattySession.h"
 
 #include <sys/time.h>
 #include <unistd.h>
@@ -56,6 +51,8 @@
 #if ENABLE_NATTY_TIME_STAMP
 extern pthread_mutex_t time_mutex;
 #endif
+
+#if 0
 int ntyHeartBeatDetectItem(void *node, void *mainloop, TIMESTAMP curStamp) {
 #if 0
 	Client *client = node;
@@ -81,11 +78,11 @@ int ntyHeartBeatDetectItem(void *node, void *mainloop, TIMESTAMP curStamp) {
 	}
 #endif
 	if (client->devId == NATTY_NULL_DEVID) {
-		
+#if 0		
 		ntylog("Client DevID == 0 ---> Addr : %d.%d.%d.%d:%d \n", *(unsigned char*)(&client->addr.sin_addr.s_addr), *((unsigned char*)(&client->addr.sin_addr.s_addr)+1),													
 				*((unsigned char*)(&client->addr.sin_addr.s_addr)+2), *((unsigned char*)(&client->addr.sin_addr.s_addr)+3),													
 				client->addr.sin_port);	
-		
+#endif		
 		return 0;
 	}
 
@@ -148,7 +145,17 @@ void ntyHeartBeatDetectTraversal(void *mainloop) {
 	}
 	ntyRBTreeHeartBeatDetect(pTree, ntyHeartBeatDetectItem, mainloop, curStamp);
 }
+#else
+
+int ntyCheckOnlineAlarmNotify(NITIMER_ID id, void *arg, int len) {
+	void **pArg = arg;
+	Client *client = *pArg;
+
+	
+	return NTY_RESULT_SUCCESS;
+}
 
 
+#endif
 
 

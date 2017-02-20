@@ -47,6 +47,8 @@
 #include "NattyUdpServer.h"
 #include "NattyThreadPool.h"
 #include "NattyUtils.h"
+#include "NattyRBTree.h"
+#include "NattyResult.h"
 
 #include <errno.h>
 
@@ -107,7 +109,7 @@ void* allocRequestPacket(void) {
 		perror("malloc Request Packet failed\n");
 		return NULL;
 	}
-	req->client = (UdpClient*)malloc(sizeof(UdpClient));
+	req->client = (Client*)malloc(sizeof(Client));
 	if (req->client == NULL ) {
 		perror("malloc client failed\n");
 		
@@ -165,12 +167,13 @@ int ntyUdpServerProcess(const void *_self) {
 			if (req == NULL) {
 				continue;
 			}
+			struct sockaddr_in addr;			
 			
 			bzero(buf, RECV_BUFFER_SIZE);    
-			n = recvfrom(self->sockfd, buf, RECV_BUFFER_SIZE, 0, (struct sockaddr *) &req->client->addr, &clientlen);    
-			ntylog("UdpRecv : %d.%d.%d.%d:%d, length:%d --> %x, id:%lld\n", *(unsigned char*)(&req->client->addr.sin_addr.s_addr), *((unsigned char*)(&req->client->addr.sin_addr.s_addr)+1),													
-				*((unsigned char*)(&req->client->addr.sin_addr.s_addr)+2), *((unsigned char*)(&req->client->addr.sin_addr.s_addr)+3),													
-				req->client->addr.sin_port, n, buf[NTY_PROTO_TYPE_IDX], *(C_DEVID*)(&buf[NTY_PROTO_DEVID_IDX]));	
+			n = recvfrom(self->sockfd, buf, RECV_BUFFER_SIZE, 0, (struct sockaddr *) &addr, &clientlen);    
+			ntylog("UdpRecv : %d.%d.%d.%d:%d, length:%d --> %x, id:%lld\n", *(unsigned char*)(&addr.sin_addr.s_addr), *((unsigned char*)(&addr.sin_addr.s_addr)+1),													
+				*((unsigned char*)(&addr.sin_addr.s_addr)+2), *((unsigned char*)(&addr.sin_addr.s_addr)+3),													
+				addr.sin_port, n, buf[NTY_PROTO_TYPE_IDX], *(C_DEVID*)(&buf[NTY_PROTO_DEVID_IDX]));	
 			// proccess
 			// i think process protocol and search client id from rb-tree
 #if 0
@@ -178,11 +181,11 @@ int ntyUdpServerProcess(const void *_self) {
 			req->client->ackNum = *(U32*)(buffer+NTY_PROTO_ACKNUM_IDX)+1;
 #else
 			ntyU8ArrayToU64(&buf[NTY_PROTO_DEVID_IDX], &req->client->devId);
-			req->client->ackNum = ntyU8ArrayToU32(&buf[NTY_PROTO_ACKNUM_IDX])+1;
+			//req->client->ackNum = ntyU8ArrayToU32(&buf[NTY_PROTO_ACKNUM_IDX])+1;
 #endif
-			req->client->sockfd = self->sockfd;
-			req->client->watcher = NULL;
-			req->client->clientType = PROTO_TYPE_UDP;
+			//req->sockfd = self->sockfd;
+			//req->client->watcher = NULL;
+			req->connectType = PROTO_TYPE_UDP;
 			req->length = (U16)n;
 			req->buffer = (U8*)malloc(n);
 			if (req->buffer == NULL) {
@@ -242,14 +245,17 @@ int ntyUdpServerRun(const void *arg) {
 }
 
 int ntyClientCompare(const UdpClient *clientA, const UdpClient *clientB) {
+#if 0
 	if ((clientA->addr.sin_port == clientB->addr.sin_port) 
 		&& (clientA->addr.sin_addr.s_addr == clientB->addr.sin_addr.s_addr)) {
 		return 1;
 	}
-
+#endif
 	return 0;
 }
 
+
+#if 0
 int ntySendBuffer(const UdpClient *client, unsigned char *buffer, int length) {
 	if (client == NULL) return -1;
 	//if (client->sockfd == 0) return -1; //socket stored in watcher so delete it.
@@ -258,14 +264,20 @@ int ntySendBuffer(const UdpClient *client, unsigned char *buffer, int length) {
 	U32 Crc = ntyGenCrcValue(buffer, length-sizeof(U32));
 	memcpy(buffer+length-sizeof(U32), &Crc, sizeof(U32));
 #endif
-		
-	if (client->clientType == PROTO_TYPE_UDP) {
-		return sendto(client->sockfd, buffer, length, 0, (struct sockaddr *)&client->addr, sizeof(struct sockaddr_in));
-	} else if (client->clientType == PROTO_TYPE_TCP) {
+
+	void *map = ntyMapInstance();
+	ASSERT(map != NULL);
+
+	NValue *nv = ntyMapSearch(map, client->devId);
+	ASSERT(nv != NULL);
+
+	if (client->connectType == PROTO_TYPE_UDP) {
+		return sendto(nv->sockfd, buffer, length, 0, (struct sockaddr *)&nv->addr, sizeof(struct sockaddr_in));
+	} else if (client->connectType == PROTO_TYPE_TCP) {
 #if 0
 		int ret = send(client->sockfd, buffer, length, 0);
 #else
-		int ret = send(client->watcher->fd, buffer, length, 0);
+		int ret = send(nv->sockfd, buffer, length, 0);
 #endif
 		if (ret == -1) {
 			ntylog(" tcp send errno : %d\n", errno);
@@ -276,6 +288,50 @@ int ntySendBuffer(const UdpClient *client, unsigned char *buffer, int length) {
 	}
 	return -1;
 }
+
+#else
+
+int ntySendBuffer(ClientSocket *client, unsigned char *buffer, int length) {
+	if (client == NULL) return NTY_RESULT_FAILED;
+#if 1
+	U32 Crc = ntyGenCrcValue(buffer, length-sizeof(U32));
+	memcpy(buffer+length-sizeof(U32), &Crc, sizeof(U32));
+#endif
+
+	if (client->connectType == PROTO_TYPE_UDP) {
+		return sendto(client->sockfd, buffer, length, 0, (struct sockaddr *)&client->addr, sizeof(struct sockaddr_in));
+	} else if (client->connectType == PROTO_TYPE_TCP) {
+		int ret = send(client->sockfd, buffer, length, 0);
+		if (ret == -1) {
+			ntylog(" tcp send errno : %d\n", errno);
+		} else {
+			ntylog(" tcp send success : %d\n", ret);
+		}
+		return ret;
+	}
+	return NTY_RESULT_FAILED;
+}
+
+int ntyProxyBuffer(ClientSocket *client, unsigned char *buffer, int length) {
+	if (client == NULL) return NTY_RESULT_FAILED;
+
+	if (client->connectType == PROTO_TYPE_UDP) {
+		return sendto(client->sockfd, buffer, length, 0, (struct sockaddr *)&client->addr, sizeof(struct sockaddr_in));
+	} else if (client->connectType == PROTO_TYPE_TCP) {
+		int ret = send(client->sockfd, buffer, length, 0);
+		if (ret == -1) {
+			ntylog(" tcp send errno : %d\n", errno);
+		} else {
+			ntylog(" tcp send success : %d\n", ret);
+		}
+		return ret;
+	}
+	return NTY_RESULT_FAILED;
+}
+
+
+#endif
+
 
 void* ntyUdpServerInstance(void) {
 	if (pUdpServer == NULL) {

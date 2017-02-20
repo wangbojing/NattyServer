@@ -96,7 +96,7 @@ static int ntyWorkQueueInit(WorkQueue *wq, int numWorkers) {
 	if (numWorkers < 1) numWorkers = 1;
 	memset(wq, 0, sizeof(WorkQueue));
 	memcpy(&wq->jobs_mutex, &blank_mutex, sizeof(wq->jobs_mutex));
-	memcpy(&wq->jobs_cond, &blank_mutex, sizeof(wq->jobs_cond));
+	memcpy(&wq->jobs_cond, &blank_cond, sizeof(wq->jobs_cond));
 
 	for (i = 0;i < numWorkers;i ++) {
 		if ((worker = malloc(sizeof(Worker))) == NULL) {
