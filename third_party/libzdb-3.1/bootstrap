@@ -1,0 +1,14 @@
+#!/bin/sh
+# Use this script to re-create configure. Requires the following auto-tools,
+# autoconf        >= 2.59
+# automake        >= 1.9
+# libtool         >= 1.4
+glibtoolize -f 2>/dev/null || libtoolize -f
+if aclocal -I config && autoheader && automake --foreign --add-missing --copy && autoconf 
+then
+        echo "Success" 
+else
+        echo "Bootstrapping Build System failed"
+        exit 1
+fi
+

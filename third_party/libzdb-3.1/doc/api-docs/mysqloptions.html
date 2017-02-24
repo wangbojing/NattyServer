@@ -1,0 +1,120 @@
+<html>
+<head>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+    <title>libzdb | MySQL Options</title>
+    <link rel="stylesheet" href="libzdb.css">
+</head>
+<body>
+    <h1>
+        MySQL URL properties
+    </h1>
+    <table>
+        <tr>
+            <th>Property</th>
+            <th>Description</th>
+            <th>Type</th>
+        </tr>
+        <tr>
+            <td >
+                user
+            </td>
+            <td>
+                The MySQL login ID. This property is required unless the auth-part of the URL was used.
+                <p class="example">Example: user=root</p>
+            </td>
+            <td>
+                String
+            </td>
+        </tr>
+        <tr>
+            <td >
+                password
+            </td>
+            <td>
+                The password for user. This property is required unless the auth-part of the URL was used. 
+                <p class="example">Example: password=swordfish</p>
+            </td>
+            <td>
+                String
+            </td>
+        </tr>
+        <tr>
+            <td >
+                connect-timeout
+            </td>
+            <td>
+                Connect timeout in seconds. Default is 3 seconds. It is a checked runtime error to use a value equal to or less than 0.
+                <p class="example">Example: connect-timeout=5</p>
+
+            </td>
+            <td>
+                Integer (seconds)
+            </td>
+        </tr>
+        <tr>
+            <td>
+                compress
+            </td>
+            <td>
+                Use the compressed client/server protocol. Default is false.
+                <p class="example">Example: compress=true</p>
+            </td>
+            <td>
+                Boolean (true/false)
+            </td>
+        </tr>
+        <tr>
+            <td>
+                use-ssl
+            </td>
+            <td>
+                Used for establishing secure connections using SSL. OpenSSL support 
+                must be enabled/linked in the client library. Default is false.
+                <p class="example">Example: use-ssl=true</p>
+                
+            </td>
+            <td>
+                Boolean (true/false)
+            </td>
+        </tr>
+        <tr>
+            <td>
+                charset
+            </td>
+            <td>
+                Use this character set when communicating with the server. MySQL charsets, e.g. "utf8" or "latin1".
+                <p class="example">Example: charset=utf8</p>
+            </td>
+            <td>
+                String
+            </td>
+        </tr>
+        <tr>
+            <td>
+                secure-auth
+            </td>
+            <td>
+                Whether to connect to a server that does not support the password hashing used in MySQL 4.1.1 and later. Default is false.
+                <p class="example">Example: secure-auth=true</p>
+            </td>
+            <td>
+                Boolean (true/false)
+            </td>
+        </tr>
+        <tr>
+            <td>
+                unix-socket
+            </td>
+            <td>
+                Connect to the database server over a unix socket on localhost. The unix-socket value should be the full path to the socket file.
+                MySQL use default the file /tmp/mysql.sock. Note that this is different from the PostgreSQL unix-socket parameter which specify
+                the path to the <em>directory</em> where the socket file is located.
+                <p class="example">Example: unix-socket=/tmp/mysql.sock</p>
+            </td>
+            <td>
+                String (file path)
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

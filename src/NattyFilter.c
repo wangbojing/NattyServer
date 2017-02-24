@@ -1607,7 +1607,7 @@ void* ntyProtocolFilterInstance(void) {
 }
 
 #define NTY_CRCTABLE_LENGTH			256
-#define NTY_CRC_KEY		0x04c11db7ul
+#define NTY_CRC_KEY					0x04c11db7ul
 
 static U32 u32CrcTable[NTY_CRCTABLE_LENGTH] = {0};
 
