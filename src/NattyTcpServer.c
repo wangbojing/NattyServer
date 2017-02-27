@@ -169,7 +169,7 @@ static int ntyAddRelationMap(MessagePacket *msg) {
 			ASSERT(ret == NTY_RESULT_SUCCESS);
 		}
 		
-	}else {
+	} else {
 	
 		if (value->sockfd != msg->watcher->fd) {
 			struct sockaddr_in client_addr;

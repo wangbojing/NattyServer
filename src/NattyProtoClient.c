@@ -957,38 +957,7 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 		int i = 0;
 		
 		int count = ntyU8ArrayToU16(&buf[NTY_PROTO_LOGIN_ACK_FRIENDS_COUNT_IDX]);
-#if 0
-		void *pTree = ntyRBTreeInstance();
 
-		LOG("count : %d", count);
-		for (i = 0;i < count;i ++) {
-			//C_DEVID friendId = *(C_DEVID*)(&buf[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_DEVID_IDX(i)]);
-			C_DEVID friendId = 0;
-			ntyU8ArrayToU64(&buf[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_DEVID_IDX(i)], &friendId);
-			LOG(" friendId i:%d --> %lld\n", i+1, friendId);
-
-			FriendsInfo *friendInfo = ntyRBTreeInterfaceSearch(pTree, friendId);
-			if (NULL == friendInfo) {
-				FriendsInfo *pFriend = (FriendsInfo*)malloc(sizeof(FriendsInfo));
-				assert(pFriend);
-				pFriend->sockfd = ntyGetSocket(pNetwork);
-				pFriend->isP2P = 0;
-				pFriend->counter = 0;
-				pFriend->addr = ntyU8ArrayToU32(&buf[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_ADDR_IDX(i)]);
-				pFriend->port = ntyU8ArrayToU16(&buf[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_PORT_IDX(i)]);
-				ntyRBTreeInterfaceInsert(pTree, friendId, pFriend);
-			} else {
-				friendInfo->sockfd = ntyGetSocket(pNetwork);;
-				friendInfo->isP2P = 0;
-				friendInfo->counter = 0;
-				friendInfo->addr = ntyU8ArrayToU32(&buf[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_ADDR_IDX(i)]);
-				friendInfo->port = ntyU8ArrayToU16(&buf[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_PORT_IDX(i)]);
-			}					
-		}
-
-		proto->level = LEVEL_DATAPACKET;
-		//ntylog("NTY_PROTO_LOGIN_ACK\n");
-#else	 //
 
 		for (i = 0;i < count;i ++) {
 			C_DEVID friendId = 0;
@@ -997,12 +966,11 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 			ntyVectorAdd(proto->friends, &friendId, sizeof(C_DEVID));
 		}
 
-#endif
 		
 	} else if (buf[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_DATAPACKET_REQ) {
 		//U16 cliCount = *(U16*)(&buf[NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_COUNT_IDX]);
 		U8 data[RECV_BUFFER_SIZE] = {0};//NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_IDX
-		U16 recByteCount = ntyU8ArrayToU16(&buf[NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_COUNT_IDX]);
+		U16 recByteCount = ntyU8ArrayToU16(&buf[1]);
 		C_DEVID friId = 0;
 		ntyU8ArrayToU64(&buf[NTY_PROTO_DEVID_IDX], &friId);
 		U32 ack = ntyU8ArrayToU32(&buf[NTY_PROTO_ACKNUM_IDX]);

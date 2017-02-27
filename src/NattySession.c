@@ -185,46 +185,11 @@ int ntySendFriendsTreeIpAddr(const void *client, U8 reqType) {
 	}
 	//*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_ACKNUM_IDX]) = pClient->ackNum;
 	*(U16*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDS_COUNT_IDX]) = Count;
-	*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_CRC_IDX(Count)]) = ntyGenCrcValue(ack, NTY_PROTO_LOGIN_ACK_CRC_IDX(Count));
-	length += NTY_PROTO_LOGIN_ACK_CRC_IDX(Count)+sizeof(U32);
+	*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_CRC_IDX]) = ntyGenCrcValue(ack, NTY_PROTO_LOGIN_ACK_CRC_IDX);
+	length += NTY_PROTO_LOGIN_ACK_CRC_IDX+sizeof(U32);
 
 	return ntySendBuffer(toClient, ack, length);
 }
-
-#if 0
-int ntySendIpAddrFriendsList(void *client, C_DEVID *friends, U16 Count) {
-	int i = 0, length;
-	U8 ack[NTY_LOGIN_ACK_LENGTH] = {0};
-	
-	UdpClient *pClient = client;
-	void *pRBTree = ntyRBTreeInstance();
-
-	//C_DEVID *friends = ntyFriendsTreeGetAllNodeList(pClient->friends);
-	//U16 Count = ntFriendsTreeGetNodeCount(pClient->friends);
-
-	for (i = 0;i < Count;i ++) {
-		UdpClient *cliValue = ntyRBTreeInterfaceSearch(pRBTree, *(friends+i));
-		if (cliValue != NULL) {
-#if 0
-			*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_ADDR_IDX(i)]) = (U32)(cliValue->addr.sin_addr.s_addr);
-			*(U16*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_PORT_IDX(i)]) = (U16)(cliValue->addr.sin_port);
-#endif
-		}
-		*(C_DEVID*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDSLIST_DEVID_IDX(i)]) = *(friends+i);
-	}
-
-	ack[NTY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
-	ack[NTY_PROTO_PROTOTYPE_IDX] = (U8)MSG_ACK;
-	ack[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_P2P_ADDR_ACK;
-	//*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_ACKNUM_IDX]) = pClient->ackNum;
-	*(U16*)(&ack[NTY_PROTO_LOGIN_ACK_FRIENDS_COUNT_IDX]) = Count;
-	*(U32*)(&ack[NTY_PROTO_LOGIN_ACK_CRC_IDX(Count)]) = ntyGenCrcValue(ack, NTY_PROTO_LOGIN_ACK_CRC_IDX(Count));
-	length += NTY_PROTO_LOGIN_ACK_CRC_IDX(Count)+sizeof(U32);
-
-	return ntySendBuffer(pClient, ack, length);
-}
-#endif
-
 
 /*
  * transparent transport data
