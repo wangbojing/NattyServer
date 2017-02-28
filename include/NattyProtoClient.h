@@ -91,9 +91,14 @@ void ntySetPacketRecv(PROXY_CALLBACK_CLINET cb);
 void ntySetPacketSuccess(PROXY_CALLBACK_CLINET cb);
 
 
+int ntyBindClient(DEVID did);
+int ntyUnBindClient(DEVID did);
 
-void ntyBindClient(DEVID did);
-void ntyUnBindClient(DEVID did);
+int ntyVoiceReqClient(U8 *json, U16 length);
+int ntyVoiceAckClient(U8 *json, U16 length);
+int ntyVoiceDataReqClient(DEVID gId, U8 *data, int length);
+int ntyCommonReqClient(DEVID gId, U8 *json, U16 length);
+int ntyDataRouteClient(DEVID toId, U8 *json, U16 length);
 
 DEVID* ntyGetFriendsList(int *Count);
 void ntyReleaseFriendsList(DEVID **list);
