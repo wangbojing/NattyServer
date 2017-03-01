@@ -122,12 +122,15 @@ typedef struct _NATTYPROTOCOL {
 	NTY_STATUS_CALLBACK onLogoutAckResult; //RECV LOGOUT_ACK
 	NTY_PARAM_CALLBACK onTimeAckResult; //RECV TIME_ACK
 	NTY_PARAM_CALLBACK onICCIDAckResult; //RECV ICCID_ACK
-	NTY_PARAM_CALLBACK onCommonReqResult; //RECV COMMON_REQ
+	NTY_RETURN_CALLBACK onCommonReqResult; //RECV COMMON_REQ
+#if 0 //discard
 	NTY_PARAM_CALLBACK onCommonAckResult; //RECV COMMON_ACK
+#endif
 	NTY_STATUS_CALLBACK onVoiceDataAckResult; //RECV VOICE_DATA_ACK
 	NTY_PARAM_CALLBACK onOfflineMsgAckResult; //RECV OFFLINE_MSG_ACK
-	NTY_RETURN_CALLBACK onLocationPushResult; //RECV LOCATION_PUSH
-	NTY_PARAM_CALLBACK onDataRoute; //RECV DATA_RESULT
+	NTY_PARAM_CALLBACK onLocationPushResult; //RECV LOCATION_PUSH
+	NTY_PARAM_CALLBACK onWeatherPushResult; //RECV WEATHER_PUSH
+	NTY_RETURN_CALLBACK onDataRoute; //RECV DATA_RESULT
 	NTY_STATUS_CALLBACK onDataResult; //RECV DATA_RESULT
 	NTY_RETURN_CALLBACK onVoiceBroadCastResult; //RECV VOICE_BROADCAST
 	NTY_RETURN_CALLBACK onLocationBroadCastResult; //RECV LOCATION_BROADCAST
@@ -156,6 +159,7 @@ typedef struct _NATTYPROTO_OPERA {
 	int (*voiceAck)(void *_self, U8 *json, U16 length);
 	int (*voiceDataReq)(void *_self, C_DEVID gId, U8 *data, int length);
 	int (*commonReq)(void *_self, C_DEVID gId, U8 *json, U16 length);
+	int (*commonAck)(void *_self, U8 *json, U16 length);
 	int (*offlineMsgReq)(void *_self);
 	int (*dataRoute)(void *_self, C_DEVID toId, U8 *json, U16 length);
 #endif
@@ -178,7 +182,7 @@ void* ntyProtoClientCtor(void *_self, va_list *params) {
 	proto->selfId = g_devid;
 	proto->recvLen = 0;
 	memset(proto->recvBuffer, 0, RECV_BUFFER_SIZE);
-	proto->friends = ntyVectorCreator();
+	//proto->friends = ntyVectorCreator();
 
 	ntyGenCrcTable();
 	//Setup Socket Connection
@@ -209,7 +213,7 @@ void* ntyProtoClientDtor(void *_self) {
 	//Release Socket Connection
 	ntyNetworkRelease();
 	
-	ntyVectorDestory(proto->friends);
+	//ntyVectorDestory(proto->friends);
 	proto->u8ConnectFlag = 0;
 	proto->u8RecvExitFlag = 0;
 
@@ -248,14 +252,14 @@ static int ntyHeartBeatCb (NITIMER_ID id, void *user_data, int len) {
 	}
 	
 	buffer[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;	
-	buffer[NTY_PROTO_PROTOTYPE_IDX] = (U8) MSG_REQ;	
+	buffer[NTY_PROTO_PROTOTYPE_IDX] = (U8) PROTO_REQ;	
 	buffer[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_HEARTBEAT_REQ;	
 #if 0
 	*(C_DEVID*)(&buffer[NTY_PROTO_DEVID_IDX]) = proto->devid;
 #else
 	memcpy(buffer+NTY_PROTO_DEVID_IDX, &proto->selfId, sizeof(C_DEVID));
 #endif
-	length = NTY_PROTO_HEARTBEAT_CRC_IDX+sizeof(U32);
+	length = NTY_PROTO_HEARTBEAT_REQ_CRC_IDX+sizeof(U32);
 	
 	n = ntySendFrame(nSocket, buffer, length);
 
@@ -436,6 +440,26 @@ int ntyProtoClientCommonReq(void *_self, C_DEVID gId, U8 *json, U16 length) {
 	return ntySendFrame(pNetwork, buf, length);
 }
 
+
+int ntyProtoClientCommonAck(void *_self, U8 *json, U16 length) {
+	NattyProto *proto = _self;
+
+	U8 buf[RECV_BUFFER_SIZE] = {0};
+	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
+	buf[NTY_PROTO_PROTOTYPE_IDX] = (U8) PROTO_REQ; 
+	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_COMMON_ACK;
+
+	memcpy(&buf[NTY_PROTO_COMMON_ACK_DEVID_IDX], &proto->selfId, sizeof(C_DEVID));
+	memcpy(&buf[NTY_PROTO_COMMON_ACK_JSON_LENGTH_IDX], &length, sizeof(U16));
+
+	memcpy(&buf[NTY_PROTO_COMMON_ACK_JSON_CONTENT_IDX], json, length);
+
+	length = NTY_PROTO_COMMON_ACK_JSON_CONTENT_IDX+length+sizeof(U32);
+
+	void *pNetwork = ntyNetworkInstance();
+	return ntySendFrame(pNetwork, buf, length);
+}
+
 int ntyProtoClientOfflineMsgReq(void *_self) {
 	NattyProto *proto = _self;
 	int len = 0;
@@ -490,6 +514,7 @@ static const NattyProtoHandle ntyProtoOpera = {
 	ntyProtoClientVoiceAck,
 	ntyProtoClientVoiceDataReq,
 	ntyProtoClientCommonReq,
+	ntyProtoClientCommonAck,
 	ntyProtoClientOfflineMsgReq,
 	ntyProtoClientDataRoute,
 #endif
@@ -520,37 +545,6 @@ void ntyProtoRelease(void) {
 	}
 }
 
-#if 0
-static void ntySetupHeartBeatThread(void* self) {
-#if 1
-	NattyProto *proto = self;
-	NattyProtoOpera * const * protoOpera = self;
-	int err;
-
-	if (self && (*protoOpera) && (*protoOpera)->heartbeat) {
-		if (proto->heartbeatThread_id != 0) {
-			ntydbg(" heart beat thread is running \n");
-			return ;
-		}
-		err = pthread_create(&proto->heartbeatThread_id, NULL, (*protoOpera)->heartbeat, self);				
-		if (err != 0) { 				
-			ntydbg(" can't create thread:%s\n", strerror(err)); 
-			return ;			
-		}
-	}
-#else
-	NattyProto *proto = self;
-	int err;
-	if (self && proto && proto->heartbeat) {		
-		err = pthread_create(&proto->heartbeatThread_id, NULL, proto->heartbeat, self);				
-		if (err != 0) { 				
-			ntydbg(" can't create thread:%s\n", strerror(err)); 
-			exit(0);				
-		}
-	}
-#endif
-}
-#endif
 
 static void ntySetupRecvProcThread(void *self) {
 	//NattyProtoOpera * const * protoOpera = self;
@@ -589,6 +583,10 @@ static int ntySendLogout(void *self) {
 	}
 }
 
+
+
+
+#if 0
 int ntySendDataPacket(C_DEVID toId, U8 *data, int length) {
 	int n = 0;
 	void *self = ntyProtoInstance();
@@ -633,6 +631,7 @@ int ntySendMassDataPacket(U8 *data, int length) {
 }
 
 
+#endif
 
 void ntySetSendSuccessCallback(PROXY_CALLBACK cb) {
 	NattyProto* proto = ntyProtoInstance();
@@ -703,6 +702,112 @@ void ntySetDevId(C_DEVID id) {
 	}
 }
 
+void ntySetLoginAckResult(NTY_PARAM_CALLBACK cb) {
+	NattyProto* proto = ntyProtoInstance();
+	if (proto) {
+		proto->onLoginAckResult = cb;
+	}
+}
+
+void ntySetHeartBeatAckResult(NTY_STATUS_CALLBACK cb) {
+	NattyProto* proto = ntyProtoInstance();
+	if (proto) {
+		proto->onHeartBeatAckResult = cb;
+	}
+}
+
+void ntySetLogoutAckResult(NTY_STATUS_CALLBACK cb) {
+	NattyProto* proto = ntyProtoInstance();
+	if (proto) {
+		proto->onLogoutAckResult = cb;
+	}
+}
+
+void ntySetTimeAckResult(NTY_PARAM_CALLBACK cb) {
+	NattyProto* proto = ntyProtoInstance();
+	if (proto) {
+		proto->onTimeAckResult = cb;
+	}
+}
+
+void ntySetICCIDAckResult(NTY_PARAM_CALLBACK cb) {
+	NattyProto* proto = ntyProtoInstance();
+	if (proto) {
+		proto->onICCIDAckResult = cb;
+	}
+}
+
+void ntySetCommonReqResult(NTY_RETURN_CALLBACK cb) {
+	NattyProto* proto = ntyProtoInstance();
+	if (proto) {
+		proto->onCommonReqResult = cb;
+	}
+}
+
+void ntySetVoiceDataAckResult(NTY_STATUS_CALLBACK cb) {
+	NattyProto* proto = ntyProtoInstance();
+	if (proto) {
+		proto->onVoiceDataAckResult = cb;
+	}
+}
+
+void ntySetOfflineMsgAckResult(NTY_PARAM_CALLBACK cb) {
+	NattyProto* proto = ntyProtoInstance();
+	if (proto) {
+		proto->onOfflineMsgAckResult = cb;
+	}
+}
+
+void ntySetLocationPushResult(NTY_PARAM_CALLBACK cb) {
+	NattyProto* proto = ntyProtoInstance();
+	if (proto) {
+		proto->onLocationPushResult = cb;
+	}
+}
+
+void ntySetWeatherPushResult(NTY_PARAM_CALLBACK cb) {
+	NattyProto* proto = ntyProtoInstance();
+	if (proto) {
+		proto->onWeatherPushResult = cb;
+	}
+}
+
+void ntySetDataRoute(NTY_RETURN_CALLBACK cb) {
+	NattyProto* proto = ntyProtoInstance();
+	if (proto) {
+		proto->onDataRoute = cb;
+	}
+}
+
+void ntySetDataResult(NTY_STATUS_CALLBACK cb) {
+	NattyProto* proto = ntyProtoInstance();
+	if (proto) {
+		proto->onDataResult = cb;
+	}
+}
+
+void ntySetVoiceBroadCastResult(NTY_RETURN_CALLBACK cb) {
+	NattyProto* proto = ntyProtoInstance();
+	if (proto) {
+		proto->onVoiceBroadCastResult = cb;
+	}
+}
+
+void ntySetLocationBroadCastResult(NTY_RETURN_CALLBACK cb) {
+	NattyProto* proto = ntyProtoInstance();
+	if (proto) {
+		proto->onLocationBroadCastResult = cb;
+	}
+}
+
+void ntySetCommonBroadCastResult(NTY_RETURN_CALLBACK cb) {
+	NattyProto* proto = ntyProtoInstance();
+	if (proto) {
+		proto->onCommonBroadCastResult = cb;
+	}
+}
+
+
 int ntyGetNetworkStatus(void) {
 	void *network = ntyNetworkInstance();
 	return ntyGetSocket(network);
@@ -712,9 +817,11 @@ int ntyGetNetworkStatus(void) {
 int ntyCheckProtoClientStatus(void) {
 	NattyProto* proto = ntyProtoInstance();
 	if (proto) {
+#if 0
 		if (proto->onProxyCallback == NULL) return -2;
 		if (proto->onProxyFailed == NULL) return -3;
 		if (proto->onProxySuccess == NULL) return -4;
+#endif
 		if (proto->onProxyDisconnect == NULL) return -5;
 		if (proto->onProxyReconnect == NULL) return -6;
 		if (proto->onBindResult == NULL) return -7;
@@ -746,6 +853,7 @@ void ntyShutdownClient(void) {
 }
 
 #if 1
+
 int ntyBindClient(C_DEVID did) {
 	NattyProto* proto = ntyProtoInstance();
 
@@ -796,6 +904,15 @@ int ntyCommonReqClient(C_DEVID gId, U8 *json, U16 length) {
 	return -1;
 }
 
+
+int ntyCommonAckClient(U8 *json, U16 length) {
+	NattyProto* proto = ntyProtoInstance();
+	if (proto) {
+		return ntyProtoClientCommonAck(proto, json, length);
+	}
+	return -1;
+}
+
 int ntyDataRouteClient(C_DEVID toId, U8 *json, U16 length) {
 	NattyProto* proto = ntyProtoInstance();
 
@@ -804,6 +921,10 @@ int ntyDataRouteClient(C_DEVID toId, U8 *json, U16 length) {
 	}
 	return -1;
 }
+
+
+
+
 
 
 #endif
@@ -824,7 +945,7 @@ int ntyGetRecvBufferSize(void) {
 	}
 	return -1;
 }
-
+#if 0
 static void ntySendTimeout(int len) {
 	NattyProto* proto = ntyProtoInstance();
 	if (proto && proto->onProxyFailed) {
@@ -834,6 +955,7 @@ static void ntySendTimeout(int len) {
 	//void* pTimer = ntyNetworkTimerInstance();
 	//ntyStopTimer(pTimer);
 }
+#endif
 
 static int ntyReconnectCb(NITIMER_ID id, void *user_data, int len) {
 	int status = 0;
@@ -859,12 +981,14 @@ static int ntyReconnectCb(NITIMER_ID id, void *user_data, int len) {
 	return NTY_RESULT_SUCCESS;
 }
 
+#if 0
+
 C_DEVID* ntyGetFriendsList(int *Count) {
 	NattyProto* proto = ntyProtoInstance();
 
-	C_DEVID *list = ntyVectorGetNodeList(proto->friends, Count);
+	//C_DEVID *list = ntyVectorGetNodeList(proto->friends, Count);
 
-	return list;
+	return NULL;
 }
 
 void ntyReleaseFriendsList(C_DEVID **list) {
@@ -872,6 +996,7 @@ void ntyReleaseFriendsList(C_DEVID **list) {
 	free(pList);
 	pList = NULL;
 }
+#endif
 
 void ntyStartReconnectTimer(void) {
 	void *nTimerList = ntyTimerInstance();
@@ -986,7 +1111,12 @@ static int ntySendBigBufferCb(NITIMER_ID id, void *user_data, int len) {
 			tBigTimer = -1;
 		}
 #else
-		
+		if (nBigBufferSendTimer != NULL) {
+			void *nTimerList = ntyTimerInstance();
+			
+			ntyTimerDel(nTimerList, nBigBufferSendTimer);
+			nBigBufferSendTimer = NULL;
+		}
 #endif
 	}
 
@@ -997,6 +1127,9 @@ static int ntySendBigBuffer(void *self, U8 *u8Buffer, int length, C_DEVID gId) {
 	int i = 0;
 #if 0
 	tBigTimer = add_timer(10, ntySendBigBufferCb, NULL, 0);
+#else
+	void *nTimerList = ntyTimerInstance();
+	nBigBufferSendTimer = ntyTimerAdd(nTimerList, PACKET_SEND_TIME_TICK, ntySendBigBufferCb, NULL, 0);
 #endif
 	int ret = ntyAudioPacketEncode(u8Buffer, length);
 	LOG(" ntySendBigBuffer --> Ret %d, %x", ret, u8Buffer[0]);
@@ -1041,138 +1174,228 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 	NattyProto *proto = arg;
 	NattyProtoOpera * const *protoOpera = arg;
 	Network *pNetwork = ntyNetworkInstance();
-	
-	if (buf[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_LOGIN_ACK) {
+	U8 MSG = buf[NTY_PROTO_MSGTYPE_IDX];
 
-		U16 status = *(U16*)(buf+NTY_PROTO_LOGIN_ACK_STATUS_IDX);
-		U16 jsonLen = *(U16*)(buf+NTY_PROTO_LOGIN_ACK_JSON_LENGTH_IDX);
-		U8 *json = buf+NTY_PROTO_LOGIN_ACK_JSON_CONTENT_IDX;
+	switch (MSG) {
+		case NTY_PROTO_LOGIN_ACK: {
 
-		LOG(" LoginAckResult status:%d\n", status);
-		proto->onLoginAckResult(json, jsonLen);
-	
-	} else if (buf[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_DATAPACKET_REQ) {
-		//U16 cliCount = *(U16*)(&buf[NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_COUNT_IDX]);
-		U8 data[RECV_BUFFER_SIZE] = {0};//NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_IDX
-		U16 recByteCount = ntyU8ArrayToU16(&buf[1]);
-		C_DEVID friId = 0;
-		ntyU8ArrayToU64(&buf[NTY_PROTO_DEVID_IDX], &friId);
-		U32 ack = ntyU8ArrayToU32(&buf[NTY_PROTO_ACKNUM_IDX]);
+			U16 status = *(U16*)(buf+NTY_PROTO_LOGIN_ACK_STATUS_IDX);
+			U16 jsonLen = *(U16*)(buf+NTY_PROTO_LOGIN_ACK_JSON_LENGTH_IDX);
+			U8 *json = buf+NTY_PROTO_LOGIN_ACK_JSON_CONTENT_IDX;
 
-		memcpy(data, buf+NTY_PROTO_DATAPACKET_CONTENT_IDX, recByteCount);
-		LOG(" recv:%s end\n", data);
+			LOG(" LoginAckResult status:%d\n", status);
+			proto->onLoginAckResult(json, jsonLen);
+			break;
+		} 
+		case NTY_PROTO_BIND_ACK: {
 
-		memcpy(&proto->fromId, &friId, sizeof(C_DEVID));
-		if (buf[NTY_PROTO_PROTOTYPE_IDX] == MSG_RET) {
-			if (proto->onProxyFailed)
-				proto->onProxyFailed(STATUS_NOEXIST);
-			
-			//continue;
-		}
-		LOG("proxyAck start");
-#if 0
-		if (arg && (*protoOpera) && (*protoOpera)->proxyAck) {
-			(*protoOpera)->proxyAck(proto, friId, ack);
-		}
-#endif
-		LOG("proxyAck end");
-		if (proto->onProxyCallback) {
-			proto->recvLen -= (NTY_PROTO_DATAPACKET_CONTENT_IDX+sizeof(U32));
-			proto->onProxyCallback(proto->recvLen);
-		}
-		LOG("onProxyCallback end");
-		
-	} else if (buf[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_DATAPACKET_ACK) {
-		LOG(" send success\n");
-		if (proto->onProxySuccess) {
-			proto->onProxySuccess(0);
-		}
-	} else if (buf[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_BIND_ACK) {
-#if 0
-		int result = ntyU8ArrayToU32(&buf[NTY_PROTO_BIND_ACK_RESULT_IDX]);
-#else
-		int result = 0;
-		memcpy(&result, &buf[NTY_PROTO_BIND_ACK_RESULT_IDX], sizeof(int));
-#endif
-		if (proto->onBindResult) {
-			proto->onBindResult(result);
-		}
-		ntydbg(" NTY_PROTO_BIND_ACK\n");
-	} else if (buf[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_UNBIND_ACK) {
-#if 0
-		int result = ntyU8ArrayToU32(&buf[NTY_PROTO_BIND_ACK_RESULT_IDX]);
-#else
-		int result = 0;
-		memcpy(&result, &buf[NTY_PROTO_BIND_ACK_RESULT_IDX], sizeof(int));
-#endif
-		if (proto->onUnBindResult) {
-			proto->onUnBindResult(result);
-		}
-		ntydbg(" NTY_PROTO_UNBIND_ACK\n");
-	} else if (buf[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_VOICE_REQ) {
-		int ret = ntyAudioRecodeDepacket(buf, length);
-		if (ret == 1) { //the end
-			C_DEVID friId = 0;
-			ntyU8ArrayToU64(&buf[NTY_PROTO_DEVID_IDX], &friId);
-			memcpy(&proto->fromId, &friId, sizeof(C_DEVID));
+			int result = 0;
+			memcpy(&result, &buf[NTY_PROTO_BIND_ACK_RESULT_IDX], sizeof(int));
 
-			if (proto->onPacketRecv) {
-				proto->onPacketRecv(u32DataLength);
+			if (proto->onBindResult) {
+				proto->onBindResult(result);
 			}
-		}		
-	} else if (buf[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_VOICE_ACK) {
-#if 0
-		if (tBigTimer != -1) {
-			del_timer(tBigTimer);
-			tBigTimer = -1;
-		}
-#endif
-		LOG(" onPacketSuccess --> ");
-		if (proto->onPacketSuccess) {
-			proto->onPacketSuccess(0); //Success
-		}
-	} else if (buf[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_EFENCE_REQ) {
-		
-		U8 data[RECV_BUFFER_SIZE] = {0};//NTY_PROTO_DATAPACKET_NOTIFY_CONTENT_IDX
-		U16 recByteCount = ntyU8ArrayToU16(&buf[NTY_PROTO_EFENCE_CONTENT_COUNT_IDX]);
-		C_DEVID friId = 0;
-		ntyU8ArrayToU64(&buf[NTY_PROTO_DEVID_IDX], &friId);
-		U32 ack = ntyU8ArrayToU32(&buf[NTY_PROTO_ACKNUM_IDX]);
-		
-		memcpy(data, buf+NTY_PROTO_EFENCE_CONTENT_IDX, recByteCount);
-		LOG(" efence recv:%s end\n", data);
+			ntydbg(" NTY_PROTO_BIND_ACK\n");
+			break;
+		} 
+		case NTY_PROTO_UNBIND_ACK: {
 
-		memcpy(&proto->fromId, &friId, sizeof(C_DEVID));
-		if (buf[NTY_PROTO_PROTOTYPE_IDX] == MSG_RET) {
-			if (proto->onProxyFailed)
-				proto->onProxyFailed(STATUS_NOEXIST);
+			int result = 0;
+			memcpy(&result, &buf[NTY_PROTO_BIND_ACK_RESULT_IDX], sizeof(int));
+
+			if (proto->onUnBindResult) {
+				proto->onUnBindResult(result);
+			}
+			ntydbg(" NTY_PROTO_UNBIND_ACK\n");
+			break;
+		} 
+		case NTY_PROTO_HEARTBEAT_ACK: {
 			
+			break;
+		} 
+		case NTY_PROTO_LOGOUT_ACK: {
+			
+			break;
 		}
-		LOG(" efence proxyAck start");
-#if 0
-		if (arg && (*protoOpera) && (*protoOpera)->proxyAck) {
-			(*protoOpera)->fenceAck(proto, friId, ack);
+#if (NTY_PROTO_SELFTYPE == NTY_PROTO_CLIENT_WATCH)
+		case NTY_PROTO_TIME_CHECK_ACK: {
+			//set system time
+			break;
+		}
+		case NTY_PROTO_ICCID_ACK: {
+			U16 status = 0;
+			U16 length = 0;
+			U8 *json = NULL;
+
+			memcpy(&status, buf+NTY_PROTO_ICCID_ACK_STATUS_IDX, sizeof(U16));
+			memcpy(&length, buf+NTY_PROTO_ICCID_ACK_JSON_LENGTH_IDX, sizeof(U16));
+			json = buf+NTY_PROTO_ICCID_ACK_JSON_CONTENT_IDX;
+
+			if (proto->onICCIDAckResult) {
+				proto->onICCIDAckResult(json, length);
+			}
+			
+			break;
 		}
 #endif
-		LOG(" efence proxyAck end");
-		if (proto->onProxyCallback) {
-			proto->recvLen -= (NTY_PROTO_EFENCE_CONTENT_IDX+sizeof(U32));
-			proto->onProxyCallback(proto->recvLen);
+		case NTY_PROTO_COMMON_REQ: {
+			C_DEVID fromId = 0;
+			U16 length = 0;
+			U8 *json = NULL;
+
+			ntyU8ArrayToU64(buf+NTY_PROTO_COMMON_REQ_DEVID_IDX, &fromId);
+			memcpy(&length, buf+NTY_PROTO_COMMON_REQ_JSON_LENGTH_IDX, sizeof(U16));
+
+			json = buf+NTY_PROTO_COMMON_REQ_JSON_CONTENT_IDX;
+
+			if (proto->onCommonReqResult) {
+				proto->onCommonReqResult(fromId, json, length);
+			}
+			
+			break;
 		}
-		LOG(" efence onProxyCallback end");
-	} else if (buf[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_EFENCE_ACK) {
-		LOG(" efence send success\n");
-#if 0
-		if (tEfenceTimer != -1) {
-			del_timer(tEfenceTimer);
-			tEfenceTimer = -1;
+		case NTY_PROTO_VOICE_DATA_REQ: {
+			int ret = ntyAudioRecodeDepacket(buf, length);
+			if (ret == 1) {
+				C_DEVID fromId = 0;
+				ntyU8ArrayToU64(buf+NTY_PROTO_VOICE_DATA_REQ_DEVID_IDX, &fromId);
+
+				if (proto->onPacketRecv) {
+					proto->onPacketRecv(u32DataLength);
+				}
+			}
+			break;
 		}
-#endif
-		LOG(" efence onPacketSuccess --> ");
-		if (proto->onPacketSuccess) {
-			proto->onPacketSuccess(0); //Success
+		case NTY_PROTO_VOICE_DATA_ACK: {
+			U16 status = 0;
+
+			memcpy(&status, buf+NTY_PROTO_VOICE_DATA_ACK_STATUS_IDX, sizeof(U16));
+
+			//send voice data success
+			if (proto->onVoiceDataAckResult) {
+				proto->onVoiceDataAckResult(status);
+			}
+			break;
 		}
+		case NTY_PROTO_OFFLINE_MSG_ACK: {
+
+			U16 jsonLen = *(U16*)(buf+NTY_PROTO_OFFLINE_MSG_ACK_JSON_LENGTH_IDX);
+			U8 *json = buf+NTY_PROTO_OFFLINE_MSG_ACK_JSON_CONTENT_IDX;
+
+			if (proto->onOfflineMsgAckResult) {
+				proto->onOfflineMsgAckResult(json, jsonLen);
+			}
+			
+			break;
+		}
+		case NTY_PROTO_DATA_ROUTE: {
+			C_DEVID fromId = 0;
+			
+			memcpy(&fromId, buf+NTY_PROTO_DATA_ROUTE_DEVID_IDX, sizeof(C_DEVID));
+
+			U16 jsonLen = *(U16*)(buf+NTY_PROTO_DATA_ROUTE_JSON_LENGTH_IDX);
+			U8 *json = buf+NTY_PROTO_DATA_ROUTE_JSON_CONTENT_IDX;
+
+			if (proto->onDataRoute) {
+				proto->onDataRoute(fromId, json, jsonLen);
+			}
+			
+			break;
+		}
+		case NTY_PROTO_DATA_RESULT: {
+			U16 status = 0;
+			int ackNum = 0;
+
+			memcpy(&status, buf+NTY_PROTO_DATA_RESULT_STATUS_IDX, sizeof(U16));
+			memcpy(&ackNum, buf+NTY_PROTO_DATA_RESULT_ACKNUM_IDX, sizeof(U32));
+			LOG("Data Result:%d\n", status);
+		
+			if (proto->onDataResult) {
+				proto->onDataResult(ackNum);
+			}
+			
+			break;
+		}
+		case NTY_PROTO_VOICE_BROADCAST: { //Recv Voice Notify
+			C_DEVID fromId = 0;
+			U8 *json = NULL;
+			U16 length = 0;
+			
+			memcpy(&fromId, buf+NTY_PROTO_VOICE_BROADCAST_DEVID_IDX, sizeof(DEVID));
+			memcpy(&length, buf+NTY_PROTO_VOICE_BROADCAST_JSON_LENGTH_IDX, sizeof(U16));
+
+			json = buf+NTY_PROTO_VOICE_BROADCAST_JSON_CONTENT_IDX;
+
+			// voice data notify
+			if (proto->onVoiceBroadCastResult) {
+				proto->onVoiceBroadCastResult(fromId, json, length);
+			}
+			
+			break;
+		}
+		case NTY_PROTO_LOCATION_BROADCAST: {
+			C_DEVID fromId = 0;
+			U8 *json = NULL;
+			U16 length = 0;
+			
+			memcpy(&fromId, buf+NTY_PROTO_LOCATION_BROADCAST_DEVID_IDX, sizeof(C_DEVID));
+			memcpy(&length, buf+NTY_PROTO_LOCATION_BROADCAST_JSON_LENGTH_IDX, sizeof(U16));
+
+			json = buf+NTY_PROTO_LOCATION_BROADCAST_JSON_CONTENT_IDX;
+			
+
+			if (proto->onLocationBroadCastResult) {
+				proto->onLocationBroadCastResult(fromId, json, length);
+			}
+			break;
+		}
+		case NTY_PROTO_COMMON_BROADCAST: {
+			DEVID fromId = 0;
+			U8 *json = NULL;
+			U16 length = 0;
+			
+			memcpy(&fromId, buf+NTY_PROTO_COMMON_BROADCAST_DEVID_IDX, sizeof(DEVID));
+			memcpy(&length, buf+NTY_PROTO_COMMON_BROADCAST_JSON_LENGTH_IDX, sizeof(U16));
+
+			json = buf+NTY_PROTO_COMMON_BROADCAST_JSON_CONTENT_IDX;
+			
+			if (proto->onCommonBroadCastResult) {
+				proto->onCommonBroadCastResult(fromId, json, length);
+			}
+			
+			break;
+		}
+#if (NTY_PROTO_SELFTYPE == NTY_PROTO_CLIENT_WATCH)		
+		case NTY_PROTO_LOCATION_PUSH: {
+			U8 *json = NULL;
+			U16 length = 0;
+			
+			memcpy(&length, buf+NTY_PROTO_LOCATION_PUSH_JSON_LENGTH_IDX, sizeof(U16));
+			json = buf+NTY_PROTO_LOCATION_PUSH_JSON_CONTENT_IDX;
+
+			if (proto->onLocationPushResult) {
+				proto->onLocationPushResult(json, length);
+			}
+
+			break;
+		}
+		case NTY_PROTO_WEATHER_PUSH: {
+
+			U8 *json = NULL;
+			U16 length = 0;
+			
+			memcpy(&length, buf+NTY_PROTO_WEATHER_PUSH_JSON_LENGTH_IDX, sizeof(U16));
+			json = buf+NTY_PROTO_WEATHER_PUSH_JSON_CONTENT_IDX;
+
+			if (proto->onWeatherPushResult) {
+				proto->onWeatherPushResult(json, length);
+			}
+			
+			break;
+		}
+#endif		
 	}
+	
 }
 
 static U8 rBuffer[NTY_VOICEREQ_PACKET_LENGTH] = {0};

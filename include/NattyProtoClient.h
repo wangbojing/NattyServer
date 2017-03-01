@@ -59,6 +59,11 @@ typedef long long DEVID;
 typedef void (*PROXY_CALLBACK_CLINET)(int len);
 typedef void (*PROXY_HANDLE_CLIENT)(DEVID id, int len);
 
+typedef void (*NTY_STATUS_CALLBACK)(int status);
+typedef void (*NTY_PARAM_CALLBACK)(U8 *arg, int length);
+typedef void (*NTY_RETURN_CALLBACK)(DEVID fromId, U8 *arg, int length);
+
+
 #define CLIENT_BUFFER_SIZE		1024
 #define NTY_BIGBUFFER_SIZE		30*1024
 #define NTY_TIMER_SIZE			32
@@ -91,17 +96,48 @@ void ntySetPacketRecv(PROXY_CALLBACK_CLINET cb);
 void ntySetPacketSuccess(PROXY_CALLBACK_CLINET cb);
 
 
+void ntySetCommonBroadCastResult(NTY_RETURN_CALLBACK cb);
+void ntySetLocationBroadCastResult(NTY_RETURN_CALLBACK cb);
+void ntySetVoiceBroadCastResult(NTY_RETURN_CALLBACK cb);
+
+void ntySetDataResult(NTY_STATUS_CALLBACK cb);
+void ntySetDataRoute(NTY_RETURN_CALLBACK cb);
+
+void ntySetWeatherPushResult(NTY_PARAM_CALLBACK cb);
+void ntySetLocationPushResult(NTY_PARAM_CALLBACK cb);
+
+void ntySetOfflineMsgAckResult(NTY_PARAM_CALLBACK cb);
+void ntySetVoiceDataAckResult(NTY_STATUS_CALLBACK cb);
+void ntySetCommonReqResult(NTY_RETURN_CALLBACK cb);
+
+void ntySetICCIDAckResult(NTY_PARAM_CALLBACK cb);
+void ntySetTimeAckResult(NTY_PARAM_CALLBACK cb);
+
+void ntySetLogoutAckResult(NTY_STATUS_CALLBACK cb);
+void ntySetHeartBeatAckResult(NTY_STATUS_CALLBACK cb);
+void ntySetLoginAckResult(NTY_PARAM_CALLBACK cb);
+
+
 int ntyBindClient(DEVID did);
 int ntyUnBindClient(DEVID did);
 
 int ntyVoiceReqClient(U8 *json, U16 length);
 int ntyVoiceAckClient(U8 *json, U16 length);
 int ntyVoiceDataReqClient(DEVID gId, U8 *data, int length);
+
 int ntyCommonReqClient(DEVID gId, U8 *json, U16 length);
+int ntyCommonAckClient(U8 *json, U16 length);
 int ntyDataRouteClient(DEVID toId, U8 *json, U16 length);
 
-DEVID* ntyGetFriendsList(int *Count);
-void ntyReleaseFriendsList(DEVID **list);
+void ntyProtoClientSetToken(void *_self, U8 *tokens, int length);
+
+U8 *ntyGetRecvBigBuffer(void);
+int ntyGetRecvBigLength(void);
+
+
+
+//DEVID* ntyGetFriendsList(int *Count);
+//void ntyReleaseFriendsList(DEVID **list);
 
 #endif
 

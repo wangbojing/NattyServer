@@ -1292,7 +1292,7 @@ void* ntyProtocolFilterInit(void) {
 	memcpy(&loop_mutex, &blank_mutex, sizeof(blank_mutex));
 #endif
 
-	return pHeartBeatFilter;
+	return pLoginFilter;
 }
 
 static void ntyClientBufferRelease(Client *client) {

@@ -86,13 +86,83 @@ void ntyUnBindResult(int arg) {
 	ntydbg(" ntyUnBindResult --> arg: %d", arg);
 }
 
-void ntyPacketRecv(int arg) {
+void ntyPacketRecv(int arg) { //voice data recv success, arg: length of voice data
 	ntydbg(" ntyUnBindResult --> arg: %d", arg);
+
+	U8 *pBuffer = ntyGetRecvBigBuffer();	//
 }
 
 void ntyPacketSuccess(int arg) {
 	ntydbg(" ntyUnBindResult --> arg: %d", arg);
 }
+
+void ntyLoginAckResult(U8 *json, int length) {
+	ntydbg(" ntyLoginAckResult:%s\n", json);
+}
+
+void ntyHeartBeatAckResult(int status) {
+	ntydbg(" ntyLoginAckResult:%d\n", status);
+}
+
+void ntyLogoutAckResult(int status) {
+	ntydbg(" ntyLogoutAckResult:%d\n", status);
+}
+
+void ntyTimeAckResult(U8 *json, int length) {
+	
+}
+
+void ntyICCIDAckResult(U8 *json, int length) {
+	
+}
+
+void ntyCommonReqResult(DEVID fromId, U8 *json, int length) {
+	ntydbg(" ntyCommonReqResult : %lld\n", fromId);
+	ntydbg(" ntyCommonReqResult : %s\n", json);
+}
+
+void ntyCommonAckResult(U8 *json, int length) {
+	
+}
+
+void ntyVoiceDataAckResult(int status) {
+	//voice data send success
+	ntydbg(" ntyVoiceDataAckResult: %d\n", status);
+}
+
+void ntyOfflineMsgAckResult(U8 *json, int length) {
+	ntydbg(" ntyOfflineMsgAckResult:%s\n", json);
+}
+
+void ntyLocationPushResult(U8 *json, int length) {
+	ntydbg(" ntyLocationPushResult:%s\n", json);
+}
+
+void ntyWeatherPushResult(U8 *json, int length) {
+	ntydbg(" ntyWeatherPushResult:%s\n", json);
+}
+
+void ntyDataRoute(DEVID fromId, U8 *json, int length) {
+	ntydbg(" ntyDataRoute:%s\n", json);
+}
+
+void ntyDataResult(int status) {
+	ntydbg(" ntyDataResult:%d\n", status);
+}
+
+void ntyVoiceBroadCastResult(DEVID fromId, U8 *json, int length) {
+	ntydbg(" ntyVoiceBroadCastResult:%s\n", json);
+}
+
+void ntyLocationBroadCastResult(DEVID fromId, U8 *json, int length) {
+	ntydbg(" ntyLocationBroadCastResult:%s\n", json);
+}
+
+void ntyCommonBoradCastResult(DEVID fromId, U8 *json, int length) {
+	ntydbg(" ntyCommonBoradCastResult:%s\n", json);
+}
+
+
 
 
 DEVID g_devid = 0x352315052834187;
@@ -126,7 +196,7 @@ int main() {
 	
 	//ntyBindClient(0xEDFF12342345613);
 	//ntyUnBindClient(0xEDFF12342345613);
-#if 1
+#if 0
 	int count = 0;
 	DEVID *list = ntyGetFriendsList(&count);
 	for (i = 0;i < count;i ++) {
@@ -159,7 +229,7 @@ int main() {
 #if 0
 		ntySendMassDataPacket(tempBuf, len-1);
 #else
-		ntySendDataPacket(aid, tempBuf, len-1);
+		//ntySendDataPacket(aid, tempBuf, len-1);
 #endif
 	}
 #endif
