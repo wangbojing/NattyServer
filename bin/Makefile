@@ -4,10 +4,10 @@ SERVER_OBJ = NattyAbstractClass.o NattyFilter.o NattyRBTree.o NattyServer.o \
 	NattyUdpServer.o NattyTcpServer.o NattyUtils.o NattyThreadPool.o NattyWorkQueue.o \
 	NattySession.o NattyDaveMQ.o NattyHttpCurl.o NattyLetter.o NattyLog.o NattyHash.o \
 	NattyHBD.o NattyDBOperator.o NattyNodeAgent.o NattyMulticast.o NattySignal.o NattyTimer.o	\
-	NattyBPlusTree.o NattyVector.o
+	NattyBPlusTree.o NattyVector.o NattyJson.o parson.o
 
 CLIENT_OBJ = NattyNetwork.o NattyRBTree.o NattyAbstractClass.o NattyTimer.o NattyProtoClient.o \
-	NattyClientMain.o NattyUtils.o NattyLetter.o NattyVector.o
+	NattyClientMain.o NattyUtils.o NattyLetter.o NattyVector.o 
 
 SERVER_BIN = NattyCloud
 CLIENT_BIN = NattyClient

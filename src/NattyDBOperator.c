@@ -659,6 +659,45 @@ int ntyExecuteAppLogoutUpdate(void *self, C_DEVID aid) {
 	return ret;
 }
 
+
+
+//NTY_DB_INSERT_EFENCE
+int ntyExecuteEfenceInsert(void *self, C_DEVID aid, C_DEVID did, int num, U8 *points, U8 *runtime) {
+	ConnectionPool *pool = self;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+	U8 u8PhNum[20] = {0};
+
+	TRY 
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			U8 buffer[512];
+
+			sprintf(buffer, NTY_DB_INSERT_EFENCE, did, num, points, runtime);
+			ntylog(" sql : %s\n", buffer);
+			Connection_execute(con, NTY_DB_INSERT_EFENCE, did, num, points, runtime);
+		}
+	} 
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+
+
 //NTY_DB_DEVICE_STATUS_RESET_FORMAT
 int ntyQueryDeviceOnlineStatus(void *self, C_DEVID did, int *online) {
 	ConnectionPool *pool = self;
@@ -787,6 +826,12 @@ int ntyExecuteAppLogoutUpdateHandle(C_DEVID aid) {
 	void *pool = ntyConnectionPoolInstance();
 	return ntyExecuteAppLogoutUpdate(pool, aid);
 }
+
+int ntyExecuteEfenceInsertHandle(C_DEVID aid, C_DEVID did, int num, U8 *points, U8 *runtime) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteEfenceInsert(pool, aid, did, num, points, runtime);
+}
+
 
 
 int ntyQueryPhNumSelectHandle(C_DEVID did, U8 *iccid, U8 *phnum) {
