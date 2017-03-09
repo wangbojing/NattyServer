@@ -1243,71 +1243,29 @@ void ntyRoutePacketHandleRequest(const void *_self, unsigned char *buffer, int l
 			ntydbg("Category : %s\n", app_category);
 	
 			if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_CONFIG) == 0) {
-
-
-				char *jsonresult = malloc(sizeof(char)*jsonlen+15); 
-				ntyJsonResult(jsonstring, jsonresult);
-				void *map = ntyMapInstance();
-				ClientSocket *nSocket = ntyMapSearch(map, client->devId);
-				ntySendBuffer(nSocket, jsonresult, strlen(jsonresult));
-				ntyMapRelease(map);
-				free(jsonresult);
-			} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_POWER) == 0) {
-				/*
-				CommonReq *pCommonReq = (CommonReq*)malloc(sizeof(CommonReq));
-				PowerAck *pPowerAck = (PowerAck*)malloc(sizeof(PowerAck));
-				
-				ntyJsonCommon(json, pCommonReq);
-				pPowerAck->results.IMEI = pCommonReq->IMEI;
-				pPowerAck->results.category = pCommonReq->category;
-				pPowerAck->results.power = "5";
-				char *json_send = ntyJsonWritePower(pPowerAck);
-				
-				free(pCommonReq);
+				ConfigAck *pConfigAck = malloc(sizeof(ConfigAck));
+				char *jsonresult = ntyJsonWriteConfig(pConfigAck);
+				ntySendDataRoute(client->devId, (U8*)jsonresult, strlen(jsonresult));
+				ntyJsonFree(jsonresult);
+				free(pConfigAck);
+			} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_POWER) == 0) {				
+				PowerAck *pPowerAck = malloc(sizeof(PowerAck));				
+				char *jsonresult = ntyJsonWritePower(pPowerAck);
+				ntySendDataRoute(client->devId, (U8*)jsonresult, strlen(jsonresult));
+				ntyJsonFree(jsonresult);
 				free(pPowerAck);
-				*/
-
-				char *jsonresult = malloc(sizeof(char)*jsonlen+15);
-				ntyJsonResult(jsonstring, jsonresult);
-				void *map = ntyMapInstance();
-				ClientSocket *nSocket = ntyMapSearch(map, client->devId);
-				ntySendBuffer(nSocket, jsonresult, strlen(jsonresult));
-				ntyMapRelease(map);
-				free(jsonresult);
 			} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_SIGNAL) == 0) {
-				/*
-				CommonReq *pCommonReq = (CommonReq*)malloc(sizeof(CommonReq));
-				SignalAck *pSignalAck = (SignalAck*)malloc(sizeof(SignalAck));
-				
-				ntyJsonCommon(json, pCommonReq);
-				pSignalAck->results.IMEI = pCommonReq->IMEI;
-				pSignalAck->results.category = pCommonReq->category;
-				pSignalAck->results.signal = "86";
-				char *json_send = ntyJsonWriteSignal(pSignalAck);
-
-				free(pCommonReq);
+				SignalAck *pSignalAck = malloc(sizeof(SignalAck));				
+				char *jsonresult = ntyJsonWriteSignal(pSignalAck);
+				ntySendDataRoute(client->devId, (U8*)jsonresult, strlen(jsonresult));
+				ntyJsonFree(jsonresult);
 				free(pSignalAck);
-				*/
-
-				char *jsonresult = malloc(sizeof(char)*jsonlen+15);
-				ntyJsonResult(jsonstring, jsonresult);
-				void *map = ntyMapInstance();
-				ClientSocket *nSocket = ntyMapSearch(map, client->devId);
-				ntySendBuffer(nSocket, jsonresult, strlen(jsonresult));
-				ntyMapRelease(map);
-				free(jsonresult);
 			} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_LOCATION) == 0) {
-				//CommonReq *pCommonReq = (CommonReq*)malloc(sizeof(CommonReq));
-				//ntyJsonCommon(json, pCommonReq);
-				//free(pCommonReq);
-
-				char *jsonresult = malloc(sizeof(char)*jsonlen+15);
-				ntyJsonResult(jsonstring, jsonresult);
-				void *map = ntyMapInstance();
-				ClientSocket *nSocket = ntyMapSearch(map, client->devId);
-				ntySendBuffer(nSocket, jsonresult, strlen(jsonresult));
-				ntyMapRelease(map);
-				free(jsonresult);
+				LocationAck *pLocationAck = malloc(sizeof(LocationAck));				
+				char *jsonresult = ntyJsonWriteLocation(pLocationAck);
+				ntySendDataRoute(client->devId, (U8*)jsonresult, strlen(jsonresult));
+				ntyJsonFree(jsonresult);
+				free(pLocationAck);
 			} else {
 				ntylog("Can't find category with: %s\n", app_category);
 			}

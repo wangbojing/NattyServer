@@ -130,6 +130,13 @@
 #define NATTY_USER_PROTOCOL_STARTTIME 		"StartTime"
 #define NATTY_USER_PROTOCOL_ENDTIME 		"EndTime"
 
+#define NATTY_USER_PROTOCOL_CONTACTS 		"Contacts"
+#define NATTY_USER_PROTOCOL_NAME 			"Name"
+#define NATTY_USER_PROTOCOL_IMAGE 			"Image"
+#define NATTY_USER_PROTOCOL_TELPHONE 		"Telphone"
+#define NATTY_USER_PROTOCOL_APP 			"App"
+
+
 
 
 #include <stdio.h>
@@ -451,6 +458,49 @@ typedef struct _TimeTablesAck {
 } TimeTablesAck;
 
 
+
+typedef struct _Contacts {
+	const char *id;
+	const char *name;
+	const char *image;
+	const char *telphone;
+	const char *mana;
+	const char *app;
+} Contacts;
+
+typedef struct _ContactsResults {
+	const char *IMEI;
+	const char *category;
+	const char *num;
+	size_t size;
+	Contacts *pContacts;
+} ContactsResults;
+
+typedef struct _ContactsAck {
+	ContactsResults results;
+} ContactsAck;
+
+typedef struct _AddContactsReq {
+	const char *IMEI;
+	const char *category;
+	const char *action;
+	Contacts contacts;
+} AddContactsReq;
+
+typedef struct _DelContactsReq {
+	const char *IMEI;
+	const char *category;
+	const char *action;
+	const char *id;
+} DelContactsReq;
+
+typedef struct _UpdateContactsReq {
+	const char *IMEI;
+	const char *category;
+	const char *action;
+	const char *id;
+	Contacts contacts;
+} UpdateContactsReq;
 
 
 #endif

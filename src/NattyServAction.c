@@ -60,6 +60,7 @@ void ntyJsonSuccessResult(C_DEVID devId) {
 	pCommonAck->result.status = "200";
 	char *jsonresult = ntyJsonWriteCommon(pCommonAck);
 	ntySendDataResult(devId, (U8*)jsonresult, strlen(jsonresult), 200);
+	ntyJsonFree(jsonresult);
 	free(pCommonAck);
 }
 
@@ -97,6 +98,7 @@ void ntyJsonEfenceAction(C_DEVID AppId, C_DEVID toId, JSON_Value *json, U8 *json
 		pEfenceAck->result = *(EfenceResult*)pEfenceReq;
 		char *jsonresult = ntyJsonWriteEfence(pEfenceAck);
 		ntySendCommonBroadCastResult(AppId, DeviceId, (U8*)jsonresult, strlen(jsonresult));
+		ntyJsonFree(jsonresult);
 		free(pEfenceAck);
 	}
 	ntyJsonEfencePointRelease(pEfenceReq->efence.pPoints);
@@ -258,6 +260,7 @@ void ntyJsonSelectScheduleAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json,
 		if (ret == 1) {
 			char *jsonresult = ntyJsonWriteSchedule(pScheduleAck);
 			ntySendCommonBroadCastResult(AppId, DeviceId, (U8*)jsonresult, strlen(jsonresult));
+			ntyJsonFree(jsonresult);
 			free(pScheduleAck);
 		}
 	}

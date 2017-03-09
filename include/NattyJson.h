@@ -64,6 +64,8 @@ JSON_Value* ntyMallocJsonByString(const char *jsonstring);
 
 void ntyFreeJson(JSON_Value *json);
 
+void ntyJsonFree(void *json);
+
 void ntyJsonResult(const char *jsonstring, char *jsonresult);
 
 const char * ntyJsonAppCategory(JSON_Value *json);
@@ -108,6 +110,12 @@ void ntyJsonTimeTables(JSON_Value *json, TimeTablesReq *pTimeTablesReq);
 
 void ntyJsonTimeTablesItemRelease(TimeTablesItem *pTimeTables);
 
+void ntyJsonAddContacts(JSON_Value *json, AddContactsReq *pAddContactsReq);
+
+void ntyJsonUpdateContacts(JSON_Value *json, UpdateContactsReq *pUpdateContactsReq);
+
+void ntyJsonDelContacts(JSON_Value *json, DelContactsReq *pDelContactsReq);
+
 char * ntyJsonWriteCommon(CommonAck *pCommonAck);
 
 char * ntyJsonWriteConfig(ConfigAck *pConfigAck);
@@ -132,6 +140,7 @@ char * ntyJsonWriteSchedule(ScheduleAck *pScheduleAck);
 
 char * ntyJsonWriteTimeTables(TimeTablesAck *pTimeTablesAck);
 
+char * ntyJsonWriteContacts(ContactsAck *pContactsAck);
 
 
 #endif

@@ -123,6 +123,10 @@ void ntyFreeJson(JSON_Value *json) {
 	json_value_free(json);
 }
 
+void ntyJsonFree(void *json) {
+	//parson_free(json);
+}
+
 void ntyJsonResult(const char *jsonstring, char *jsonresult) {
 	if (jsonstring == NULL) {
 		return;
@@ -485,6 +489,60 @@ void ntyJsonTimeTables(JSON_Value *json, TimeTablesReq *pTimeTablesReq) {
 	}
 }
 
+void ntyJsonAddContacts(JSON_Value *json, AddContactsReq *pAddContactsReq) {
+	if (json == NULL || pAddContactsReq == NULL) {
+		ntydbg("param is null.\n");
+		return;
+	}
+
+	JSON_Object *root_object = json_value_get_object(json);
+	pAddContactsReq->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
+	pAddContactsReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
+	pAddContactsReq->action = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ACTION);
+	ntydbg("IMEI:%s   Category:%s  Action:%s\n", pAddContactsReq->IMEI, pAddContactsReq->category, pAddContactsReq->action);
+
+	JSON_Object *contacts_object = json_object_get_object(root_object, NATTY_USER_PROTOCOL_CONTACTS);
+	pAddContactsReq->contacts.name = json_object_get_string(contacts_object, NATTY_USER_PROTOCOL_NAME);
+	pAddContactsReq->contacts.image = json_object_get_string(contacts_object, NATTY_USER_PROTOCOL_IMAGE);
+	pAddContactsReq->contacts.telphone = json_object_get_string(contacts_object, NATTY_USER_PROTOCOL_TELPHONE);
+	pAddContactsReq->contacts.app = json_object_get_string(contacts_object, NATTY_USER_PROTOCOL_APP);
+}
+
+void ntyJsonUpdateContacts(JSON_Value *json, UpdateContactsReq *pUpdateContactsReq) {
+	if (json == NULL || pUpdateContactsReq == NULL) {
+		ntydbg("param is null.\n");
+		return;
+	}
+	
+	JSON_Object *root_object = json_value_get_object(json);
+	pUpdateContactsReq->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
+	pUpdateContactsReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
+	pUpdateContactsReq->action = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ACTION);
+	pUpdateContactsReq->id = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ID);
+	ntydbg("IMEI:%s   Category:%s  Action:%s  id:%s\n", pUpdateContactsReq->IMEI, pUpdateContactsReq->category, pUpdateContactsReq->action, pUpdateContactsReq->id);
+
+	JSON_Object *contacts_object = json_object_get_object(root_object, NATTY_USER_PROTOCOL_CONTACTS);
+	pUpdateContactsReq->contacts.name = json_object_get_string(contacts_object, NATTY_USER_PROTOCOL_NAME);
+	pUpdateContactsReq->contacts.image = json_object_get_string(contacts_object, NATTY_USER_PROTOCOL_IMAGE);
+	pUpdateContactsReq->contacts.telphone = json_object_get_string(contacts_object, NATTY_USER_PROTOCOL_TELPHONE);
+	pUpdateContactsReq->contacts.app = json_object_get_string(contacts_object, NATTY_USER_PROTOCOL_APP);
+}
+
+void ntyJsonDelContacts(JSON_Value *json, DelContactsReq *pDelContactsReq) {
+	if (json == NULL || pDelContactsReq == NULL) {
+		ntydbg("param is null.\n");
+		return;
+	}
+	
+	JSON_Object *root_object = json_value_get_object(json);
+	pDelContactsReq->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
+	pDelContactsReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
+	pDelContactsReq->action = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ACTION);
+	pDelContactsReq->id = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ID);
+	ntydbg("IMEI:%s   Category:%s  Action:%s  id:%s\n", pDelContactsReq->IMEI, pDelContactsReq->category, pDelContactsReq->action, pDelContactsReq->id);
+}
+
+
 void ntyJsonTimeTablesItemRelease(TimeTablesItem *pTimeTables) {
 	if (pTimeTables != NULL) {
 		free(pTimeTables);
@@ -503,7 +561,9 @@ char * ntyJsonWriteCommon(CommonAck *pCommonAck) {
 	JSON_Object *result_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULT);
 	json_object_set_string(result_obj, NATTY_USER_PROTOCOL_STATUS, pCommonAck->result.status);
 
-	return json_serialize_to_string(schema);
+	char *jsonstring =  json_serialize_to_string(schema);
+	json_value_free(schema);
+	return jsonstring;
 }
 
 char * ntyJsonWriteConfig(ConfigAck *pConfigAck) {
@@ -526,8 +586,9 @@ char * ntyJsonWriteConfig(ConfigAck *pConfigAck) {
 	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_PHONENUM, pConfigAck->results.config.phone_num);
 	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_LOCATION, pConfigAck->results.config.location);
 
-	
-	return json_serialize_to_string(schema);
+	char *jsonstring =  json_serialize_to_string(schema);
+	json_value_free(schema);
+	return jsonstring;
 }
 
 char * ntyJsonWritePower(PowerAck *pPowerAck) {
@@ -540,8 +601,10 @@ char * ntyJsonWritePower(PowerAck *pPowerAck) {
 	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object());
 	JSON_Object *results_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULTS);
 	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_POWER, pPowerAck->results.power);
-	
-	return json_serialize_to_string(schema);
+
+	char *jsonstring =  json_serialize_to_string(schema);
+	json_value_free(schema);
+	return jsonstring;
 }
 
 char * ntyJsonWriteSignal(SignalAck *pSignalAck) {
@@ -554,8 +617,10 @@ char * ntyJsonWriteSignal(SignalAck *pSignalAck) {
 	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object());
 	JSON_Object *results_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULTS);
 	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_SIGNAL, pSignalAck->results.signal);
-	
-	return json_serialize_to_string(schema);
+
+	char *jsonstring =  json_serialize_to_string(schema);
+	json_value_free(schema);
+	return jsonstring;
 }
 
 char * ntyJsonWriteWIFI(WIFIAck *pWIFIAck) {
@@ -583,8 +648,11 @@ char * ntyJsonWriteWIFI(WIFIAck *pWIFIAck) {
 		json_object_set_string(wifiitem_obj, NATTY_USER_PROTOCOL_MAC, pWIFIAck->result.pWIFI[i].MAC);
 		json_object_set_string(wifiitem_obj, NATTY_USER_PROTOCOL_V, pWIFIAck->result.pWIFI[i].V);
 	}
-	
-	return json_serialize_to_string(schema);
+
+	char *jsonstring =  json_serialize_to_string(schema);
+	json_value_free(schema);
+	return jsonstring;
+
 }
 
 char * ntyJsonWriteLAB(LABAck *pLABAck) {
@@ -613,8 +681,10 @@ char * ntyJsonWriteLAB(LABAck *pLABAck) {
 		json_object_set_string(nearbts_obj, NATTY_USER_PROTOCOL_SIGNAL, pLABAck->result.lab.pNearbts[i].signal);
 		json_object_set_string(nearbts_obj, NATTY_USER_PROTOCOL_CELL, pLABAck->result.lab.pNearbts[i].cell);
 	}
-	
-	return json_serialize_to_string(schema);
+
+	char *jsonstring =  json_serialize_to_string(schema);
+	json_value_free(schema);
+	return jsonstring;
 }
 
 
@@ -631,8 +701,10 @@ char *ntyJsonWriteLocation(LocationAck *pLocationAck) {
 	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_RADIUS, pLocationAck->results.radius);
 	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_LOCATION, pLocationAck->results.location);
 	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_CATEGORY, pLocationAck->results.category);
-	
-	return json_serialize_to_string(schema);
+
+	char *jsonstring =  json_serialize_to_string(schema);
+	json_value_free(schema);
+	return jsonstring;
 }
 
 
@@ -666,8 +738,10 @@ char * ntyJsonWriteEfence(EfenceAck *pEfenceAck) {
 	for (i = 0; i < pEfenceAck->result.efence.size; i++) {
 		json_array_append_string(points_arr, pEfenceAck->result.efence.pPoints[i].point);
 	}
-	
-	return json_serialize_to_string(schema);
+
+	char *jsonstring =  json_serialize_to_string(schema);
+	json_value_free(schema);
+	return jsonstring;
 }
 
 char * ntyJsonWriteRunTime(RunTimeAck *pRunTimeAck) {
@@ -689,8 +763,10 @@ char * ntyJsonWriteRunTime(RunTimeAck *pRunTimeAck) {
 	json_object_set_string(runtime_obj, NATTY_USER_PROTOCOL_LIGHTPANEL, pRunTimeAck->result.runtime.light_panel);
 	json_object_set_string(runtime_obj, NATTY_USER_PROTOCOL_WATCHBELL, pRunTimeAck->result.runtime.watch_bell);
 	json_object_set_string(runtime_obj, NATTY_USER_PROTOCOL_TAGETSTEP, pRunTimeAck->result.runtime.taget_step);
-	
-	return json_serialize_to_string(schema);
+
+	char *jsonstring =  json_serialize_to_string(schema);
+	json_value_free(schema);
+	return jsonstring;
 }
 
 
@@ -719,7 +795,10 @@ char * ntyJsonWriteSchedule(ScheduleAck *pScheduleAck) {
 		json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_TIME, pScheduleAck->results.pSchedule[i].time);
 		json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_DETAILS, pScheduleAck->results.pSchedule[i].details);
 	}
-	return json_serialize_to_string(schema);
+
+	char *jsonstring =  json_serialize_to_string(schema);
+	json_value_free(schema);
+	return jsonstring;
 }
 
 char * ntyJsonWriteTimeTables(TimeTablesAck *pTimeTablesAck) {
@@ -755,14 +834,43 @@ char * ntyJsonWriteTimeTables(TimeTablesAck *pTimeTablesAck) {
 		json_object_set_string(afternoon_obj, NATTY_USER_PROTOCOL_STARTTIME, pTimeTablesAck->results.pTimeTables[i].afternoon.startTime);
 		json_object_set_string(afternoon_obj, NATTY_USER_PROTOCOL_ENDTIME, pTimeTablesAck->results.pTimeTables[i].afternoon.endTime);
 	}
-	return json_serialize_to_string(schema);
+
+	char *jsonstring =  json_serialize_to_string(schema);
+	json_value_free(schema);
+	return jsonstring;
 }
 
 
+char * ntyJsonWriteContacts(ContactsAck *pContactsAck) {
+	if (pContactsAck == NULL) {
+		return NULL;
+	}
 
+	JSON_Value *schema = json_value_init_object();
+	JSON_Object *schema_obj = json_value_get_object(schema);
+	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object());
+	JSON_Object *results_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULTS);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_IMEI, pContactsAck->results.IMEI);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_CATEGORY, pContactsAck->results.category);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_NUM, pContactsAck->results.num);
 
+	json_object_set_value(results_obj, NATTY_USER_PROTOCOL_CONTACTS, json_value_init_array());
+	JSON_Array *contacts_arr = json_object_get_array(results_obj, NATTY_USER_PROTOCOL_CONTACTS);
+	
+	size_t i;
+	for (i = 0; i < pContactsAck->results.size; i++) {
+		json_array_append_value(contacts_arr, json_value_init_object());
+		JSON_Object *contacts_obj = json_array_get_object(contacts_arr, i);
+		json_object_set_string(contacts_obj, NATTY_USER_PROTOCOL_NAME, pContactsAck->results.pContacts[i].name);
+		json_object_set_string(contacts_obj, NATTY_USER_PROTOCOL_IMAGE, pContactsAck->results.pContacts[i].image);
+		json_object_set_string(contacts_obj, NATTY_USER_PROTOCOL_TELPHONE, pContactsAck->results.pContacts[i].telphone);
+		json_object_set_string(contacts_obj, NATTY_USER_PROTOCOL_APP, pContactsAck->results.pContacts[i].app);
+	}
 
-
+	char *jsonstring =  json_serialize_to_string(schema);
+	json_value_free(schema);
+	return jsonstring;
+}
 
 
 

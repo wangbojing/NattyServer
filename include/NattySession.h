@@ -89,6 +89,7 @@ int ntySendLocationBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int le
 int ntySendVoiceBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int length);
 int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int length);
 int ntySendDataResult(C_DEVID toId, U8 *json, int length, U16 status);
+int ntySendDataRoute(C_DEVID toId, U8 *buffer, int length);
 
 
 
