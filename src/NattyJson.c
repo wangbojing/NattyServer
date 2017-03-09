@@ -278,11 +278,31 @@ void ntyJsonAMap(JSON_Value *json, AMap *pAMap) {
 	ntydbg("status:%s,  info:%s,  infocode:%s,  location:%s\n", pAMap->status, pAMap->info, pAMap->infocode, pAMap->result.location);
 }
 
-/*
-void ntyJsonWeather(JSON_Value *json, WeatherAck *pWeather) {
-	return;
+void ntyJsonWeather(JSON_Value *json, WeatherReq *pWeatherReq) {
+	if (json == NULL || pWeatherReq == NULL) {
+		ntydbg("param is null.\n");
+		return;
+	}
+
+	JSON_Object *root_object = json_value_get_object(json);
+	pWeatherReq->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
+	pWeatherReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
+	pWeatherReq->bts = json_object_get_string(root_object, NATTY_USER_PROTOCOL_BTS);
+	
+	ntydbg("IMEI:%s,  category:%s,  bts:%s\n", pWeatherReq->IMEI, pWeatherReq->category, pWeatherReq->bts);
 }
-*/
+
+void ntyJsonICCID(JSON_Value *json, ICCIDReq *pICCIDReq) {
+	if (json == NULL || pICCIDReq == NULL) {
+			ntydbg("param is null.\n");
+			return;
+	}
+	
+	JSON_Object *root_object = json_value_get_object(json);
+	pICCIDReq->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
+	
+	ntydbg("IMEI:%s\n", pICCIDReq->IMEI);
+}
 
 void ntyJsonCommon(JSON_Value *json, CommonReq *pCommonReq) {
 	if (json == NULL || pCommonReq == NULL) {
@@ -534,6 +554,65 @@ char * ntyJsonWriteSignal(SignalAck *pSignalAck) {
 	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object());
 	JSON_Object *results_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULTS);
 	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_SIGNAL, pSignalAck->results.signal);
+	
+	return json_serialize_to_string(schema);
+}
+
+char * ntyJsonWriteWIFI(WIFIAck *pWIFIAck) {
+	if (pWIFIAck == NULL) {
+		return NULL;
+	}
+
+	JSON_Value *schema = json_value_init_object();
+	JSON_Object *schema_obj = json_value_get_object(schema);
+	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object());
+	JSON_Object *results_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULTS);
+
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_IMEI, pWIFIAck->result.IMEI);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_CATEGORY, pWIFIAck->result.category);
+	
+
+	json_object_set_value(results_obj, NATTY_USER_PROTOCOL_WIFI, json_value_init_array());
+	JSON_Array *wifi_arr = json_object_get_array(results_obj, NATTY_USER_PROTOCOL_WIFI);
+	
+	size_t i;
+	for (i = 0; i < pWIFIAck->result.size; i++) {
+		json_array_append_value(wifi_arr, json_value_init_object());
+		JSON_Object *wifiitem_obj = json_array_get_object(wifi_arr, i);
+		json_object_set_string(wifiitem_obj, NATTY_USER_PROTOCOL_SSID, pWIFIAck->result.pWIFI[i].SSID);
+		json_object_set_string(wifiitem_obj, NATTY_USER_PROTOCOL_MAC, pWIFIAck->result.pWIFI[i].MAC);
+		json_object_set_string(wifiitem_obj, NATTY_USER_PROTOCOL_V, pWIFIAck->result.pWIFI[i].V);
+	}
+	
+	return json_serialize_to_string(schema);
+}
+
+char * ntyJsonWriteLAB(LABAck *pLABAck) {
+	if (pLABAck == NULL) {
+		return NULL;
+	}
+
+	JSON_Value *schema = json_value_init_object();
+	JSON_Object *schema_obj = json_value_get_object(schema);
+	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object());
+	JSON_Object *results_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULTS);
+
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_IMEI, pLABAck->result.IMEI);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_CATEGORY, pLABAck->result.category);
+
+	JSON_Object *lab_obj = json_object_get_object(results_obj, NATTY_USER_PROTOCOL_LAB);
+	json_object_set_string(lab_obj, NATTY_USER_PROTOCOL_BTS, pLABAck->result.lab.bts);
+
+	json_object_set_value(lab_obj, NATTY_USER_PROTOCOL_NEARBTS, json_value_init_array());
+	JSON_Array *nearbts_arr = json_object_get_array(lab_obj, NATTY_USER_PROTOCOL_NEARBTS);
+	
+	size_t i;
+	for (i = 0; i < pLABAck->result.size; i++) {
+		json_array_append_value(nearbts_arr, json_value_init_object());
+		JSON_Object *nearbts_obj = json_array_get_object(nearbts_arr, i);
+		json_object_set_string(nearbts_obj, NATTY_USER_PROTOCOL_SIGNAL, pLABAck->result.lab.pNearbts[i].signal);
+		json_object_set_string(nearbts_obj, NATTY_USER_PROTOCOL_CELL, pLABAck->result.lab.pNearbts[i].cell);
+	}
 	
 	return json_serialize_to_string(schema);
 }

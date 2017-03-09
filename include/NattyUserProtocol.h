@@ -43,8 +43,11 @@
 
 
 
+
 #ifndef __NATTY_USER_PROTOCOL_H__
 #define __NATTY_USER_PROTOCOL_H__
+
+
 
 
 #define NATTY_USER_PROTOCOL_IMEI					"IMEI"
@@ -138,11 +141,17 @@ typedef struct _WIFIItem {
 	const char *V;
 } WIFIItem;
 
+
 typedef struct _WIFIReq {
 	const char *IMEI;
 	const char *category;
+	size_t size;
 	WIFIItem *pWIFI;
-} WIFIReq;
+} WIFIReq, WIFIResult;
+
+typedef struct _WIFIAck {
+	WIFIResult result;
+} WIFIAck;
 
 
 typedef struct _Nearbts {
@@ -158,9 +167,13 @@ typedef struct _LABItem {
 typedef struct _LABReq {
 	const char *IMEI;
 	const char *category;
+	size_t size;
 	LABItem lab;
-} LABReq;
+} LABReq, LABResult;
 
+typedef struct _LABAck {
+	LABResult result;
+} LABAck;
 
 
 typedef struct _AMapResult {
@@ -221,6 +234,21 @@ typedef struct _WeatherAck {
 	WeatherResults *pResults;
 } WeatherAck;
 
+typedef struct _WeatherReq {
+	const char *IMEI;
+    const char *category;
+    const char *bts;
+} WeatherReq;
+
+
+typedef struct _ICCIDReq {
+	const char *IMEI;
+} ICCIDReq;
+
+typedef struct _ICCIDAck {
+	const char *IMEI;
+	const char *phone_num;
+} ICCIDAck;
 
 
 typedef struct _CommonResult {
@@ -423,6 +451,9 @@ typedef struct _TimeTablesAck {
 } TimeTablesAck;
 
 
+
+
 #endif
+
 
 

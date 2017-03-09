@@ -84,7 +84,9 @@ void ntyJsonLABItemRelease(Nearbts *pNearbts);
 
 void ntyJsonAMap(JSON_Value *json, AMap *pAMap);
 
-//void ntyJsonWeather(JSON_Value *json, WeatherAck *pWeather);
+void ntyJsonWeather(JSON_Value *json, WeatherReq *pWeatherReq);
+
+void ntyJsonICCID(JSON_Value *json, ICCIDReq *pICCIDReq);
 
 void ntyJsonCommon(JSON_Value *json, CommonReq *pCommonReq);
 
@@ -113,6 +115,10 @@ char * ntyJsonWriteConfig(ConfigAck *pConfigAck);
 char * ntyJsonWritePower(PowerAck *pPowerAck);
 
 char * ntyJsonWriteSignal(SignalAck *pSignalAck);
+
+char * ntyJsonWriteWIFI(WIFIAck *pWIFIAck);
+
+char * ntyJsonWriteLAB(LABAck *pLABAck);
 
 char * ntyJsonWriteLocation(LocationAck *pLocationAck);
 
