@@ -60,11 +60,11 @@ void ntyReleaseScheduleAck(ScheduleAck *pScheduleAck);
 TimeTablesAck* ntyInitTimeTablesAck();
 void ntyReleaseTimeTablesAck(TimeTablesAck *pTimeTablesAck);
 
-
-
 JSON_Value* ntyMallocJsonByString(const char *jsonstring);
 
 void ntyFreeJson(JSON_Value *json);
+
+void ntyJsonResult(const char *jsonstring, char *jsonresult);
 
 const char * ntyJsonAppCategory(JSON_Value *json);
 
@@ -74,7 +74,11 @@ const char * ntyJsonAction(JSON_Value *json);
 
 void ntyJsonWIFI(JSON_Value *json, WIFIReq *pWIFIReq);
 
+void ntyJsonWIFIItemRelease(WIFIItem *pWIFI);
+
 void ntyJsonLAB(JSON_Value *json, LABReq *pLABReq);
+
+void ntyJsonLABItemRelease(Nearbts *pNearbts);
 
 //void ntyJsonLocation(JSON_Value *json, LocationAck *pLocation);
 
@@ -85,6 +89,8 @@ void ntyJsonAMap(JSON_Value *json, AMap *pAMap);
 void ntyJsonCommon(JSON_Value *json, CommonReq *pCommonReq);
 
 void ntyJsonEfence(JSON_Value *json, EfenceReq *pEfenceReq);
+
+void ntyJsonEfencePointRelease(EfencePoints *pPoints);
 
 void ntyJsonRuntime(JSON_Value *json, RunTimeReq *pRunTimeReq);
 
@@ -98,6 +104,9 @@ void ntyJsonDelSchedule(JSON_Value *json, DelScheduleReq *pDelScheduleReq);
 
 void ntyJsonTimeTables(JSON_Value *json, TimeTablesReq *pTimeTablesReq);
 
+void ntyJsonTimeTablesItemRelease(TimeTablesItem *pTimeTables);
+
+char * ntyJsonWriteCommon(CommonAck *pCommonAck);
 
 char * ntyJsonWriteConfig(ConfigAck *pConfigAck);
 
@@ -108,6 +117,8 @@ char * ntyJsonWriteSignal(SignalAck *pSignalAck);
 char * ntyJsonWriteLocation(LocationAck *pLocationAck);
 
 char * ntyJsonWriteWeather(WeatherAck *pWeatherAck);
+
+char * ntyJsonWriteEfence(EfenceAck *pEfenceAck);
 
 char * ntyJsonWriteRunTime(RunTimeAck *pRunTimeAck);
 
