@@ -199,7 +199,7 @@ int ntySendDeviceTimeCheckAck(const Client *pClient, U32 ackNum) {
 
 	
 	ack[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
-	ack[NTY_PROTO_PROTOTYPE_IDX] = (U8)MSG_ACK;
+	ack[NTY_PROTO_PROTOTYPE_IDX] = (U8)PROTO_ACK;
 	ack[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_TIME_CHECK_ACK;
 #if 0
 	ack[NTY_PROTO_DEVID_IDX] = pClient->devId;
@@ -211,7 +211,7 @@ int ntySendDeviceTimeCheckAck(const Client *pClient, U32 ackNum) {
 	ntyTimeCheckStamp(ack);
 	
 	//*(U32*)(&ack[NTY_PROTO_TIMECHECK_CRC_IDX]) = ntyGenCrcValue(ack, NTY_PROTO_LOGIN_REQ_CRC_IDX);
-	length = NTY_PROTO_TIMECHECK_CRC_IDX+sizeof(U32);
+	length = NTY_PROTO_TIME_ACK_CRC_IDX+sizeof(U32);
 
 	void *map = ntyMapInstance();
 	ClientSocket *nSocket = ntyMapSearch(map, pClient->devId);
@@ -660,13 +660,28 @@ int ntySendVoiceBroadCastIter(void *self, void *arg) {
 
 	length = length + NTY_PROTO_VOICE_BROADCAST_JSON_CONTENT_IDX + sizeof(U32);
 
+	return ntySendBuffer(client, buffer, length);
+}
+
+//
+int ntySendCommonReq(C_DEVID toId, U8 *buffer, int length) {
+
+	void *map = ntyMapInstance();
+	ClientSocket *client = ntyMapSearch(map, toId);
+
+	return ntySendBuffer(client, buffer, length);
 	
+}
+
+int ntySendDataRoute(C_DEVID toId, U8 *buffer, int length) {
+	void *map = ntyMapInstance();
+	ClientSocket *client = ntyMapSearch(map, toId);
 
 	return ntySendBuffer(client, buffer, length);
 }
 
 
-int ntySendVoiceBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int length) {
+int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int length) {
 	void *heap = ntyBHeapInstance();
 	NRecord *record = ntyBHeapSelect(heap, gId);
 
@@ -675,7 +690,7 @@ int ntySendVoiceBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int lengt
 	msg->buffer = json;
 	msg->length = length;
 	msg->group = pClient;
-	msg->self = &selfId;
+	msg->self = &fromId;
 	
 	ntyVectorIterator(pClient->friends, ntySendVoiceBroadCastIter, msg);
 
@@ -715,7 +730,7 @@ int ntySendLocationBroadCastIter(void *self, void *arg) {
 }
 
 
-int ntySendLocationBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int length) {
+int ntySendLocationBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int length) {
 	void *heap = ntyBHeapInstance();
 	NRecord *record = ntyBHeapSelect(heap, gId);
 
@@ -724,7 +739,7 @@ int ntySendLocationBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int le
 	msg->buffer = json;
 	msg->length = length;
 	msg->group = pClient;
-	msg->self = &selfId;
+	msg->self = &fromId;
 	
 	ntyVectorIterator(pClient->friends, ntySendLocationBroadCastIter, msg);
 
@@ -755,7 +770,7 @@ int ntySendLoginAckResult(C_DEVID fromId, U8 *json, int length, U16 status) {
 	
 }
 
-int ntySendOfflineMsgAckResult(C_DEVID toId, U8 *json, int length, U16 status) {
+int ntySendOfflineMsgAckResult(C_DEVID fromId, U8 *json, int length, U16 status) {
 	U16 bLength = (U16)length;
 	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
 	
@@ -771,7 +786,7 @@ int ntySendOfflineMsgAckResult(C_DEVID toId, U8 *json, int length, U16 status) {
 	bLength = bLength + NTY_PROTO_OFFLINE_MSG_ACK_JSON_CONTENT_IDX + sizeof(U32);
 
 	void *map = ntyMapInstance();
-	ClientSocket *client = ntyMapSearch(map, toId);
+	ClientSocket *client = ntyMapSearch(map, fromId);
 	
 	return ntySendBuffer(client, buffer, bLength);
 }

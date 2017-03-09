@@ -184,6 +184,15 @@
 #define NTY_DB_DELETE_VOICE_OFFLINE_MSG		"CALL PROC_DELETE_VOICE_OFFLINE_MSG(%d, %lld)"
 
 
+#define NTY_DB_SELECT_WATCHLIST_FROMAPPID 	"CALL PROC_SELECT_WATCHLIST_FROMAPPID(%lld)"
+
+
+
+
+
+
+
+
 
 typedef struct _CONN_POOL {
 	const void *_;

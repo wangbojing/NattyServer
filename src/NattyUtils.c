@@ -67,13 +67,13 @@ TimeStamp* ntyGetSystemTime(void) {
 void ntyTimeCheckStamp(U8 *buf) {
 	struct tm *tblock = ntyGetSystemTime();
 
-	buf[NTY_PROTO_TIMECHECK_YEAR_IDX] = (U8)(tblock->tm_year % 100);
-	buf[NTY_PROTO_TIMECHECK_MONTH_IDX] = (U8)(tblock->tm_mon);
-	buf[NTY_PROTO_TIMECHECK_DAY_IDX] = (U8)(tblock->tm_mday);
-	buf[NTY_PROTO_TIMECHECK_WDAY_IDX] = (U8)(tblock->tm_wday);
-	buf[NTY_PROTO_TIMECHECK_HOUR_IDX] = (U8)(tblock->tm_hour);
-	buf[NTY_PROTO_TIMECHECK_MINUTE_IDX] = (U8)(tblock->tm_min);
-	buf[NTY_PROTO_TIMECHECK_SECOND_IDX] = (U8)(tblock->tm_sec);
+	buf[NTY_PROTO_TIME_ACK_YEAR_IDX] = (U8)(tblock->tm_year % 100);
+	buf[NTY_PROTO_TIME_ACK_MONTH_IDX] = (U8)(tblock->tm_mon);
+	buf[NTY_PROTO_TIME_ACK_DAY_IDX] = (U8)(tblock->tm_mday);
+	buf[NTY_PROTO_TIME_ACK_WDAY_IDX] = (U8)(tblock->tm_wday);
+	buf[NTY_PROTO_TIME_ACK_HOUR_IDX] = (U8)(tblock->tm_hour);
+	buf[NTY_PROTO_TIME_ACK_MINUTE_IDX] = (U8)(tblock->tm_min);
+	buf[NTY_PROTO_TIME_ACK_SECOND_IDX] = (U8)(tblock->tm_sec);
 }
 
 

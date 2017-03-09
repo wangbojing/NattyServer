@@ -171,7 +171,7 @@ typedef struct _NATTYPROTO_OPERA {
 typedef NattyProtoOpera NattyProtoHandle;
 
 #endif
-#if 1
+#if 0
 extern DEVID g_devid;
 #endif
 
@@ -179,7 +179,7 @@ void* ntyProtoClientCtor(void *_self, va_list *params) {
 	NattyProto *proto = _self;
 
 	proto->onRecvCallback = ntyRecvProc;
-	proto->selfId = g_devid;
+	//proto->selfId = g_devid;
 	proto->recvLen = 0;
 	memset(proto->recvBuffer, 0, RECV_BUFFER_SIZE);
 	//proto->friends = ntyVectorCreator();
@@ -353,6 +353,27 @@ int ntyProtoClientUnBind(void *_self, C_DEVID did) {
 	return ntySendFrame(nSocket, buf, len);
 }
 
+int ntyProtoClientHeartBeat(void *_self) {
+	NattyProto *proto = _self;
+	int len;	
+
+	U8 buf[NORMAL_BUFFER_SIZE] = {0};	
+
+	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;	
+	buf[NTY_PROTO_PROTOTYPE_IDX] = (U8) PROTO_REQ;	
+	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_HEARTBEAT_REQ;
+
+	memcpy(buf+NTY_PROTO_HEARTBEAT_REQ_DEVID_IDX, &proto->selfId, sizeof(C_DEVID));
+	//memcpy(buf+NTY_PROTO_UNBIND_DEVICEID_IDX, &did, sizeof(C_DEVID));
+	//*(C_DEVID*)(&buf[NTY_PROTO_UNBIND_DEVICEID_IDX]) = did;
+	len = NTY_PROTO_HEARTBEAT_REQ_CRC_IDX + sizeof(U32);
+
+	ClientSocket *nSocket = ntyNetworkInstance();
+	return ntySendFrame(nSocket, buf, len);
+}
+
+
+
 int ntyProtoClientLogout(void *_self) {
 	NattyProto *proto = _self;
 	int len;	
@@ -504,12 +525,7 @@ static const NattyProtoHandle ntyProtoOpera = {
 	ntyProtoClientDtor,
 	ntyProtoClientLogin,
 	ntyProtoClientLogout,
-#if 0
-	ntyProtoClientProxyReq,
-	ntyProtoClientProxyAck,
-	ntyProtoClientEfenceReq,
-	ntyProtoClientEfenceAck,
-#else
+
 	ntyProtoClientVoiceReq,
 	ntyProtoClientVoiceAck,
 	ntyProtoClientVoiceDataReq,
@@ -517,7 +533,7 @@ static const NattyProtoHandle ntyProtoOpera = {
 	ntyProtoClientCommonAck,
 	ntyProtoClientOfflineMsgReq,
 	ntyProtoClientDataRoute,
-#endif
+	
 	ntyProtoClientBind,
 	ntyProtoClientUnBind,
 };
@@ -582,56 +598,6 @@ static int ntySendLogout(void *self) {
 		return (*protoOpera)->logout(self);
 	}
 }
-
-
-
-
-#if 0
-int ntySendDataPacket(C_DEVID toId, U8 *data, int length) {
-	int n = 0;
-	void *self = ntyProtoInstance();
-	NattyProtoOpera * const *protoOpera = self;
-	NattyProto *proto = self;
-	
-	U8 buf[NTY_PROXYDATA_PACKET_LENGTH] = {0};
-	
-#if 0
-	buf[NEY_PROTO_VERSION_IDX] = NEY_PROTO_VERSION;
-	buf[NTY_PROTO_PROTOTYPE_IDX] = (U8) MSG_REQ;	
-	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
-	*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEVID_IDX]) = (C_DEVID) proto->devid;
-	*(C_DEVID*)(&buf[NTY_PROTO_DATAPACKET_DEST_DEVID_IDX]) = toId;
-	
-	*(U16*)(&buf[NTY_PROTO_DATAPACKET_CONTENT_COUNT_IDX]) = (U16)length;
-	length += NTY_PROTO_DATAPACKET_CONTENT_IDX;
-	length += sizeof(U32);
-	void *pNetwork = ntyNetworkInstance();
-	n = ntySendFrame(pNetwork, &proto->serveraddr, buf, length);
-#else
-	U8 *tempBuf = &buf[NTY_PROTO_DATAPACKET_CONTENT_IDX];
-	memcpy(tempBuf, data, length);
-	ntydbg(" toId : %lld \n", toId);
-#if 0
-	if (proto && (*protoOpera) && (*protoOpera)->proxyReq) {
-		(*protoOpera)->proxyReq(proto, toId, buf, length);
-		return 0;
-	}
-#endif
-	return -1;
-#endif
-	
-}
-
-int ntySendMassDataPacket(U8 *data, int length) {	
-	void *pTree = ntyRBTreeInstance();
-	
-	ntyFriendsTreeMass(pTree, ntySendDataPacket, data, length);
-
-	return 0;
-}
-
-
-#endif
 
 void ntySetSendSuccessCallback(PROXY_CALLBACK cb) {
 	NattyProto* proto = ntyProtoInstance();
@@ -904,7 +870,6 @@ int ntyCommonReqClient(C_DEVID gId, U8 *json, U16 length) {
 	return -1;
 }
 
-
 int ntyCommonAckClient(U8 *json, U16 length) {
 	NattyProto* proto = ntyProtoInstance();
 	if (proto) {
@@ -921,11 +886,6 @@ int ntyDataRouteClient(C_DEVID toId, U8 *json, U16 length) {
 	}
 	return -1;
 }
-
-
-
-
-
 
 #endif
 
@@ -1321,7 +1281,7 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 			U8 *json = NULL;
 			U16 length = 0;
 			
-			memcpy(&fromId, buf+NTY_PROTO_VOICE_BROADCAST_DEVID_IDX, sizeof(DEVID));
+			memcpy(&fromId, buf+NTY_PROTO_VOICE_BROADCAST_DEVID_IDX, sizeof(C_DEVID));
 			memcpy(&length, buf+NTY_PROTO_VOICE_BROADCAST_JSON_LENGTH_IDX, sizeof(U16));
 
 			json = buf+NTY_PROTO_VOICE_BROADCAST_JSON_CONTENT_IDX;
