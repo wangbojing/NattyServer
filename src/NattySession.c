@@ -555,7 +555,7 @@ int ntyIterFriendsMessage(void *self, void *arg) {
 }
 
 /* ** **** ******** **************** Natty V3.6 **************** ******** **** ** */
-int ntySendDataResult(C_DEVID toId, U8 *json, int length, U16 status) {
+int ntySendDataResult(C_DEVID fromId, U8 *json, int length, U16 status) {
 	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
 	U16 bLength = length;
 	U16 bStatus = (U16)status;
@@ -573,7 +573,7 @@ int ntySendDataResult(C_DEVID toId, U8 *json, int length, U16 status) {
 	bLength = NTY_PROTO_DATA_RESULT_JSON_CONTENT_IDX + length + sizeof(U32);
 
 	void *map = ntyMapInstance();
-	ClientSocket *client = ntyMapSearch(map, toId);
+	ClientSocket *client = ntyMapSearch(map, fromId);
 	
 	return ntySendBuffer(client, buffer, bLength);
 	

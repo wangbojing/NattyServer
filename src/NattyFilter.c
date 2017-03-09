@@ -411,13 +411,15 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 		Client *pClient = NULL;
 		ntyAddClientHeap(client, (RECORDTYPE *)&pClient);
 		if (pClient != NULL) {
-			ntySendFriendsTreeIpAddr(pClient, 1);
+			//ntySendFriendsTreeIpAddr(pClient, 1);
 
 			if (pClient->deviceType == NTY_PROTO_CLIENT_WATCH) {
 #if 0
 				ntySendDeviceTimeCheckAck(pClient, client->ackNum+1);
-#else
+#elif 0
 				ntySendDeviceTimeCheckAck(pClient, 1);
+#else	
+				ntySendLoginAckResult(pClient->devId, "", 0, 200);
 #endif
 			}
 		} else {	
@@ -502,12 +504,14 @@ static const ProtocolFilter ntyLogoutFilter = {
 
 
 void ntyTimeCheckHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
-	const UdpClient *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_TIME_CHECK_REQ) {
 #if 0
 		C_DEVID key = *(C_DEVID*)(buffer+NTY_PROTO_LOGIN_REQ_DEVID_IDX);
 		U32 ackNum = *(U32*)(buffer+NTY_PROTO_LOGIN_REQ_ACKNUM_IDX)+1;
 		ntySendDeviceTimeCheckAck(client, ackNum);
+#else
+		const Client *client = obj;
+		ntySendDeviceTimeCheckAck(client, 1);
 #endif
 		
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
