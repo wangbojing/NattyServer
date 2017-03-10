@@ -187,6 +187,21 @@ void ntyJsonTurnAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsons
 	free(pTurnReq);
 }
 
+void ntyJsonICCIDAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
+	ICCIDReq *pICCIDReq = (ICCIDReq*)malloc(sizeof(ICCIDReq));
+	ntyJsonICCID(json, pICCIDReq);
+	C_DEVID DeviceId = *(C_DEVID*)(pICCIDReq->IMEI);
+
+	int ret = ntyExecuteICCIDSelectHandle(AppId, DeviceId);
+	if (ret == -1) {
+		ntylog(" ntyJsonICCIDAction --> DB Exception\n");
+		ret = 4;
+	} else if (ret == 0) {
+		ntyJsonSuccessResult(devId);
+	}
+	free(pICCIDReq);
+}
+
 void ntyJsonAddScheduleAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
 	AddScheduleReq *pAddScheduleReq = (AddScheduleReq*)malloc(sizeof(AddScheduleReq));
 	ntyJsonAddSchedule(json, pAddScheduleReq);

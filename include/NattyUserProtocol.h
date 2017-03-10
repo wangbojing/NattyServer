@@ -137,6 +137,8 @@
 #define NATTY_USER_PROTOCOL_APP 			"App"
 
 
+#define NATTY_USER_PROTOCOL_ICCID 			"ICCID"
+
 
 
 #include <stdio.h>

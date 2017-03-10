@@ -254,7 +254,7 @@ int ntyExecuteScheduleSelectHandle(C_DEVID aid, C_DEVID did, ScheduleAck *pSched
 
 int ntyExecuteTimeTablesUpdateHandle(C_DEVID aid, C_DEVID did, const char *morning, U8 morning_turn, const char *afternoon,  U8 afternoon_turn, const char *daily);
 
-
+int ntyExecuteICCIDSelectHandle(C_DEVID aid, C_DEVID did);
 
 
 

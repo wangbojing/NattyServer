@@ -653,6 +653,8 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 			ntyJsonRunTimeAction(AppId, client->devId, json, jsonstring, jsonlen);
 		} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_TURN) == 0) {
 			ntyJsonTurnAction(AppId, client->devId, json, jsonstring, jsonlen);
+		} else if (strcmp(category, NATTY_USER_PROTOCOL_ICCID) == 0) {
+			ntyJsonICCIDAction(AppId, client->devId, json, jsonstring, jsonlen);
 		} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_SCHEDULE) == 0) {
 			const char *action = ntyJsonAction(json);
 			if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_ADD) == 0) {

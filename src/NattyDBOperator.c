@@ -1116,6 +1116,39 @@ int ntyExecuteTimeTablesUpdate(void *self, C_DEVID aid, C_DEVID did, const char 
 
 
 
+int ntyExecuteICCIDSelect(void *self, C_DEVID aid, C_DEVID did) {
+	//ConnectionPool *pool = self;
+	/*
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+	U8 u8PhNum[20] = {0};
+
+	TRY
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			U8 buffer[512];
+			ntylog(" sql : %s\n", buffer);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_SCHEDULE, did);
+			
+		}
+	} 
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+	*/
+	return 0;
+}
 
 
 
@@ -1247,38 +1280,10 @@ int ntyExecuteAppLogoutUpdateHandle(C_DEVID aid) {
 	void *pool = ntyConnectionPoolInstance();
 	return ntyExecuteAppLogoutUpdate(pool, aid);
 }
-
 int ntyExecuteEfenceInsertHandle(C_DEVID aid, C_DEVID did, int num, U8 *points, U8 *runtime) {
 	void *pool = ntyConnectionPoolInstance();
 	return ntyExecuteEfenceInsert(pool, aid, did, num, points, runtime);
 }
-
-int ntyExecuteScheduleInsertHandle(C_DEVID aid, C_DEVID did, const char *daily, const char *time, const char *details) {
-	void *pool = ntyConnectionPoolInstance();
-	return ntyExecuteScheduleInsert(pool, aid, did, daily, time, details);
-}
-
-int ntyExecuteScheduleDeleteHandle(C_DEVID aid, C_DEVID did, int id) {
-	void *pool = ntyConnectionPoolInstance();
-	return ntyExecuteScheduleDelete(pool, aid, did, id);
-}
-
-int ntyExecuteScheduleUpdateHandle(C_DEVID aid, C_DEVID did, int id, const char *daily, const char *time, const char *details) {
-	void *pool = ntyConnectionPoolInstance();
-	return ntyExecuteScheduleUpdate(pool, aid, did, id, daily, time, details);
-}
-
-int ntyExecuteScheduleSelectHandle(C_DEVID aid, C_DEVID did, ScheduleAck *pScheduleAck, size_t size) {
-	void *pool = ntyConnectionPoolInstance();
-	return ntyExecuteScheduleSelect(pool, aid, did, pScheduleAck, size);
-}
-
-int ntyExecuteTimeTablesUpdateHandle(C_DEVID aid, C_DEVID did, const char *morning, U8 morning_turn, const char *afternoon,  U8 afternoon_turn, const char *daily) {
-	void *pool = ntyConnectionPoolInstance();
-	return ntyExecuteTimeTablesUpdate(pool, aid, did, morning, morning_turn, afternoon, afternoon_turn, daily);
-}
-
-
 
 int ntyExecuteRuntimeUpdateHandle(C_DEVID aid, C_DEVID did, int auto_conn, U8 loss_report, U8 light_panel, const char *bell, int target_step) {
 	void *pool = ntyConnectionPoolInstance();
@@ -1313,6 +1318,36 @@ int ntyExecuteRuntimeTargetStepUpdateHandle(C_DEVID aid, C_DEVID did, int runtim
 int ntyExecuteTurnUpdateHandle(C_DEVID aid, C_DEVID did, U8 status, const char *ontime, const char *offtime) {
 	void *pool = ntyConnectionPoolInstance();
 	return ntyExecuteTurnUpdate(pool, aid, did, status, ontime, offtime);
+}
+
+int ntyExecuteScheduleInsertHandle(C_DEVID aid, C_DEVID did, const char *daily, const char *time, const char *details) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteScheduleInsert(pool, aid, did, daily, time, details);
+}
+
+int ntyExecuteScheduleDeleteHandle(C_DEVID aid, C_DEVID did, int id) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteScheduleDelete(pool, aid, did, id);
+}
+
+int ntyExecuteScheduleUpdateHandle(C_DEVID aid, C_DEVID did, int id, const char *daily, const char *time, const char *details) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteScheduleUpdate(pool, aid, did, id, daily, time, details);
+}
+
+int ntyExecuteScheduleSelectHandle(C_DEVID aid, C_DEVID did, ScheduleAck *pScheduleAck, size_t size) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteScheduleSelect(pool, aid, did, pScheduleAck, size);
+}
+
+int ntyExecuteTimeTablesUpdateHandle(C_DEVID aid, C_DEVID did, const char *morning, U8 morning_turn, const char *afternoon,  U8 afternoon_turn, const char *daily) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteTimeTablesUpdate(pool, aid, did, morning, morning_turn, afternoon, afternoon_turn, daily);
+}
+
+int ntyExecuteICCIDSelectHandle(C_DEVID aid, C_DEVID did) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteICCIDSelect(pool, aid, did);
 }
 
 
