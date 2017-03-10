@@ -66,6 +66,7 @@
 #define NATTY_USER_PROTOCOL_CATEGORY_SIGNAL			"Signal"
 #define NATTY_USER_PROTOCOL_CATEGORY_LOCATION		"Location"
 
+#define NATTY_USER_PROTOCOL_CATEGORY_FARE			"Fare"
 
 
 #define NATTY_USER_PROTOCOL_WIFI			"WIFI"
@@ -271,7 +272,7 @@ typedef struct _CommonAck {
 typedef struct _CommonReq {
 	const char *IMEI;
 	const char *action;
-	const char *category; //Config  Power  Signal
+	const char *category; //Config  Power  Signal Location Fare
 } CommonReq;
 
 

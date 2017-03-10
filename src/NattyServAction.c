@@ -172,11 +172,16 @@ void ntyJsonRunTimeAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *js
 }
 
 void ntyJsonTurnAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
+	
+		
+
 	TurnReq *pTurnReq = (TurnReq*)malloc(sizeof(TurnReq));
 	ntyJsonTurn(json, pTurnReq);
 	C_DEVID DeviceId = *(C_DEVID*)(pTurnReq->IMEI);
 
 	U8 status = atoi(pTurnReq->turn.status);
+	ntydbg("====================begin ntyJsonTurnAction ==========================\n");
+	ntydbg("====================end ntyJsonTurnAction ==========================\n");
 	int ret = ntyExecuteTurnUpdateHandle(AppId, DeviceId, status, pTurnReq->turn.on.time, pTurnReq->turn.off.time);
 	if (ret == -1) {
 		ntylog(" ntyJsonTurnAction --> DB Exception\n");
@@ -185,6 +190,7 @@ void ntyJsonTurnAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsons
 		ntyJsonSuccessResult(devId);
 	}
 	free(pTurnReq);
+	
 }
 
 void ntyJsonICCIDAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {

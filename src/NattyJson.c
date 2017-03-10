@@ -387,6 +387,8 @@ void ntyJsonTurn(JSON_Value *json, TurnReq *pTurnReq) {
 		return;
 	}
 
+	ntydbg("====================begin ntyJsonTurn ==========================\n");
+	
 	JSON_Object *root_object = json_value_get_object(json);
 	pTurnReq->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
 	pTurnReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
@@ -397,6 +399,7 @@ void ntyJsonTurn(JSON_Value *json, TurnReq *pTurnReq) {
 	JSON_Object *off_object = json_object_get_object(turn_object, NATTY_USER_PROTOCOL_OFF);
 	pTurnReq->turn.on.time = json_object_get_string(on_object, NATTY_USER_PROTOCOL_TIME);
 	pTurnReq->turn.off.time = json_object_get_string(off_object, NATTY_USER_PROTOCOL_TIME);
+	ntydbg("====================end   ntyJsonTurn ==========================\n");
 }
 
 

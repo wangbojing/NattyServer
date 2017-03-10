@@ -644,6 +644,8 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 	
 		C_DEVID AppId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_APPID_IDX);
 		ntydbg("ntyCommonReqPacketHandleRequest --> json : %s\n", jsonstring);
+
+		ntydbg("====================begin ntyCommonReqPacketHandleRequest action ==========================\n");
 		
 		JSON_Value *json = ntyMallocJsonValue(jsonstring);
 		const char *category = ntyJsonAppCategory(json);
@@ -674,6 +676,9 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 			ntylog("Can't find category with: %s\n", category);
 		}
 		ntyFreeJsonValue(json);
+
+
+		ntydbg("====================end ntyCommonReqPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
@@ -1229,6 +1234,11 @@ void ntyRoutePacketHandleRequest(const void *_self, unsigned char *buffer, int l
 					ntyJsonSuccessResult(fromId);
 				}
 			} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_LOCATION) == 0) {
+				int len = ntySendDataRoute(toId, (U8*)buffer, strlen(buffer));
+				if (len>0) {
+					ntyJsonSuccessResult(fromId);
+				}
+			} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_FARE) == 0) {
 				int len = ntySendDataRoute(toId, (U8*)buffer, strlen(buffer));
 				if (len>0) {
 					ntyJsonSuccessResult(fromId);
