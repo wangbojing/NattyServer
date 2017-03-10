@@ -305,7 +305,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 
 		void *hash = ntyHashTableInstance();
 		Payload *load = ntyHashTableSearch(hash, watcher->fd);
-		ASSERT(load != NULL);
+		//ASSERT(load != NULL);
 #if 1 //post to zeromq to remove id from rbtree and b+tree, 
 		// post token <id, action>		<load-id, delete>
 		//load->id
