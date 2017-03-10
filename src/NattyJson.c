@@ -106,7 +106,7 @@ void ntyReleaseTimeTablesAck(TimeTablesAck *pTimeTablesAck) {
 	}
 }
 
-JSON_Value* ntyMallocJsonByString(const char *jsonstring) {
+JSON_Value* ntyMallocJsonValue(const char *jsonstring) {
 	if (jsonstring == NULL) {
 		return NULL;
 	}
@@ -115,7 +115,7 @@ JSON_Value* ntyMallocJsonByString(const char *jsonstring) {
 	return schema;
 }
 
-void ntyFreeJson(JSON_Value *json) {
+void ntyFreeJsonValue(JSON_Value *json) {
 	if (json == NULL) {
 		return;
 	}
@@ -123,18 +123,18 @@ void ntyFreeJson(JSON_Value *json) {
 	json_value_free(json);
 }
 
-void ntyJsonFree(void *json) {
-	//parson_free(json);
+void ntyJsonFree(void *obj) {
+	json_free_serialized_string(obj);
 }
 
-void ntyJsonResult(const char *jsonstring, char *jsonresult) {
-	if (jsonstring == NULL) {
-		return;
-	}
 
-	strcat(jsonresult, "{\"result\":");
-	strcat(jsonresult, jsonstring);
-	strcat(jsonresult, "}");
+const char * ntyJsonDeviceIMEI(JSON_Value *json) {
+	if (json == NULL) {
+		return NULL;
+	}
+	JSON_Object *root_object = json_value_get_object(json);
+	const char *IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
+	return IMEI;
 }
 
 const char * ntyJsonAppCategory(JSON_Value *json) {

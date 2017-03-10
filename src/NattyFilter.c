@@ -645,7 +645,7 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 		C_DEVID AppId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_APPID_IDX);
 		ntydbg("ntyCommonReqPacketHandleRequest --> json : %s\n", jsonstring);
 		
-		JSON_Value *json = ntyMallocJsonByString(jsonstring);
+		JSON_Value *json = ntyMallocJsonValue(jsonstring);
 		const char *category = ntyJsonAppCategory(json);
 		if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_EFENCE) == 0) {
 			ntyJsonEfenceAction(AppId, client->devId, json, jsonstring, jsonlen);
@@ -671,37 +671,7 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 		} else {
 			ntylog("Can't find category with: %s\n", category);
 		}
-		ntyFreeJson(json);
-
-
-		/*
-
-		
-		/*
-
-		//2.课程表
-		TimeTablesAck *pTimeTablesAck = ntyInitTimeTablesAck();
-		pTimeTablesAck->results.IMEI = "352315052834187";
-		pTimeTablesAck->results.category = "sdfsdf";
-		pTimeTablesAck->results.size = 1;
-		TimeTablesItem *pTimeTables = malloc(sizeof(TimeTablesItem)*pTimeTablesAck->results.size);
-		pTimeTablesAck->results.pTimeTables = pTimeTables;
-		size_t j;
-		for (j=0; j<pTimeTablesAck->results.size; j++) {
-			pTimeTables[j].daily= "Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday";
-			pTimeTables[j].morning.status = "On";
-			pTimeTables[j].morning.startTime = "08:00:00";
-			pTimeTables[j].morning.endTime = "12:00:00";
-
-			pTimeTables[j].afternoon.status = "On";
-			pTimeTables[j].afternoon.startTime = "08:00:00";
-			pTimeTables[j].afternoon.endTime = "12:00:00";
-		}
-		char *buf_curriculum = ntyJsonWriteTimeTables(pTimeTablesAck);
-		ntyReleaseTimeTablesAck(pTimeTablesAck);
-		ntydbg("buf_curriculum:%s\n", buf_curriculum);
-		*/
-		
+		ntyFreeJsonValue(json);
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
@@ -1153,6 +1123,7 @@ void ntyLocationAsyncReqPacketHandleRequest(const void *_self, unsigned char *bu
 		pLocationAck->results.location = "116.4807476,39.9895123";
 		char *buf_location = ntyJsonWriteLocation(pLocationAck);
 		ntydbg("buf_location:%s\n", buf_location);
+		ntyJsonFree(buf_location);
 		free(pLocationAck);
 		
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
@@ -1180,10 +1151,7 @@ void ntyWeatherAsyncReqPacketHandleRequest(const void *_self, unsigned char *buf
 		buffer[length-4] = '\0';
 		ntydbg("ntyWeatherAsyncReqPacketHandleRequest --> json : %s\n", p);
 
-		//2.天气
-		//Weather *pWeather = ntyInitWeather();
-		//ntyJsonWeather(pWeather);
-		//ntyReleaseWeather(pWeather);
+		
 
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
@@ -1225,6 +1193,10 @@ void ntyRoutePacketHandleRequest(const void *_self, unsigned char *buffer, int l
 		U16 jsonlen = 0;
 		char *jsonstring = NULL;
 		memcpy(&jsonlen, buffer+24, 2);
+
+		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_DATA_ROUTE_DEVID_IDX);
+		C_DEVID toId = *(C_DEVID*)(buffer+NTY_PROTO_DATA_ROUTE_RECVID_IDX);
+		
 		jsonstring = buffer+26;
 		buffer[length-4] = '\0';
 		U16 jsonlenTemp = strlen(jsonstring);
@@ -1234,46 +1206,37 @@ void ntyRoutePacketHandleRequest(const void *_self, unsigned char *buffer, int l
 		}
 		ntydbg("ntyRoutePacketHandleRequest --> json : %s\n", jsonstring);
 
-		JSON_Value *json = ntyMallocJsonByString(jsonstring);
+		JSON_Value *json = ntyMallocJsonValue(jsonstring);
 		const char *app_category = ntyJsonAppCategory(json);
-		const char *watch_category = ntyJsonWatchCategory(json);
 		U16 app_jsonlen = strlen(app_category);
-		U16 watch_jsonlen = strlen(watch_category);
 		if (app_jsonlen != 0) {
 			ntydbg("Category : %s\n", app_category);
-	
 			if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_CONFIG) == 0) {
-				ConfigAck *pConfigAck = malloc(sizeof(ConfigAck));
-				char *jsonresult = ntyJsonWriteConfig(pConfigAck);
-				ntySendDataRoute(client->devId, (U8*)jsonresult, strlen(jsonresult));
-				ntyJsonFree(jsonresult);
-				free(pConfigAck);
+				int len = ntySendDataRoute(toId, (U8*)buffer, strlen(buffer));
+				if (len>0) {
+					ntyJsonSuccessResult(fromId);
+				}
 			} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_POWER) == 0) {				
-				PowerAck *pPowerAck = malloc(sizeof(PowerAck));				
-				char *jsonresult = ntyJsonWritePower(pPowerAck);
-				ntySendDataRoute(client->devId, (U8*)jsonresult, strlen(jsonresult));
-				ntyJsonFree(jsonresult);
-				free(pPowerAck);
+				int len = ntySendDataRoute(toId, (U8*)buffer, strlen(buffer));
+				if (len>0) {
+					ntyJsonSuccessResult(fromId);
+				}
 			} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_SIGNAL) == 0) {
-				SignalAck *pSignalAck = malloc(sizeof(SignalAck));				
-				char *jsonresult = ntyJsonWriteSignal(pSignalAck);
-				ntySendDataRoute(client->devId, (U8*)jsonresult, strlen(jsonresult));
-				ntyJsonFree(jsonresult);
-				free(pSignalAck);
+				int len = ntySendDataRoute(toId, (U8*)buffer, strlen(buffer));
+				if (len>0) {
+					ntyJsonSuccessResult(fromId);
+				}
 			} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_LOCATION) == 0) {
-				LocationAck *pLocationAck = malloc(sizeof(LocationAck));				
-				char *jsonresult = ntyJsonWriteLocation(pLocationAck);
-				ntySendDataRoute(client->devId, (U8*)jsonresult, strlen(jsonresult));
-				ntyJsonFree(jsonresult);
-				free(pLocationAck);
+				int len = ntySendDataRoute(toId, (U8*)buffer, strlen(buffer));
+				if (len>0) {
+					ntyJsonSuccessResult(fromId);
+				}
 			} else {
 				ntylog("Can't find category with: %s\n", app_category);
 			}
-		} else if (watch_jsonlen != 0) {
-			//收到手表返回数据
 		}
 		
-		ntyFreeJson(json);
+		ntyFreeJsonValue(json);
 
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);

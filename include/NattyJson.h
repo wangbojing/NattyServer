@@ -47,6 +47,7 @@
 #define __NATTY_JSON_H__
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "../include/parson.h"
 #include "NattyUserProtocol.h"
 
@@ -60,13 +61,13 @@ void ntyReleaseScheduleAck(ScheduleAck *pScheduleAck);
 TimeTablesAck* ntyInitTimeTablesAck();
 void ntyReleaseTimeTablesAck(TimeTablesAck *pTimeTablesAck);
 
-JSON_Value* ntyMallocJsonByString(const char *jsonstring);
+JSON_Value* ntyMallocJsonValue(const char *jsonstring);
 
-void ntyFreeJson(JSON_Value *json);
+void ntyFreeJsonValue(JSON_Value *json);
 
-void ntyJsonFree(void *json);
+void ntyJsonFree(void *obj);
 
-void ntyJsonResult(const char *jsonstring, char *jsonresult);
+const char * ntyJsonDeviceIMEI(JSON_Value *json);
 
 const char * ntyJsonAppCategory(JSON_Value *json);
 
