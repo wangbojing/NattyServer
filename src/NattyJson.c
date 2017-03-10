@@ -388,6 +388,7 @@ void ntyJsonTurn(JSON_Value *json, TurnReq *pTurnReq) {
 	}
 
 	ntydbg("====================begin ntyJsonTurn ==========================\n");
+	ntydbg("====================begin ntyJsonTurn ==========================\n");
 	
 	JSON_Object *root_object = json_value_get_object(json);
 	pTurnReq->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
