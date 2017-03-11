@@ -1109,29 +1109,32 @@ static const ProtocolFilter ntyMutlcastAckFilter = {
 void ntyLocationAsyncReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const Client *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_LOCATION_ASYNCREQ) {
-		U8 *p = buffer+14;
+		U16 jsonlen = 0;
+		U8 *jsonstring = NULL;
+		memcpy(&jsonlen, buffer+16, sizeof(U16));
+		jsonstring = buffer+18;
 		buffer[length-4] = '\0';
-		ntydbg("ntyLocationAsyncReqPacketHandleRequest --> json : %s\n", p);
+		U16 jsonlenTemp = strlen(jsonstring);
+		if (jsonlen != jsonlenTemp) {
+			ntylog("JSON format error: %s\n", jsonstring);
+			return;
+		}
 
-		char *labUrl = "http://apilocate.amap.com/position?accesstype=0&imei=%s&bts=%s&output=json&key=%s";
-		char labUrlBuffer[1000] = {0};
-		sprintf(labUrlBuffer, labUrl, "352315052834187", "460,01,40977,2205409,-65", "fb44f91d1a1df4d4b6356f43183a329f");
-		int result = ntyHttpQJKLab(labUrlBuffer);
+		C_DEVID fromId = *(C_DEVID*)(buffer+4);
+		ntydbg("ntyLocationAsyncReqPacketHandleRequest --> json : %s\n", jsonstring);
 
-		C_DEVID fromId = 0;
-		C_DEVID toId = 0;
-		U8 *data = "....";
-		int length = 0;
-		int n = ntyClassifyMessageType(fromId, toId, data, length);
-
-		LocationAck *pLocationAck = malloc(sizeof(LocationAck));
-		pLocationAck->results.type = "WIFI";
-		pLocationAck->results.radius = "540";
-		pLocationAck->results.location = "116.4807476,39.9895123";
-		char *buf_location = ntyJsonWriteLocation(pLocationAck);
-		ntydbg("buf_location:%s\n", buf_location);
-		ntyJsonFree(buf_location);
-		free(pLocationAck);
+		ntydbg("====================begin ntyLocationAsyncReqPacketHandleRequest action ==========================\n");
+		
+		JSON_Value *json = ntyMallocJsonValue(jsonstring);
+		const char *category = ntyJsonAppCategory(json);
+		if (strcmp(category, NATTY_USER_PROTOCOL_WIFI) == 0) {
+			ntyJsonLocationWIFIAction(fromId, client->devId, json, jsonstring, jsonlen);
+		} else if (strcmp(category, NATTY_USER_PROTOCOL_LAB) == 0) {
+			ntyJsonLocationLabAction(fromId, client->devId, json, jsonstring, jsonlen);
+		} else {
+			ntylog("Can't find category with: %s\n", category);
+		}
+		ntyFreeJsonValue(json);
 		
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
@@ -1154,11 +1157,24 @@ static const ProtocolFilter ntyLocationAsyncReqFilter = {
 void ntyWeatherAsyncReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const Client *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_WEATHER_ASYNCREQ) {
-		U8 *p = buffer+14;
+		U16 jsonlen = 0;
+		U8 *jsonstring = NULL;
+		memcpy(&jsonlen, buffer+12, sizeof(U16));
+		jsonstring = buffer+14;
 		buffer[length-4] = '\0';
-		ntydbg("ntyWeatherAsyncReqPacketHandleRequest --> json : %s\n", p);
+		U16 jsonlenTemp = strlen(jsonstring);
+		if (jsonlen != jsonlenTemp) {
+			ntylog("JSON format error: %s\n", jsonstring);
+			return;
+		}
 
+		C_DEVID clientId = *(C_DEVID*)(buffer+4);
+		ntydbg("ntyWeatherAsyncReqPacketHandleRequest --> json : %s\n", jsonstring);
+		ntydbg("====================begin ntyWeatherAsyncReqPacketHandleRequest action ==========================\n");
 		
+		JSON_Value *json = ntyMallocJsonValue(jsonstring);
+		ntyJsonWeatherAction(clientId, client->devId, json, jsonstring, jsonlen);
+		ntyFreeJsonValue(json);
 
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
@@ -1212,7 +1228,8 @@ void ntyRoutePacketHandleRequest(const void *_self, unsigned char *buffer, int l
 			return;
 		}
 		ntydbg("ntyRoutePacketHandleRequest --> json : %s\n", jsonstring);
-
+		ntydbg("====================begin ntyRoutePacketHandleRequest action ==========================\n");
+		
 		JSON_Value *json = ntyMallocJsonValue(jsonstring);
 		const char *app_category = ntyJsonAppCategory(json);
 		U16 app_jsonlen = strlen(app_category);
@@ -1249,6 +1266,7 @@ void ntyRoutePacketHandleRequest(const void *_self, unsigned char *buffer, int l
 		}
 		
 		ntyFreeJsonValue(json);
+		ntydbg("====================end ntyRoutePacketHandleRequest action ==========================\n");
 
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);

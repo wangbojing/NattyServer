@@ -73,6 +73,11 @@ void ntyJsonSelectScheduleAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json,
 
 void ntyJsonTimeTablesAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
 
+void ntyJsonLocationWIFIAction(C_DEVID fromId, C_DEVID toId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
+
+void ntyJsonLocationLabAction(C_DEVID fromId, C_DEVID toId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
+
+void ntyJsonWeatherAction(C_DEVID clientId, C_DEVID toId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
 
 
 #endif // __NATTY_SERVACTION_H__

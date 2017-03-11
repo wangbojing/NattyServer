@@ -605,49 +605,18 @@ int ntyHttpCurlGlobalInit(void) {
 }
 
 
-static size_t ntyHttpQJKLabHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
-	ntylog("ntyHttpQJKLabHandleResult --> length:%ld\n", size*nmemb);
+static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
+	ntylog("ntyHttpQJKLocationHandleResult --> length:%ld\n", size*nmemb);
 	ntylog("buffer:%s, %ld\n", (char*)buffer, size*nmemb);
 	ntylog("stream:%s\n", (char*)stream);
 
-	const char *json = buffer;
-	AMap *pAMap = (AMap*)malloc(sizeof(AMap));
-	ntyJsonAMap(json, pAMap);
-
-	if (strcmp(pAMap->status, "1") != 0) {
-		return -1;
-	}
-
-	char colon[2] = {0x3A, 0x00};
-	char lng[50] = {0};
-	char lat[50] = {0};
-    char *p2 = strchr(pAMap->result.location, ',');
-	char *p1 = (char *)pAMap->result.location;
-	if (p2 != NULL) {
-		size_t len = p2-p1;
-		memcpy(lng, p1, len);
-		memcpy(lat, p1+len+1, (size_t)strlen(pAMap->result.location)-len);
-	}
-	char latlng[100] = {0};
-	strncat(latlng, lat, (size_t)strlen(lat));
-	strncat(latlng, colon, (size_t)strlen(colon));
-	strncat(latlng, lng, (size_t)strlen(lng));
 	
-	//2. имим??
-	char *url = "https://api.thinkpage.cn/v3/weather/daily.json?key=0pyd8z7jouficcil&location=%s&language=zh-Hans&unit=c&start=0&days=5";
-	char u8UrlBuffer[230] = {0};
-	sprintf(u8UrlBuffer, url, latlng);
-	int result = ntyHttpQJKWeather(u8UrlBuffer);
-
-	ntylog("result : %d\n", result);
-
-	free(pAMap);
-
-	return result;
+	
+	return 0;
 }
 
 
-int ntyHttpQJKLab(void *arg) {
+int ntyHttpQJKLocation(void *arg) {
 	CURL *curl;	
 	CURLcode res;	
 	U8 *tag = arg;
@@ -672,7 +641,7 @@ int ntyHttpQJKLab(void *arg) {
 #if 1
 	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
 #endif
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ntyHttpQJKLabHandleResult); 
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ntyHttpQJKLocationHandleResult); 
 	//curl_easy_setopt(curl, CURLOPT_WRITEDATA, tag); 
 
 	res = curl_easy_perform(curl);	
@@ -705,38 +674,107 @@ int ntyHttpQJKLab(void *arg) {
 
 
 
+static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
+	ntylog("ntyHttpQJKWeatherLocationHandleResult --> length:%ld\n", size*nmemb);
+	ntylog("buffer:%s, %ld\n", (char*)buffer, size*nmemb);
+	ntylog("stream:%s\n", (char*)stream);
+
+	const char *json = buffer;
+	AMap *pAMap = (AMap*)malloc(sizeof(AMap));
+	ntyJsonAMap(json, pAMap);
+
+	if (strcmp(pAMap->status, "1") != 0) {
+		return -1;
+	}
+
+	char colon[2] = {0x3A, 0x00};
+	char lng[50] = {0};
+	char lat[50] = {0};
+    char *p2 = strchr(pAMap->result.location, ',');
+	char *p1 = (char *)pAMap->result.location;
+	if (p2 != NULL) {
+		size_t len = p2-p1;
+		memcpy(lng, p1, len);
+		memcpy(lat, p1+len+1, (size_t)strlen(pAMap->result.location)-len);
+	}
+	char latlng[100] = {0};
+	strncat(latlng, lat, (size_t)strlen(lat));
+	strncat(latlng, colon, (size_t)strlen(colon));
+	strncat(latlng, lng, (size_t)strlen(lng));
+	
+	char *url = "https://api.thinkpage.cn/v3/weather/daily.json?key=0pyd8z7jouficcil&location=%s&language=zh-Hans&unit=c&start=0&days=5";
+	char u8UrlBuffer[230] = {0};
+	sprintf(u8UrlBuffer, url, latlng);
+	int result = ntyHttpQJKWeather(u8UrlBuffer);
+	ntylog("result : %d\n", result);
+	free(pAMap);
+
+	return result;
+
+}
+
+int ntyHttpQJKWeatherLocation(void *arg) {
+	CURL *curl;	
+	CURLcode res;	
+	U8 *tag = arg;
+#if 0
+	CURLcode return_code;
+	return_code = curl_global_init(CURL_GLOBAL_ALL);
+	if (CURLE_OK != return_code) {
+		ntylog("init libcurl failed.\n");		
+		return -1;
+	}
+#endif
+	curl = curl_easy_init();
+	if (!curl)	{		
+		ntylog("curl init failed\n");		
+		return -2;	
+	}
+
+	ntylog("QJK url:%s\n", tag);
+
+	curl_easy_setopt(curl, CURLOPT_URL, tag); 
+	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L); 
+#if 1
+	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
+#endif
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ntyHttpQJKWeatherLocationHandleResult); 
+	//curl_easy_setopt(curl, CURLOPT_WRITEDATA, tag); 
+
+	res = curl_easy_perform(curl);	
+	if (res != CURLE_OK)	{		
+		switch(res)		{			
+			case CURLE_UNSUPPORTED_PROTOCOL:				
+				ntylog("CURLE_UNSUPPORTED_PROTOCOL\n");			
+			case CURLE_COULDNT_CONNECT:				
+				ntylog("CURLE_COULDNT_CONNECT\n");			
+			case CURLE_HTTP_RETURNED_ERROR:				
+				ntylog("CURLE_HTTP_RETURNED_ERROR\n");			
+			case CURLE_READ_ERROR:				
+				ntylog("CURLE_READ_ERROR\n");			
+			default:				
+				ntylog("default %d\n",res);		
+		}		
+		return -3;	
+	}	
+	
+	curl_easy_cleanup(curl);
+	
+	if (tag != NULL) {
+		free(tag);
+		tag = NULL;
+	}
+
+	return 0;
+}
+
 
 static size_t ntyHttpQJKWeatherHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
-	VALUE_TYPE *tag = stream;
-	U8 u8ResultBuffer[256] = {0};
-
 	ntylog("ntyHttpQJKWeatherHandleResult --> length:%ld\n", size*nmemb);
 	ntylog("buffer:%s, %ld\n", (char*)buffer, size*nmemb);
-	sprintf(u8ResultBuffer, "Set Fall %d", 1);
+	ntylog("stream:%s\n", (char*)stream);
 
-	if (tag == NULL) goto exit; 
-	//strcpy(u8ResultBuffer, "Set Fall 1", 10);
-#if 0
-	Client *cv = ntyRBTreeInterfaceSearch(tree, tag->fromId);
-	if (cv == NULL) { 
-		ntylog(" http qjk fallen fromId not exist\n");
-		goto exit;
-	}
-	
-	ntySendDeviceRouterInfo(cv, ack, strlen(ack));
-#else
-#if 0
-	ntyProtoHttpProxyTransform(tag->fromId, tag->toId, u8ResultBuffer, strlen(u8ResultBuffer+NTY_PROTO_DATAPACKET_CONTENT_IDX));
-#else
-	ntyBoardcastAllFriendsById(tag->fromId, u8ResultBuffer, strlen(u8ResultBuffer));
-#endif
-	ntyProtoHttpRetProxyTransform(tag->toId, u8ResultBuffer, strlen(u8ResultBuffer));
-#endif
-
-exit:	
-
-
-	return size*nmemb;
+	return 0;
 }
 
 
@@ -791,7 +829,6 @@ int ntyHttpQJKWeather(void *arg) {
 		free(tag);
 		tag = NULL;
 	}
-
 
 	return 0;
 }

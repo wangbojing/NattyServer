@@ -178,12 +178,12 @@ void ntyJsonWIFI(JSON_Value *json, WIFIReq *pWIFIReq) {
 	
 	JSON_Object *wifi_object = NULL;
 	JSON_Array *wifi_array = json_object_get_array(root_object, NATTY_USER_PROTOCOL_WIFI);
-	size_t wifi_count = json_array_get_count(wifi_array);
-	WIFIItem *pWIFI = malloc(sizeof(WIFIItem)*wifi_count);
+	pWIFIReq->size = json_array_get_count(wifi_array);
+	WIFIItem *pWIFI = malloc(sizeof(WIFIItem)*pWIFIReq->size);
 	pWIFIReq->pWIFI = pWIFI;
 
 	size_t i;
-	for (i = 0; i < wifi_count; i++) {
+	for (i = 0; i < pWIFIReq->size; i++) {
 		wifi_object = json_array_get_object(wifi_array, i);
 		pWIFI[i].SSID = json_object_get_string(wifi_object, NATTY_USER_PROTOCOL_SSID);
 		pWIFI[i].MAC = json_object_get_string(wifi_object, NATTY_USER_PROTOCOL_MAC);
@@ -216,11 +216,11 @@ void ntyJsonLAB(JSON_Value *json, LABReq *pLABReq) {
 
 	JSON_Object *nearbts_object = NULL;
 	JSON_Array *nearbts_array = json_object_get_array(lab_object, NATTY_USER_PROTOCOL_NEARBTS);
-	size_t nearbts_count = json_array_get_count(nearbts_array);
-	Nearbts *pNearbts = malloc(sizeof(Nearbts)*nearbts_count);
+	pLABReq->size = json_array_get_count(nearbts_array);
+	Nearbts *pNearbts = malloc(sizeof(Nearbts)*pLABReq->size);
 	pLABReq->lab.pNearbts = pNearbts;
 	size_t i;
-	for (i = 0; i < nearbts_count; i++) {
+	for (i = 0; i < pLABReq->size; i++) {
 		nearbts_object = json_array_get_object(nearbts_array, i);
 		pNearbts[i].cell = json_object_get_string(nearbts_object, NATTY_USER_PROTOCOL_CELL);
 		pNearbts[i].signal = json_object_get_string(nearbts_object, NATTY_USER_PROTOCOL_SIGNAL);
@@ -387,7 +387,6 @@ void ntyJsonTurn(JSON_Value *json, TurnReq *pTurnReq) {
 		return;
 	}
 
-	ntydbg("====================begin ntyJsonTurn ==========================\n");
 	ntydbg("====================begin ntyJsonTurn ==========================\n");
 	
 	JSON_Object *root_object = json_value_get_object(json);

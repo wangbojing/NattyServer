@@ -57,6 +57,10 @@ int ntyHttpMtkQuickLocation(void *arg);
 int ntyHttpGaodeWifiCellAPI(void *arg);
 int ntyHttpQJKFallen(void *arg);
 
+int ntyHttpQJKLocation(void *arg);
+int ntyHttpQJKWeatherLocation(void *arg);
+int ntyHttpQJKWeather(void *arg);
+
 int ntyHttpCurlGlobalInit(void);
 
 

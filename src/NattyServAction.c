@@ -59,9 +59,171 @@ void ntyJsonSuccessResult(C_DEVID devId) {
 	CommonAck *pCommonAck = (CommonAck*)malloc(sizeof(CommonAck));
 	pCommonAck->result.status = "200";
 	char *jsonresult = ntyJsonWriteCommon(pCommonAck);
+
+	ntylog("ntyJsonSuccessResult-> %lld, %s\n", devId, jsonresult);
+
 	ntySendDataResult(devId, (U8*)jsonresult, strlen(jsonresult), 200);
 	ntyJsonFree(jsonresult);
 	free(pCommonAck);
+}
+
+/*
+ * amap WIFI position
+ *
+ * http://apilocate.amap.com/position?accesstype=1&imei=352315052834187&smac=E0:DB:55:E4:C7:49&mmac=22:27:1d:20:08:d5,-55,CMCC-EDU&macs=22:27:1d:
+ * 20:08:d5,-55,CMCC-EDU|5c:63:bf:a4:bf:56,-86,TP-LINK|d8:c7:c8:a8:1a:13,-42,TP-LINK&serverip=10.2.166.4&output=json&key=<用户 Key>
+ *
+ */
+void ntyJsonLocationWIFIAction(C_DEVID fromId, C_DEVID toId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
+	WIFIReq *pWIFIReq = (WIFIReq*)malloc(sizeof(WIFIReq));
+	ntyJsonWIFI(json, pWIFIReq);
+	C_DEVID DeviceId = *(C_DEVID*)(pWIFIReq->IMEI);
+
+	U8 macs[200] = {0};
+	size_t i;
+	for (i=0; i<pWIFIReq->size; i++) {
+		strcat(macs, pWIFIReq->pWIFI[i].MAC);
+		strcat(macs, ",");
+		strcat(macs, pWIFIReq->pWIFI[i].V);
+		strcat(macs, ",");
+		strcat(macs, pWIFIReq->pWIFI[i].SSID);
+		strcat(macs, "|");
+	}
+	size_t macs_len = strlen(macs);
+	if (macs_len!=0) {
+		macs[macs_len-1] = '\0';
+	}
+
+	U8 wifibuf[500] = {0};
+	sprintf(wifibuf, "http://apilocate.amap.com/position?accesstype=1&imei=%s&macs=%s&output=json&key=%s", 
+		pWIFIReq->IMEI, macs, "0pyd8z7jouficcil");
+	ntydbg(" wifibuf --> %s\n", wifibuf);
+
+	int ret = ntyHttpQJKLocation(wifibuf);
+	if (ret == -1) {
+		ntylog(" ntyHttpQJKLocation --> Http Exception\n");
+		ret = 4;
+	} else if (ret > 0) {
+		ntyJsonSuccessResult(toId);
+	}
+	
+	ntyJsonWIFIItemRelease(pWIFIReq->pWIFI);
+	free(pWIFIReq);
+}
+
+
+/**
+ * amap Lab position
+ *
+ * http://apilocate.amap.com/position?accesstype=0&imei=352315052834187&cdma=0&bts=460,01,40977,2205409,-65&nearbts=460,01,
+ * 40977,2205409,-65|460,01,40977,2205409,-65|460,01,40977,2205409,-65&serverip=10.2.166.4&output=json&key=<用户 Key>
+ *
+ */
+void ntyJsonLocationLabAction(C_DEVID fromId, C_DEVID toId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
+	LABReq *pLABReq = (LABReq*)malloc(sizeof(LABReq));
+	ntyJsonLAB(json, pLABReq);
+	C_DEVID DeviceId = *(C_DEVID*)(pLABReq->IMEI);
+	
+	U8 nearbts[200] = {0};
+	size_t i;
+	for (i=0; i<pLABReq->size; i++) {
+		strcat(nearbts, pLABReq->lab.pNearbts[i].cell);
+		strcat(nearbts, ",");
+		strcat(nearbts, pLABReq->lab.pNearbts[i].signal);
+		strcat(nearbts, "|");
+	}
+	size_t macs_len = strlen(nearbts);
+	if (macs_len!=0) {
+		nearbts[macs_len-1] = '\0';
+	}
+	
+	U8 labbuf[500] = {0};
+	sprintf(labbuf, "http://apilocate.amap.com/position?accesstype=0&imei=%s&cdma=0&bts=%s&nearbts=%s&output=json&key=%s", 
+		pLABReq->IMEI, pLABReq->lab.bts, nearbts, "0pyd8z7jouficcil");
+	ntydbg(" labbuf --> %s\n", labbuf);
+	
+	int ret = ntyHttpQJKLocation(labbuf);
+	if (ret == -1) {
+		ntylog(" ntyHttpQJKLocation --> Http Exception\n");
+		ret = 4;
+	} else if (ret > 0) {
+		ntyJsonSuccessResult(toId);
+	}
+
+	ntyJsonLABItemRelease(pLABReq->lab.pNearbts);
+	free(pLABReq);
+}
+
+void ntyJsonWeatherAction(C_DEVID clientId, C_DEVID toId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
+	LABReq *pLABReq = (LABReq*)malloc(sizeof(LABReq));
+	ntyJsonLAB(json, pLABReq);
+	C_DEVID DeviceId = *(C_DEVID*)(pLABReq->IMEI);
+	
+	U8 nearbts[200] = {0};
+	size_t i;
+	for (i=0; i<pLABReq->size; i++) {
+		strcat(nearbts, pLABReq->lab.pNearbts[i].cell);
+		strcat(nearbts, ",");
+		strcat(nearbts, pLABReq->lab.pNearbts[i].signal);
+		strcat(nearbts, "|");
+	}
+	size_t macs_len = strlen(nearbts);
+	if (macs_len!=0) {
+		nearbts[macs_len-1] = '\0';
+	}
+
+	U8 labbuf[500] = {0};
+	sprintf(labbuf, "http://apilocate.amap.com/position?accesstype=0&imei=%s&cdma=0&bts=%s&nearbts=%s&output=json&key=%s", 
+		pLABReq->IMEI, pLABReq->lab.bts, nearbts, "0pyd8z7jouficcil");
+	ntydbg(" labbuf --> %s\n", labbuf);
+	
+	int ret = ntyHttpQJKWeatherLocation(labbuf);
+	if (ret == -1) {
+		ntylog(" ntyJsonWeatherAction --> Http Exception\n");
+		ret = 4;
+	} else if (ret > 0) {
+		ntyJsonSuccessResult(toId);
+	/*
+		JSON_Value *json2 = NULL;
+		AMap *pAMap = (AMap*)malloc(sizeof(AMap));
+		ntyJsonAMap(json2, pAMap);
+		if (strcmp(pAMap->status, "1") != 0) {
+			return;	
+		}
+	
+		char colon[2] = {0x3A, 0x00};
+		char lng[50] = {0};
+		char lat[50] = {0};
+	    char *p2 = strchr(pAMap->result.location, ',');
+		char *p1 = (char *)pAMap->result.location;
+		if (p2 != NULL) {
+			size_t len = p2-p1;
+			memcpy(lng, p1, len);
+			memcpy(lat, p1+len+1, (size_t)strlen(pAMap->result.location)-len);
+		}
+		char latlng[100] = {0};
+		strncat(latlng, lat, (size_t)strlen(lat));
+		strncat(latlng, colon, (size_t)strlen(colon));
+		strncat(latlng, lng, (size_t)strlen(lng));
+		
+		U8 weatherbuf[500] = {0};
+		sprintf(weatherbuf, "https://api.thinkpage.cn/v3/weather/daily.json?key=0pyd8z7jouficcil&location=%s&language=zh-Hans&unit=c&start=0&days=5", latlng);
+		ntydbg(" weatherbuf --> %s\n", weatherbuf);
+		
+		ret = ntyHttpQJKWeather(weatherbuf);
+		if (ret == -1) {
+			ntylog(" ntyHttpQJKLocation --> Http Exception\n");
+			ret = 4;
+		} else if (ret > 0) {
+			ntyJsonSuccessResult(toId);
+		}
+
+		free(pAMap);
+	*/
+	}
+
+	ntyJsonLABItemRelease(pLABReq->lab.pNearbts);
+	free(pLABReq);
 }
 
 void ntyJsonEfenceAction(C_DEVID AppId, C_DEVID toId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
