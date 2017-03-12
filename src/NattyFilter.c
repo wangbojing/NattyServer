@@ -405,7 +405,7 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 
 			ntylog(" Buffer Version : %x\n", buffer[NEY_PROTO_VERSION_IDX]);
 			if (buffer[NEY_PROTO_VERSION_IDX] == NTY_PROTO_DEVICE_VERSION)
-				ntySendDeviceTimeCheckAck(pClient, client->ackNum+1);
+				ntySendDeviceTimeCheckAck(pClient->devId, client->ackNum+1);
 		}
 #else
 		Client *pClient = NULL;
@@ -420,6 +420,7 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 				ntySendDeviceTimeCheckAck(pClient, 1);
 #else	
 				ntySendLoginAckResult(pClient->devId, "", 0, 200);
+				ntySendDeviceTimeCheckAck(pClient->devId, 1);
 #endif
 			}
 		} else {	
@@ -511,7 +512,7 @@ void ntyTimeCheckHandleRequest(const void *_self, unsigned char *buffer, int len
 		ntySendDeviceTimeCheckAck(client, ackNum);
 #else
 		const Client *client = obj;
-		ntySendDeviceTimeCheckAck(client, 1);
+		ntySendDeviceTimeCheckAck(client->devId, 1);
 #endif
 		
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
@@ -1137,7 +1138,8 @@ void ntyLocationAsyncReqPacketHandleRequest(const void *_self, unsigned char *bu
 			ntylog("Can't find category with: %s\n", category);
 		}
 		ntyFreeJsonValue(json);
-		
+
+		ntydbg("====================end ntyLocationAsyncReqPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);

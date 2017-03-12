@@ -50,6 +50,8 @@
 #include "NattySession.h"
 #include "NattyUtils.h"
 #include "NattyUserProtocol.h"
+#include "NattyDaveMQ.h"
+#include "NattyJson.h"
 
 #include <curl/curl.h>
 #include <string.h>
@@ -610,7 +612,43 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 	ntylog("buffer:%s, %ld\n", (char*)buffer, size*nmemb);
 	ntylog("stream:%s\n", (char*)stream);
 
+	ntydbg("ntyHttpQJKLocationHandleResult --> length:%ld\n", size*nmemb);
+
+	MessageTag *pMessageTag = (MessageTag *)stream;	
+	U8 *jsonstring = buffer;
+
+	ntydbg("ntyHttpQJKLocationHandleResult json --> %s\n", jsonstring);
+	ntydbg("ntyHttpQJKLocationHandleResult url --> %s\n", pMessageTag->Tag);
 	
+	JSON_Value *json = ntyMallocJsonValue(jsonstring);
+	AMap *pAMap = malloc(sizeof(AMap));
+
+	ntyJsonAMap(json, pAMap);
+	if (pAMap == NULL) {
+		return -1;
+	} 
+	LocationAck *pLocationAck = malloc(sizeof(LocationAck));
+	pLocationAck->results.IMEI = ntyJsonDeviceIMEI(json);
+	pLocationAck->results.category = ntyJsonAppCategory(json);
+	pLocationAck->results.type = pAMap->result.type;
+	pLocationAck->results.location = pAMap->result.location;
+	pLocationAck->results.radius = pAMap->result.radius;
+	char *jsonresult = ntyJsonWriteLocation(pLocationAck);
+
+	free(pAMap);
+	free(pLocationAck);
+	ntydbg("jsonresult --> %s\n", jsonresult);
+	int ret = ntySendLocationPushResult(pMessageTag->fromId, jsonresult, strlen(jsonresult));
+	if (ret > 0) {
+		ntydbg("ntySendLocationPushResult ok\n");
+		ret = ntySendLocationBroadCastResult(pMessageTag->fromId, pMessageTag->toId, jsonresult, strlen(jsonresult));
+		if (ret < 0) {
+			ntylog("ntyHttpQJKLocationHandleResult send error.\n");
+		} else {
+			ntydbg("ntySendLocationBroadCastResult ok\n");
+		}
+
+	}
 	
 	return 0;
 }
@@ -618,8 +656,10 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 
 int ntyHttpQJKLocation(void *arg) {
 	CURL *curl;	
-	CURLcode res;	
-	U8 *tag = arg;
+	CURLcode res;
+	
+	MessageTag *pMessageTag = (MessageTag *)arg;
+	U8 *tag = pMessageTag->Tag;
 #if 0
 	CURLcode return_code;
 	return_code = curl_global_init(CURL_GLOBAL_ALL);
@@ -642,7 +682,7 @@ int ntyHttpQJKLocation(void *arg) {
 	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
 #endif
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ntyHttpQJKLocationHandleResult); 
-	//curl_easy_setopt(curl, CURLOPT_WRITEDATA, tag); 
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, tag); 
 
 	res = curl_easy_perform(curl);	
 	if (res != CURLE_OK)	{		
@@ -681,7 +721,7 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 
 	const char *json = buffer;
 	AMap *pAMap = (AMap*)malloc(sizeof(AMap));
-	ntyJsonAMap(json, pAMap);
+	//ntyJsonAMap(json, pAMap);
 
 	if (strcmp(pAMap->status, "1") != 0) {
 		return -1;
@@ -710,7 +750,6 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	free(pAMap);
 
 	return result;
-
 }
 
 int ntyHttpQJKWeatherLocation(void *arg) {

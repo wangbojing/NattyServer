@@ -52,6 +52,10 @@
 #include "NattyUserProtocol.h"
 
 
+#define HTTP_QJK_BASE_URL		"http://app.quanjiakan.com"
+#define HTTP_GAODE_BASE_URL		"http://apilocate.amap.com"
+
+
 WeatherAck* ntyInitWeather();
 void ntyReleaseWeather(WeatherAck *pWeatherAck);
 
@@ -74,6 +78,7 @@ const char * ntyJsonAppCategory(JSON_Value *json);
 const char * ntyJsonWatchCategory(JSON_Value *json);
 
 const char * ntyJsonAction(JSON_Value *json);
+
 
 void ntyJsonWIFI(JSON_Value *json, WIFIReq *pWIFIReq);
 

@@ -95,8 +95,9 @@ void ntyJsonLocationWIFIAction(C_DEVID fromId, C_DEVID toId, JSON_Value *json, U
 	}
 
 	U8 wifibuf[500] = {0};
-	sprintf(wifibuf, "http://apilocate.amap.com/position?accesstype=1&imei=%s&macs=%s&output=json&key=%s", 
-		pWIFIReq->IMEI, macs, "0pyd8z7jouficcil");
+	sprintf(wifibuf, "%s/position?accesstype=1&imei=%s&macs=%s&output=json&key=%s",
+		HTTP_GAODE_BASE_URL, pWIFIReq->IMEI, macs, "0pyd8z7jouficcil");
+	
 	ntydbg(" wifibuf --> %s\n", wifibuf);
 
 	int ret = ntyHttpQJKLocation(wifibuf);

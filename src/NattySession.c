@@ -193,7 +193,7 @@ int ntySendFriendsTreeIpAddr(const void *client, U8 reqType) {
 }
 
 
-int ntySendDeviceTimeCheckAck(const Client *pClient, U32 ackNum) {
+int ntySendDeviceTimeCheckAck(C_DEVID fromId, U32 ackNum) {
 	int length = 0;
 	U8 ack[RECV_BUFFER_SIZE] = {0};
 
@@ -204,7 +204,7 @@ int ntySendDeviceTimeCheckAck(const Client *pClient, U32 ackNum) {
 #if 0
 	ack[NTY_PROTO_DEVID_IDX] = pClient->devId;
 #else
-	memcpy(ack+NTY_PROTO_DEVID_IDX, &pClient->devId, sizeof(C_DEVID));
+	memcpy(ack+NTY_PROTO_DEVID_IDX, &fromId, sizeof(C_DEVID));
 #endif
 	*(U32*)(&ack[NTY_PROTO_ACKNUM_IDX]) = ackNum;
 
@@ -214,7 +214,7 @@ int ntySendDeviceTimeCheckAck(const Client *pClient, U32 ackNum) {
 	length = NTY_PROTO_TIME_ACK_CRC_IDX+sizeof(U32);
 
 	void *map = ntyMapInstance();
-	ClientSocket *nSocket = ntyMapSearch(map, pClient->devId);
+	ClientSocket *nSocket = ntyMapSearch(map, fromId);
 	
 	return ntySendBuffer(nSocket, ack, length);
 	
@@ -792,6 +792,47 @@ int ntySendOfflineMsgAckResult(C_DEVID fromId, U8 *json, int length, U16 status)
 }
 
 
+int ntySendLocationPushResult(C_DEVID fromId, U8 *json, int length) {
+	U16 bLength = (U16)length;
+	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
+	
+	buffer[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
+	buffer[NTY_PROTO_DEVTYPE_IDX] = NTY_PROTO_CLIENT_DEFAULT;
+	buffer[NTY_PROTO_PROTOTYPE_IDX] = PROTO_PUSH;
+	buffer[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_LOCATION_PUSH;
+
+	memcpy(&buffer[NTY_PROTO_LOCATION_PUSH_DEVID_IDX], &fromId, sizeof(C_DEVID));
+	memcpy(&buffer[NTY_PROTO_LOCATION_PUSH_JSON_LENGTH_IDX], &bLength, sizeof(U16));
+	memcpy(&buffer[NTY_PROTO_LOCATION_PUSH_JSON_CONTENT_IDX], json, bLength);
+
+	bLength = bLength + NTY_PROTO_LOCATION_PUSH_JSON_CONTENT_IDX + sizeof(U32);
+
+	void *map = ntyMapInstance();
+	ClientSocket *client = ntyMapSearch(map, fromId);
+	
+	return ntySendBuffer(client, buffer, bLength);
+}
+
+int ntySendWeatherPushResult(C_DEVID fromId, U8 *json, int length) {
+	U16 bLength = (U16)length;
+	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
+	
+	buffer[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
+	buffer[NTY_PROTO_DEVTYPE_IDX] = NTY_PROTO_CLIENT_DEFAULT;
+	buffer[NTY_PROTO_PROTOTYPE_IDX] = PROTO_PUSH;
+	buffer[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_WEATHER_PUSH;
+
+	memcpy(&buffer[NTY_PROTO_WEATHER_PUSH_DEVID_IDX], &fromId, sizeof(C_DEVID));
+	memcpy(&buffer[NTY_PROTO_WEATHER_PUSH_JSON_LENGTH_IDX], &bLength, sizeof(U16));
+	memcpy(&buffer[NTY_PROTO_WEATHER_PUSH_JSON_CONTENT_IDX], json, bLength);
+
+	bLength = bLength + NTY_PROTO_WEATHER_PUSH_JSON_CONTENT_IDX + sizeof(U32);
+
+	void *map = ntyMapInstance();
+	ClientSocket *client = ntyMapSearch(map, fromId);
+	
+	return ntySendBuffer(client, buffer, bLength);
+}
 
 
 

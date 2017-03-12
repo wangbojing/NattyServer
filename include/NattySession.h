@@ -72,7 +72,7 @@ int ntyBoardcastAllFriendsById(C_DEVID fromId, U8 *buffer, int length);
 int ntyBoardcastAllFriendsNotifyDisconnect(C_DEVID selfId);
 void ntyProtoHttpProxyTransform(C_DEVID fromId, C_DEVID toId, U8 *buffer, int length);
 void ntyProtoHttpRetProxyTransform(C_DEVID toId, U8 *buffer, int length);
-int ntySendDeviceTimeCheckAck(const UdpClient *pClient, U32 ackNum);
+int ntySendDeviceTimeCheckAck(C_DEVID fromId, U32 ackNum);
 
 void ntyProtoUnBindAck(C_DEVID aid, C_DEVID did, int result);
 void ntyProtoBindAck(C_DEVID aid, C_DEVID did, int result);
@@ -91,6 +91,9 @@ int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int leng
 int ntySendDataResult(C_DEVID toId, U8 *json, int length, U16 status);
 int ntySendDataRoute(C_DEVID toId, U8 *buffer, int length);
 
+
+int ntySendLocationPushResult(C_DEVID fromId, U8 *json, int length);
+int ntySendWeatherPushResult(C_DEVID fromId, U8 *json, int length);
 
 
 
