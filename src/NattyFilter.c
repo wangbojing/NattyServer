@@ -1111,16 +1111,18 @@ void ntyLocationAsyncReqPacketHandleRequest(const void *_self, unsigned char *bu
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_LOCATION_ASYNCREQ) {
 		U16 jsonlen = 0;
 		U8 *jsonstring = NULL;
-		memcpy(&jsonlen, buffer+16, sizeof(U16));
-		jsonstring = buffer+18;
+		
+		memcpy(&jsonlen, buffer+NTY_PROTO_LOCATION_ASYNC_REQ_JSON_LENGTH_IDX, sizeof(U16));
+		jsonstring = buffer+NTY_PROTO_LOCATION_ASYNC_REQ_JSON_CONTENT_IDX;
 		buffer[length-4] = '\0';
+		
 		U16 jsonlenTemp = strlen(jsonstring);
 		if (jsonlen != jsonlenTemp) {
 			ntylog("JSON format error: %s\n", jsonstring);
 			return;
 		}
 
-		C_DEVID fromId = *(C_DEVID*)(buffer+4);
+		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_LOCATION_ASYNC_REQ_DEVID_IDX);
 		ntydbg("ntyLocationAsyncReqPacketHandleRequest --> json : %s\n", jsonstring);
 
 		ntydbg("====================begin ntyLocationAsyncReqPacketHandleRequest action ==========================\n");
@@ -1159,8 +1161,8 @@ void ntyWeatherAsyncReqPacketHandleRequest(const void *_self, unsigned char *buf
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_WEATHER_ASYNCREQ) {
 		U16 jsonlen = 0;
 		U8 *jsonstring = NULL;
-		memcpy(&jsonlen, buffer+12, sizeof(U16));
-		jsonstring = buffer+14;
+		memcpy(&jsonlen, buffer+NTY_PROTO_WEATHER_ASYNC_REQ_JSON_LENGTH_IDX, sizeof(U16));
+		jsonstring = buffer+NTY_PROTO_WEATHER_ASYNC_REQ_JSON_CONTENT_IDX;
 		buffer[length-4] = '\0';
 		U16 jsonlenTemp = strlen(jsonstring);
 		if (jsonlen != jsonlenTemp) {
