@@ -596,7 +596,6 @@ int ntyHttpMtkQuickLocation(void *arg) {
 }
 
 int ntyHttpCurlGlobalInit(void) {
-	
 	CURLcode return_code;
 	return_code = curl_global_init(CURL_GLOBAL_ALL);
 	if (CURLE_OK != return_code) {
@@ -608,36 +607,34 @@ int ntyHttpCurlGlobalInit(void) {
 
 
 static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
-	ntylog("ntyHttpQJKLocationHandleResult --> length:%ld\n", size*nmemb);
-	ntylog("buffer:%s, %ld\n", (char*)buffer, size*nmemb);
-	ntylog("stream:%s\n", (char*)stream);
-
 	ntydbg("ntyHttpQJKLocationHandleResult --> length:%ld\n", size*nmemb);
 
-	MessageTag *pMessageTag = (MessageTag *)stream;	
+	MessageTag *pMessageTag = (MessageTag *)stream;
 	U8 *jsonstring = buffer;
 
 	ntydbg("ntyHttpQJKLocationHandleResult json --> %s\n", jsonstring);
 	ntydbg("ntyHttpQJKLocationHandleResult url --> %s\n", pMessageTag->Tag);
-	
+
 	JSON_Value *json = ntyMallocJsonValue(jsonstring);
 	AMap *pAMap = malloc(sizeof(AMap));
-
 	ntyJsonAMap(json, pAMap);
 	if (pAMap == NULL) {
 		return -1;
-	} 
+	}
+
 	LocationAck *pLocationAck = malloc(sizeof(LocationAck));
 	pLocationAck->results.IMEI = ntyJsonDeviceIMEI(json);
 	pLocationAck->results.category = ntyJsonAppCategory(json);
 	pLocationAck->results.type = pAMap->result.type;
 	pLocationAck->results.location = pAMap->result.location;
 	pLocationAck->results.radius = pAMap->result.radius;
+	
 	char *jsonresult = ntyJsonWriteLocation(pLocationAck);
-
 	free(pAMap);
 	free(pLocationAck);
+
 	ntydbg("jsonresult --> %s\n", jsonresult);
+	
 	int ret = ntySendLocationPushResult(pMessageTag->fromId, jsonresult, strlen(jsonresult));
 	if (ret > 0) {
 		ntydbg("ntySendLocationPushResult ok\n");
@@ -647,17 +644,15 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 		} else {
 			ntydbg("ntySendLocationBroadCastResult ok\n");
 		}
-
 	}
 	
 	return 0;
 }
 
-
 int ntyHttpQJKLocation(void *arg) {
 	CURL *curl;	
 	CURLcode res;
-	
+
 	MessageTag *pMessageTag = (MessageTag *)arg;
 	U8 *tag = pMessageTag->Tag;
 #if 0
@@ -670,27 +665,27 @@ int ntyHttpQJKLocation(void *arg) {
 #endif
 	curl = curl_easy_init();
 	if (!curl)	{		
-		ntylog("curl init failed\n");		
+		ntylog("curl init failed\n");
 		return -2;	
 	}
 
 	ntylog("QJK url:%s\n", tag);
 
-	curl_easy_setopt(curl, CURLOPT_URL, tag); 
-	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L); 
+	curl_easy_setopt(curl, CURLOPT_URL, tag);
+	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
 #if 1
 	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
 #endif
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ntyHttpQJKLocationHandleResult); 
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, tag); 
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, arg); 
 
 	res = curl_easy_perform(curl);	
 	if (res != CURLE_OK)	{		
-		switch(res)		{			
-			case CURLE_UNSUPPORTED_PROTOCOL:				
-				ntylog("CURLE_UNSUPPORTED_PROTOCOL\n");			
-			case CURLE_COULDNT_CONNECT:				
-				ntylog("CURLE_COULDNT_CONNECT\n");			
+		switch(res)		{
+			case CURLE_UNSUPPORTED_PROTOCOL:			
+				ntylog("CURLE_UNSUPPORTED_PROTOCOL\n");	
+			case CURLE_COULDNT_CONNECT:
+				ntylog("CURLE_COULDNT_CONNECT\n");	
 			case CURLE_HTTP_RETURNED_ERROR:				
 				ntylog("CURLE_HTTP_RETURNED_ERROR\n");			
 			case CURLE_READ_ERROR:				
@@ -699,7 +694,7 @@ int ntyHttpQJKLocation(void *arg) {
 				ntylog("default %d\n",res);		
 		}		
 		return -3;	
-	}	
+	}
 	
 	curl_easy_cleanup(curl);
 	
@@ -707,7 +702,6 @@ int ntyHttpQJKLocation(void *arg) {
 		free(tag);
 		tag = NULL;
 	}
-
 
 	return 0;
 }
@@ -722,7 +716,6 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	const char *json = buffer;
 	AMap *pAMap = (AMap*)malloc(sizeof(AMap));
 	//ntyJsonAMap(json, pAMap);
-
 	if (strcmp(pAMap->status, "1") != 0) {
 		return -1;
 	}
@@ -813,6 +806,8 @@ static size_t ntyHttpQJKWeatherHandleResult(void* buffer, size_t size, size_t nm
 	ntylog("buffer:%s, %ld\n", (char*)buffer, size*nmemb);
 	ntylog("stream:%s\n", (char*)stream);
 
+	//ntySendWeatherPushResult(C_DEVID fromId,U8 * json,int length);
+	
 	return 0;
 }
 

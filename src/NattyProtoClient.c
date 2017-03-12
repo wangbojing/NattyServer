@@ -461,6 +461,42 @@ int ntyProtoClientCommonReq(void *_self, C_DEVID gId, U8 *json, U16 length) {
 	return ntySendFrame(pNetwork, buf, length);
 }
 
+int ntyProtoClientLocationReq(void *_self, C_DEVID gId, U8 *json, U16 length) {
+	NattyProto *proto = _self;
+	U8 buf[RECV_BUFFER_SIZE] = {0}; 
+
+	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
+	buf[NTY_PROTO_PROTOTYPE_IDX] = (U8) PROTO_ASYNCREQ; 
+	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_LOCATION_ASYNCREQ;
+
+	memcpy(&buf[NTY_PROTO_LOCATION_ASYNC_REQ_DEVID_IDX], &proto->selfId, sizeof(C_DEVID));
+	memcpy(&buf[NTY_PROTO_LOCATION_ASYNC_REQ_JSON_LENGTH_IDX], &length, sizeof(U16));
+	memcpy(&buf[NTY_PROTO_LOCATION_ASYNC_REQ_JSON_CONTENT_IDX], json, length);
+
+	length = NTY_PROTO_LOCATION_ASYNC_REQ_JSON_CONTENT_IDX + length + sizeof(U32);
+
+	void *pNetwork = ntyNetworkInstance();
+	return ntySendFrame(pNetwork, buf, length);
+}
+
+int ntyProtoClientWeatherReq(void *_self, C_DEVID gId, U8 *json, U16 length) {
+	NattyProto *proto = _self;
+	U8 buf[RECV_BUFFER_SIZE] = {0}; 
+
+	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
+	buf[NTY_PROTO_PROTOTYPE_IDX] = (U8) PROTO_ASYNCREQ; 
+	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_WEATHER_ASYNCREQ;
+
+	memcpy(&buf[NTY_PROTO_WEATHER_ASYNC_REQ_DEVID_IDX], &proto->selfId, sizeof(C_DEVID));
+	memcpy(&buf[NTY_PROTO_WEATHER_ASYNC_REQ_JSON_LENGTH_IDX], &length, sizeof(U16));
+	memcpy(&buf[NTY_PROTO_WEATHER_ASYNC_REQ_JSON_CONTENT_IDX], json, length);
+
+	length = NTY_PROTO_LOCATION_ASYNC_REQ_JSON_CONTENT_IDX + length + sizeof(U32);
+	
+	void *pNetwork = ntyNetworkInstance();
+	return ntySendFrame(pNetwork, buf, length);
+}
+
 
 int ntyProtoClientCommonAck(void *_self, U8 *json, U16 length) {
 	NattyProto *proto = _self;
@@ -870,6 +906,22 @@ int ntyCommonReqClient(C_DEVID gId, U8 *json, U16 length) {
 	return -1;
 }
 
+int ntyLocationReqClient(C_DEVID gId, U8 *json, U16 length) {
+	NattyProto* proto = ntyProtoInstance();
+	if (proto) {
+		return ntyProtoClientLocationReq(proto, gId, json, length);
+	}
+	return -1;
+}
+
+int ntyWeatherReqClient(C_DEVID gId, U8 *json, U16 length) {
+	NattyProto* proto = ntyProtoInstance();
+	if (proto) {
+		return ntyProtoClientWeatherReq(proto, gId, json, length);
+	}
+	return -1;
+}
+
 int ntyCommonAckClient(U8 *json, U16 length) {
 	NattyProto* proto = ntyProtoInstance();
 	if (proto) {
@@ -1128,8 +1180,6 @@ int ntyAudioRecodeDepacket(U8 *buffer, int length) {
 	return 0;
 }
 
-
-
 void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 	NattyProto *proto = arg;
 	NattyProtoOpera * const *protoOpera = arg;
@@ -1144,7 +1194,9 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 			U8 *json = buf+NTY_PROTO_LOGIN_ACK_JSON_CONTENT_IDX;
 
 			LOG(" LoginAckResult status:%d\n", status);
-			proto->onLoginAckResult(json, jsonLen);
+			if (proto->onLoginAckResult) {
+				proto->onLoginAckResult(json, jsonLen);
+			}
 			break;
 		} 
 		case NTY_PROTO_BIND_ACK: {
@@ -1184,15 +1236,15 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 		}
 		case NTY_PROTO_ICCID_ACK: {
 			U16 status = 0;
-			U16 length = 0;
+			U16 u16Length = 0;
 			U8 *json = NULL;
 
 			memcpy(&status, buf+NTY_PROTO_ICCID_ACK_STATUS_IDX, sizeof(U16));
-			memcpy(&length, buf+NTY_PROTO_ICCID_ACK_JSON_LENGTH_IDX, sizeof(U16));
+			memcpy(&u16Length, buf+NTY_PROTO_ICCID_ACK_JSON_LENGTH_IDX, sizeof(U16));
 			json = buf+NTY_PROTO_ICCID_ACK_JSON_CONTENT_IDX;
 
 			if (proto->onICCIDAckResult) {
-				proto->onICCIDAckResult(json, length);
+				proto->onICCIDAckResult(json, u16Length);
 			}
 			
 			break;
@@ -1200,16 +1252,16 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 #endif
 		case NTY_PROTO_COMMON_REQ: {
 			C_DEVID fromId = 0;
-			U16 length = 0;
+			U16 u16Length = 0;
 			U8 *json = NULL;
 
 			ntyU8ArrayToU64(buf+NTY_PROTO_COMMON_REQ_DEVID_IDX, &fromId);
-			memcpy(&length, buf+NTY_PROTO_COMMON_REQ_JSON_LENGTH_IDX, sizeof(U16));
+			memcpy(&u16Length, buf+NTY_PROTO_COMMON_REQ_JSON_LENGTH_IDX, sizeof(U16));
 
 			json = buf+NTY_PROTO_COMMON_REQ_JSON_CONTENT_IDX;
 
 			if (proto->onCommonReqResult) {
-				proto->onCommonReqResult(fromId, json, length);
+				proto->onCommonReqResult(fromId, json, u16Length);
 			}
 			
 			break;
@@ -1217,6 +1269,7 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 		case NTY_PROTO_VOICE_DATA_REQ: {
 			int ret = ntyAudioRecodeDepacket(buf, length);
 			if (ret == 1) {
+				
 				C_DEVID fromId = 0;
 				ntyU8ArrayToU64(buf+NTY_PROTO_VOICE_DATA_REQ_DEVID_IDX, &fromId);
 
@@ -1271,7 +1324,7 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 			LOG("Data Result:%d\n", status);
 		
 			if (proto->onDataResult) {
-				proto->onDataResult(ackNum);
+				proto->onDataResult(status);
 			}
 			
 			break;
@@ -1296,31 +1349,31 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 		case NTY_PROTO_LOCATION_BROADCAST: {
 			C_DEVID fromId = 0;
 			U8 *json = NULL;
-			U16 length = 0;
+			U16 u16Length = 0;
 			
 			memcpy(&fromId, buf+NTY_PROTO_LOCATION_BROADCAST_DEVID_IDX, sizeof(C_DEVID));
-			memcpy(&length, buf+NTY_PROTO_LOCATION_BROADCAST_JSON_LENGTH_IDX, sizeof(U16));
+			memcpy(&u16Length, buf+NTY_PROTO_LOCATION_BROADCAST_JSON_LENGTH_IDX, sizeof(U16));
 
 			json = buf+NTY_PROTO_LOCATION_BROADCAST_JSON_CONTENT_IDX;
 			
 
 			if (proto->onLocationBroadCastResult) {
-				proto->onLocationBroadCastResult(fromId, json, length);
+				proto->onLocationBroadCastResult(fromId, json, u16Length);
 			}
 			break;
 		}
 		case NTY_PROTO_COMMON_BROADCAST: {
 			DEVID fromId = 0;
 			U8 *json = NULL;
-			U16 length = 0;
+			U16 u16Length = 0;
 			
 			memcpy(&fromId, buf+NTY_PROTO_COMMON_BROADCAST_DEVID_IDX, sizeof(DEVID));
-			memcpy(&length, buf+NTY_PROTO_COMMON_BROADCAST_JSON_LENGTH_IDX, sizeof(U16));
+			memcpy(&u16Length, buf+NTY_PROTO_COMMON_BROADCAST_JSON_LENGTH_IDX, sizeof(U16));
 
 			json = buf+NTY_PROTO_COMMON_BROADCAST_JSON_CONTENT_IDX;
 			
 			if (proto->onCommonBroadCastResult) {
-				proto->onCommonBroadCastResult(fromId, json, length);
+				proto->onCommonBroadCastResult(fromId, json, u16Length);
 			}
 			
 			break;
@@ -1328,13 +1381,13 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 #if (NTY_PROTO_SELFTYPE == NTY_PROTO_CLIENT_WATCH)		
 		case NTY_PROTO_LOCATION_PUSH: {
 			U8 *json = NULL;
-			U16 length = 0;
+			U16 u16Length = 0;
 			
-			memcpy(&length, buf+NTY_PROTO_LOCATION_PUSH_JSON_LENGTH_IDX, sizeof(U16));
+			memcpy(&u16Length, buf+NTY_PROTO_LOCATION_PUSH_JSON_LENGTH_IDX, sizeof(U16));
 			json = buf+NTY_PROTO_LOCATION_PUSH_JSON_CONTENT_IDX;
-
+			
 			if (proto->onLocationPushResult) {
-				proto->onLocationPushResult(json, length);
+				proto->onLocationPushResult(json, u16Length);
 			}
 
 			break;
@@ -1342,20 +1395,19 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 		case NTY_PROTO_WEATHER_PUSH: {
 
 			U8 *json = NULL;
-			U16 length = 0;
+			U16 u16Length = 0;
 			
-			memcpy(&length, buf+NTY_PROTO_WEATHER_PUSH_JSON_LENGTH_IDX, sizeof(U16));
+			memcpy(&u16Length, buf+NTY_PROTO_WEATHER_PUSH_JSON_LENGTH_IDX, sizeof(U16));
 			json = buf+NTY_PROTO_WEATHER_PUSH_JSON_CONTENT_IDX;
 
 			if (proto->onWeatherPushResult) {
-				proto->onWeatherPushResult(json, length);
+				proto->onWeatherPushResult(json, u16Length);
 			}
 			
 			break;
 		}
 #endif		
 	}
-	
 }
 
 static U8 rBuffer[NTY_VOICEREQ_PACKET_LENGTH] = {0};
@@ -1366,10 +1418,11 @@ int ntyPacketValidator(void *self, U8 *buffer, int length) {
 	int bCopy = 0, bIndex = 0, ret = -1;
 	U32 uCrc = 0, uClientCrc = 0;
 	int bLength = length;
-
-	LOG(" rLength :%d, length:%d\n", rLength, length);
+	
 	uCrc = ntyGenCrcValue(buffer, length-4);
 	uClientCrc = ntyU8ArrayToU32(buffer+length-4);
+	LOG(" rLength :%d, length:%d, crc:%x, u8Crc:%x\n", rLength, length, uCrc, uClientCrc);
+
 	if (uCrc != uClientCrc) {
 		do {
 			bCopy = (bLength > NTY_VOICEREQ_PACKET_LENGTH ? NTY_VOICEREQ_PACKET_LENGTH : bLength);
@@ -1396,11 +1449,12 @@ int ntyPacketValidator(void *self, U8 *buffer, int length) {
 			rLength %= NTY_VOICEREQ_PACKET_LENGTH;
 			
 		} while (bLength);
-	} else {
+	} else  {
 		ntyPacketClassifier(self, buffer, length);
 		rLength = 0;
 		ret = 0;
 	}
+
 	return ret;
 }
 

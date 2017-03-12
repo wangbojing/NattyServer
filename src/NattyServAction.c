@@ -42,6 +42,7 @@
  */
 
 #include "NattyServAction.h"
+#include "NattyDaveMQ.h"
 
 #include <string.h>
 #include <time.h>
@@ -95,9 +96,8 @@ void ntyJsonLocationWIFIAction(C_DEVID fromId, C_DEVID toId, JSON_Value *json, U
 	}
 
 	U8 wifibuf[500] = {0};
-	sprintf(wifibuf, "%s/position?accesstype=1&imei=%s&macs=%s&output=json&key=%s",
+	sprintf(wifibuf, "%s/position?accesstype=1&imei=%s&macs=%s&output=json&key=%s", 
 		HTTP_GAODE_BASE_URL, pWIFIReq->IMEI, macs, "0pyd8z7jouficcil");
-	
 	ntydbg(" wifibuf --> %s\n", wifibuf);
 
 	int ret = ntyHttpQJKLocation(wifibuf);
@@ -121,6 +121,7 @@ void ntyJsonLocationWIFIAction(C_DEVID fromId, C_DEVID toId, JSON_Value *json, U
  *
  */
 void ntyJsonLocationLabAction(C_DEVID fromId, C_DEVID toId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
+	ntydbg(" ntyJsonLocationLabAction begin --> \n");
 	LABReq *pLABReq = (LABReq*)malloc(sizeof(LABReq));
 	ntyJsonLAB(json, pLABReq);
 	C_DEVID DeviceId = *(C_DEVID*)(pLABReq->IMEI);
@@ -133,17 +134,33 @@ void ntyJsonLocationLabAction(C_DEVID fromId, C_DEVID toId, JSON_Value *json, U8
 		strcat(nearbts, pLABReq->lab.pNearbts[i].signal);
 		strcat(nearbts, "|");
 	}
-	size_t macs_len = strlen(nearbts);
-	if (macs_len!=0) {
-		nearbts[macs_len-1] = '\0';
+	size_t nearbts_len = strlen(nearbts);
+	if (nearbts_len!=0) {
+		nearbts[nearbts_len-1] = '\0';
 	}
 	
 	U8 labbuf[500] = {0};
-	sprintf(labbuf, "http://apilocate.amap.com/position?accesstype=0&imei=%s&cdma=0&bts=%s&nearbts=%s&output=json&key=%s", 
-		pLABReq->IMEI, pLABReq->lab.bts, nearbts, "0pyd8z7jouficcil");
+	sprintf(labbuf, "%s/position?accesstype=0&imei=%s&cdma=0&bts=%s&nearbts=%s&output=json&key=%s", 
+		HTTP_GAODE_BASE_URL, pLABReq->IMEI, pLABReq->lab.bts, nearbts, "fb44f91d1a1df4d4b6356f43183a329f");
 	ntydbg(" labbuf --> %s\n", labbuf);
+
+	MessageTag *pMessageTag = malloc(sizeof(MessageTag));
+	pMessageTag->fromId = fromId;
+	pMessageTag->toId = toId;
+	pMessageTag->Tag = labbuf;
+	pMessageTag->length = strlen(labbuf);
+
+	/*
+	ntyJsonLocationType(const char *locationType, U8 *u8LocationType);
+	if (strcmp(pLABReq->category, NATTY_USER_PROTOCOL_WIFI) == 0)) {
+		pMessageTag->u8LocationType = 1;
+	} else if (strcmp(pLABReq->category, NATTY_USER_PROTOCOL_LAB) == 0)) {
+		pMessageTag->u8LocationType = 2;
+	}
+	*/
 	
-	int ret = ntyHttpQJKLocation(labbuf);
+	int ret = ntyHttpQJKLocation(pMessageTag);
+	free(pMessageTag);
 	if (ret == -1) {
 		ntylog(" ntyHttpQJKLocation --> Http Exception\n");
 		ret = 4;
@@ -153,6 +170,7 @@ void ntyJsonLocationLabAction(C_DEVID fromId, C_DEVID toId, JSON_Value *json, U8
 
 	ntyJsonLABItemRelease(pLABReq->lab.pNearbts);
 	free(pLABReq);
+	ntydbg(" ntyJsonLocationLabAction end --> \n");
 }
 
 void ntyJsonWeatherAction(C_DEVID clientId, C_DEVID toId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
@@ -174,8 +192,8 @@ void ntyJsonWeatherAction(C_DEVID clientId, C_DEVID toId, JSON_Value *json, U8 *
 	}
 
 	U8 labbuf[500] = {0};
-	sprintf(labbuf, "http://apilocate.amap.com/position?accesstype=0&imei=%s&cdma=0&bts=%s&nearbts=%s&output=json&key=%s", 
-		pLABReq->IMEI, pLABReq->lab.bts, nearbts, "0pyd8z7jouficcil");
+	sprintf(labbuf, "%s/position?accesstype=0&imei=%s&cdma=0&bts=%s&nearbts=%s&output=json&key=%s", 
+		HTTP_GAODE_BASE_URL, pLABReq->IMEI, pLABReq->lab.bts, nearbts, "0pyd8z7jouficcil");
 	ntydbg(" labbuf --> %s\n", labbuf);
 	
 	int ret = ntyHttpQJKWeatherLocation(labbuf);
@@ -458,8 +476,11 @@ void ntyJsonTimeTablesAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 
 	ntyJsonTimeTables(json, pTimeTablesReq);
 	C_DEVID DeviceId = *(C_DEVID*)(pTimeTablesReq->IMEI);
 
+	ntylog(" ntyJsonTimeTablesAction 1111 --> %d \n", (int)pTimeTablesReq->size);
+
+	int ret = 1;
+	/*
 	size_t i;
-	int ret;
 	for (i=0; i<pTimeTablesReq->size; i++) {
 		U8 morning_status = atoi(pTimeTablesReq->pTimeTables[i].morning.status);
 		U8 afternoon_status = atoi(pTimeTablesReq->pTimeTables[i].afternoon.status);
@@ -477,13 +498,19 @@ void ntyJsonTimeTablesAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 
 			ret = 4;
 		}
 	}
+	*/
+	ntylog(" ntyJsonTimeTablesAction 2222 --> %d \n", (int)pTimeTablesReq->size);
 
 	//if (ret == -1) {
 	//	ntylog(" ntyJsonTimeTables --> DB Exception\n");
 	//	ret = 4;
 	//} else if (ret == 0) {
-	if (ret == 0) {
-		ntyJsonSuccessResult(devId);
+	if (ret > 0) {
+		ntylog(" ntyJsonTimeTablesAction --> ok \n");
+		ret = ntySendCommonReq(devId, jsonstring, strlen(jsonstring));
+		if (ret>0) {
+			ntyJsonSuccessResult(AppId);
+		}
 	}
 	ntyJsonTimeTablesItemRelease(pTimeTablesReq->pTimeTables);
 	free(pTimeTablesReq);
