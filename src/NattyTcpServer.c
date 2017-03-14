@@ -164,9 +164,13 @@ static int ntyAddRelationMap(MessagePacket *msg) {
 			void *hash = ntyHashTableInstance();
 			Payload payload;
 			payload.id = msg->client->devId;
-			
+#if 0	//Update	
 			ret = ntyHashTableInsert(hash, msg->watcher->fd, &payload);
 			ASSERT(ret == NTY_RESULT_SUCCESS);
+#else
+			ret = ntyHashTableUpdate(hash, msg->watcher->fd, &payload);
+			ASSERT(ret == NTY_RESULT_SUCCESS);
+#endif
 		}
 		
 	} else {
@@ -305,7 +309,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 
 		void *hash = ntyHashTableInstance();
 		Payload *load = ntyHashTableSearch(hash, watcher->fd);
-		//ASSERT(load != NULL);
+		ASSERT(load != NULL);
 #if 1 //post to zeromq to remove id from rbtree and b+tree, 
 		// post token <id, action>		<load-id, delete>
 		//load->id
@@ -452,6 +456,13 @@ void ntyOnAcceptEvent(struct ev_loop *loop, struct ev_io *watcher, int revents){
 	if (ret == 0) { 			
 		ntylog("Hash Table Node Insert Success\n");
 	} 
+#else
+	void *hash = ntyHashTableInstance();
+	Payload payload;
+	payload.id = NATTY_NULL_DEVID;
+		
+	int ret = ntyHashTableInsert(hash, client_fd, &payload);
+	ASSERT(ret == NTY_RESULT_SUCCESS);
 #endif
 
 

@@ -530,7 +530,7 @@ int ntyHashInsert(void *_self, U32 key, Payload* load) {
 #endif
 	ntylog(" ntyHashInsert --> %lx\n", (long)node);
 
-	return 0;
+	return NTY_RESULT_SUCCESS;
 }
 
 
@@ -613,7 +613,7 @@ int ntyHashUpdate(void *_self, U32 key, Payload* load) {
 	if (node == NULL) {
 		return NTY_RESULT_FAILED;
 	}
-	if (node->sockfd == NATTY_NULL_DEVID) {
+	if (node->sockfd == NATTY_ILLEGAL_FD) {
 		ntylog(" ntyHashUpdate --> %d\n", node->sockfd);
 		return NTY_RESULT_NOEXIST;
 	}

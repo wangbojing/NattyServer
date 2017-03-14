@@ -85,6 +85,7 @@
 #define ASSERT(x)			assert(x)
 
 
+#define NATTY_ILLEGAL_FD				0x0
 #define NATTY_NULL_DEVID				0x0
 #define NATTY_HOLDER_DEVID				0x1
 
