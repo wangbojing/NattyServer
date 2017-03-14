@@ -752,7 +752,7 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	pMessageSendTag->Tag = weatherbuf;
 	pMessageSendTag->length = strlen(weatherbuf);
 
-	//int ret = ntyClassifyMessageType(pMessageSendTag->fromId, pMessageSendTag->toId, pMessageSendTag->Tag, pMessageSendTag->length);
+	//int ret = ntyDaveMqPushMessage(pMessageSendTag->fromId, pMessageSendTag->toId, pMessageSendTag->Tag, pMessageSendTag->length);
 	int ret = ntyHttpQJKWeather(pMessageSendTag);
 	ntylog("result : %d\n", ret);
 	free(pAMap);
