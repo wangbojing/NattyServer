@@ -310,10 +310,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		void *hash = ntyHashTableInstance();
 		Payload *load = ntyHashTableSearch(hash, watcher->fd);
 		ASSERT(load != NULL);
-#if 1 //post to zeromq to remove id from rbtree and b+tree, 
-		// post token <id, action>		<load-id, delete>
-		//load->id
-#endif		
+
 
 		MessagePacket *msg = (MessagePacket*)allocRequestPacket();
 		if (msg == NULL) {
@@ -350,6 +347,10 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		job->user_data = msg;
 		ntyThreadPoolPush(pThreadPool, job);
 		ntyReleaseSocket(loop, watcher);
+		
+#if 1 //delete hash key
+		ntyHashTableDelete(hash, watcher->fd);
+#endif
 
 	} else {
 		int i = 0;
