@@ -251,27 +251,6 @@ void ntyJsonLABItemRelease(Nearbts *pNearbts) {
 	}
 }
 
-
-/*
-void ntyJsonLocation(JSON_Value *json, LocationAck *pLocation) {
-	if (json == NULL || pLocation == NULL) {
-		ntydbg("param is null.\n");
-		return;
-	}
-	
-	JSON_Object *root_object = json_value_get_object(json);
-	JSON_Object *results_object = json_object_get_object(root_object, NATTY_USER_PROTOCOL_RESULTS);
-	pLocation->results.IMEI = json_object_get_string(results_object, NATTY_USER_PROTOCOL_IMEI);
-	pLocation->results.category = json_object_get_string(results_object, NATTY_USER_PROTOCOL_CATEGORY);
-	pLocation->results.type = json_object_get_string(results_object, NATTY_USER_PROTOCOL_TYPE);
-	pLocation->results.radius = json_object_get_string(results_object, NATTY_USER_PROTOCOL_RADIUS);
-	pLocation->results.location = json_object_get_string(results_object, NATTY_USER_PROTOCOL_LOCATION);
-	
-	ntydbg("type:%s   radius:%s   location:%s\n", pLocation->results.type, pLocation->results.radius, pLocation->results.location);
-	json_value_free(json);
-}
-*/
-
 void ntyJsonAMap(JSON_Value *json, AMap *pAMap) {
 	if (json == NULL || pAMap == NULL) {
 		ntydbg("param is null.\n");
@@ -578,7 +557,8 @@ char * ntyJsonWriteCommon(CommonAck *pCommonAck) {
 	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULT, json_value_init_object());
 	JSON_Object *result_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULT);
 	json_object_set_string(result_obj, NATTY_USER_PROTOCOL_CODE, pCommonAck->result.code);
-
+	json_object_set_string(result_obj, NATTY_USER_PROTOCOL_MESSAGE, pCommonAck->result.message);
+	
 	char *jsonstring =  json_serialize_to_string(schema);
 	json_value_free(schema);
 	return jsonstring;

@@ -210,10 +210,12 @@ static int ntyDelRelationMap(MessagePacket *msg) {
 		} else if (ret == NTY_RESULT_SUCCESS) {		
 			free(value);
 			//delete HashTable
+			/*
 			void *hash = ntyHashTableInstance();
 			ret = ntyHashTableDelete(hash, msg->watcher->fd);
 			
 			ASSERT(ret == NTY_RESULT_SUCCESS);	
+			*/
 		}	
 	} else {
 		ntylog(" Map Have No Id --> %lld\n", msg->client->devId);
@@ -310,7 +312,10 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		void *hash = ntyHashTableInstance();
 		Payload *load = ntyHashTableSearch(hash, watcher->fd);
 		ASSERT(load != NULL);
-
+#if 1 //post to zeromq to remove id from rbtree and b+tree, 
+		// post token <id, action>		<load-id, delete>
+		//load->id
+#endif		
 
 		MessagePacket *msg = (MessagePacket*)allocRequestPacket();
 		if (msg == NULL) {
@@ -332,6 +337,8 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 			return;
 		}	
 
+		ntylog("  ntySelfLogoutPacket ---- :%d\n", watcher->fd);
+
 		ntySelfLogoutPacket(msg->client->devId, msg->buffer);
 #if 1 //release ntyHashTableDelete
 		ntyDelRelationMap(msg);
@@ -347,10 +354,8 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		job->user_data = msg;
 		ntyThreadPoolPush(pThreadPool, job);
 		ntyReleaseSocket(loop, watcher);
-		
-#if 1 //delete hash key
+
 		ntyHashTableDelete(hash, watcher->fd);
-#endif
 
 	} else {
 		int i = 0;
@@ -463,7 +468,7 @@ void ntyOnAcceptEvent(struct ev_loop *loop, struct ev_io *watcher, int revents){
 	payload.id = NATTY_NULL_DEVID;
 		
 	int ret = ntyHashTableInsert(hash, client_fd, &payload);
-	ASSERT(ret == NTY_RESULT_SUCCESS);
+	ASSERT(ret == NTY_RESULT_SUCCESS || ret == NTY_RESULT_EXIST);
 #endif
 
 

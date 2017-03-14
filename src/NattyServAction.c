@@ -43,6 +43,8 @@
 
 #include "NattyServAction.h"
 #include "NattyDaveMQ.h"
+#include "NattyMessage.h"
+
 
 #include <string.h>
 #include <time.h>
@@ -59,9 +61,10 @@ void ntyJsonBroadCastRecvResult(C_DEVID selfId, C_DEVID gId, char *jsonresult) {
 void ntyJsonResult(C_DEVID devId, const char * code) {
 	CommonAck *pCommonAck = (CommonAck*)malloc(sizeof(CommonAck));
 	pCommonAck->result.code = code;
+	pCommonAck->result.message = ntyCommonResultMessage(pCommonAck->result.code);
+
 	char *jsonresult = ntyJsonWriteCommon(pCommonAck);
-	
-	ntylog("ntyJsonSuccessResult-> %lld, %s  %d\n", devId, jsonresult, strlen(jsonresult));
+	ntylog("ntyJsonSuccessResult-> %lld, %s  %d\n", devId, jsonresult, (int)strlen(jsonresult));
 	ntySendDataResult(devId, (U8*)jsonresult, strlen(jsonresult), 200);
 	ntyJsonFree(jsonresult);
 	free(pCommonAck);
@@ -190,45 +193,8 @@ void ntyJsonWeatherAction(C_DEVID fromId, C_DEVID toId, JSON_Value *json, U8 *js
 	if (ret == -1) {
 		ntylog(" ntyHttpQJKWeatherLocation --> Http Exception\n");
 		ret = 4;
-	} else if (ret > 0) {
+	} else if (ret >= 0) {
 		ntyJsonResult(toId, NATTY_RESULT_CODE_SUCCESS);
-	/*
-		JSON_Value *json2 = NULL;
-		AMap *pAMap = (AMap*)malloc(sizeof(AMap));
-		ntyJsonAMap(json2, pAMap);
-		if (strcmp(pAMap->status, "1") != 0) {
-			return;	
-		}
-	
-		char colon[2] = {0x3A, 0x00};
-		char lng[50] = {0};
-		char lat[50] = {0};
-	    char *p2 = strchr(pAMap->result.location, ',');
-		char *p1 = (char *)pAMap->result.location;
-		if (p2 != NULL) {
-			size_t len = p2-p1;
-			memcpy(lng, p1, len);
-			memcpy(lat, p1+len+1, (size_t)strlen(pAMap->result.location)-len);
-		}
-		char latlng[100] = {0};
-		strncat(latlng, lat, (size_t)strlen(lat));
-		strncat(latlng, colon, (size_t)strlen(colon));
-		strncat(latlng, lng, (size_t)strlen(lng));
-		
-		U8 weatherbuf[500] = {0};
-		sprintf(weatherbuf, "https://api.thinkpage.cn/v3/weather/daily.json?key=0pyd8z7jouficcil&location=%s&language=zh-Hans&unit=c&start=0&days=5", latlng);
-		ntydbg(" weatherbuf --> %s\n", weatherbuf);
-		
-		ret = ntyHttpQJKWeather(weatherbuf);
-		if (ret == -1) {
-			ntylog(" ntyHttpQJKLocation --> Http Exception\n");
-			ret = 4;
-		} else if (ret > 0) {
-			ntyJsonResult(toId, NATTY_RESULT_CODE_SUCCESS);
-		}
-
-		free(pAMap);
-	*/
 	}
 
 	free(pWeatherReq);
@@ -267,7 +233,7 @@ void ntyJsonEfenceAction(C_DEVID AppId, C_DEVID toId, JSON_Value *json, U8 *json
 		EfenceAck *pEfenceAck = (EfenceAck*)malloc(sizeof(EfenceAck));
 		pEfenceAck->result = *(EfenceResult*)pEfenceReq;
 		char *jsonresult = ntyJsonWriteEfence(pEfenceAck);
-		ntylog(" ntySendCommonBroadCastResult --> %lld, %lld, %s, %d\n", AppId, devId, jsonresult, strlen(jsonresult));
+		ntylog(" ntySendCommonBroadCastResult --> %lld, %lld, %s, %d\n", AppId, devId, jsonresult, (int)strlen(jsonresult));
 		ntySendCommonBroadCastResult(AppId, devId, (U8*)jsonresult, strlen(jsonresult));
 		ntyJsonFree(jsonresult);
 		free(pEfenceAck);
@@ -366,7 +332,7 @@ void ntyJsonTurnAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsons
 	if (ret == -1) {
 		ntylog(" ntyJsonTurnAction --> DB Exception\n");
 		ret = 4;
-	} else if (ret == 0) {
+	} else if (ret >= 0) {
 		ntyJsonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
 	}
 	free(pTurnReq);
@@ -381,7 +347,7 @@ void ntyJsonICCIDAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *json
 	if (ret == -1) {
 		ntylog(" ntyJsonICCIDAction --> DB Exception\n");
 		ret = 4;
-	} else if (ret == 0) {
+	} else if (ret >= 0) {
 		ntyJsonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
 	}
 	free(pICCIDReq);
@@ -397,7 +363,7 @@ void ntyJsonAddScheduleAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8
 	if (ret == -1) {
 		ntylog(" ntyJsonAddScheduleAction --> DB Exception\n");
 		ret = 4;
-	} else if (ret == 0) {
+	} else if (ret >= 0) {
 		ntyJsonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
 	}
 	free(pAddScheduleReq);
@@ -416,7 +382,7 @@ void ntyJsonDelScheduleAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8
 	if (ret == -1) {
 		ntylog(" ntyJsonDelScheduleAction --> DB Exception\n");
 		ret = 4;
-	} else if (ret == 0) {
+	} else if (ret >= 0) {
 		ntyJsonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
 	}
 	free(pDelScheduleReq);
@@ -438,7 +404,7 @@ void ntyJsonUpdateScheduleAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json,
 	if (ret == -1) {
 		ntylog(" ntyJsonUpdateScheduleAction --> DB Exception\n");
 		ret = 4;
-	} else if (ret == 0) {
+	} else if (ret >= 0) {
 		ntyJsonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
 	}
 	free(pUpdateScheduleReq);
@@ -461,10 +427,9 @@ void ntyJsonSelectScheduleAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json,
 	if (ret == -1) {
 		ntylog(" ntyJsonDelScheduleAction --> DB Exception\n");
 		ret = 4;
-	} else if (ret == 0) {
+	} else if (ret >= 0) {
 		ntyJsonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
-
-		if (ret == 1) {
+		if (ret >= 1) {
 			char *jsonresult = ntyJsonWriteSchedule(pScheduleAck);
 			ntySendCommonBroadCastResult(AppId, devId, (U8*)jsonresult, strlen(jsonresult));
 			ntyJsonFree(jsonresult);
@@ -512,7 +477,7 @@ void ntyJsonTimeTablesAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 
 	if (ret > 0) {
 		ntylog(" ntyJsonTimeTablesAction --> ok \n");
 		ret = ntySendCommonReq(devId, jsonstring, strlen(jsonstring));
-		if (ret>0) {
+		if (ret >= 0) {
 			ntyJsonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
 		}
 	}

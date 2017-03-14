@@ -607,8 +607,6 @@ int ntyHttpCurlGlobalInit(void) {
 
 
 static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
-	ntydbg("ntyHttpQJKLocationHandleResult --> length:%ld\n", size*nmemb);
-
 	MessageTag *pMessageTag = (MessageTag *)stream;
 	U8 *jsonstring = buffer;
 
@@ -622,8 +620,6 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 		return -1;
 	}
 
-	ntydbg("==1=================================================================\n");
-	
 	LocationAck *pLocationAck = malloc(sizeof(LocationAck));
 	pLocationAck->results.IMEI = ntyJsonDeviceIMEI(json);
 	pLocationAck->results.category = ntyJsonAppCategory(json);
@@ -635,14 +631,12 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 	}
 	pLocationAck->results.location = pAMap->result.location;
 	pLocationAck->results.radius = pAMap->result.radius;
-
-	ntydbg("==2=================================================================\n");
 	
 	char *jsonresult = ntyJsonWriteLocation(pLocationAck);
 	free(pAMap);
 	free(pLocationAck);
 
-	ntydbg("jsonresult --> %s\n", jsonresult);
+	ntydbg("ntyHttpQJKLocationHandleResult jsonresult --> %s\n", jsonresult);
 	
 	int ret = ntySendLocationPushResult(pMessageTag->fromId, jsonresult, strlen(jsonresult));
 	if (ret > 0) {
@@ -719,7 +713,6 @@ int ntyHttpQJKLocation(void *arg) {
 
 static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
 	ntylog("==================begin ntyHttpQJKWeatherLocationHandleResult ==========================\n");
-	ntydbg("ntyHttpQJKWeatherLocationHandleResult --> length:%ld\n", size*nmemb);
 	MessageTag *pMessageTag = (MessageTag *)stream;
 	U8 *jsonstring = buffer;
 	ntydbg("ntyHttpQJKWeatherLocationHandleResult json --> %s\n", jsonstring);
@@ -759,8 +752,8 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	pMessageSendTag->Tag = weatherbuf;
 	pMessageSendTag->length = strlen(weatherbuf);
 
-	int ret = ntyClassifyMessageType(pMessageSendTag->fromId, pMessageSendTag->toId, pMessageSendTag->Tag, pMessageSendTag->length);
-	//int ret = ntyHttpQJKWeather(pMessageSendTag);
+	//int ret = ntyClassifyMessageType(pMessageSendTag->fromId, pMessageSendTag->toId, pMessageSendTag->Tag, pMessageSendTag->length);
+	int ret = ntyHttpQJKWeather(pMessageSendTag);
 	ntylog("result : %d\n", ret);
 	free(pAMap);
 	ntylog("==================end ntyHttpQJKWeatherLocationHandleResult ============================\n");

@@ -69,6 +69,7 @@
 #define NTY_IPPORT_LENGTH				2
 #define NTY_CRCNUM_LENGTH				4
 
+#define NTY_JSON_COUNT_LENGTH			2
 #define NTY_STATUS_LENGTH				2
 #define NTY_RESULT_LENGTH				4
 #define NTY_PROTO_MIN_LENGTH			16

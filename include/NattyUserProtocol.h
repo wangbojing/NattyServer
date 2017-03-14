@@ -47,6 +47,8 @@
 #ifndef __NATTY_USER_PROTOCOL_H__
 #define __NATTY_USER_PROTOCOL_H__
 
+#include <stdio.h>
+
 
 #define HTTP_QJK_BASE_URL		"http://app.quanjiakan.com"
 #define HTTP_GAODE_BASE_URL		"http://apilocate.amap.com"
@@ -132,6 +134,7 @@
 
 #define NATTY_USER_PROTOCOL_ICCID 			"ICCID"
 #define NATTY_USER_PROTOCOL_CODE 			"Code"
+#define NATTY_USER_PROTOCOL_MESSAGE 		"Message"
 #define NATTY_USER_PROTOCOL_STATUS 			"Status"
 
 
@@ -152,15 +155,6 @@
 #define NATTY_AMAP_PROTOCOL_LOCATION 		"location"
 
 
-#define NATTY_RESULT_CODE_SUCCESS 			"200"		//
-#define NATTY_RESULT_CODE_ERR_01 			"10001"		//
-#define NATTY_RESULT_CODE_ERR_02 			"10002"		//
-#define NATTY_RESULT_CODE_ERR_03 			"10003"		//
-
-
-
-
-#include <stdio.h>
 
 
 typedef struct _WIFIItem {
