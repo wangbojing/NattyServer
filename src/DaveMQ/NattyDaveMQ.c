@@ -59,7 +59,7 @@
 #include <jemalloc/jemalloc.h>
 
 
-static void ntyDaveMqPushWorker(void *arg);
+static void ntyDaveMqPullMessage(void *arg);
 extern int ntyThreadPoolPush(void *self, void *task);
 
 DaveQueue* ntyDaveQueueInitialize(DaveQueue *Queue) {
@@ -197,7 +197,7 @@ static void* ntyDeQueueThread(void *arg) {
 		node = ntyDaveDeQueue(Queue);
 		if (node != Queue->nil &&  node != NULL) {
 			ntylog(" ntyDeQueueThread --> ntyDaveDeQueue Node\n");
-			ntyDaveMqPushWorker(node->value);
+			ntyDaveMqPullMessage(node->value);
 			free(node);
 		}
 		usleep(10);
@@ -283,27 +283,51 @@ static void ntyDaveMqHandleMTKQuickLocation(Job *job) {
 	ntyFree(job);
 }
 
+/* add */
 
-static void ntyDaveMqPushWorker(void *arg) {
+static void ntyDaveMqHandleCallback(Job *job) {
+	VALUE_TYPE *tag = (VALUE_TYPE*)job->user_data;
+	
+	tag->cb(tag); //callback
+	
+	ntyFree(job);
+} 
+
+
+
+
+int ntyDaveMqEnQueue(void *Queue, void *arg) {
+	DaveQueueHandle * const * handle = Queue;
+
+	if (Queue && (*handle) && (*handle)->enqueue) {
+		(*handle)->enqueue(Queue, arg);
+		return 0;
+	}
+	ntylog("enqueue is not exist\n");
+	return -1;
+}
+#if 0
+int ntyDaveMqPushMessage(MESSAGE_TYPE type, C_DEVID fromId, C_DEVID toId, U8 *data, int length, DAVE_MESSAGE_CALLBACK cb) {
+	void *Queue = ntyDaveQueueInstance();
+	if (Queue == NULL) return -2;
+
+	return ntyDaveMqEnQueue(Queue, fromId, toId, type, data, length);
+}
+#endif
+
+static void ntyDaveMqPullMessage(void *arg) {
 	VALUE_TYPE *tag = arg;
-	ntylog(" ntyDaveMqPushWorker --> start \n");
+	ntylog(" ntyDaveMqPullMessage --> start \n");
 	void *worker = ntyDaveMqWorkerInstance();
 	Job *job = (Job*)malloc(sizeof(Job));
 	if (job == NULL) {
 		ntylog(" job == NULL");
 		return ;
 	}
-	ntylog(" ntyDaveMqPushWorker --> type:%d\n", tag->Type);
-	if (MSG_TYPE_QJK_FALLEN == tag->Type) {
-		job->job_function = ntyDaveMqHandleQJKFallen;
-		job->user_data = tag;
-		ntyThreadPoolPush(worker, job);
-	} else if (MSG_TYPE_GAODE_WIFI_CELL_API == tag->Type) {
-		job->job_function = ntyDaveMqHandleGaoWifiLocation;
-		job->user_data = tag;
-		ntyThreadPoolPush(worker, job);
-	} else if (MSG_TYPE_MTK_QUICKLOCATION == tag->Type) {
-		job->job_function = ntyDaveMqHandleMTKQuickLocation;
+	ntylog(" ntyDaveMqPullMessage --> type:%d\n", tag->Type);
+
+	if (MSG_TYPE_START <= tag->Type && MSG_TYPE_END >= tag->Type) {
+		job->job_function = ntyDaveMqHandleCallback;
 		job->user_data = tag;
 		ntyThreadPoolPush(worker, job);
 	} else {
@@ -311,108 +335,30 @@ static void ntyDaveMqPushWorker(void *arg) {
 		free(tag);
 		free(job);
 	}
-	
+
 }
 
-int ntyDaveMqEnQueue(void *Queue, C_DEVID fromId, C_DEVID toId, MESSAGE_TYPE type, U8 *data, int length) {
-	DaveQueueHandle * const * handle = Queue;
 
-	if (Queue && (*handle) && (*handle)->enqueue) {
-		int i = 0;
-		VALUE_TYPE *tag = (VALUE_TYPE*)malloc(sizeof(VALUE_TYPE));
-		memset(tag, 0, sizeof(VALUE_TYPE));
-#if 1 //Update URL have space key
-		for (i = 0;i < length;i ++) {
-			if (data[i] == ' ' || data[i] >= 0x7F || data[i] <= 0x20) {
-				data[i] = '_';
-			}
-		}
-		if (type == MSG_TYPE_GAODE_WIFI_CELL_API) {
-			int matchs[3] = {0}, n = 0;
-			const char *pattern = "accesstype=1";
-			int len = strlen(pattern);
 
-			n = ntyKMP(data, length, pattern, len, matchs);
-			if (matchs[0] != 0) { //wifi location
-				tag->u8LocationType = 1;
-			} else { //cell location
-				tag->u8LocationType = 3;
-			}
-		}
-#endif
-		ntylog(" ntyDaveMqEnQueue --> length:%d, data.length:%ld\n", length, strlen(data));
-#if ENABLE_DAVE_MSGQUEUE_MALLOC
-		tag->Tag = (U8*)malloc((length+1) * sizeof(U8));
-		memset(tag->Tag, 0, (length+1));
-#endif
-		memcpy(tag->Tag, data, length);
-
-		tag->length = length;
-		tag->Type = type;
-		#if 1
-		tag->fromId = fromId;
-		tag->toId = toId;
-		#else
-		memcpy(&tag->fromId, &fromId, sizeof(C_DEVID));
-		memcpy(&tag->toId, &toId, sizeof(C_DEVID));
-		#endif
-		ntylog(" ntyDaveMqEnQueue --> fromId:%lld, toId:%lld, length:%d, type:%d\n", fromId, toId, length, type);
-		
-		(*handle)->enqueue(Queue, tag);
-
-		return 0;
-	}
-	ntylog("enqueue is not exist\n");
-	return -1;
-}
-
-int ntyPushDaveMessageQueue(MESSAGE_TYPE type, C_DEVID fromId, C_DEVID toId, U8 *data, int length) {
+int ntyDaveMqPushMessage(VALUE_TYPE *tag) {
 	void *Queue = ntyDaveQueueInstance();
 	if (Queue == NULL) return -2;
 
-	return ntyDaveMqEnQueue(Queue, fromId, toId, type, data, length);
-}
+	int length = tag->length;
 
+	VALUE_TYPE *pTag = (VALUE_TYPE*)malloc(sizeof(VALUE_TYPE));
+	memset(tag, 0, sizeof(VALUE_TYPE));
 
-int ntyClassifyMessageType(C_DEVID fromId, C_DEVID toId, U8 *data, int length) {
-	int i = 0, n = 0;
+	pTag->Tag = (U8*)malloc(length * sizeof(U8));
+	memset(pTag->Tag, 0, length);
 
-	ntylog("ntyClassifyMessageType --> fromId:%lld, toId:%lld, length:%d\n", fromId, toId, length);
-	if (length <= 4) return -5;
-	
-#if 0
-	for (i = 5;i < length;i ++) {
-		if (data[i] == ' ') {
-			data[i] = '\0';
-			break;
-		}
-	}
-#else
-	const char *http_key = "HTTP/1.1";
-	int pattern_len = strlen(http_key);
-	U32 pattern_index[5] = {0};
-	n = ntyKMP(data, length, http_key, pattern_len, pattern_index);
-	if (n != 0) {
-		data[pattern_index[0]-1] = '\0';
-		length = pattern_index[0] - 1;
-	}
-#endif
-	ntylog("fromId:%lld, toId:%lld, length:%d\n", fromId, toId, length);
-	if (0 == strncmp(NTY_HTTP_GET_HANDLE_STRING, data, 3)) {
-		if (0 == strncmp(data+4, HTTP_QJK_BASE_URL, strlen(HTTP_QJK_BASE_URL))) {
-			return ntyPushDaveMessageQueue(MSG_TYPE_QJK_FALLEN, fromId, toId, data+4, length-4);
-		} else if (0 == strncmp(data+4, HTTP_GAODE_BASE_URL, strlen(HTTP_GAODE_BASE_URL))) {
-			return ntyPushDaveMessageQueue(MSG_TYPE_GAODE_WIFI_CELL_API, fromId, toId, data+4, length-4);
-		}
-	} else if (0 == strncmp(NTY_HTTP_POST_HANDLE_STRING, data, 4)) {
+	memcpy(pTag->Tag, tag->Tag, length);		
+	pTag->length = length;
+	pTag->Type = tag->Type;
+	pTag->fromId = tag->fromId;
+	pTag->toId = tag->toId;
 
-	} else if (0 == strncmp(NTY_HTTP_RET_HANDLE_STRING, data, 3)) {
-		if (0 == strncmp(data+4, HTTP_GAODE_BASE_URL, strlen(HTTP_GAODE_BASE_URL))) {
-			return ntyPushDaveMessageQueue(MSG_TYPE_MTK_QUICKLOCATION, fromId, toId, data+4, length-4);
-		}
-	} else {
-		return -4;
-	}
+	return ntyDaveMqEnQueue(Queue, pTag);
 }
 
 

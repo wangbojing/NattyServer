@@ -57,6 +57,7 @@
 #define NTY_HTTP_POST_HANDLE_STRING			"POST"
 #define NTY_HTTP_RET_HANDLE_STRING			"RET"
 
+typedef int (*DAVE_MESSAGE_CALLBACK)(void *arg);
 
 
 typedef enum {
@@ -77,6 +78,7 @@ typedef struct _MESSAGETAG {
 	int length;
 	C_DEVID fromId;
 	C_DEVID toId;
+	DAVE_MESSAGE_CALLBACK cb;
 	U8 u8LocationType;
 } MessageTag;
 
@@ -106,10 +108,14 @@ typedef struct _DaveQueueHandle {
 } DaveQueueHandle;
 
 void *ntyDaveMqWorkerInstance(void);
-int ntyClassifyMessageType(C_DEVID fromId, C_DEVID toId, U8 *data, int length);
+//int ntyClassifyMessageType(C_DEVID fromId, C_DEVID toId, U8 *data, int length);
 
 void ntyDaveMqStart(void);
 void ntyDaveMqWorkerInit(void);
+
+
+
+int ntyDaveMqPushMessage(VALUE_TYPE *tag);
 
 
 

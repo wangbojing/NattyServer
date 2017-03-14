@@ -456,6 +456,8 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_HEARTBEAT_REQ) {
 		Client *pClient = NULL;
 		ntyAddClientHeap(client, (RECORDTYPE *)&pClient);
+
+		ntySendHeartBeatResult(client->devId);
 		
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);

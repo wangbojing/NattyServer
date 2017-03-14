@@ -833,6 +833,26 @@ int ntySendWeatherPushResult(C_DEVID fromId, U8 *json, int length) {
 	return ntySendBuffer(client, buffer, bLength);
 }
 
+int ntySendHeartBeatResult(C_DEVID fromId) {
+	int length = 0;
+	U8 buffer[NTY_HEARTBEAT_ACK_LENGTH] = {0};
+	
+	buffer[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
+	buffer[NTY_PROTO_DEVTYPE_IDX] = NTY_PROTO_CLIENT_DEFAULT;
+	buffer[NTY_PROTO_PROTOTYPE_IDX] = PROTO_PUSH;
+	buffer[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_WEATHER_PUSH;
+
+	buffer[NTY_PROTO_HEARTBEAT_ACK_STATUS_IDX] = 200;
+
+	length = NTY_PROTO_HEARTBEAT_ACK_CRC_IDX + sizeof(U32);
+
+	void *map = ntyMapInstance();
+	ClientSocket *client = ntyMapSearch(map, fromId);
+	
+	return ntySendBuffer(client, buffer, length);
+}
+
+
 
 
 
