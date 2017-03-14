@@ -47,6 +47,7 @@
 #define __DAVE_MQ_H__
 
 #include "NattyAbstractClass.h"
+#include "NattyUserProtocol.h"
 #include "NattyConfig.h"
 
 

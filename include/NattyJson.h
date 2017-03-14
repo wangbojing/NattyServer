@@ -56,7 +56,8 @@
 #define HTTP_GAODE_BASE_URL		"http://apilocate.amap.com"
 
 
-//void ntyJsonLocationType(const char *locationType, U8 *u8LocationType);
+void ntyJsonSetLocationType(const char *locationType, int *u8LocationType);
+void ntyJsonGetLocationType(const int u8LocationType, char* locationType);
 
 
 WeatherAck* ntyInitWeather();
@@ -83,7 +84,6 @@ const char * ntyJsonWatchCategory(JSON_Value *json);
 const char * ntyJsonAction(JSON_Value *json);
 
 void ntyJsonAMap(JSON_Value *json, AMap *pAMap);
-
 
 void ntyJsonWIFI(JSON_Value *json, WIFIReq *pWIFIReq);
 

@@ -622,12 +622,21 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 		return -1;
 	}
 
+	ntydbg("==1=================================================================\n");
+	
 	LocationAck *pLocationAck = malloc(sizeof(LocationAck));
 	pLocationAck->results.IMEI = ntyJsonDeviceIMEI(json);
 	pLocationAck->results.category = ntyJsonAppCategory(json);
-	pLocationAck->results.type = pAMap->result.type;
+	if (pAMap->result.type != NULL) {
+		int nLocationType = atoi(pAMap->result.type);
+		char *type = NULL;
+		ntyJsonGetLocationType(nLocationType, type);
+		pLocationAck->results.type = type;
+	}
 	pLocationAck->results.location = pAMap->result.location;
 	pLocationAck->results.radius = pAMap->result.radius;
+
+	ntydbg("==2=================================================================\n");
 	
 	char *jsonresult = ntyJsonWriteLocation(pLocationAck);
 	free(pAMap);
@@ -709,13 +718,16 @@ int ntyHttpQJKLocation(void *arg) {
 
 
 static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
-	ntylog("ntyHttpQJKWeatherLocationHandleResult --> length:%ld\n", size*nmemb);
-	ntylog("buffer:%s, %ld\n", (char*)buffer, size*nmemb);
-	ntylog("stream:%s\n", (char*)stream);
-
-	const char *json = buffer;
+	ntylog("==================begin ntyHttpQJKWeatherLocationHandleResult ==========================\n");
+	ntydbg("ntyHttpQJKWeatherLocationHandleResult --> length:%ld\n", size*nmemb);
+	MessageTag *pMessageTag = (MessageTag *)stream;
+	U8 *jsonstring = buffer;
+	ntydbg("ntyHttpQJKWeatherLocationHandleResult json --> %s\n", jsonstring);
+	ntydbg("ntyHttpQJKWeatherLocationHandleResult url --> %s\n", pMessageTag->Tag);
+	
+	JSON_Value *json = ntyMallocJsonValue(jsonstring);
 	AMap *pAMap = (AMap*)malloc(sizeof(AMap));
-	//ntyJsonAMap(json, pAMap);
+	ntyJsonAMap(json, pAMap);
 	if (strcmp(pAMap->status, "1") != 0) {
 		return -1;
 	}
@@ -734,21 +746,32 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	strncat(latlng, lat, (size_t)strlen(lat));
 	strncat(latlng, colon, (size_t)strlen(colon));
 	strncat(latlng, lng, (size_t)strlen(lng));
-	
-	char *url = "https://api.thinkpage.cn/v3/weather/daily.json?key=0pyd8z7jouficcil&location=%s&language=zh-Hans&unit=c&start=0&days=5";
-	char u8UrlBuffer[230] = {0};
-	sprintf(u8UrlBuffer, url, latlng);
-	int result = ntyHttpQJKWeather(u8UrlBuffer);
-	ntylog("result : %d\n", result);
-	free(pAMap);
 
-	return result;
+
+	U8 weatherbuf[500] = {0};
+	sprintf(weatherbuf, "%s/v3/weather/daily.json?key=%s&location=%s&language=zh-Hans&unit=c&start=0&days=3", 
+		HTTP_WEATHER_BASE_URL, HTTP_WEATHER_KEY, latlng);
+	ntydbg(" weatherbuf --> %s\n", weatherbuf);
+
+	MessageTag *pMessageSendTag = malloc(sizeof(MessageTag));
+	pMessageSendTag->fromId = pMessageTag->fromId;
+	pMessageSendTag->toId = pMessageTag->toId;
+	pMessageSendTag->Tag = weatherbuf;
+	pMessageSendTag->length = strlen(weatherbuf);
+
+	int ret = ntyClassifyMessageType(pMessageSendTag->fromId, pMessageSendTag->toId, pMessageSendTag->Tag, pMessageSendTag->length);
+	//int ret = ntyHttpQJKWeather(pMessageSendTag);
+	ntylog("result : %d\n", ret);
+	free(pAMap);
+	ntylog("==================end ntyHttpQJKWeatherLocationHandleResult ============================\n");
+	return ret;
 }
 
 int ntyHttpQJKWeatherLocation(void *arg) {
 	CURL *curl;	
 	CURLcode res;	
-	U8 *tag = arg;
+	MessageTag *pMessageTag = (MessageTag *)arg;
+	U8 *tag = pMessageTag->Tag;
 #if 0
 	CURLcode return_code;
 	return_code = curl_global_init(CURL_GLOBAL_ALL);
@@ -771,7 +794,7 @@ int ntyHttpQJKWeatherLocation(void *arg) {
 	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
 #endif
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ntyHttpQJKWeatherLocationHandleResult); 
-	//curl_easy_setopt(curl, CURLOPT_WRITEDATA, tag); 
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, arg); 
 
 	res = curl_easy_perform(curl);	
 	if (res != CURLE_OK)	{		
@@ -802,9 +825,13 @@ int ntyHttpQJKWeatherLocation(void *arg) {
 
 
 static size_t ntyHttpQJKWeatherHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
-	ntylog("ntyHttpQJKWeatherHandleResult --> length:%ld\n", size*nmemb);
-	ntylog("buffer:%s, %ld\n", (char*)buffer, size*nmemb);
-	ntylog("stream:%s\n", (char*)stream);
+	ntylog("==================begin ntyHttpQJKWeatherHandleResult ==========================\n");
+	ntydbg("ntyHttpQJKWeatherHandleResult --> length:%ld\n", size*nmemb);
+	MessageTag *pMessageTag = (MessageTag *)stream;
+	U8 *jsonstring = buffer;
+	ntydbg("ntyHttpQJKWeatherHandleResult json --> %s\n", jsonstring);
+	ntydbg("ntyHttpQJKWeatherHandleResult url --> %s\n", pMessageTag->Tag);
+	
 
 	//ntySendWeatherPushResult(C_DEVID fromId,U8 * json,int length);
 	
@@ -815,7 +842,8 @@ static size_t ntyHttpQJKWeatherHandleResult(void* buffer, size_t size, size_t nm
 int ntyHttpQJKWeather(void *arg) {
 	CURL *curl;	
 	CURLcode res;	
-	U8 *tag = arg;
+	MessageTag *pMessageTag = (MessageTag *)arg;
+	U8 *tag = pMessageTag->Tag;
 #if 0
 	CURLcode return_code;
 	return_code = curl_global_init(CURL_GLOBAL_ALL);
@@ -838,7 +866,7 @@ int ntyHttpQJKWeather(void *arg) {
 	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
 #endif
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ntyHttpQJKWeatherHandleResult); 
-	//curl_easy_setopt(curl, CURLOPT_WRITEDATA, tag); 
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, arg); 
 
 	res = curl_easy_perform(curl);	
 	if (res != CURLE_OK)	{		

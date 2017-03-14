@@ -57,6 +57,23 @@ typedef unsigned short U16;
 #endif
 
 
+void ntyJsonSetLocationType(const char *locationType, int *u8LocationType) {
+	if (strcmp(locationType, NATTY_USER_PROTOCOL_WIFI) == 0) {
+		*u8LocationType = 1;
+	} else if (strcmp(locationType, NATTY_USER_PROTOCOL_LAB) == 0) {
+		*u8LocationType = 2;
+	}
+}
+
+void ntyJsonGetLocationType(const int u8LocationType, char* locationType) {
+	if (u8LocationType == 1) {
+		locationType = NATTY_USER_PROTOCOL_WIFI;
+	} else if (u8LocationType == 2) {
+		locationType = NATTY_USER_PROTOCOL_LAB;
+	}
+}
+
+
 WeatherAck* ntyInitWeather() {
 	WeatherAck *pWeatherAck = malloc(sizeof(WeatherAck));
 	return pWeatherAck;
@@ -262,22 +279,22 @@ void ntyJsonAMap(JSON_Value *json, AMap *pAMap) {
 	}
 
 	JSON_Object *root_object = json_value_get_object(json);
-	pAMap->status = json_object_get_string(root_object, NATTY_USER_PROTOCOL_STATUS);
-	pAMap->info = json_object_get_string(root_object, NATTY_USER_PROTOCOL_INFO);
-	pAMap->infocode = json_object_get_string(root_object, NATTY_USER_PROTOCOL_INFOCODE);
+	pAMap->status = json_object_get_string(root_object, NATTY_AMAP_PROTOCOL_STATUS);
+	pAMap->info = json_object_get_string(root_object, NATTY_AMAP_PROTOCOL_INFO);
+	pAMap->infocode = json_object_get_string(root_object, NATTY_AMAP_PROTOCOL_INFOCODE);
 	
-	JSON_Object *result_object = json_object_get_object(root_object, NATTY_USER_PROTOCOL_RESULT);
-	pAMap->result.type = json_object_get_string(result_object, NATTY_USER_PROTOCOL_TYPE);
-	pAMap->result.radius = json_object_get_string(result_object, NATTY_USER_PROTOCOL_RADIUS);
-	pAMap->result.location = json_object_get_string(result_object, NATTY_USER_PROTOCOL_LOCATION);
-	pAMap->result.desc = json_object_get_string(result_object, NATTY_USER_PROTOCOL_DESC);
-	pAMap->result.country = json_object_get_string(result_object, NATTY_USER_PROTOCOL_COUNTRY);
-	pAMap->result.city = json_object_get_string(result_object, NATTY_USER_PROTOCOL_CITY);
-	pAMap->result.citycode = json_object_get_string(result_object, NATTY_USER_PROTOCOL_CITYCODE);
-	pAMap->result.adcode= json_object_get_string(result_object, NATTY_USER_PROTOCOL_ADCODE);
-	pAMap->result.road = json_object_get_string(result_object, NATTY_USER_PROTOCOL_ROAD);
-	pAMap->result.street = json_object_get_string(result_object, NATTY_USER_PROTOCOL_STREET);
-	pAMap->result.poi = json_object_get_string(result_object, NATTY_USER_PROTOCOL_POI);
+	JSON_Object *result_object = json_object_get_object(root_object, NATTY_AMAP_PROTOCOL_RESULT);
+	pAMap->result.type = json_object_get_string(result_object, NATTY_AMAP_PROTOCOL_TYPE);
+	pAMap->result.radius = json_object_get_string(result_object, NATTY_AMAP_PROTOCOL_RADIUS);
+	pAMap->result.location = json_object_get_string(result_object, NATTY_AMAP_PROTOCOL_LOCATION);
+	pAMap->result.desc = json_object_get_string(result_object, NATTY_AMAP_PROTOCOL_DESC);
+	pAMap->result.country = json_object_get_string(result_object, NATTY_AMAP_PROTOCOL_COUNTRY);
+	pAMap->result.city = json_object_get_string(result_object, NATTY_AMAP_PROTOCOL_CITY);
+	pAMap->result.citycode = json_object_get_string(result_object, NATTY_AMAP_PROTOCOL_CITYCODE);
+	pAMap->result.adcode= json_object_get_string(result_object, NATTY_AMAP_PROTOCOL_ADCODE);
+	pAMap->result.road = json_object_get_string(result_object, NATTY_AMAP_PROTOCOL_ROAD);
+	pAMap->result.street = json_object_get_string(result_object, NATTY_AMAP_PROTOCOL_STREET);
+	pAMap->result.poi = json_object_get_string(result_object, NATTY_AMAP_PROTOCOL_POI);
 	
 	ntydbg("status:%s,  info:%s,  infocode:%s,  location:%s\n", pAMap->status, pAMap->info, pAMap->infocode, pAMap->result.location);
 }
@@ -387,8 +404,6 @@ void ntyJsonTurn(JSON_Value *json, TurnReq *pTurnReq) {
 		return;
 	}
 
-	ntydbg("====================begin ntyJsonTurn ==========================\n");
-	
 	JSON_Object *root_object = json_value_get_object(json);
 	pTurnReq->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
 	pTurnReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
@@ -397,9 +412,9 @@ void ntyJsonTurn(JSON_Value *json, TurnReq *pTurnReq) {
 	JSON_Object *turn_object = json_object_get_object(root_object, NATTY_USER_PROTOCOL_TURN);
 	JSON_Object *on_object = json_object_get_object(turn_object, NATTY_USER_PROTOCOL_ON);
 	JSON_Object *off_object = json_object_get_object(turn_object, NATTY_USER_PROTOCOL_OFF);
+	pTurnReq->turn.status = json_object_get_string(turn_object, NATTY_USER_PROTOCOL_STATUS);
 	pTurnReq->turn.on.time = json_object_get_string(on_object, NATTY_USER_PROTOCOL_TIME);
 	pTurnReq->turn.off.time = json_object_get_string(off_object, NATTY_USER_PROTOCOL_TIME);
-	ntydbg("====================end   ntyJsonTurn ==========================\n");
 }
 
 
@@ -562,7 +577,7 @@ char * ntyJsonWriteCommon(CommonAck *pCommonAck) {
 	JSON_Object *schema_obj = json_value_get_object(schema);
 	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULT, json_value_init_object());
 	JSON_Object *result_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULT);
-	json_object_set_string(result_obj, NATTY_USER_PROTOCOL_STATUS, pCommonAck->result.status);
+	json_object_set_string(result_obj, NATTY_USER_PROTOCOL_CODE, pCommonAck->result.code);
 
 	char *jsonstring =  json_serialize_to_string(schema);
 	json_value_free(schema);
@@ -761,11 +776,21 @@ char * ntyJsonWriteRunTime(RunTimeAck *pRunTimeAck) {
 
 	json_object_set_value(results_obj, NATTY_USER_PROTOCOL_RUNTIME, json_value_init_object());
 	JSON_Object *runtime_obj = json_object_get_object(results_obj, NATTY_USER_PROTOCOL_RUNTIME);
-	json_object_set_string(runtime_obj, NATTY_USER_PROTOCOL_AUTOCONNECTION, pRunTimeAck->result.runtime.auto_connection);
-	json_object_set_string(runtime_obj, NATTY_USER_PROTOCOL_LOSSREPORT, pRunTimeAck->result.runtime.loss_report);
-	json_object_set_string(runtime_obj, NATTY_USER_PROTOCOL_LIGHTPANEL, pRunTimeAck->result.runtime.light_panel);
-	json_object_set_string(runtime_obj, NATTY_USER_PROTOCOL_WATCHBELL, pRunTimeAck->result.runtime.watch_bell);
-	json_object_set_string(runtime_obj, NATTY_USER_PROTOCOL_TAGETSTEP, pRunTimeAck->result.runtime.taget_step);
+	if (pRunTimeAck->result.runtime.auto_connection != NULL) {
+		json_object_set_string(runtime_obj, NATTY_USER_PROTOCOL_AUTOCONNECTION, pRunTimeAck->result.runtime.auto_connection);
+	}
+	if (pRunTimeAck->result.runtime.loss_report != NULL) {
+		json_object_set_string(runtime_obj, NATTY_USER_PROTOCOL_LOSSREPORT, pRunTimeAck->result.runtime.loss_report);
+	}
+	if (pRunTimeAck->result.runtime.light_panel != NULL) {
+		json_object_set_string(runtime_obj, NATTY_USER_PROTOCOL_LIGHTPANEL, pRunTimeAck->result.runtime.light_panel);
+	}
+	if (pRunTimeAck->result.runtime.watch_bell != NULL) {
+		json_object_set_string(runtime_obj, NATTY_USER_PROTOCOL_WATCHBELL, pRunTimeAck->result.runtime.watch_bell);
+	}
+	if (pRunTimeAck->result.runtime.taget_step != NULL) {
+		json_object_set_string(runtime_obj, NATTY_USER_PROTOCOL_TAGETSTEP, pRunTimeAck->result.runtime.taget_step);
+	}
 
 	char *jsonstring =  json_serialize_to_string(schema);
 	json_value_free(schema);
@@ -798,6 +823,7 @@ char * ntyJsonWriteSchedule(ScheduleAck *pScheduleAck) {
 		json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_TIME, pScheduleAck->results.pSchedule[i].time);
 		json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_DETAILS, pScheduleAck->results.pSchedule[i].details);
 	}
+	
 
 	char *jsonstring =  json_serialize_to_string(schema);
 	json_value_free(schema);

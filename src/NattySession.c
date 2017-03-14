@@ -574,7 +574,6 @@ int ntySendDataResult(C_DEVID fromId, U8 *json, int length, U16 status) {
 
 	void *map = ntyMapInstance();
 	ClientSocket *client = ntyMapSearch(map, fromId);
-	
 	return ntySendBuffer(client, buffer, bLength);
 	
 }
@@ -615,7 +614,7 @@ int ntySendCommonBroadCastIter(void *self, void *arg) {
 //gId stand for devid
 //selfId AppId
 int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int length) {
-	
+	ntydbg("===================begin  ntySendCommonBroadCastResult ===============================");
 	void *heap = ntyBHeapInstance();
 	NRecord *record = ntyBHeapSelect(heap, gId);
 

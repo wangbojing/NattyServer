@@ -247,7 +247,7 @@ int main() {
 		*/
 
 		//1. Config2¨´¡Á¡Â
-		char *json_str_config = "{\"IMEI\":\"355637052788650\",\"Action\":\"Get\",\"Category\":\"Config\"}";
+		//char *json_str_config = "{\"IMEI\":\"355637052788650\",\"Action\":\"Get\",\"Category\":\"Config\"}";
 		//char *json_str = "{\"IMEI\":\"355637052788650\",\"Category\":\"Schedule\",\"Action\":\"Add\",\"Schedule\":{\"Daily\":\"Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday\",\"Time\":\"18:00:00\",\"Details\":\"chifan\"}}";
 		//U16 json_len = (U16)strlen(json_str);
 		//tempBuf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
@@ -307,21 +307,30 @@ int main() {
 		//ntyCommonReqClient(g_devid, json_str, json_len);
 		//ntyDataRouteClient(g_devid,json_str,json_len);
 
+
+		//char *json_dataroute = "{\"IMEI\":\"352315052834187\",\"Action\":\"Get\",\"Category\":\"Config\"}";
+		//ntydbg("Request DataRoute : %s\n", json_dataroute);
+		//ntyDataRouteClient(g_devid,json_dataroute,strlen(json_dataroute));
+		//sleep(20);
 		
-		ntyDataRouteClient(g_devid,json_str_config,strlen(json_str_config));
-		ntydbg("============================\n");
-
-
-		ntyCommonReqClient(g_devid,json_str1, strlen(json_str1));
-
-		ntydbg("============================\n");
+		//break;
+		
+		//char *json_common = "{\"IMEI\":\"352315052834187\",\"Category\":\"Turn\",\"Turn\":{\"Status\":\"0\",\"On\":{\"Time\":\"08:00:00\"},\"Off\":{\"Time\":\"18:00:00\"}}}";
+		//ntyCommonReqClient(g_devid,json_common,strlen(json_common));
+		//sleep(20);
+		//break;
+		
+		char *json_location = "{\"IMEI\":\"135790246811220\",\"Category\":\"WIFI\",\"WIFI\":[{\"SSID\":\"TP-LINK_42ED@Q@(?p?\",\"MAC\":\"F4:83:CD:3A:42:ED\",\"V\":\"-37\"},{\"SSID\":\"EXT\",\"MAC\":\"04:95:E6:22:DA:48\",\"V\":\"-52\"}]}";
+		ntydbg("%s\n", json_location);
+		ntyLocationReqClient(g_devid, json_location, strlen(json_location));
 		sleep(20);
-		
-		ntydbg("%s\n", json_str);
-		ntyLocationReqClient(g_devid, json_str, strlen(json_str));
-		
-		//ntyWeatherReqClient(g_devid, json_str, json_len);
+
+		char *json_weather = "{\"IMEI\":\"355637052788650\",\"Category\":\"Weather\",\"Bts\":\"460,01,40977,2205409,-65\"}";
+		ntydbg("Request Weather : %s\n", json_weather);
+		ntyWeatherReqClient(g_devid, json_weather, strlen(json_weather));
 		sleep(20);
+
+		sleep(3000);
 #endif
 	}
 #endif

@@ -53,7 +53,7 @@ void ntyJsonRecvResult(C_DEVID devId, char *jsonresult);
 
 void ntyJsonBroadCastRecvResult(C_DEVID selfId, C_DEVID gId, char *jsonresult);
 
-void ntyJsonSuccessResult(C_DEVID devId);
+void ntyJsonResult(C_DEVID devId, const char * code);
 
 void ntyJsonEfenceAction(C_DEVID AppId, C_DEVID toId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
 

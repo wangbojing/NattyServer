@@ -48,6 +48,11 @@
 #define __NATTY_USER_PROTOCOL_H__
 
 
+#define HTTP_QJK_BASE_URL		"http://app.quanjiakan.com"
+#define HTTP_GAODE_BASE_URL		"http://apilocate.amap.com"
+#define HTTP_WEATHER_BASE_URL	"https://api.thinkpage.cn"
+#define HTTP_GAODE_KEY			"fb44f91d1a1df4d4b6356f43183a329f"
+#define HTTP_WEATHER_KEY		"0pyd8z7jouficcil"
 
 
 #define NATTY_USER_PROTOCOL_IMEI					"IMEI"
@@ -75,7 +80,7 @@
 #define NATTY_USER_PROTOCOL_V				"V"
 
 #define NATTY_USER_PROTOCOL_LAB				"LAB"
-#define NATTY_USER_PROTOCOL_BTS				"bts"
+#define NATTY_USER_PROTOCOL_BTS				"Bts"
 #define NATTY_USER_PROTOCOL_NEARBTS			"Nearbts"
 #define NATTY_USER_PROTOCOL_CELL			"Cell"
 #define NATTY_USER_PROTOCOL_SIGNAL			"Signal"
@@ -88,20 +93,8 @@
 #define NATTY_USER_PROTOCOL_RESULTS			"Results"
 #define NATTY_USER_PROTOCOL_RESULT			"Result"
 #define NATTY_USER_PROTOCOL_TYPE			"Type"
-#define NATTY_USER_PROTOCOL_RADIUS			"Tadius"
+#define NATTY_USER_PROTOCOL_RADIUS			"Radius"
 #define NATTY_USER_PROTOCOL_LOCATION		"Location"
-
-#define NATTY_USER_PROTOCOL_STATUS 			"Status"
-#define NATTY_USER_PROTOCOL_INFO 			"Info"
-#define NATTY_USER_PROTOCOL_INFOCODE 		"Infocode"
-#define NATTY_USER_PROTOCOL_DESC 			"Desc"
-#define NATTY_USER_PROTOCOL_COUNTRY 		"Country"
-#define NATTY_USER_PROTOCOL_CITY 			"City"
-#define NATTY_USER_PROTOCOL_CITYCODE 		"Citycode"
-#define NATTY_USER_PROTOCOL_ADCODE 			"Adcode"
-#define NATTY_USER_PROTOCOL_ROAD 			"Road"
-#define NATTY_USER_PROTOCOL_STREET 			"Street"
-#define NATTY_USER_PROTOCOL_POI 			"Poi"
 
 #define NATTY_USER_PROTOCOL_EFENCE			"Efence"
 #define NATTY_USER_PROTOCOL_NUM 			"Num"
@@ -137,8 +130,33 @@
 #define NATTY_USER_PROTOCOL_TELPHONE 		"Telphone"
 #define NATTY_USER_PROTOCOL_APP 			"App"
 
-
 #define NATTY_USER_PROTOCOL_ICCID 			"ICCID"
+#define NATTY_USER_PROTOCOL_CODE 			"Code"
+#define NATTY_USER_PROTOCOL_STATUS 			"Status"
+
+
+#define NATTY_AMAP_PROTOCOL_STATUS 			"status"
+#define NATTY_AMAP_PROTOCOL_INFO 			"info"
+#define NATTY_AMAP_PROTOCOL_INFOCODE 		"infocode"
+#define NATTY_AMAP_PROTOCOL_DESC 			"desc"
+#define NATTY_AMAP_PROTOCOL_COUNTRY 		"country"
+#define NATTY_AMAP_PROTOCOL_CITY 			"city"
+#define NATTY_AMAP_PROTOCOL_CITYCODE 		"citycode"
+#define NATTY_AMAP_PROTOCOL_ADCODE 			"adcode"
+#define NATTY_AMAP_PROTOCOL_ROAD 			"road"
+#define NATTY_AMAP_PROTOCOL_STREET 			"street"
+#define NATTY_AMAP_PROTOCOL_POI 			"poi"
+#define NATTY_AMAP_PROTOCOL_RESULT 			"result"
+#define NATTY_AMAP_PROTOCOL_TYPE 			"type"
+#define NATTY_AMAP_PROTOCOL_RADIUS 			"radius"
+#define NATTY_AMAP_PROTOCOL_LOCATION 		"location"
+
+
+#define NATTY_RESULT_CODE_SUCCESS 			"200"		//
+#define NATTY_RESULT_CODE_ERR_01 			"10001"		//
+#define NATTY_RESULT_CODE_ERR_02 			"10002"		//
+#define NATTY_RESULT_CODE_ERR_03 			"10003"		//
+
 
 
 
@@ -262,7 +280,8 @@ typedef struct _ICCIDAck {
 
 
 typedef struct _CommonResult {
-	const char *status;
+	const char *code;
+	const char *message;
 } CommonResult;
 
 typedef struct _CommonAck {

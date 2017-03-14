@@ -632,6 +632,9 @@ static const ProtocolFilter ntyVoiceAckFilter = {
 void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const Client *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_COMMON_REQ) {
+		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_COMMON_REQ_DEVID_IDX);
+		C_DEVID toId = *(C_DEVID*)(buffer+NTY_PROTO_COMMON_REQ_RECVID_IDX);
+		
 		U16 jsonlen = 0;
 		U8 *jsonstring = NULL;
 		memcpy(&jsonlen, buffer+24, sizeof(U16));
@@ -642,42 +645,45 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 			ntylog("JSON format error: %s\n", jsonstring);
 			return;
 		}
-	
-		C_DEVID AppId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_APPID_IDX);
-		ntydbg("ntyCommonReqPacketHandleRequest --> json : %s\n", jsonstring);
 
-		ntydbg("====================begin ntyCommonReqPacketHandleRequest action ==========================\n");
+		int ret = ntySendCommonReq(toId, buffer, length);
+		if (ret <= 0) {
+			ntyJsonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
+			return;
+		}
 		
+		ntydbg("====================begin ntyCommonReqPacketHandleRequest action ==========================\n");
+		ntydbg("ntyCommonReqPacketHandleRequest --> json : %s\n", jsonstring);
+				
 		JSON_Value *json = ntyMallocJsonValue(jsonstring);
 		const char *category = ntyJsonAppCategory(json);
 		if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_EFENCE) == 0) {
-			ntyJsonEfenceAction(AppId, client->devId, json, jsonstring, jsonlen);
+			ntyJsonEfenceAction(fromId, toId, json, jsonstring, jsonlen);
 		} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_RUNTIME) == 0) {
-			ntyJsonRunTimeAction(AppId, client->devId, json, jsonstring, jsonlen);
+			ntyJsonRunTimeAction(fromId, toId, json, jsonstring, jsonlen);
 		} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_TURN) == 0) {
-			ntyJsonTurnAction(AppId, client->devId, json, jsonstring, jsonlen);
+			ntyJsonTurnAction(fromId, toId, json, jsonstring, jsonlen);
 		} else if (strcmp(category, NATTY_USER_PROTOCOL_ICCID) == 0) {
-			ntyJsonICCIDAction(AppId, client->devId, json, jsonstring, jsonlen);
+			ntyJsonICCIDAction(fromId, toId, json, jsonstring, jsonlen);
 		} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_SCHEDULE) == 0) {
 			const char *action = ntyJsonAction(json);
 			if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_ADD) == 0) {
-				ntyJsonAddScheduleAction(AppId, client->devId, json, jsonstring, jsonlen);
+				ntyJsonAddScheduleAction(fromId, toId, json, jsonstring, jsonlen);
 			} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_DELETE) == 0) {
-				ntyJsonDelScheduleAction(AppId, client->devId, json, jsonstring, jsonlen);
+				ntyJsonDelScheduleAction(fromId, toId, json, jsonstring, jsonlen);
 			} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_UPDATE) == 0) {
-				ntyJsonUpdateScheduleAction(AppId, client->devId, json, jsonstring, jsonlen);
+				ntyJsonUpdateScheduleAction(fromId, toId, json, jsonstring, jsonlen);
 			} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_SCHEDULE) == 0) {
-				ntyJsonSelectScheduleAction(AppId, client->devId, json, jsonstring, jsonlen);
+				ntyJsonSelectScheduleAction(fromId, toId, json, jsonstring, jsonlen);
 			} else {
 				ntylog("Can't find action with: %s\n", action);
 			}
 		} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_TIMETABLES) == 0) {
-			ntyJsonTimeTablesAction(AppId, client->devId, json, jsonstring, jsonlen);
+			ntyJsonTimeTablesAction(fromId, toId, json, jsonstring, jsonlen);
 		} else {
 			ntylog("Can't find category with: %s\n", category);
 		}
 		ntyFreeJsonValue(json);
-
 
 		ntydbg("====================end ntyCommonReqPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
@@ -1124,16 +1130,24 @@ void ntyLocationAsyncReqPacketHandleRequest(const void *_self, unsigned char *bu
 		}
 
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_LOCATION_ASYNC_REQ_DEVID_IDX);
+		
 		ntydbg("ntyLocationAsyncReqPacketHandleRequest --> json : %s\n", jsonstring);
 
 		ntydbg("====================begin ntyLocationAsyncReqPacketHandleRequest action ==========================\n");
 		
 		JSON_Value *json = ntyMallocJsonValue(jsonstring);
+		if (json == NULL) {
+			ntydbg("=json is null====\n");
+		} else {
+			ntydbg("=json not  null====\n");
+		}
+		
 		const char *category = ntyJsonAppCategory(json);
+		ntydbg(" category %s\n", category);
 		if (strcmp(category, NATTY_USER_PROTOCOL_WIFI) == 0) {
-			ntyJsonLocationWIFIAction(fromId, client->devId, json, jsonstring, jsonlen);
+			ntyJsonLocationWIFIAction(fromId, fromId, json, jsonstring, jsonlen);
 		} else if (strcmp(category, NATTY_USER_PROTOCOL_LAB) == 0) {
-			ntyJsonLocationLabAction(fromId, client->devId, json, jsonstring, jsonlen);
+			ntyJsonLocationLabAction(fromId, fromId, json, jsonstring, jsonlen);
 		} else {
 			ntylog("Can't find category with: %s\n", category);
 		}
@@ -1213,17 +1227,15 @@ static const ProtocolFilter ntyWeatherAsyncReqFilter = {
  * send to server addr, proxy to send one client
  * 
  */
-
 void ntyRoutePacketHandleRequest(const void *_self, unsigned char *buffer, int length,const void* obj) {
 	const Client *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_DATA_ROUTE) {
+		C_DEVID fromId = *(C_DEVID*)(buffer+4);
+		C_DEVID toId = *(C_DEVID*)(buffer+16);
+
 		U16 jsonlen = 0;
 		char *jsonstring = NULL;
 		memcpy(&jsonlen, buffer+24, 2);
-
-		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_DATA_ROUTE_DEVID_IDX);
-		C_DEVID toId = *(C_DEVID*)(buffer+NTY_PROTO_DATA_ROUTE_RECVID_IDX);
-		
 		jsonstring = buffer+26;
 		buffer[length-4] = '\0';
 		U16 jsonlenTemp = strlen(jsonstring);
@@ -1231,8 +1243,29 @@ void ntyRoutePacketHandleRequest(const void *_self, unsigned char *buffer, int l
 			ntylog("JSON format error: %s\n", jsonstring);
 			return;
 		}
-		ntydbg("ntyRoutePacketHandleRequest --> json : %s\n", jsonstring);
+		
+		ntydbg("ntySendDataRoute -- > %s\n", jsonstring);
+		int len = ntySendDataRoute(toId, (U8*)jsonstring, jsonlen);
+		if (len>=0) {
+			ntydbg("ntySendDataRoute -- > OK \n");
+			ntyJsonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
+		}
+
+		/*
+		U16 jsonlen = 0;
+		char *jsonstring = NULL;
+		memcpy(&jsonlen, buffer+24, 2);
+		jsonstring = buffer+26;
+		buffer[length-4] = '\0';
+		U16 jsonlenTemp = strlen(jsonstring);
+		if (jsonlen != jsonlenTemp) {
+			ntylog("JSON format error: %s\n", jsonstring);
+			return;
+		}
+		
 		ntydbg("====================begin ntyRoutePacketHandleRequest action ==========================\n");
+		ntydbg("ntyRoutePacketHandleRequest --> json : %s\n", jsonstring);
+		ntydbg("======fromId :%lld,  toId :%lld\n", fromId, toId);
 		
 		JSON_Value *json = ntyMallocJsonValue(jsonstring);
 		const char *app_category = ntyJsonAppCategory(json);
@@ -1240,36 +1273,37 @@ void ntyRoutePacketHandleRequest(const void *_self, unsigned char *buffer, int l
 		if (app_jsonlen != 0) {
 			ntydbg("Category : %s\n", app_category);
 			if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_CONFIG) == 0) {
-				int len = ntySendDataRoute(toId, (U8*)buffer, strlen(buffer));
-				if (len>0) {
-					ntyJsonSuccessResult(fromId);
+				int len = ntySendDataRoute(toId, (U8*)buffer, length);
+				if (len>=0) {
+					ntydbg("ntySendDataRoute -- > OK\n");
+					ntyJsonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
 				}
 			} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_POWER) == 0) {				
-				int len = ntySendDataRoute(toId, (U8*)buffer, strlen(buffer));
-				if (len>0) {
-					ntyJsonSuccessResult(fromId);
+				int len = ntySendDataRoute(toId, (U8*)buffer, length);
+				if (len>=0) {
+					ntyJsonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
 				}
 			} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_SIGNAL) == 0) {
-				int len = ntySendDataRoute(toId, (U8*)buffer, strlen(buffer));
-				if (len>0) {
-					ntyJsonSuccessResult(fromId);
+				int len = ntySendDataRoute(toId, (U8*)buffer, length);
+				if (len>=0) {
+					ntyJsonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
 				}
 			} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_LOCATION) == 0) {
-				int len = ntySendDataRoute(toId, (U8*)buffer, strlen(buffer));
-				if (len>0) {
-					ntyJsonSuccessResult(fromId);
+				int len = ntySendDataRoute(toId, (U8*)buffer, length);
+				if (len>=0) {
+					ntyJsonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
 				}
 			} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_FARE) == 0) {
-				int len = ntySendDataRoute(toId, (U8*)buffer, strlen(buffer));
-				if (len>0) {
-					ntyJsonSuccessResult(fromId);
+				int len = ntySendDataRoute(toId, (U8*)buffer, length);
+				if (len>=0) {
+					ntyJsonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
 				}
 			} else {
 				ntylog("Can't find category with: %s\n", app_category);
 			}
 		}
-		
-		ntyFreeJsonValue(json);
+		//ntyFreeJsonValue(json);
+		*/
 		ntydbg("====================end ntyRoutePacketHandleRequest action ==========================\n");
 
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
