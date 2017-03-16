@@ -63,6 +63,7 @@ typedef int (*DAVE_MESSAGE_CALLBACK)(void *arg);
 typedef enum {
 	MSG_TYPE_START = 0,
 	MSG_TYPE_QJK_FALLEN = MSG_TYPE_START,
+	MSG_TYPE_WEATHER_API,
 	MSG_TYPE_GAODE_WIFI_CELL_API,
 	MSG_TYPE_MTK_QUICKLOCATION,
 	MSG_TYPE_END = MSG_TYPE_MTK_QUICKLOCATION,
@@ -78,8 +79,12 @@ typedef struct _MESSAGETAG {
 	int length;
 	C_DEVID fromId;
 	C_DEVID toId;
-	DAVE_MESSAGE_CALLBACK cb;
 	U8 u8LocationType;
+#if 0
+	DAVE_MESSAGE_CALLBACK cb;
+#else
+	int (*cb)(void *arg);
+#endif
 } MessageTag;
 
 //typedef int VALUE_TYPE;

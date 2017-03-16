@@ -60,7 +60,6 @@ int ntyHttpQJKWeather(void *arg);
 int ntyHttpCurlGlobalInit(void);
 
 
-
 #endif
 
 

@@ -614,7 +614,6 @@ int ntySendCommonBroadCastIter(void *self, void *arg) {
 //gId stand for devid
 //selfId AppId
 int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int length) {
-	ntydbg("===================begin  ntySendCommonBroadCastResult ===============================");
 	void *heap = ntyBHeapInstance();
 	NRecord *record = ntyBHeapSelect(heap, gId);
 
@@ -624,9 +623,13 @@ int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int leng
 	msg->length = length;
 	msg->group = pClient;
 	msg->self = &selfId;
-	
-	ntyVectorIterator(pClient->friends, ntySendCommonBroadCastIter, msg);
 
+	ntylog(" -->> ntySendCommonBroadCastResult --> %s \n", json);
+#if 0
+	ntyVectorIterator(pClient->friends, ntySendCommonBroadCastIter, msg);
+#else
+	ntyVectorIter(pClient->friends, ntySendCommonBroadCastIter, msg);
+#endif
 	free(msg);
 }
 
@@ -664,7 +667,8 @@ int ntySendVoiceBroadCastIter(void *self, void *arg) {
 
 //
 int ntySendCommonReq(C_DEVID toId, U8 *buffer, int length) {
-
+	ntylog(" ntySendCommonReq --> %s \n", buffer);
+	
 	void *map = ntyMapInstance();
 	ClientSocket *client = ntyMapSearch(map, toId);
 
@@ -690,9 +694,11 @@ int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int lengt
 	msg->length = length;
 	msg->group = pClient;
 	msg->self = &fromId;
-	
+#if 0
 	ntyVectorIterator(pClient->friends, ntySendVoiceBroadCastIter, msg);
-
+#else
+	ntyVectorIter(pClient->friends, ntySendVoiceBroadCastIter, msg);
+#endif
 	free(msg);
 }
 
@@ -739,9 +745,11 @@ int ntySendLocationBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int le
 	msg->length = length;
 	msg->group = pClient;
 	msg->self = &fromId;
-	
+#if 0
 	ntyVectorIterator(pClient->friends, ntySendLocationBroadCastIter, msg);
-
+#else
+	ntyVectorIter(pClient->friends, ntySendLocationBroadCastIter, msg);
+#endif
 	free(msg);
 }
 

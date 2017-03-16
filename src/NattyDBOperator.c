@@ -240,6 +240,7 @@ static int ntyQueryAppIDListSelect(void *self, C_DEVID did, void *container) {
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_APPIDLIST_SELECT_FORMAT, did);
 			while (ResultSet_next(r)) {
 				C_DEVID id = ResultSet_getLLong(r, 1);
+				ntylog("app: %lld\n", id);
 #if 1
 				ntyVectorAdd(container, &id, sizeof(C_DEVID));
 #else
@@ -662,7 +663,7 @@ int ntyExecuteAppLogoutUpdate(void *self, C_DEVID aid) {
 
 
 //NTY_DB_INSERT_EFENCE
-int ntyExecuteEfenceInsert(void *self, C_DEVID aid, C_DEVID did, int num, U8 *points, U8 *runtime) {
+int ntyExecuteEfenceInsert(void *self, C_DEVID aid, C_DEVID did, int index, int num, U8 *points, U8 *runtime, int *id) {
 	ConnectionPool *pool = self;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
@@ -676,9 +677,12 @@ int ntyExecuteEfenceInsert(void *self, C_DEVID aid, C_DEVID did, int num, U8 *po
 		} else {
 			U8 buffer[512];
 
-			sprintf(buffer, NTY_DB_INSERT_EFENCE, did, num, points, runtime);
+			sprintf(buffer, NTY_DB_INSERT_EFENCE, did, index, num, points, runtime);
 			ntylog(" sql : %s\n", buffer);
-			Connection_execute(con, NTY_DB_INSERT_EFENCE, did, num, points, runtime);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_EFENCE, did, index, num, points, runtime);
+			if (ResultSet_next(r)) {
+				*id = ResultSet_getInt(r, 1);
+			}
 		}
 	} 
 	CATCH(SQLException) 
@@ -696,6 +700,41 @@ int ntyExecuteEfenceInsert(void *self, C_DEVID aid, C_DEVID did, int num, U8 *po
 	return ret;
 }
 
+
+//NTY_DB_DELETE_EFENCE
+int ntyExecuteEfenceDelete(void *self, C_DEVID aid, C_DEVID did, int index) {
+	ConnectionPool *pool = self;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+	U8 u8PhNum[20] = {0};
+
+	TRY 
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			U8 buffer[512];
+
+			sprintf(buffer, NTY_DB_DELETE_EFENCE, did, index);
+			ntylog(" sql : %s\n", buffer);
+			Connection_execute(con, NTY_DB_DELETE_EFENCE, did, index);
+		}
+	} 
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
 
 
 //NTY_DB_UPDATE_RUNTIME
@@ -934,7 +973,7 @@ int ntyExecuteTurnUpdate(void *self, C_DEVID aid, C_DEVID did, U8 status, const 
 }
 
 //NTY_DB_INSERT_SCHEDULE
-int ntyExecuteScheduleInsert(void *self, C_DEVID aid, C_DEVID did, const char *daily, const char *time, const char *details) {
+int ntyExecuteScheduleInsert(void *self, C_DEVID aid, C_DEVID did, const char *daily, const char *time, const char *details, int *id) {
 	ConnectionPool *pool = self;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
@@ -948,7 +987,10 @@ int ntyExecuteScheduleInsert(void *self, C_DEVID aid, C_DEVID did, const char *d
 		} else {
 			U8 buffer[512];
 			ntylog(" sql : %s\n", buffer);
-			Connection_execute(con, NTY_DB_INSERT_SCHEDULE, did, daily, time, details);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_SCHEDULE, did, daily, time, details, *id);
+			if (ResultSet_next(r)) {
+				*id = ResultSet_getInt(r, 1);
+			}
 		}
 	} 
 	CATCH(SQLException) 
@@ -1280,9 +1322,14 @@ int ntyExecuteAppLogoutUpdateHandle(C_DEVID aid) {
 	void *pool = ntyConnectionPoolInstance();
 	return ntyExecuteAppLogoutUpdate(pool, aid);
 }
-int ntyExecuteEfenceInsertHandle(C_DEVID aid, C_DEVID did, int num, U8 *points, U8 *runtime) {
+int ntyExecuteEfenceInsertHandle(C_DEVID aid, C_DEVID did, int index, int num, U8 *points, U8 *runtime, int *id) {
 	void *pool = ntyConnectionPoolInstance();
-	return ntyExecuteEfenceInsert(pool, aid, did, num, points, runtime);
+	return ntyExecuteEfenceInsert(pool, aid, did, index, num, points, runtime, id);
+}
+
+int ntyExecuteEfenceDeleteHandle(C_DEVID aid, C_DEVID did, int index) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteEfenceDelete(pool, aid, did, index);
 }
 
 int ntyExecuteRuntimeUpdateHandle(C_DEVID aid, C_DEVID did, int auto_conn, U8 loss_report, U8 light_panel, const char *bell, int target_step) {
@@ -1320,9 +1367,9 @@ int ntyExecuteTurnUpdateHandle(C_DEVID aid, C_DEVID did, U8 status, const char *
 	return ntyExecuteTurnUpdate(pool, aid, did, status, ontime, offtime);
 }
 
-int ntyExecuteScheduleInsertHandle(C_DEVID aid, C_DEVID did, const char *daily, const char *time, const char *details) {
+int ntyExecuteScheduleInsertHandle(C_DEVID aid, C_DEVID did, const char *daily, const char *time, const char *details, int *id) {
 	void *pool = ntyConnectionPoolInstance();
-	return ntyExecuteScheduleInsert(pool, aid, did, daily, time, details);
+	return ntyExecuteScheduleInsert(pool, aid, did, daily, time, details, id);
 }
 
 int ntyExecuteScheduleDeleteHandle(C_DEVID aid, C_DEVID did, int id) {

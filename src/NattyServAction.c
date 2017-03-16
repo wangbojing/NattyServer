@@ -44,6 +44,7 @@
 #include "NattyServAction.h"
 #include "NattyDaveMQ.h"
 #include "NattyMessage.h"
+#include "NattyHttpCurl.h"
 
 
 #include <string.h>
@@ -58,17 +59,34 @@ void ntyJsonBroadCastRecvResult(C_DEVID selfId, C_DEVID gId, char *jsonresult) {
 	ntySendCommonBroadCastResult(selfId, gId, (U8*)jsonresult, jsonlen);
 }
 
-void ntyJsonResult(C_DEVID devId, const char * code) {
+void ntyJsonCommonResult(C_DEVID devId, const char * code) {
 	CommonAck *pCommonAck = (CommonAck*)malloc(sizeof(CommonAck));
 	pCommonAck->result.code = code;
 	pCommonAck->result.message = ntyCommonResultMessage(pCommonAck->result.code);
 
 	char *jsonresult = ntyJsonWriteCommon(pCommonAck);
-	ntylog("ntyJsonSuccessResult-> %lld, %s  %d\n", devId, jsonresult, (int)strlen(jsonresult));
+	ntylog("ntyJsonCommonResult %s -> %lld, %s  %d\n", code, devId, jsonresult, (int)strlen(jsonresult));
 	ntySendDataResult(devId, (U8*)jsonresult, strlen(jsonresult), 200);
 	ntyJsonFree(jsonresult);
 	free(pCommonAck);
 }
+
+void ntyJsonCommonExtendResult(C_DEVID devId, const char * code, int id) {
+	char ids[20] = {0};
+	CommonExtendAck *pCommonExtendAck = (CommonExtendAck*)malloc(sizeof(CommonExtendAck));
+	pCommonExtendAck->id = ids;
+	sprintf(ids, "%d", id);
+	pCommonExtendAck->result.code = code;
+	pCommonExtendAck->result.message = ntyCommonResultMessage(pCommonExtendAck->result.code);
+	char *jsonresult = ntyJsonWriteCommonExtend(pCommonExtendAck);
+	ntylog("ntyJsonCommonExtendResult %s -> %d %lld, %s  %d\n", code, id, devId, jsonresult, (int)strlen(jsonresult));
+	ntySendDataResult(devId, (U8*)jsonresult, strlen(jsonresult), 200);
+	ntyJsonFree(jsonresult);
+	free(pCommonExtendAck);
+}
+
+
+
 
 /*
  * amap WIFI position
@@ -112,7 +130,7 @@ void ntyJsonLocationWIFIAction(C_DEVID fromId, C_DEVID toId, JSON_Value *json, U
 		ntylog(" ntyHttpQJKLocation --> Http Exception\n");
 		ret = 4;
 	} else if (ret > 0) {
-		ntyJsonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
+		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
 	}
 	
 	ntyJsonWIFIItemRelease(pWIFIReq->pWIFI);
@@ -166,7 +184,7 @@ void ntyJsonLocationLabAction(C_DEVID fromId, C_DEVID toId, JSON_Value *json, U8
 		ntylog(" ntyHttpQJKLocation --> Http Exception\n");
 		ret = 4;
 	} else if (ret > 0) {
-		ntyJsonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
+		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
 	}
 
 	ntyJsonLABItemRelease(pLABReq->lab.pNearbts);
@@ -175,40 +193,43 @@ void ntyJsonLocationLabAction(C_DEVID fromId, C_DEVID toId, JSON_Value *json, U8
 }
 
 void ntyJsonWeatherAction(C_DEVID fromId, C_DEVID toId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
-	WeatherReq *pWeatherReq = (WeatherReq*)malloc(sizeof(WeatherReq));
-	ntyJsonWeather(json, pWeatherReq);
+	WeatherLocationReq *pWeatherLocationReq = (WeatherLocationReq*)malloc(sizeof(WeatherLocationReq));
+	ntyJsonWeatherLocation(json, pWeatherLocationReq);
 
 	U8 weatherbuf[500] = {0};
 	sprintf(weatherbuf, "%s/position?accesstype=0&imei=%s&cdma=0&bts=%s&output=json&key=%s", 
-		HTTP_GAODE_BASE_URL, pWeatherReq->IMEI, pWeatherReq->bts, HTTP_GAODE_KEY);
+		HTTP_GAODE_BASE_URL, pWeatherLocationReq->IMEI, pWeatherLocationReq->bts, HTTP_GAODE_KEY);
 	ntydbg(" weatherbuf --> %s\n", weatherbuf);
 
 	MessageTag *pMessageTag = malloc(sizeof(MessageTag));
+	pMessageTag->Type = MSG_TYPE_WEATHER_API;
 	pMessageTag->fromId = fromId;
 	pMessageTag->toId = toId;
 	pMessageTag->Tag = weatherbuf;
 	pMessageTag->length = strlen(weatherbuf);
-	
-	int ret = ntyHttpQJKWeatherLocation(pMessageTag);
+	pMessageTag->cb = ntyHttpQJKWeatherLocation;
+
+	int ret = ntyDaveMqPushMessage(pMessageTag);
+	//int ret = ntyHttpQJKWeatherLocation(pMessageTag);
 	if (ret == -1) {
 		ntylog(" ntyHttpQJKWeatherLocation --> Http Exception\n");
 		ret = 4;
 	} else if (ret >= 0) {
-		ntyJsonResult(toId, NATTY_RESULT_CODE_SUCCESS);
+		ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
 	}
 
-	free(pWeatherReq);
+	free(pWeatherLocationReq);
 }
 
-void ntyJsonEfenceAction(C_DEVID AppId, C_DEVID toId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
-	EfenceReq *pEfenceReq = (EfenceReq*)malloc(sizeof(EfenceReq));
-	ntyJsonEfence(json, pEfenceReq);
+void ntyJsonAddEfenceAction(C_DEVID AppId, C_DEVID toId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
+	AddEfenceReq *pAddEfenceReq = (AddEfenceReq*)malloc(sizeof(AddEfenceReq));
+	ntyJsonAddEfence(json, pAddEfenceReq);
 	C_DEVID devId = toId;
 
 	U8 points[200] = {0};
 	size_t i;
-	for (i=0; i<pEfenceReq->efence.size; i++) {
-		strcat(points, pEfenceReq->efence.pPoints[i].point);
+	for (i=0; i<pAddEfenceReq->efence.size; i++) {
+		strcat(points, pAddEfenceReq->efence.pPoints[i].point);
 		strcat(points, ";");
 	}
 	size_t points_len = strlen(points);
@@ -222,24 +243,56 @@ void ntyJsonEfenceAction(C_DEVID AppId, C_DEVID toId, JSON_Value *json, U8 *json
 	p = localtime(&timep);
 	U8 runtime[50] = {0};
 	sprintf(runtime, "%04d/%02d/%02d %02d:%02d:%02d", 1900+p->tm_year, 1+p->tm_mon, p->tm_hour, p->tm_hour, p->tm_min, p->tm_sec);
-	
-	int ret = ntyExecuteEfenceInsertHandle(AppId, devId, pEfenceReq->efence.size, points, runtime);
+
+	int id = 0;
+	int ret = ntyExecuteEfenceInsertHandle(AppId, devId, pAddEfenceReq->index, pAddEfenceReq->efence.size, points, runtime, &id);
 	if (ret == -1) {
 		ntylog(" ntyJsonEfenceAction --> DB Exception\n");
 		ret = 4;
-	} else if (ret == 0) {
-		ntyJsonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
+	} else if (ret >= 0) {
+		ret = ntySendCommonReq(devId, jsonstring, strlen(jsonstring));
+		if (ret >= 0) {
+			ntyJsonCommonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
+			
+			AddEfenceAck *pAddEfenceAck = (AddEfenceAck*)malloc(sizeof(AddEfenceAck));
+			char ids[20] = {0};
+			sprintf(ids, "%d", id);
+			pAddEfenceAck->id = ids;
+			pAddEfenceAck->result = *(AddEfenceResult*)pAddEfenceReq;
+			char *jsonresult = ntyJsonWriteAddEfence(pAddEfenceAck);
+			ntylog(" ntySendCommonBroadCastResult --> %lld, %lld, %s, %d\n", AppId, devId, jsonresult, (int)strlen(jsonresult));
+			ntySendCommonBroadCastResult(AppId, devId, (U8*)jsonresult, strlen(jsonresult));
+			ntyJsonFree(jsonresult);
+			free(pAddEfenceAck);
+		}
+	}
+	ntyJsonAddEfencePointRelease(pAddEfenceReq->efence.pPoints);
+	free(pAddEfenceReq);
+}
 
-		EfenceAck *pEfenceAck = (EfenceAck*)malloc(sizeof(EfenceAck));
-		pEfenceAck->result = *(EfenceResult*)pEfenceReq;
-		char *jsonresult = ntyJsonWriteEfence(pEfenceAck);
+void ntyJsonDelEfenceAction(C_DEVID AppId, C_DEVID toId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
+	DelEfenceReq *pDelEfenceReq = (DelEfenceReq*)malloc(sizeof(DelEfenceReq));
+	ntyJsonDelEfence(json, pDelEfenceReq);
+	C_DEVID devId = toId;
+	int index = 0;
+	if (pDelEfenceReq->index != NULL) {
+		index = atoi(pDelEfenceReq->index);
+	}
+	int ret = ntyExecuteEfenceDeleteHandle(AppId, devId, index);
+	if (ret == -1) {
+		ntylog(" ntyJsonEfenceAction --> DB Exception\n");
+		ret = 4;
+	} else if (ret >= 0) {
+		ntyJsonCommonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
+		DelEfenceAck *pDelEfenceAck = (DelEfenceAck*)malloc(sizeof(DelEfenceAck));
+		pDelEfenceAck->result = *(DelEfenceResult*)pDelEfenceReq;
+		char *jsonresult = ntyJsonWriteDelEfence(pDelEfenceAck);
 		ntylog(" ntySendCommonBroadCastResult --> %lld, %lld, %s, %d\n", AppId, devId, jsonresult, (int)strlen(jsonresult));
 		ntySendCommonBroadCastResult(AppId, devId, (U8*)jsonresult, strlen(jsonresult));
 		ntyJsonFree(jsonresult);
-		free(pEfenceAck);
+		free(pDelEfenceAck);
 	}
-	ntyJsonEfencePointRelease(pEfenceReq->efence.pPoints);
-	free(pEfenceReq);
+	free(pDelEfenceReq);
 }
 
 void ntyJsonRunTimeAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
@@ -308,35 +361,38 @@ void ntyJsonRunTimeAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *js
 	}
 
 	if (ret == 0) {
-		ntyJsonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
-		RunTimeAck *pRunTimeAck = (RunTimeAck*)malloc(sizeof(RunTimeAck));
-		pRunTimeAck->result = *(RunTimeResult*)pRunTimeReq;
-		char *jsonresult = ntyJsonWriteRunTime(pRunTimeAck);
-		ntyJsonBroadCastRecvResult(AppId, devId, jsonresult);
-		ntyJsonFree(jsonresult);
-		free(pRunTimeAck);
+		ret = ntySendCommonReq(devId, jsonstring, strlen(jsonstring));
+		if (ret >= 0) {
+			ntyJsonCommonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
+			RunTimeAck *pRunTimeAck = (RunTimeAck*)malloc(sizeof(RunTimeAck));
+			pRunTimeAck->result = *(RunTimeResult*)pRunTimeReq;
+			char *jsonresult = ntyJsonWriteRunTime(pRunTimeAck);
+			ntyJsonBroadCastRecvResult(AppId, devId, jsonresult);
+			ntyJsonFree(jsonresult);
+			free(pRunTimeAck);
+		}
 	}
 	free(pRunTimeReq);
 }
 
 void ntyJsonTurnAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
-	ntylog(" =======================begin ntyJsonTurnAction====================================\n");
 	TurnReq *pTurnReq = (TurnReq*)malloc(sizeof(TurnReq));
 	ntyJsonTurn(json, pTurnReq);
 	U8 status = 0;
 	if (pTurnReq->turn.status != NULL) {
 		status = atoi(pTurnReq->turn.status);
 	}
-	ntylog(" ntyJsonTurnAction --> status:%d\n", status);
 	int ret = ntyExecuteTurnUpdateHandle(AppId, devId, status, pTurnReq->turn.on.time, pTurnReq->turn.off.time);
 	if (ret == -1) {
 		ntylog(" ntyJsonTurnAction --> DB Exception\n");
 		ret = 4;
 	} else if (ret >= 0) {
-		ntyJsonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
+		ret = ntySendCommonReq(devId, jsonstring, strlen(jsonstring));
+		if (ret >= 0) {
+			ntyJsonCommonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
+		}
 	}
 	free(pTurnReq);
-	ntylog(" =======================end ntyJsonTurnAction====================================\n");
 }
 
 void ntyJsonICCIDAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
@@ -348,7 +404,10 @@ void ntyJsonICCIDAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *json
 		ntylog(" ntyJsonICCIDAction --> DB Exception\n");
 		ret = 4;
 	} else if (ret >= 0) {
-		ntyJsonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
+		ret = ntySendCommonReq(devId, jsonstring, strlen(jsonstring));
+		if (ret >= 0) {
+			ntyJsonCommonResult(devId, NATTY_RESULT_CODE_SUCCESS);
+		}
 	}
 	free(pICCIDReq);
 }
@@ -356,15 +415,20 @@ void ntyJsonICCIDAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *json
 void ntyJsonAddScheduleAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
 	AddScheduleReq *pAddScheduleReq = (AddScheduleReq*)malloc(sizeof(AddScheduleReq));
 	ntyJsonAddSchedule(json, pAddScheduleReq);
+	int id = 0;
 	int ret = ntyExecuteScheduleInsertHandle(AppId, devId,
 		pAddScheduleReq->schedule.daily,
 		pAddScheduleReq->schedule.time,
-		pAddScheduleReq->schedule.details);
+		pAddScheduleReq->schedule.details,
+		id);
 	if (ret == -1) {
 		ntylog(" ntyJsonAddScheduleAction --> DB Exception\n");
 		ret = 4;
 	} else if (ret >= 0) {
-		ntyJsonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
+		ret = ntySendCommonReq(devId, jsonstring, strlen(jsonstring));
+		if (ret >= 0) {
+			ntyJsonCommonExtendResult(AppId, NATTY_RESULT_CODE_SUCCESS, id);
+		}
 	}
 	free(pAddScheduleReq);
 }
@@ -375,15 +439,20 @@ void ntyJsonDelScheduleAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8
 	C_DEVID DeviceId = *(C_DEVID*)(pDelScheduleReq->IMEI);
 
 	int scheduleId = 0;
-	if (strlen(pDelScheduleReq->id) != 0) {
-		scheduleId = atoi(pDelScheduleReq->id);
+	if (pDelScheduleReq->id != NULL) {
+		if (strlen(pDelScheduleReq->id) != 0) {
+			scheduleId = atoi(pDelScheduleReq->id);
+		}
 	}
 	int ret = ntyExecuteScheduleDeleteHandle(AppId, DeviceId, scheduleId);
 	if (ret == -1) {
 		ntylog(" ntyJsonDelScheduleAction --> DB Exception\n");
 		ret = 4;
 	} else if (ret >= 0) {
-		ntyJsonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
+		ret = ntySendCommonReq(devId, jsonstring, strlen(jsonstring));
+		if (ret >= 0) {
+			ntyJsonCommonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
+		}
 	}
 	free(pDelScheduleReq);
 }
@@ -393,8 +462,10 @@ void ntyJsonUpdateScheduleAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json,
 	ntyJsonUpdateSchedule(json, pUpdateScheduleReq);
 
 	int scheduleId = 0;
-	if (strlen(pUpdateScheduleReq->id) != 0) {
-		scheduleId = atoi(pUpdateScheduleReq->id);
+	if (pUpdateScheduleReq->id != NULL) {
+		if (strlen(pUpdateScheduleReq->id) != 0) {
+			scheduleId = atoi(pUpdateScheduleReq->id);
+		}
 	}
 	int ret = ntyExecuteScheduleUpdateHandle(AppId, devId, 
 		scheduleId,
@@ -405,7 +476,10 @@ void ntyJsonUpdateScheduleAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json,
 		ntylog(" ntyJsonUpdateScheduleAction --> DB Exception\n");
 		ret = 4;
 	} else if (ret >= 0) {
-		ntyJsonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
+		ret = ntySendCommonReq(devId, jsonstring, strlen(jsonstring));
+		if (ret >= 0) {
+			ntyJsonCommonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
+		}
 	}
 	free(pUpdateScheduleReq);
 }
@@ -425,11 +499,13 @@ void ntyJsonSelectScheduleAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json,
 	
 	int ret = ntyExecuteScheduleSelectHandle(AppId, devId, pScheduleAck, size);
 	if (ret == -1) {
-		ntylog(" ntyJsonDelScheduleAction --> DB Exception\n");
+		ntylog(" ntyJsonSelectScheduleAction --> DB Exception\n");
 		ret = 4;
 	} else if (ret >= 0) {
-		ntyJsonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
-		if (ret >= 1) {
+		ret = ntySendCommonReq(devId, jsonstring, strlen(jsonstring));
+		if (ret >= 0) {
+			ntyJsonCommonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
+
 			char *jsonresult = ntyJsonWriteSchedule(pScheduleAck);
 			ntySendCommonBroadCastResult(AppId, devId, (U8*)jsonresult, strlen(jsonresult));
 			ntyJsonFree(jsonresult);
@@ -444,21 +520,18 @@ void ntyJsonSelectScheduleAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json,
 void ntyJsonTimeTablesAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
 	TimeTablesReq *pTimeTablesReq = (TimeTablesReq*)malloc(sizeof(TimeTablesReq));
 	ntyJsonTimeTables(json, pTimeTablesReq);
+	
+	ntylog(" ntyJsonTimeTablesAction --> %s  \n", jsonstring);
 
-	ntylog(" ntyJsonTimeTablesAction 1111 --> %d \n", (int)pTimeTablesReq->size);
-
-	int ret = 1;
-	/*
+	int ret = 0;
 	size_t i;
-	for (i=0; i<pTimeTablesReq->size; i++) {
+	for (i=0; i<pTimeTablesReq->size; i++) {	
 		U8 morning_status = atoi(pTimeTablesReq->pTimeTables[i].morning.status);
 		U8 afternoon_status = atoi(pTimeTablesReq->pTimeTables[i].afternoon.status);
-
 		U8 morning[200] = {0}, afternoon[200] = {0};
 		sprintf(morning, "%s|%s", pTimeTablesReq->pTimeTables[i].morning.startTime, pTimeTablesReq->pTimeTables[i].morning.endTime);
 		sprintf(afternoon, "%s|%s", pTimeTablesReq->pTimeTables[i].afternoon.startTime, pTimeTablesReq->pTimeTables[i].afternoon.endTime);
-		
-		ret = ntyExecuteTimeTablesUpdateHandle(AppId, DeviceId, 
+		ret = ntyExecuteTimeTablesUpdateHandle(AppId, devId, 
 			morning, morning_status,
 			afternoon, afternoon_status,
 			pTimeTablesReq->pTimeTables[i].daily);
@@ -467,22 +540,33 @@ void ntyJsonTimeTablesAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 
 			ret = 4;
 		}
 	}
-	*/
-	ntylog(" ntyJsonTimeTablesAction 2222 --> %d \n", (int)pTimeTablesReq->size);
-
-	//if (ret == -1) {
-	//	ntylog(" ntyJsonTimeTables --> DB Exception\n");
-	//	ret = 4;
-	//} else if (ret == 0) {
-	if (ret > 0) {
+	
+	if (ret == -1) {
+		ntylog(" ntyJsonTimeTables --> DB Exception\n");
+		ret = 4;
+	} else if (ret >= 0) {
 		ntylog(" ntyJsonTimeTablesAction --> ok \n");
 		ret = ntySendCommonReq(devId, jsonstring, strlen(jsonstring));
 		if (ret >= 0) {
-			ntyJsonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
+			ntyJsonCommonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
+			
+			TimeTablesAck *pTimeTablesAck = malloc(sizeof(TimeTablesAck));
+			pTimeTablesAck->results = *(TimeTablesResults*)pTimeTablesReq;
+			char *jsonresult = ntyJsonWriteTimeTables(pTimeTablesAck);
+			ntySendCommonBroadCastResult(AppId, devId, (U8*)jsonresult, strlen(jsonresult));
+			ntyJsonFree(jsonresult);
+			free(pTimeTablesAck);
 		}
 	}
 	ntyJsonTimeTablesItemRelease(pTimeTablesReq->pTimeTables);
 	free(pTimeTablesReq);
+}
+
+
+
+void ntyJsonContactsAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
+	
+
 }
 
 

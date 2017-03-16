@@ -93,15 +93,19 @@ void ntyJsonLAB(JSON_Value *json, LABReq *pLABReq);
 
 void ntyJsonLABItemRelease(Nearbts *pNearbts);
 
+void ntyJsonWeatherLocation(JSON_Value *json, WeatherLocationReq *pWeatherLocationReq);
+
 void ntyJsonWeather(JSON_Value *json, WeatherReq *pWeatherReq);
 
 void ntyJsonICCID(JSON_Value *json, ICCIDReq *pICCIDReq);
 
 void ntyJsonCommon(JSON_Value *json, CommonReq *pCommonReq);
 
-void ntyJsonEfence(JSON_Value *json, EfenceReq *pEfenceReq);
+void ntyJsonAddEfence(JSON_Value *json, AddEfenceReq *pAddEfenceReq);
 
-void ntyJsonEfencePointRelease(EfencePoints *pPoints);
+void ntyJsonAddEfencePointRelease(EfencePoints *pPoints);
+
+void ntyJsonDelEfence(JSON_Value *json, DelEfenceReq *pDelEfenceReq);
 
 void ntyJsonRuntime(JSON_Value *json, RunTimeReq *pRunTimeReq);
 
@@ -125,6 +129,8 @@ void ntyJsonDelContacts(JSON_Value *json, DelContactsReq *pDelContactsReq);
 
 char * ntyJsonWriteCommon(CommonAck *pCommonAck);
 
+char * ntyJsonWriteCommonExtend(CommonExtendAck *pCommonExtendAck);
+
 char * ntyJsonWriteConfig(ConfigAck *pConfigAck);
 
 char * ntyJsonWritePower(PowerAck *pPowerAck);
@@ -139,7 +145,9 @@ char * ntyJsonWriteLocation(LocationAck *pLocationAck);
 
 char * ntyJsonWriteWeather(WeatherAck *pWeatherAck);
 
-char * ntyJsonWriteEfence(EfenceAck *pEfenceAck);
+char * ntyJsonWriteAddEfence(AddEfenceAck *pAddEfenceAck);
+
+char * ntyJsonWriteDelEfence(DelEfenceAck *pDelEfenceAck);
 
 char * ntyJsonWriteRunTime(RunTimeAck *pRunTimeAck);
 

@@ -94,7 +94,7 @@
 
 
 /* ** **** ******** **************** Natty V3.2 **************** ******** **** ** */
-#define NTY_DB_INSERT_EFENCE				"CALL PROC_INSERT_EFENCE(%lld, %d, '%s', '%s');"
+#define NTY_DB_INSERT_EFENCE				"CALL PROC_INSERT_EFENCE(%lld, %d, %d, '%s', '%s');"
 
 #define NTY_DB_DELETE_EFENCE				"CALL PROC_DELETE_EFENCE(%lld, %d)"
 
@@ -141,7 +141,7 @@
 
 
 //作息时间 ，闹钟 
-#define NTY_DB_INSERT_SCHEDULE				"CALL PROC_INSERT_SCHEDULE(%lld, '%s', '%s', '%s')"
+#define NTY_DB_INSERT_SCHEDULE				"CALL PROC_INSERT_SCHEDULE(%lld, '%s', '%s', '%s', %d)"
 
 #define NTY_DB_DELETE_SCHEDULE				"CALL PROC_DELETE_SCHEDULE(%lld, %d)"
 
@@ -227,8 +227,9 @@ int ntyExecuteAppLoginUpdateHandle(C_DEVID aid);
 int ntyExecuteAppLogoutUpdateHandle(C_DEVID aid);
 
 
+int ntyExecuteEfenceInsertHandle(C_DEVID aid, C_DEVID did, int index, int num, U8 *points, U8 *runtime, int *id);
 
-int ntyExecuteEfenceInsertHandle(C_DEVID aid, C_DEVID did, int num, U8 *points, U8 *runtime);
+int ntyExecuteEfenceDeleteHandle(C_DEVID aid, C_DEVID did, int index);
 
 int ntyExecuteRuntimeUpdateHandle(C_DEVID aid, C_DEVID did, int auto_conn, U8 loss_report, U8 light_panel, const char *bell, int target_step);
 
@@ -244,7 +245,7 @@ int ntyExecuteRuntimeTargetStepUpdateHandle(C_DEVID aid, C_DEVID did, int runtim
 
 int ntyExecuteTurnUpdateHandle(C_DEVID aid, C_DEVID did, U8 status, const char *ontime, const char *offtime);
 
-int ntyExecuteScheduleInsertHandle(C_DEVID aid, C_DEVID did, const char *daily, const char *time, const char *details);
+int ntyExecuteScheduleInsertHandle(C_DEVID aid, C_DEVID did, const char *daily, const char *time, const char *details, int *id);
 
 int ntyExecuteScheduleDeleteHandle(C_DEVID aid, C_DEVID did, int id);
 

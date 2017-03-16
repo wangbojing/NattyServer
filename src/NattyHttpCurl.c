@@ -62,8 +62,6 @@
 #define JEMALLOC_NO_RENAME	 1
 #include <jemalloc/jemalloc.h>
 
-
-
 static size_t ntyHttpQJKFallenHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
 	VALUE_TYPE *tag = stream;
 	U8 u8ResultBuffer[256] = {0};
@@ -747,13 +745,14 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	ntydbg(" weatherbuf --> %s\n", weatherbuf);
 
 	MessageTag *pMessageSendTag = malloc(sizeof(MessageTag));
+	pMessageSendTag->Type = MSG_TYPE_WEATHER_API;
 	pMessageSendTag->fromId = pMessageTag->fromId;
 	pMessageSendTag->toId = pMessageTag->toId;
 	pMessageSendTag->Tag = weatherbuf;
 	pMessageSendTag->length = strlen(weatherbuf);
+	pMessageSendTag->cb = ntyHttpQJKWeather;
 
-	//int ret = ntyDaveMqPushMessage(pMessageSendTag->fromId, pMessageSendTag->toId, pMessageSendTag->Tag, pMessageSendTag->length);
-	int ret = ntyHttpQJKWeather(pMessageSendTag);
+	int ret = ntyDaveMqPushMessage(pMessageSendTag);
 	ntylog("result : %d\n", ret);
 	free(pAMap);
 	ntylog("==================end ntyHttpQJKWeatherLocationHandleResult ============================\n");

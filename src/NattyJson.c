@@ -73,7 +73,6 @@ void ntyJsonGetLocationType(const int u8LocationType, char* locationType) {
 	}
 }
 
-
 WeatherAck* ntyInitWeather() {
 	WeatherAck *pWeatherAck = malloc(sizeof(WeatherAck));
 	return pWeatherAck;
@@ -107,7 +106,6 @@ void ntyReleaseScheduleAck(ScheduleAck *pScheduleAck) {
 		free(pScheduleAck);
 	}
 }
-
 
 TimeTablesAck* ntyInitTimeTablesAck() {
 	TimeTablesAck *pTimeTablesAck = malloc(sizeof(TimeTablesAck));
@@ -143,7 +141,6 @@ void ntyFreeJsonValue(JSON_Value *json) {
 void ntyJsonFree(void *obj) {
 	json_free_serialized_string(obj);
 }
-
 
 const char * ntyJsonDeviceIMEI(JSON_Value *json) {
 	if (json == NULL) {
@@ -215,7 +212,6 @@ void ntyJsonWIFIItemRelease(WIFIItem *pWIFI) {
 	}
 }
 
-
 void ntyJsonLAB(JSON_Value *json, LABReq *pLABReq) {
 	if (json == NULL || pLABReq == NULL) {
 		ntydbg("param is null.\n");
@@ -278,6 +274,20 @@ void ntyJsonAMap(JSON_Value *json, AMap *pAMap) {
 	ntydbg("status:%s,  info:%s,  infocode:%s,  location:%s\n", pAMap->status, pAMap->info, pAMap->infocode, pAMap->result.location);
 }
 
+void ntyJsonWeatherLocation(JSON_Value *json, WeatherLocationReq *pWeatherLocationReq) {
+	if (json == NULL || pWeatherLocationReq == NULL) {
+		ntydbg("param is null.\n");
+		return;
+	}
+
+	JSON_Object *root_object = json_value_get_object(json);
+	pWeatherLocationReq->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
+	pWeatherLocationReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
+	pWeatherLocationReq->bts = json_object_get_string(root_object, NATTY_USER_PROTOCOL_BTS);
+	
+	ntydbg("IMEI:%s,  category:%s,  bts:%s\n", pWeatherLocationReq->IMEI, pWeatherLocationReq->category, pWeatherLocationReq->bts);
+}
+
 void ntyJsonWeather(JSON_Value *json, WeatherReq *pWeatherReq) {
 	if (json == NULL || pWeatherReq == NULL) {
 		ntydbg("param is null.\n");
@@ -285,11 +295,48 @@ void ntyJsonWeather(JSON_Value *json, WeatherReq *pWeatherReq) {
 	}
 
 	JSON_Object *root_object = json_value_get_object(json);
-	pWeatherReq->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
-	pWeatherReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
-	pWeatherReq->bts = json_object_get_string(root_object, NATTY_USER_PROTOCOL_BTS);
+
+	JSON_Object *results_object = NULL;
+	JSON_Array *results_array = json_object_get_array(root_object, NATTY_WEATHER_PROTOCOL_RESULTS);
+	pWeatherReq->size = json_array_get_count(results_array);
+	WeatherResults *pWeatherResults = malloc(sizeof(WeatherResults)*pWeatherReq->size);
+	pWeatherReq->pResults = pWeatherResults;
+	size_t i;
+	for (i = 0; i < pWeatherReq->size; i++) {
+		results_object = json_array_get_object(results_array, i);
+		pWeatherResults[i].last_update = json_object_get_string(results_object, NATTY_WEATHER_PROTOCOL_LAST_UPDATE);
+		
+		JSON_Object *location_object = json_object_get_object(results_object, NATTY_WEATHER_PROTOCOL_LOCATION);
+		pWeatherResults[i].location.id = json_object_get_string(location_object, NATTY_WEATHER_PROTOCOL_ID);
+		pWeatherResults[i].location.name = json_object_get_string(location_object, NATTY_WEATHER_PROTOCOL_NAME);
+		pWeatherResults[i].location.country = json_object_get_string(location_object, NATTY_WEATHER_PROTOCOL_COUNTRY);
+		pWeatherResults[i].location.path = json_object_get_string(location_object, NATTY_WEATHER_PROTOCOL_PATH);
+		pWeatherResults[i].location.timezone = json_object_get_string(location_object, NATTY_WEATHER_PROTOCOL_TIMEZONE);
+		pWeatherResults[i].location.timezone_offset = json_object_get_string(location_object, NATTY_WEATHER_PROTOCOL_TIMEZONE_OFFSET);
+
+		JSON_Object *daily_object = NULL;
+		JSON_Array *daily_array = json_object_get_array(root_object, NATTY_WEATHER_PROTOCOL_DAILY);
+		pWeatherResults[i].size = json_array_get_count(daily_array);
+		WeatherDaily *pWeatherDaily = malloc(sizeof(WeatherDaily)*pWeatherResults[i].size);
+		pWeatherResults[i].pDaily = pWeatherDaily;
 	
-	ntydbg("IMEI:%s,  category:%s,  bts:%s\n", pWeatherReq->IMEI, pWeatherReq->category, pWeatherReq->bts);
+		size_t j;
+		for (j = 0; j < pWeatherResults[i].size; j++) {
+			daily_object = json_array_get_object(daily_array, j);
+			pWeatherDaily[j].date = json_object_get_string(daily_object, NATTY_WEATHER_PROTOCOL_DATE);
+			pWeatherDaily[j].text_day = json_object_get_string(daily_object, NATTY_WEATHER_PROTOCOL_TEXT_DAY);
+			pWeatherDaily[j].code_day = json_object_get_string(daily_object, NATTY_WEATHER_PROTOCOL_CODE_DAY);
+			pWeatherDaily[j].text_night = json_object_get_string(daily_object, NATTY_WEATHER_PROTOCOL_TEXT_NIGHT);
+			pWeatherDaily[j].code_night = json_object_get_string(daily_object, NATTY_WEATHER_PROTOCOL_CODE_NIGHT);
+			pWeatherDaily[j].high = json_object_get_string(daily_object, NATTY_WEATHER_PROTOCOL_HIGH);
+			pWeatherDaily[j].low = json_object_get_string(daily_object, NATTY_WEATHER_PROTOCOL_LOW);
+			pWeatherDaily[j].precip = json_object_get_string(daily_object, NATTY_WEATHER_PROTOCOL_PRECIP);
+			pWeatherDaily[j].wind_direction = json_object_get_string(daily_object, NATTY_WEATHER_PROTOCOL_WIND_DIRECTION);
+			pWeatherDaily[j].wind_direction_degree = json_object_get_string(daily_object, NATTY_WEATHER_PROTOCOL_WIND_DIRECTION_DEGREE);
+			pWeatherDaily[j].wind_speed = json_object_get_string(daily_object, NATTY_WEATHER_PROTOCOL_WIND_SPEED);
+			pWeatherDaily[j].wind_scale = json_object_get_string(daily_object, NATTY_WEATHER_PROTOCOL_WIND_SCALE);
+		}
+	}
 }
 
 void ntyJsonICCID(JSON_Value *json, ICCIDReq *pICCIDReq) {
@@ -316,26 +363,27 @@ void ntyJsonCommon(JSON_Value *json, CommonReq *pCommonReq) {
 	pCommonReq->action = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ACTION);
 }
 
-
-void ntyJsonEfence(JSON_Value *json, EfenceReq *pEfenceReq) {
-	if (json == NULL || pEfenceReq == NULL) {
+void ntyJsonAddEfence(JSON_Value *json, AddEfenceReq *pAddEfenceReq) {
+	if (json == NULL || pAddEfenceReq == NULL) {
 		ntydbg("param is null.\n");
 		return;
 	}
 
 	JSON_Object *root_object = json_value_get_object(json);
-	pEfenceReq->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
-	pEfenceReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
+	pAddEfenceReq->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
+	pAddEfenceReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
+	pAddEfenceReq->action = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ACTION);
+	pAddEfenceReq->index = json_object_get_string(root_object, NATTY_USER_PROTOCOL_INDEX);
 	
 	JSON_Object *efence_object = json_object_get_object(root_object, NATTY_USER_PROTOCOL_EFENCE);
-	pEfenceReq->efence.num = json_object_get_string(efence_object, NATTY_USER_PROTOCOL_NUM);
+	pAddEfenceReq->efence.num = json_object_get_string(efence_object, NATTY_USER_PROTOCOL_NUM);
 
 	JSON_Object *point_object = NULL;
 	JSON_Array *points_array = json_object_get_array(efence_object, NATTY_USER_PROTOCOL_POINTS);
 	size_t points_count = json_array_get_count(points_array);
 	EfencePoints *pPoints = malloc(sizeof(EfencePoints)*points_count);
-	pEfenceReq->efence.pPoints = pPoints;
-	pEfenceReq->efence.size = points_count;
+	pAddEfenceReq->efence.pPoints = pPoints;
+	pAddEfenceReq->efence.size = points_count;
 	
 	size_t i;
 	for (i = 0; i < points_count; i++) {
@@ -344,12 +392,24 @@ void ntyJsonEfence(JSON_Value *json, EfenceReq *pEfenceReq) {
 	}
 }
 
-void ntyJsonEfencePointRelease(EfencePoints *pPoints) {
+void ntyJsonAddEfencePointRelease(EfencePoints *pPoints) {
 	if (pPoints != NULL) {
 		free(pPoints);
 	}
 }
 
+void ntyJsonDelEfence(JSON_Value *json, DelEfenceReq *pDelEfenceReq) {
+	if (json == NULL || pDelEfenceReq == NULL) {
+		ntydbg("param is null.\n");
+		return;
+	}
+
+	JSON_Object *root_object = json_value_get_object(json);
+	pDelEfenceReq->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
+	pDelEfenceReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
+	pDelEfenceReq->action = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ACTION);
+	pDelEfenceReq->index = json_object_get_string(root_object, NATTY_USER_PROTOCOL_INDEX);
+}
 
 void ntyJsonRuntime(JSON_Value *json, RunTimeReq *pRunTimeReq) {
 	if (json == NULL || pRunTimeReq == NULL) {
@@ -396,7 +456,6 @@ void ntyJsonTurn(JSON_Value *json, TurnReq *pTurnReq) {
 	pTurnReq->turn.off.time = json_object_get_string(off_object, NATTY_USER_PROTOCOL_TIME);
 }
 
-
 void ntyJsonAddSchedule(JSON_Value *json, AddScheduleReq *pAddScheduleReq) {
 	if (json == NULL || pAddScheduleReq == NULL) {
 		ntydbg("param is null.\n");
@@ -416,7 +475,6 @@ void ntyJsonAddSchedule(JSON_Value *json, AddScheduleReq *pAddScheduleReq) {
 	ntydbg("Daily:%s, Time:%s, Details:%s\n", pAddScheduleReq->schedule.daily, pAddScheduleReq->schedule.time, pAddScheduleReq->schedule.details);
 }
 
-
 void ntyJsonUpdateSchedule(JSON_Value *json, UpdateScheduleReq *pUpdateScheduleReq) {
 	if (json == NULL || pUpdateScheduleReq == NULL) {
 		ntydbg("param is null.\n");
@@ -433,10 +491,9 @@ void ntyJsonUpdateSchedule(JSON_Value *json, UpdateScheduleReq *pUpdateScheduleR
 	JSON_Object *schedule_object = json_object_get_object(root_object, NATTY_USER_PROTOCOL_SCHEDULE);
 	pUpdateScheduleReq->schedule.daily = json_object_get_string(schedule_object, NATTY_USER_PROTOCOL_DAILY);
 	pUpdateScheduleReq->schedule.time = json_object_get_string(schedule_object, NATTY_USER_PROTOCOL_TIME);
-	pUpdateScheduleReq->schedule.details= json_object_get_string(schedule_object, NATTY_USER_PROTOCOL_DETAILS);
+	pUpdateScheduleReq->schedule.details = json_object_get_string(schedule_object, NATTY_USER_PROTOCOL_DETAILS);
 	ntydbg("Daily:%s, Time:%s, Details:%s\n", pUpdateScheduleReq->schedule.daily, pUpdateScheduleReq->schedule.time, pUpdateScheduleReq->schedule.details);
 }
-
 
 void ntyJsonDelSchedule(JSON_Value *json, DelScheduleReq *pDelScheduleReq) {
 	if (json == NULL || pDelScheduleReq == NULL) {
@@ -467,12 +524,12 @@ void ntyJsonTimeTables(JSON_Value *json, TimeTablesReq *pTimeTablesReq) {
 	JSON_Object *morning_object = NULL;
 	JSON_Object *afternoon_object = NULL;
 	JSON_Array *timetables_array = json_object_get_array(root_object, NATTY_USER_PROTOCOL_TIMETABLES);
-	size_t timetables_count = json_array_get_count(timetables_array);
-	TimeTablesItem *pTimeTables = malloc(sizeof(TimeTablesItem)*timetables_count);
+	pTimeTablesReq->size = json_array_get_count(timetables_array);
+	TimeTablesItem *pTimeTables = malloc(sizeof(TimeTablesItem)*pTimeTablesReq->size);
 	pTimeTablesReq->pTimeTables = pTimeTables;
 
 	size_t i,j;
-	for (i = 0; i < timetables_count; i++) {
+	for (i = 0; i < pTimeTablesReq->size; i++) {
 		timetables_object = json_array_get_object(timetables_array, i);
 		pTimeTables[i].daily = json_object_get_string(root_object, NATTY_USER_PROTOCOL_DAILY);
 		morning_object = json_object_get_object(timetables_object, NATTY_USER_PROTOCOL_MORNING);
@@ -480,9 +537,9 @@ void ntyJsonTimeTables(JSON_Value *json, TimeTablesReq *pTimeTablesReq) {
 		pTimeTables[i].morning.startTime = json_object_get_string(morning_object, NATTY_USER_PROTOCOL_STARTTIME);
 		pTimeTables[i].morning.endTime = json_object_get_string(morning_object, NATTY_USER_PROTOCOL_ENDTIME);
 		afternoon_object = json_object_get_object(timetables_object, NATTY_USER_PROTOCOL_AFTERNOON);
-		pTimeTables[i].morning.status = json_object_get_string(afternoon_object, NATTY_USER_PROTOCOL_STATUS);
-		pTimeTables[i].morning.startTime = json_object_get_string(afternoon_object, NATTY_USER_PROTOCOL_STARTTIME);
-		pTimeTables[i].morning.endTime = json_object_get_string(afternoon_object, NATTY_USER_PROTOCOL_ENDTIME);
+		pTimeTables[i].afternoon.status = json_object_get_string(afternoon_object, NATTY_USER_PROTOCOL_STATUS);
+		pTimeTables[i].afternoon.startTime = json_object_get_string(afternoon_object, NATTY_USER_PROTOCOL_STARTTIME);
+		pTimeTables[i].afternoon.endTime = json_object_get_string(afternoon_object, NATTY_USER_PROTOCOL_ENDTIME);
 	}
 }
 
@@ -539,13 +596,11 @@ void ntyJsonDelContacts(JSON_Value *json, DelContactsReq *pDelContactsReq) {
 	ntydbg("IMEI:%s   Category:%s  Action:%s  id:%s\n", pDelContactsReq->IMEI, pDelContactsReq->category, pDelContactsReq->action, pDelContactsReq->id);
 }
 
-
 void ntyJsonTimeTablesItemRelease(TimeTablesItem *pTimeTables) {
 	if (pTimeTables != NULL) {
 		free(pTimeTables);
 	}
 }
-
 
 char * ntyJsonWriteCommon(CommonAck *pCommonAck) {
 	if (pCommonAck == NULL) {
@@ -558,6 +613,24 @@ char * ntyJsonWriteCommon(CommonAck *pCommonAck) {
 	JSON_Object *result_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULT);
 	json_object_set_string(result_obj, NATTY_USER_PROTOCOL_CODE, pCommonAck->result.code);
 	json_object_set_string(result_obj, NATTY_USER_PROTOCOL_MESSAGE, pCommonAck->result.message);
+	
+	char *jsonstring =  json_serialize_to_string(schema);
+	json_value_free(schema);
+	return jsonstring;
+}
+
+char * ntyJsonWriteCommonExtend(CommonExtendAck *pCommonExtendAck) {
+	if (pCommonExtendAck == NULL) {
+		return NULL;
+	}
+
+	JSON_Value *schema = json_value_init_object();
+	JSON_Object *schema_obj = json_value_get_object(schema);
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_ID, pCommonExtendAck->id);
+	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULT, json_value_init_object());
+	JSON_Object *result_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULT);
+	json_object_set_string(result_obj, NATTY_USER_PROTOCOL_CODE, pCommonExtendAck->result.code);
+	json_object_set_string(result_obj, NATTY_USER_PROTOCOL_MESSAGE, pCommonExtendAck->result.message);
 	
 	char *jsonstring =  json_serialize_to_string(schema);
 	json_value_free(schema);
@@ -650,7 +723,6 @@ char * ntyJsonWriteWIFI(WIFIAck *pWIFIAck) {
 	char *jsonstring =  json_serialize_to_string(schema);
 	json_value_free(schema);
 	return jsonstring;
-
 }
 
 char * ntyJsonWriteLAB(LABAck *pLABAck) {
@@ -685,7 +757,6 @@ char * ntyJsonWriteLAB(LABAck *pLABAck) {
 	return jsonstring;
 }
 
-
 char *ntyJsonWriteLocation(LocationAck *pLocationAck) {
 	if (pLocationAck == NULL) {
 		return NULL;
@@ -705,7 +776,6 @@ char *ntyJsonWriteLocation(LocationAck *pLocationAck) {
 	return jsonstring;
 }
 
-
 char *ntyJsonWriteWeather(WeatherAck *pWeatherAck) {
 	if (pWeatherAck == NULL) {
 		return NULL;
@@ -713,29 +783,53 @@ char *ntyJsonWriteWeather(WeatherAck *pWeatherAck) {
 	return NULL;
 }
 
-char * ntyJsonWriteEfence(EfenceAck *pEfenceAck) {
-	if (pEfenceAck == NULL) {
+char * ntyJsonWriteAddEfence(AddEfenceAck *pAddEfenceAck) {
+	if (pAddEfenceAck == NULL) {
 		return NULL;
 	}
 	
 	JSON_Value *schema = json_value_init_object();
 	JSON_Object *schema_obj = json_value_get_object(schema);
+
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_ID, pAddEfenceAck->id);
 	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object());
 	JSON_Object *results_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULTS);
-	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_IMEI, pEfenceAck->result.IMEI);
-	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_CATEGORY, pEfenceAck->result.category);
-
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_IMEI, pAddEfenceAck->result.IMEI);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_CATEGORY, pAddEfenceAck->result.category);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_ACTION, pAddEfenceAck->result.action);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_INDEX, pAddEfenceAck->result.index);
+	
 	json_object_set_value(results_obj, NATTY_USER_PROTOCOL_EFENCE, json_value_init_object());
 	JSON_Object *efence_obj = json_object_get_object(results_obj, NATTY_USER_PROTOCOL_EFENCE);
-	json_object_set_string(efence_obj, NATTY_USER_PROTOCOL_NUM, pEfenceAck->result.efence.num);
+	json_object_set_string(efence_obj, NATTY_USER_PROTOCOL_NUM, pAddEfenceAck->result.efence.num);
 	
 	json_object_set_value(efence_obj, NATTY_USER_PROTOCOL_POINTS, json_value_init_array());
 	JSON_Array *points_arr = json_object_get_array(efence_obj, NATTY_USER_PROTOCOL_POINTS);
 	
 	size_t i;
-	for (i = 0; i < pEfenceAck->result.efence.size; i++) {
-		json_array_append_string(points_arr, pEfenceAck->result.efence.pPoints[i].point);
+	for (i = 0; i < pAddEfenceAck->result.efence.size; i++) {
+		json_array_append_string(points_arr, pAddEfenceAck->result.efence.pPoints[i].point);
 	}
+
+	char *jsonstring =  json_serialize_to_string(schema);
+	json_value_free(schema);
+	return jsonstring;
+}
+
+char * ntyJsonWriteDelEfence(DelEfenceAck *pDelEfenceAck) {
+	if (pDelEfenceAck == NULL) {
+		return NULL;
+	}
+	
+	JSON_Value *schema = json_value_init_object();
+	JSON_Object *schema_obj = json_value_get_object(schema);
+
+	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object());
+	JSON_Object *results_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULTS);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_IMEI, pDelEfenceAck->result.IMEI);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_CATEGORY, pDelEfenceAck->result.category);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_ACTION, pDelEfenceAck->result.action);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_INDEX, pDelEfenceAck->result.index);
 
 	char *jsonstring =  json_serialize_to_string(schema);
 	json_value_free(schema);
@@ -749,8 +843,8 @@ char * ntyJsonWriteRunTime(RunTimeAck *pRunTimeAck) {
 	
 	JSON_Value *schema = json_value_init_object();
 	JSON_Object *schema_obj = json_value_get_object(schema);
-	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object());
-	JSON_Object *results_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULTS);
+	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULT, json_value_init_object());
+	JSON_Object *results_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULT);
 	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_IMEI, pRunTimeAck->result.IMEI);
 	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_CATEGORY, pRunTimeAck->result.category);
 
@@ -804,7 +898,6 @@ char * ntyJsonWriteSchedule(ScheduleAck *pScheduleAck) {
 		json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_DETAILS, pScheduleAck->results.pSchedule[i].details);
 	}
 	
-
 	char *jsonstring =  json_serialize_to_string(schema);
 	json_value_free(schema);
 	return jsonstring;
@@ -848,7 +941,6 @@ char * ntyJsonWriteTimeTables(TimeTablesAck *pTimeTablesAck) {
 	json_value_free(schema);
 	return jsonstring;
 }
-
 
 char * ntyJsonWriteContacts(ContactsAck *pContactsAck) {
 	if (pContactsAck == NULL) {

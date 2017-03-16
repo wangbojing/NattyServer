@@ -59,6 +59,7 @@
 
 #define NATTY_USER_PROTOCOL_IMEI					"IMEI"
 #define NATTY_USER_PROTOCOL_CATEGORY				"Category"
+#define NATTY_USER_PROTOCOL_INDEX					"Index"
 
 #define NATTY_USER_PROTOCOL_CATEGORY_EFENCE			"Efence"
 #define NATTY_USER_PROTOCOL_CATEGORY_RUNTIME		"RunTime"
@@ -72,8 +73,11 @@
 #define NATTY_USER_PROTOCOL_CATEGORY_POWER			"Power"
 #define NATTY_USER_PROTOCOL_CATEGORY_SIGNAL			"Signal"
 #define NATTY_USER_PROTOCOL_CATEGORY_LOCATION		"Location"
-
 #define NATTY_USER_PROTOCOL_CATEGORY_FARE			"Fare"
+
+#define NATTY_USER_PROTOCOL_CATEGORY_CONTACTS		"Contacts"
+
+
 
 
 #define NATTY_USER_PROTOCOL_WIFI			"WIFI"
@@ -155,6 +159,32 @@
 #define NATTY_AMAP_PROTOCOL_LOCATION 		"location"
 
 
+#define NATTY_WEATHER_PROTOCOL_RESULTS 				"results"
+
+#define NATTY_WEATHER_PROTOCOL_LOCATION 			"location"
+#define NATTY_WEATHER_PROTOCOL_ID 			 	 	"id"
+#define NATTY_WEATHER_PROTOCOL_NAME 			 	"name"
+#define NATTY_WEATHER_PROTOCOL_COUNTRY 			 	"country"
+#define NATTY_WEATHER_PROTOCOL_PATH 			 	"path"
+#define NATTY_WEATHER_PROTOCOL_TIMEZONE 			"timezone"
+#define NATTY_WEATHER_PROTOCOL_TIMEZONE_OFFSET 		"timezone_offset"
+
+#define NATTY_WEATHER_PROTOCOL_DAILY 			 	 "daily"
+#define NATTY_WEATHER_PROTOCOL_DATE 				 "date"
+#define NATTY_WEATHER_PROTOCOL_TEXT_DAY 			 "text_day"
+#define NATTY_WEATHER_PROTOCOL_CODE_DAY 			 "code_day"
+#define NATTY_WEATHER_PROTOCOL_TEXT_NIGHT 			 "text_night"
+#define NATTY_WEATHER_PROTOCOL_CODE_NIGHT 			 "code_night"
+#define NATTY_WEATHER_PROTOCOL_HIGH 				 "high"
+#define NATTY_WEATHER_PROTOCOL_LOW 					 "low"
+#define NATTY_WEATHER_PROTOCOL_PRECIP 				 "precip"
+#define NATTY_WEATHER_PROTOCOL_WIND_DIRECTION 		 "wind_direction"
+#define NATTY_WEATHER_PROTOCOL_WIND_DIRECTION_DEGREE "wind_direction_degree"
+#define NATTY_WEATHER_PROTOCOL_WIND_SPEED 			 "wind_speed"
+#define NATTY_WEATHER_PROTOCOL_WIND_SCALE 			 "wind_scale"
+
+#define NATTY_WEATHER_PROTOCOL_LAST_UPDATE 			 "last_update"
+
 
 
 typedef struct _WIFIItem {
@@ -235,6 +265,7 @@ typedef struct _WeatherDaily {
 	const char *date;
 	const char *text_day;
 	const char *code_day;
+	const char *text_night;
 	const char *code_night;
 	const char *high;
 	const char *low;
@@ -247,20 +278,21 @@ typedef struct _WeatherDaily {
 
 typedef struct _WeatherResults {
 	WeatherLocation location;
-	WeatherDaily *pDaily;		
+	size_t size;
+	WeatherDaily *pDaily;
 	const char *last_update;
 } WeatherResults;
 
-typedef struct _WeatherAck {
+typedef struct _WeatherReqAck {
 	size_t size;
 	WeatherResults *pResults;
-} WeatherAck;
+} WeatherReq, WeatherAck;
 
-typedef struct _WeatherReq {
+typedef struct _WeatherLocationReq {
 	const char *IMEI;
     const char *category;
     const char *bts;
-} WeatherReq;
+} WeatherLocationReq;
 
 
 typedef struct _ICCIDReq {
@@ -351,14 +383,29 @@ typedef struct _EfenceItem {
 	size_t size;
 	EfencePoints *pPoints;
 } EfenceItem;
-typedef struct _EfenceReq {
+typedef struct _AddEfenceReq {
 	const char *IMEI;
 	const char *category;
+	const char *action;
+	const char *index;
 	EfenceItem efence;
-} EfenceReq, EfenceResult;
-typedef struct _EfenceAck {
-	EfenceResult result;
-} EfenceAck;
+} AddEfenceReq, AddEfenceResult;
+
+typedef struct _DelEfenceReq {
+	const char *IMEI;
+	const char *category;
+	const char *action;
+	const char *index;
+} DelEfenceReq, DelEfenceResult;
+
+typedef struct _AddEfenceAck {
+	const char *id;
+	AddEfenceResult result;
+} AddEfenceAck;
+
+typedef struct _DelEfenceAck {
+	DelEfenceResult result;
+} DelEfenceAck;
 
 
 typedef struct _RunTimeItem {
@@ -442,6 +489,11 @@ typedef struct _ScheduleAck {
 	ScheduleResults results;
 } ScheduleAck;
 
+
+typedef struct _CommonExtendAck {
+	const char *id;
+	CommonResult result;
+} CommonExtendAck;
 
 
 typedef struct _Morning {

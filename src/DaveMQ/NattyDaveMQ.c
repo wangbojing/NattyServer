@@ -357,6 +357,7 @@ int ntyDaveMqPushMessage(VALUE_TYPE *tag) {
 	pTag->Type = tag->Type;
 	pTag->fromId = tag->fromId;
 	pTag->toId = tag->toId;
+	pTag->cb = tag->cb;
 
 	return ntyDaveMqEnQueue(Queue, pTag);
 }
