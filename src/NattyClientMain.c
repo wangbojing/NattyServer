@@ -315,12 +315,12 @@ int main() {
 		
 		//break;
 
-		char *json_common = "{\"IMEI\":\"355637052788650\",\"Category\":\"TimeTables\",\"TimeTables\":[{\"Daily\":\"\",\"Morning\":{\"Status\":\"1\",\"StartTime\":\"08:00:00\",\"EndTime\":\"12:00:00\"},\"Afternoon\":{\"Status\":\"1\",\"StartTime\":\"13:00:00\",\"EndTime\":\"18:00:00\"}}]}";
+		//char *json_common = "{\"IMEI\":\"355637052788650\",\"Category\":\"TimeTables\",\"TimeTables\":[{\"Daily\":\"\",\"Morning\":{\"Status\":\"1\",\"StartTime\":\"08:00:00\",\"EndTime\":\"12:00:00\"},\"Afternoon\":{\"Status\":\"1\",\"StartTime\":\"13:00:00\",\"EndTime\":\"18:00:00\"}}]}";
 		//char *json_common = "{\"IMEI\":\"355637052788650\",\"Category\":\"TimeTables\",\"TimeTables\":[{\"Daily\":\"Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday\",\"Morning\":{\"Status\":\"1\",\"StartTime\":\"08:00:00\",\"EndTime\":\"12:00:00\"},\"Afternoon\":{\"Status\":\"1\",\"StartTime\":\"13:00:00\",\"EndTime\":\"18:00:00\"}}]}";
 		//char *json_common = "{\"IMEI\":\"352315052834187\",\"Category\":\"Turn\",\"Turn\":{\"Status\":\"0\",\"On\":{\"Time\":\"08:00:00\"},\"Off\":{\"Time\":\"18:00:00\"}}}";
-		ntyCommonReqClient(g_devid,json_common,strlen(json_common));
-		sleep(20);
-		break;
+		//ntyCommonReqClient(g_devid,json_common,strlen(json_common));
+		//sleep(20);
+	//	break;
 		
 		char *json_location = "{\"IMEI\":\"135790246811220\",\"Category\":\"WIFI\",\"WIFI\":[{\"SSID\":\"TP-LINK_42ED\",\"MAC\":\"F4:83:CD:3A:42:ED\",\"V\":\"-37\"},{\"SSID\":\"EXT\",\"MAC\":\"04:95:E6:22:DA:48\",\"V\":\"-52\"}]}";
 		ntydbg("%s\n", json_location);

@@ -627,9 +627,10 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 	if (pLocationAck->results.category == NULL) {
 		ntydbg("   pLocationAck->results.category  is null \n");
 	}
+	char type[20] = {0};
 	if (pAMap->result.type != NULL) {
+		ntydbg("   pLocationAck->results.type  %s \n", pLocationAck->results.type);
 		int nLocationType = atoi(pAMap->result.type);
-		char *type = NULL;
 		ntyJsonGetLocationType(nLocationType, type);
 		pLocationAck->results.type = type;
 	} else {
