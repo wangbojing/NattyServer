@@ -923,6 +923,7 @@ char * ntyJsonWriteTimeTables(TimeTablesAck *pTimeTablesAck) {
 	for (i = 0; i < pTimeTablesAck->results.size; i++) {
 		json_array_append_value(timetables_arr, json_value_init_object());
 		JSON_Object *timetables_obj = json_array_get_object(timetables_arr, i);
+		json_object_set_string(timetables_obj, NATTY_USER_PROTOCOL_ID, pTimeTablesAck->results.pTimeTables[i].id);
 		json_object_set_string(timetables_obj, NATTY_USER_PROTOCOL_DAILY, pTimeTablesAck->results.pTimeTables[i].daily);
 
 		json_object_set_value(timetables_obj, NATTY_USER_PROTOCOL_MORNING, json_value_init_object());

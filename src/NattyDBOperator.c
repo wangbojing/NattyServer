@@ -1138,7 +1138,7 @@ int ntyExecuteTimeTablesUpdate(void *self, C_DEVID aid, C_DEVID did, const char 
 		} else {
 			U8 buffer[512];
 			ntylog(" sql : %s\n", buffer);
-			ResultSet_T r =Connection_executeQuery(con, NTY_DB_UPDATE_TIMETABLE, did, morning, morning_turn, afternoon, afternoon_turn, daily, id);
+			ResultSet_T r =Connection_executeQuery(con, NTY_DB_UPDATE_TIMETABLE, did, morning, morning_turn, afternoon, afternoon_turn, daily, *id);
 			while (ResultSet_next(r)) {
 				*id = ResultSet_getInt(r, 1);				
 			}

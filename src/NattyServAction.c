@@ -120,12 +120,15 @@ void ntyJsonLocationWIFIAction(C_DEVID fromId, C_DEVID toId, JSON_Value *json, U
 	ntydbg(" wifibuf --> %s\n", wifibuf);
 
 	MessageTag *pMessageTag = malloc(sizeof(MessageTag));
+	pMessageTag->Type = MSG_TYPE_LOCATION_WIFI_API;
 	pMessageTag->fromId = fromId;
 	pMessageTag->toId = toId;
 	pMessageTag->Tag = wifibuf;
 	pMessageTag->length = strlen(wifibuf);
+	pMessageTag->cb = ntyHttpQJKLocation;
 	
-	int ret = ntyHttpQJKLocation(pMessageTag);
+	int ret = ntyDaveMqPushMessage(pMessageTag);
+	//int ret = ntyHttpQJKLocation(pMessageTag);
 	if (ret == -1) {
 		ntylog(" ntyHttpQJKLocation --> Http Exception\n");
 		ret = 4;
@@ -169,16 +172,20 @@ void ntyJsonLocationLabAction(C_DEVID fromId, C_DEVID toId, JSON_Value *json, U8
 	ntydbg(" labbuf --> %s\n", labbuf);
 
 	MessageTag *pMessageTag = malloc(sizeof(MessageTag));
+	pMessageTag->Type = MSG_TYPE_LOCATION_LAB_API;
 	pMessageTag->fromId = fromId;
 	pMessageTag->toId = toId;
 	pMessageTag->Tag = labbuf;
 	pMessageTag->length = strlen(labbuf);
-
+	pMessageTag->cb = ntyHttpQJKLocation;
+	
 	int n8LocationType = 0;
 	ntyJsonSetLocationType(pLABReq->category, &n8LocationType);
 	pMessageTag->u8LocationType = (U8)n8LocationType; 
 
-	int ret = ntyHttpQJKLocation(pMessageTag);
+	
+	int ret = ntyDaveMqPushMessage(pMessageTag);
+	//int ret = ntyHttpQJKLocation(pMessageTag);
 	free(pMessageTag);
 	if (ret == -1) {
 		ntylog(" ntyHttpQJKLocation --> Http Exception\n");
