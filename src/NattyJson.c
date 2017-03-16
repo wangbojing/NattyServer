@@ -770,6 +770,7 @@ char *ntyJsonWriteLocation(LocationAck *pLocationAck) {
 	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_RADIUS, pLocationAck->results.radius);
 	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_LOCATION, pLocationAck->results.location);
 	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_CATEGORY, pLocationAck->results.category);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_IMEI, pLocationAck->results.IMEI);
 
 	char *jsonstring =  json_serialize_to_string(schema);
 	json_value_free(schema);

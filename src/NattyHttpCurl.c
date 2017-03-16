@@ -621,11 +621,19 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 	LocationAck *pLocationAck = malloc(sizeof(LocationAck));
 	pLocationAck->results.IMEI = ntyJsonDeviceIMEI(json);
 	pLocationAck->results.category = ntyJsonAppCategory(json);
+	if (pLocationAck->results.IMEI == NULL) {
+		ntydbg("   pLocationAck->results.IMEI  is null \n");
+	}
+	if (pLocationAck->results.category == NULL) {
+		ntydbg("   pLocationAck->results.category  is null \n");
+	}
 	if (pAMap->result.type != NULL) {
 		int nLocationType = atoi(pAMap->result.type);
 		char *type = NULL;
 		ntyJsonGetLocationType(nLocationType, type);
 		pLocationAck->results.type = type;
+	} else {
+		ntydbg("   pLocationAck->results.type  is null \n");
 	}
 	pLocationAck->results.location = pAMap->result.location;
 	pLocationAck->results.radius = pAMap->result.radius;
