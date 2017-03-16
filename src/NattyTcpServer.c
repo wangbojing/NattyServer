@@ -65,6 +65,8 @@
 #define JEMALLOC_NO_RENAME	 1
 #include <jemalloc/jemalloc.h>
 
+struct ev_loop *tcp_mainloop = NULL;
+
 
 static int ntySetNonblock(int fd) {
 	int flags;
@@ -138,14 +140,20 @@ static int ntyTcpRecv(int fd, U8 *buffer, int length, struct ev_io *watcher, str
 }
 
 
-static int ntyAddRelationMap(MessagePacket *msg) {
+
+
+int ntyAddRelationMap(MessagePacket *msg) {
 	int ret = NTY_RESULT_SUCCESS;
 
 	void *map = ntyMapInstance();
 	ClientSocket * value = ntyMapSearch(map, msg->client->devId);
 	if (value == NULL) {
 		ClientSocket *nValue = (NValue*)malloc(sizeof(ClientSocket));
+#if ENABLE_EV_WATCHER_MODE
+		nValue->watcher = msg->watcher;
+#else
 		nValue->sockfd = msg->watcher->fd;
+#endif
 		nValue->connectType = msg->connectType;
 
 		int nSize = sizeof(struct sockaddr_in);
@@ -174,13 +182,17 @@ static int ntyAddRelationMap(MessagePacket *msg) {
 		}
 		
 	} else {
-	
-		if (value->sockfd != msg->watcher->fd) {
+#if ENABLE_EV_WATCHER_MODE	
+		if (value->watcher != msg->watcher) 
+#else
+		if (value->sockfd != msg->watcher->fd) 
+#endif
+		{
 			struct sockaddr_in client_addr;
 			int nSize = sizeof(struct sockaddr_in);
 
-			getpeername(value->sockfd, (struct sockaddr*)&client_addr, &nSize); 		
-			ntylog(" IP Addr Have Changed from: %d.%d.%d.%d:%d -->\n", *(unsigned char*)(&client_addr.sin_addr.s_addr), *((unsigned char*)(&client_addr.sin_addr.s_addr)+1),													
+			getpeername(value->watcher->fd, (struct sockaddr*)&client_addr, &nSize); 		
+			ntylog(" IP Addr Have Changed from: %d.%d.%d.%d:%d -->", *(unsigned char*)(&client_addr.sin_addr.s_addr), *((unsigned char*)(&client_addr.sin_addr.s_addr)+1),													
 				*((unsigned char*)(&client_addr.sin_addr.s_addr)+2), *((unsigned char*)(&client_addr.sin_addr.s_addr)+3),													
 				client_addr.sin_port);
 
@@ -188,8 +200,14 @@ static int ntyAddRelationMap(MessagePacket *msg) {
 			ntylog(" to:%d.%d.%d.%d:%d\n", *(unsigned char*)(&client_addr.sin_addr.s_addr), *((unsigned char*)(&client_addr.sin_addr.s_addr)+1),													
 				*((unsigned char*)(&client_addr.sin_addr.s_addr)+2), *((unsigned char*)(&client_addr.sin_addr.s_addr)+3),													
 				client_addr.sin_port);
-
+#if ENABLE_EV_WATCHER_MODE
+			//release before socket
+			ntyReleaseSocket(tcp_mainloop, value->watcher);
+			//save new socket io
+			value->watcher = msg->watcher;
+#else
 			value->sockfd = msg->watcher->fd;
+#endif
 			memcpy(&value->addr, &client_addr, nSize);
 			
 		}
@@ -198,27 +216,23 @@ static int ntyAddRelationMap(MessagePacket *msg) {
 	return ret;
 }
 
-static int ntyDelRelationMap(MessagePacket *msg) {
+int ntyDelRelationMap(C_DEVID id) {
 	int ret = NTY_RESULT_SUCCESS;
 	void *map = ntyMapInstance();
 	
-	NValue * value = ntyMapSearch(map, msg->client->devId);
+	NValue * value = ntyMapSearch(map, id);
 	if (value != NULL) {
-		ret = ntyMapDelete(map, msg->client->devId);
+		//release client socket
+		ntyReleaseSocket(tcp_mainloop, value->watcher);
+		//release value
+		free(value);
+		
+		ret = ntyMapDelete(map, id);
 		if (ret == NTY_RESULT_FAILED || ret == NTY_RESULT_NOEXIST) {
 			ASSERT(0);
-		} else if (ret == NTY_RESULT_SUCCESS) {		
-			free(value);
-			//delete HashTable
-			/*
-			void *hash = ntyHashTableInstance();
-			ret = ntyHashTableDelete(hash, msg->watcher->fd);
-			
-			ASSERT(ret == NTY_RESULT_SUCCESS);	
-			*/
 		}	
 	} else {
-		ntylog(" Map Have No Id --> %lld\n", msg->client->devId);
+		ntylog(" Map Have No Id --> %lld\n", id);
 	}
 
 	return ret;
@@ -259,7 +273,7 @@ static void ntyReleaseClient(Job *job) {
 	free(job);
 }
 
-static int ntyReleaseSocket(struct ev_loop *loop, struct ev_io *watcher) {
+int ntyReleaseSocket(struct ev_loop *loop, struct ev_io *watcher) {
 	if (watcher == NULL) {
 		return NTY_RESULT_FAILED;
 	}
@@ -272,6 +286,7 @@ static int ntyReleaseSocket(struct ev_loop *loop, struct ev_io *watcher) {
 
 	return NTY_RESULT_SUCCESS;
 }
+
 
 extern void ntySelfLogoutPacket(C_DEVID id, U8 *buffer);
 
@@ -341,7 +356,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 
 		ntySelfLogoutPacket(msg->client->devId, msg->buffer);
 #if 1 //release ntyHashTableDelete
-		ntyDelRelationMap(msg);
+		ntyDelRelationMap(msg->client->devId);
 #endif
 
 		Job *job = (Job*)malloc(sizeof(*job));
@@ -406,7 +421,6 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		job->user_data = msg;
 		ntyThreadPoolPush(pThreadPool, job);
 
-		
 	}
 
 	return ;
@@ -503,7 +517,7 @@ void *ntyTcpServerRelease(TcpServer *server) {
 	return server;
 }
 
-struct ev_loop *tcp_mainloop = NULL;
+
 
 void *ntyTcpServerGetMainloop(void) {
 	return tcp_mainloop;

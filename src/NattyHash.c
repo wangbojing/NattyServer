@@ -575,19 +575,18 @@ int ntyHashDelete(void *_self, U32 key) {
 	U32 index = key % NATTY_DICTIONARY_LENGTH;
 
 	if (_self == NULL) return NTY_RESULT_FAILED;
-
 	
 	HashNode *node = &table->Dictionary[index];
 	if (node->info == NULL) {
 		ntylog("ntyHashDelete\n");
-		return -2;
+		return NTY_RESULT_ERROR;
 	} else {
 			
 		if (node->sockfd == key) {
 			//ntylog(" Delete Hash Table, ip:%d,port%d\n", load->srcip, load->sport);
 			//delete node
 			ntyHashDictionaryClear(node);
-			return 0;
+			return NTY_RESULT_SUCCESS;
 
 		} else {
 			HashNode *iter = node->list;
@@ -597,7 +596,7 @@ int ntyHashDelete(void *_self, U32 key) {
 				if (node->sockfd == key) {
 					ntyHashLinkClear(iter);
 					pre->list = NULL;
-					return 0;
+					return NTY_RESULT_SUCCESS;
 				}
 				pre = iter;
 				iter = iter->list;
@@ -605,7 +604,7 @@ int ntyHashDelete(void *_self, U32 key) {
 		}
 	}
 
-	return -2;
+	return NTY_RESULT_ERROR;
 }
 
 int ntyHashUpdate(void *_self, U32 key, Payload* load) {

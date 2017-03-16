@@ -66,7 +66,7 @@
 
 #define ENABLE_ENCODE_WCHAR					1
 
-
+#define ENABLE_EV_WATCHER_MODE				1
 
 #if 1
 

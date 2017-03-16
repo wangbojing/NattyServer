@@ -131,9 +131,7 @@ void ntyVectorIter(void *self, NVECTOR_CB *cb, void *arg) {
 	NVector *vector = self;
 	NKnot *knot = NULL;
 
-	ntylog(" -->> ntyVectorIter enter <<--\n");
 	for (knot = vector->header.lh_first;knot != NULL;knot = knot->entries.le_next) {
-		//ntylog(" -->> ntyVectorIter failed <<--\n");
 		cb(knot->data, arg);
 	}
 
@@ -208,7 +206,6 @@ void ntyVectorIterator(void *self, NVECTOR_CB *cb, void *arg) {
 		return (*handle)->iter(self, cb, arg);
 	}
 
-	ntylog(" -->> ntyVectorIterator failed <<--\n");
 	return ;
 }
 

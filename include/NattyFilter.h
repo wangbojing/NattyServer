@@ -87,6 +87,8 @@ int ntyReleaseClientNodeByDevID(struct ev_loop *loop, struct ev_io *watcher, C_D
 
 int ntyReleaseClientNodeByNode(struct ev_loop *loop, void *node);
 
+int ntyClientCleanup(ClientSocket *client);
+
 
 
 typedef struct _Node {

@@ -81,6 +81,7 @@ void ntyProtoRelease(void);
 
 
 static int ntySendBigBuffer(void *self, U8 *u8Buffer, int length, C_DEVID gId);
+static int ntyReconnectCb(NITIMER_ID id, void *user_data, int len);
 
 
 #if 1 //
@@ -92,6 +93,42 @@ typedef enum {
 	STATUS_NETWORK_PROXYDATA,
 	STATUS_NETWORK_LOGOUT,
 } StatusNetwork;
+
+#if 1 //local
+static C_DEVID gSelfId = 0;
+RECV_CALLBACK onRecvCallback = NULL;
+PROXY_CALLBACK onProxyCallback = NULL;
+PROXY_CALLBACK onProxyFailed = NULL; //send data failed
+PROXY_CALLBACK onProxySuccess = NULL; //send data success
+PROXY_CALLBACK onProxyDisconnect = NULL;
+PROXY_CALLBACK onProxyReconnect = NULL;
+PROXY_CALLBACK onBindResult = NULL;
+PROXY_CALLBACK onUnBindResult = NULL;
+PROXY_CALLBACK onPacketRecv = NULL;
+PROXY_CALLBACK onPacketSuccess = NULL;
+
+NTY_PARAM_CALLBACK onLoginAckResult = NULL; //RECV LOGIN_ACK
+NTY_STATUS_CALLBACK onHeartBeatAckResult = NULL; //RECV HEARTBEAT_ACK
+NTY_STATUS_CALLBACK onLogoutAckResult = NULL; //RECV LOGOUT_ACK
+NTY_PARAM_CALLBACK onTimeAckResult = NULL; //RECV TIME_ACK
+NTY_PARAM_CALLBACK onICCIDAckResult = NULL; //RECV ICCID_ACK
+NTY_RETURN_CALLBACK onCommonReqResult = NULL; //RECV COMMON_REQ
+
+NTY_STATUS_CALLBACK onVoiceDataAckResult = NULL; //RECV VOICE_DATA_ACK
+NTY_PARAM_CALLBACK onOfflineMsgAckResult = NULL; //RECV OFFLINE_MSG_ACK
+NTY_PARAM_CALLBACK onLocationPushResult = NULL; //RECV LOCATION_PUSH
+NTY_PARAM_CALLBACK onWeatherPushResult = NULL; //RECV WEATHER_PUSH
+NTY_RETURN_CALLBACK onDataRoute = NULL; //RECV DATA_RESULT
+NTY_STATUS_CALLBACK onDataResult = NULL; //RECV DATA_RESULT
+NTY_RETURN_CALLBACK onVoiceBroadCastResult = NULL; //RECV VOICE_BROADCAST
+NTY_RETURN_CALLBACK onLocationBroadCastResult = NULL; //RECV LOCATION_BROADCAST
+NTY_RETURN_CALLBACK onCommonBroadCastResult = NULL; //RECV COMMON_BROADCAST
+	
+U8 u8ConnectFlag = 0;;
+
+
+#endif
+
 
 typedef struct _NATTYPROTOCOL {
 	const void *_;
@@ -179,11 +216,42 @@ void* ntyProtoClientCtor(void *_self, va_list *params) {
 	NattyProto *proto = _self;
 
 	proto->onRecvCallback = ntyRecvProc;
-	//proto->selfId = g_devid;
+	proto->selfId = gSelfId;
 	proto->recvLen = 0;
 	memset(proto->recvBuffer, 0, RECV_BUFFER_SIZE);
 	//proto->friends = ntyVectorCreator();
 
+	proto->onProxyCallback = onProxyCallback; //just for java
+	proto->onProxyFailed = onProxyFailed; //send data failed
+	proto->onProxySuccess = onProxySuccess; //send data success
+	proto->onProxyDisconnect = onProxyDisconnect;
+	proto->onProxyReconnect = onProxyReconnect;
+
+	proto->onBindResult = onBindResult;
+	proto->onUnBindResult = onUnBindResult;
+	proto->onPacketRecv = onPacketRecv;
+	proto->onPacketSuccess = onPacketSuccess;
+	
+	proto->onLoginAckResult = onLoginAckResult; //RECV LOGIN_ACK
+	proto->onHeartBeatAckResult = onHeartBeatAckResult; //RECV HEARTBEAT_ACK
+	proto->onLogoutAckResult = onLogoutAckResult; //RECV LOGOUT_ACK
+
+	proto->onTimeAckResult = onTimeAckResult; //RECV TIME_ACK
+	proto->onICCIDAckResult = onICCIDAckResult; //RECV ICCID_ACK
+	proto->onCommonReqResult = onCommonReqResult; //RECV COMMON_REQ
+
+	proto->onVoiceDataAckResult = onVoiceDataAckResult; //RECV VOICE_DATA_ACK
+	proto->onOfflineMsgAckResult = onOfflineMsgAckResult; //RECV OFFLINE_MSG_ACK
+	proto->onLocationPushResult = onLocationPushResult; //RECV LOCATION_PUSH
+
+	proto->onWeatherPushResult = onWeatherPushResult; //RECV WEATHER_PUSH
+	proto->onDataRoute = onDataRoute; //RECV DATA_RESULT
+	proto->onDataResult = onDataResult; //RECV DATA_RESULT
+
+	proto->onVoiceBroadCastResult = onVoiceBroadCastResult; //RECV VOICE_BROADCAST
+	proto->onLocationBroadCastResult = onLocationBroadCastResult; //RECV LOCATION_BROADCAST
+	proto->onCommonBroadCastResult = onCommonBroadCastResult; //RECV COMMON_BROADCAST
+	
 	ntyGenCrcTable();
 	//Setup Socket Connection
 	Network *network = ntyNetworkInstance();
@@ -192,7 +260,7 @@ void* ntyProtoClientCtor(void *_self, va_list *params) {
 	} else {
 		proto->u8ConnectFlag = 1;
 	}
-
+	
 	//Create Timer
 	void *nTimerList = ntyTimerInstance();
 	nHeartBeatTimer = ntyTimerAdd(nTimerList, HEARTBEAT_TIME_TICK, ntyHeartBeatCb, NULL, 0);
@@ -212,6 +280,7 @@ void* ntyProtoClientDtor(void *_self) {
 
 	//Release Socket Connection
 	ntyNetworkRelease();
+
 	
 	//ntyVectorDestory(proto->friends);
 	proto->u8ConnectFlag = 0;
@@ -580,7 +649,6 @@ static NattyProto *pProtoOpera = NULL;
 
 void *ntyProtoInstance(void) { //Singleton
 	if (pProtoOpera == NULL) {
-		ntydbg("ntyProtoInstance\n");
 		pProtoOpera = New(pNattyProtoOpera);
 		if (pProtoOpera->u8ConnectFlag == 0) { //Socket Connect Failed
 			Delete(pProtoOpera);
@@ -636,213 +704,141 @@ static int ntySendLogout(void *self) {
 }
 
 void ntySetSendSuccessCallback(PROXY_CALLBACK cb) {
-	NattyProto* proto = ntyProtoInstance();
-	proto->onProxySuccess = cb;
+	onProxySuccess = cb;
 }
 
 void ntySetSendFailedCallback(PROXY_CALLBACK cb) {
-	NattyProto* proto = ntyProtoInstance();
-	if (proto) {
-		proto->onProxyFailed = cb;
-	}
+	onProxyFailed = cb;
 }
 
 void ntySetProxyCallback(PROXY_CALLBACK cb) {
-	NattyProto* proto = ntyProtoInstance();
-	if (proto) {
-		proto->onProxyCallback = cb;
-	}
+	onProxyCallback = cb;
 }
 
 void ntySetProxyDisconnect(PROXY_CALLBACK cb) {
-	NattyProto* proto = ntyProtoInstance();
-	if (proto) {
-		proto->onProxyDisconnect = cb;
-	}
+	onProxyDisconnect = cb;
 }
 
 void ntySetProxyReconnect(PROXY_CALLBACK cb) {
-	NattyProto* proto = ntyProtoInstance();
-	if (proto) {
-		proto->onProxyReconnect = cb;
-	}
+	onProxyReconnect = cb;
 }
 
 void ntySetBindResult(PROXY_CALLBACK cb) {
-	NattyProto* proto = ntyProtoInstance();
-	if (proto) {
-		proto->onBindResult = cb;
-	}
+	onBindResult = cb;
 }
 
 void ntySetUnBindResult(PROXY_CALLBACK cb) {
-	NattyProto* proto = ntyProtoInstance();
-	if (proto) {
-		proto->onUnBindResult = cb;
-	}
+	onUnBindResult = cb;
 }
 
 void ntySetPacketRecv(PROXY_CALLBACK cb) {
-	NattyProto* proto = ntyProtoInstance();
-	if (proto) {
-		proto->onPacketRecv = cb;
-	}
+	onPacketRecv = cb;
 }
 
 void ntySetPacketSuccess(PROXY_CALLBACK cb) {
-	NattyProto* proto = ntyProtoInstance();
-	if (proto) {
-		proto->onPacketSuccess = cb;
-	}
+	onPacketSuccess = cb;
 }
 
 
 void ntySetDevId(C_DEVID id) {
-	NattyProto* proto = ntyProtoInstance();
-	if (proto) {
-		proto->selfId = id;
-	}
+	gSelfId = id;
 }
 
 void ntySetLoginAckResult(NTY_PARAM_CALLBACK cb) {
-	NattyProto* proto = ntyProtoInstance();
-	if (proto) {
-		proto->onLoginAckResult = cb;
-	}
+	onLoginAckResult = cb;
 }
 
 void ntySetHeartBeatAckResult(NTY_STATUS_CALLBACK cb) {
-	NattyProto* proto = ntyProtoInstance();
-	if (proto) {
-		proto->onHeartBeatAckResult = cb;
-	}
+	onHeartBeatAckResult = cb;
 }
 
 void ntySetLogoutAckResult(NTY_STATUS_CALLBACK cb) {
-	NattyProto* proto = ntyProtoInstance();
-	if (proto) {
-		proto->onLogoutAckResult = cb;
-	}
+	onLogoutAckResult = cb;
 }
 
 void ntySetTimeAckResult(NTY_PARAM_CALLBACK cb) {
-	NattyProto* proto = ntyProtoInstance();
-	if (proto) {
-		proto->onTimeAckResult = cb;
-	}
+	onTimeAckResult = cb;
 }
 
 void ntySetICCIDAckResult(NTY_PARAM_CALLBACK cb) {
-	NattyProto* proto = ntyProtoInstance();
-	if (proto) {
-		proto->onICCIDAckResult = cb;
-	}
+	onICCIDAckResult = cb;
 }
 
 void ntySetCommonReqResult(NTY_RETURN_CALLBACK cb) {
-	NattyProto* proto = ntyProtoInstance();
-	if (proto) {
-		proto->onCommonReqResult = cb;
-	}
+	onCommonReqResult = cb;
 }
 
 void ntySetVoiceDataAckResult(NTY_STATUS_CALLBACK cb) {
-	NattyProto* proto = ntyProtoInstance();
-	if (proto) {
-		proto->onVoiceDataAckResult = cb;
-	}
+	onVoiceDataAckResult = cb;
 }
 
 void ntySetOfflineMsgAckResult(NTY_PARAM_CALLBACK cb) {
-	NattyProto* proto = ntyProtoInstance();
-	if (proto) {
-		proto->onOfflineMsgAckResult = cb;
-	}
+	onOfflineMsgAckResult = cb;
 }
 
 void ntySetLocationPushResult(NTY_PARAM_CALLBACK cb) {
-	NattyProto* proto = ntyProtoInstance();
-	if (proto) {
-		proto->onLocationPushResult = cb;
-	}
+	onLocationPushResult = cb;
 }
 
 void ntySetWeatherPushResult(NTY_PARAM_CALLBACK cb) {
-	NattyProto* proto = ntyProtoInstance();
-	if (proto) {
-		proto->onWeatherPushResult = cb;
-	}
+	onWeatherPushResult = cb;
 }
 
 void ntySetDataRoute(NTY_RETURN_CALLBACK cb) {
-	NattyProto* proto = ntyProtoInstance();
-	if (proto) {
-		proto->onDataRoute = cb;
-	}
+	onDataRoute = cb;
 }
 
 void ntySetDataResult(NTY_STATUS_CALLBACK cb) {
-	NattyProto* proto = ntyProtoInstance();
-	if (proto) {
-		proto->onDataResult = cb;
-	}
+	onDataResult = cb;
 }
 
 void ntySetVoiceBroadCastResult(NTY_RETURN_CALLBACK cb) {
-	NattyProto* proto = ntyProtoInstance();
-	if (proto) {
-		proto->onVoiceBroadCastResult = cb;
-	}
+	onVoiceBroadCastResult = cb;
 }
 
 void ntySetLocationBroadCastResult(NTY_RETURN_CALLBACK cb) {
-	NattyProto* proto = ntyProtoInstance();
-	if (proto) {
-		proto->onLocationBroadCastResult = cb;
-	}
+	onLocationBroadCastResult = cb;
 }
 
 void ntySetCommonBroadCastResult(NTY_RETURN_CALLBACK cb) {
-	NattyProto* proto = ntyProtoInstance();
-	if (proto) {
-		proto->onCommonBroadCastResult = cb;
-	}
-}
-
-
-int ntyGetNetworkStatus(void) {
-	void *network = ntyNetworkInstance();
-	return ntyGetSocket(network);
+	onCommonBroadCastResult = cb;
 }
 
 
 int ntyCheckProtoClientStatus(void) {
-	NattyProto* proto = ntyProtoInstance();
-	if (proto) {
+	
 #if 0
-		if (proto->onProxyCallback == NULL) return -2;
-		if (proto->onProxyFailed == NULL) return -3;
-		if (proto->onProxySuccess == NULL) return -4;
+	if (onProxyCallback == NULL) return -2;
+	if (onProxyFailed == NULL) return -3;
+	if (onProxySuccess == NULL) return -4;
 #endif
-		if (proto->onProxyDisconnect == NULL) return -5;
-		if (proto->onProxyReconnect == NULL) return -6;
-		if (proto->onBindResult == NULL) return -7;
-		if (proto->onUnBindResult == NULL) return -8;
-		if (proto->onRecvCallback == NULL) return -9;
-		if (proto->onPacketRecv == NULL) return -10;
-		if (proto->onPacketSuccess == NULL) return -11;
-	}
-	return 0;
+	if (onProxyDisconnect == NULL) return -5;
+	if (onProxyReconnect == NULL) return -6;
+	if (onBindResult == NULL) return -7;
+	if (onUnBindResult == NULL) return -8;
+	if (onRecvCallback == NULL) return -9;
+	if (onPacketRecv == NULL) return -10;
+	if (onPacketSuccess == NULL) return -11;
+	
 }
 
 void* ntyStartupClient(int *status) {
 	NattyProto* proto = ntyProtoInstance();
+	//proto->
 	if (proto) {
 		ntySendLogin(proto);
 		ntySetupRecvProcThread(proto); //setup recv proc
+		
+		*status = proto->u8ConnectFlag;
+	} else {
+		if (nReconnectTimer == NULL) {
+			// startup failed
+			void *nTimerList = ntyTimerInstance();
+			nReconnectTimer = ntyTimerAdd(nTimerList, 15, ntyReconnectCb, NULL, 0);
+		}
+		*status = -1;
 	}
 
-	*status = ntyGetNetworkStatus();
 	
 	return proto;
 }
@@ -976,7 +972,7 @@ static int ntyReconnectCb(NITIMER_ID id, void *user_data, int len) {
 	NattyProto *proto = ntyStartupClient(&status);
 	if (status != -1 && (proto != NULL)) {
 		//NattyProto *proto = ntyProtoInstance();
-		trace(" ntyReconnectCb ... status:%d, flag:%d\n", status, proto->u8ConnectFlag);
+		trace(" ntyReconnectCb  Success... status:%d, flag:%d\n", status, proto->u8ConnectFlag);
 		if (proto->u8ConnectFlag) { //Reconnect Success
 			if (proto->onProxyReconnect)
 				proto->onProxyReconnect(0);
@@ -1011,8 +1007,12 @@ void ntyReleaseFriendsList(C_DEVID **list) {
 #endif
 
 void ntyStartReconnectTimer(void) {
-	void *nTimerList = ntyTimerInstance();
-	nReconnectTimer = ntyTimerAdd(nTimerList, RECONNECT_TIME_TICK, ntyReconnectCb, NULL, 0);
+//disconnect 
+	ntylog(" setup ntyStartReconnectTimer \n");
+	if (nReconnectTimer == NULL) {
+		void *nTimerList = ntyTimerInstance();
+		nReconnectTimer = ntyTimerAdd(nTimerList, 15, ntyReconnectCb, NULL, 0);
+	}
 }
 
 

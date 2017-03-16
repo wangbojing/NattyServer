@@ -49,6 +49,7 @@
 #include "NattyRBTree.h"
 #include "NattyUdpServer.h"
 #include "NattyConfig.h"
+#include "NattyResult.h"
 
 //static pthread_mutex_t rbtree_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -290,23 +291,12 @@ RBTreeNode* ntyRBTreeDelete(RBTree *T, RBTreeNode *z) {
 #if ENABLE_RBTREE_MUTEX
 		pthread_mutex_lock(&T->rbtree_mutex);
 		z->key = y->key;
-		#if 0
 		z->value = y->value;
-		#else
-		Client *pcz = z->value;
-		Client *pcy = y->value;
-		
-		//memcpy(pcz->friends, pcy->friends, sizeof(RBTree));
-		pcz->friends = pcy->friends;
-		//pcz->watcher = pcy->watcher;
-		//memcpy(pcz->watcher, pcy->watcher, sizeof(struct ev_io));
-		memcpy(z->value, y->value, sizeof(Client));
-		#endif
 		pthread_mutex_unlock(&T->rbtree_mutex);
 #else
 		z->key = y->key;
-		//z->value = y->value;
-		memcpy(z->value, y->value, sizeof(Client));
+		z->value = y->value;
+		
 #endif
 	}
 #if ENABLE_RBTREE_MUTEX
@@ -420,43 +410,23 @@ int ntyRBTreeOperaDelete(void *_self, C_DEVID key) {
 	RBTree *self = _self;
 
 	RBTreeNode *node = ntyRBTreeSearch(self , key);
-	if (node == self->nil) return 3;
-#if 1 //Release Friend list
-	if (node->value != NULL) {
-#if 1
-		if(0 == cmpxchg(&self->rbtree_delete_lock, 0, 1, WORD_WIDTH)) {
-			Client *client = node->value;
-			if (client->friends != NULL) {
-				client->friends = ntyRBTreeOperaDtor(client->friends);
-				client->friends = NULL;
-			}
-			
-			node = ntyRBTreeDelete(self, node);
-#if 1
-			self->count --;
-#endif
-#if 0
-			free(node->value);
-#endif
-			free(node);
+	if (node == self->nil) return NTY_RESULT_NOEXIST;
 
-			self->rbtree_delete_lock = 0;
-		} else {
-			ntydbg(" ntyRBTreeOperaDelete --> have delete node\n"); 
-			return 2;
-		}
-#endif
-#if 0
-		free(node->value);
-#endif
+	if(0 == cmpxchg(&self->rbtree_delete_lock, 0, 1, WORD_WIDTH)) {
+
+			
+		node = ntyRBTreeDelete(self, node);
+
+
+		free(node);
+
+		self->count --;
+		self->rbtree_delete_lock = 0;
+	} else {
+		ntydbg(" ntyRBTreeOperaDelete --> have delete node\n"); 
+		return 2;
 	}
-#endif
-#if 0
-	free(node);
-#endif
-#if 0 //Update Assertion `(list-friends) == count' failed. 
-	self->count --;
-#endif
+
 
 	return 0;
 }
@@ -892,7 +862,7 @@ int ntyMapDelete(void *self, C_DEVID key) {
 	if (self && (*pRBTreeOpera) && (*pRBTreeOpera)->delete) {
 		return (*pRBTreeOpera)->delete(self, key);
 	}
-	return -1;
+	return NTY_RESULT_FAILED;
 }
 
 int ntyMapUpdate(void *self, C_DEVID key, void *value) {
@@ -901,7 +871,7 @@ int ntyMapUpdate(void *self, C_DEVID key, void *value) {
 	if (self && (*pRBTreeOpera) && (*pRBTreeOpera)->update) {
 		return (*pRBTreeOpera)->update(self, key, value);
 	}
-	return -1;
+	return NTY_RESULT_FAILED;
 }
 
 

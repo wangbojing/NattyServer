@@ -122,7 +122,11 @@ typedef struct _Client {
 #else
 
 typedef struct _NValue {
+#if ENABLE_EV_WATCHER_MODE
+	struct ev_io *watcher;
+#else
 	int sockfd;
+#endif
 	struct sockaddr_in addr;
 	U8 connectType; //UDP / TCP
 } NValue;

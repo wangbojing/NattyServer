@@ -75,6 +75,9 @@ pthread_mutex_t time_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t loop_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
+extern void *ntyTcpServerGetMainloop(void);
+extern int ntyReleaseSocket(struct ev_loop *loop, struct ev_io *watcher);
+
 
 static void *ntyClientListCtor(void *_self, va_list *params) {
 	SingleList *self = _self;
@@ -267,8 +270,6 @@ static int ntyUpdateClientListIpAddr(UdpClient *client, C_DEVID key, U32 ackNum)
 }
 
 
-extern void *ntyTcpServerGetMainloop(void);
-
 
 /*
  * add rbtree <key, value> -- <UserId, sockfd>
@@ -284,7 +285,7 @@ static int ntyAddClientHeap(const void * obj, RECORDTYPE *value) {
 	NRecord *record = ntyBHeapSelect(heap, client->devId);
 	if (record == NULL) {
 		Client *pClient = (Client*)malloc(sizeof(Client));
-		assert(pClient != NULL);
+		ASSERT(pClient != NULL);
 
 		memcpy(pClient, client, sizeof(Client));
 		
@@ -350,12 +351,11 @@ static int ntyAddClientHeap(const void * obj, RECORDTYPE *value) {
 	return NTY_RESULT_SUCCESS;
 }
 
-static int ntyDelClientHeap(const void * obj) {
-	const Client *client = obj;
+static int ntyDelClientHeap(C_DEVID clientId) {
 	int ret = -1;
 
 	void *heap = ntyBHeapInstance();
-	NRecord *record = ntyBHeapSelect(heap, client->devId);
+	NRecord *record = ntyBHeapSelect(heap, clientId);
 	if (record != NULL) {
 		Client *pClient = record->value;
 
@@ -373,7 +373,7 @@ static int ntyDelClientHeap(const void * obj) {
 		pClient->group
 #endif
 
-		ret = ntyBHeapDelete(heap, client->devId);
+		ret = ntyBHeapDelete(heap, clientId);
 		if (ret == NTY_RESULT_FAILED || ret == NTY_RESULT_NOEXIST) {
 			ASSERT(0);
 		}
@@ -384,6 +384,42 @@ static int ntyDelClientHeap(const void * obj) {
 
 	return NTY_RESULT_SUCCESS;
 }
+
+/*
+ * Release Client
+ * 1. HashTable	Hash
+ * 2. HashMap  	RBTree
+ * 3. BHeap 	BPlusTree
+ */
+
+int ntyClientCleanup(ClientSocket *client) { //
+	if (client == NULL) return NTY_RESULT_ERROR;
+	if (client->watcher == NULL) return NTY_RESULT_ERROR;
+	int sockfd = client->watcher->fd;
+
+	void *hash = ntyHashTableInstance();
+	Payload *load = ntyHashTableSearch(hash, sockfd);
+	if (load == NULL) return NTY_RESULT_NOEXIST;
+
+	C_DEVID Id = load->id;
+	ntylog(" ntyClientCleanup --> %lld\n", Id);
+	//delete hash key 
+	int ret = ntyHashTableDelete(hash, sockfd);
+	if (ret == NTY_RESULT_SUCCESS) {
+		//release client socket map
+		ret = ntyDelRelationMap(Id);
+		ntylog(" ntyMapDelete --> ret : %d\n", ret);
+		
+		//release HashMap
+		ret = ntyDelClientHeap(Id);
+		ntylog(" ntyMapDelete --> ret : %d\n", ret);
+	} else {
+		ntylog(" ntyHashDelete ret : %d\n", ret);
+	}
+
+}
+
+
 
 
 
@@ -484,7 +520,7 @@ void ntyLogoutPacketHandleRequest(const void *_self, U8 *buffer, int length, con
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_LOGOUT_REQ) {
 		//delete key
 
-		ntyDelClientHeap(client);
+		ntyDelClientHeap(client->devId);
 
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);

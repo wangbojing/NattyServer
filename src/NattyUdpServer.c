@@ -291,19 +291,28 @@ int ntySendBuffer(const UdpClient *client, unsigned char *buffer, int length) {
 
 #else
 
+
+
 int ntySendBuffer(ClientSocket *client, unsigned char *buffer, int length) {
 	if (client == NULL) return NTY_RESULT_FAILED;
+#if ENABLE_EV_WATCHER_MODE
+	if (client->watcher == NULL) return NTY_RESULT_ERROR;
+	int sockfd = client->watcher->fd;
+#else
+	int sockfd = client->sockfd;
+#endif
 #if 1
 	U32 Crc = ntyGenCrcValue(buffer, length-sizeof(U32));
 	memcpy(buffer+length-sizeof(U32), &Crc, sizeof(U32));
 #endif
 
 	if (client->connectType == PROTO_TYPE_UDP) {
-		return sendto(client->sockfd, buffer, length, 0, (struct sockaddr *)&client->addr, sizeof(struct sockaddr_in));
+		return sendto(sockfd, buffer, length, 0, (struct sockaddr *)&client->addr, sizeof(struct sockaddr_in));
 	} else if (client->connectType == PROTO_TYPE_TCP) {
-		int ret = send(client->sockfd, buffer, length, 0);
+		int ret = send(sockfd, buffer, length, 0);
 		if (ret == -1) {
 			ntylog(" tcp send errno : %d\n", errno);
+			//delete client all fromId;
 		} else {
 			ntylog(" tcp send success : %d\n", ret);
 		}
@@ -314,13 +323,16 @@ int ntySendBuffer(ClientSocket *client, unsigned char *buffer, int length) {
 
 int ntyProxyBuffer(ClientSocket *client, unsigned char *buffer, int length) {
 	if (client == NULL) return NTY_RESULT_FAILED;
+	int sockfd = client->watcher->fd;
 
 	if (client->connectType == PROTO_TYPE_UDP) {
-		return sendto(client->sockfd, buffer, length, 0, (struct sockaddr *)&client->addr, sizeof(struct sockaddr_in));
+		return sendto(sockfd, buffer, length, 0, (struct sockaddr *)&client->addr, sizeof(struct sockaddr_in));
 	} else if (client->connectType == PROTO_TYPE_TCP) {
-		int ret = send(client->sockfd, buffer, length, 0);
+		int ret = send(sockfd, buffer, length, 0);
 		if (ret == -1) {
 			ntylog(" tcp send errno : %d\n", errno);
+			//release Client Resource
+			ntyClientCleanup(client);
 		} else {
 			ntylog(" tcp send success : %d\n", ret);
 		}

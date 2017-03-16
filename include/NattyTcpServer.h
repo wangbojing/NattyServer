@@ -74,6 +74,11 @@ void *ntyTcpServerGetMainloop(void);
 
 
 
+int ntyDelRelationMap(C_DEVID id);
+int ntyAddRelationMap(MessagePacket *msg);
+
+
+
 #endif
 
 
