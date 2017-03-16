@@ -339,6 +339,19 @@ void ntyJsonWeather(JSON_Value *json, WeatherReq *pWeatherReq) {
 	}
 }
 
+
+void ntyJsonWeatherRelease(WeatherReq *pWeatherReq) {
+	if (pWeatherReq != NULL) {
+		size_t i;
+		for (i = 0; i<pWeatherReq->size; i++) {
+			if (pWeatherReq->pResults[i].pDaily != NULL) {
+				free(pWeatherReq->pResults[i].pDaily);
+			}
+		}
+		free(pWeatherReq->pResults);
+	}
+}
+
 void ntyJsonICCID(JSON_Value *json, ICCIDReq *pICCIDReq) {
 	if (json == NULL || pICCIDReq == NULL) {
 			ntydbg("param is null.\n");

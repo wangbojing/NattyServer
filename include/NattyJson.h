@@ -97,6 +97,8 @@ void ntyJsonWeatherLocation(JSON_Value *json, WeatherLocationReq *pWeatherLocati
 
 void ntyJsonWeather(JSON_Value *json, WeatherReq *pWeatherReq);
 
+void ntyJsonWeatherRelease(WeatherReq *pWeatherReq);
+
 void ntyJsonICCID(JSON_Value *json, ICCIDReq *pICCIDReq);
 
 void ntyJsonCommon(JSON_Value *json, CommonReq *pCommonReq);

@@ -343,23 +343,28 @@ static void ntyDaveMqPullMessage(void *arg) {
 int ntyDaveMqPushMessage(VALUE_TYPE *tag) {
 	void *Queue = ntyDaveQueueInstance();
 	if (Queue == NULL) return -2;
-
+#if 0
 	int length = tag->length;
 
+	ntylog(" --- >>> ntyDaveMqPushMessage 11111 : %d<<< ---- \n", length);
 	VALUE_TYPE *pTag = (VALUE_TYPE*)malloc(sizeof(VALUE_TYPE));
+	if (pTag == NULL) return -1;
 	memset(tag, 0, sizeof(VALUE_TYPE));
 
 	pTag->Tag = (U8*)malloc(length * sizeof(U8));
 	memset(pTag->Tag, 0, length);
-
-	memcpy(pTag->Tag, tag->Tag, length);		
+	ntylog(" --- >>> ntyDaveMqPushMessage 2222 tag:%s <<< ---- \n", tag->Tag);
+	memcpy(pTag->Tag, tag->Tag, length);	
+	ntylog(" --- >>> ntyDaveMqPushMessage 3333 <<< ---- \n");	
 	pTag->length = length;
 	pTag->Type = tag->Type;
 	pTag->fromId = tag->fromId;
 	pTag->toId = tag->toId;
+	ntylog(" --- >>> ntyDaveMqPushMessage 4444 <<< ---- \n");
 	pTag->cb = tag->cb;
-
-	return ntyDaveMqEnQueue(Queue, pTag);
+	ntylog(" --- >>> ntyDaveMqPushMessage 5555 <<< ---- \n");
+#endif
+	return ntyDaveMqEnQueue(Queue, tag);
 }
 
 

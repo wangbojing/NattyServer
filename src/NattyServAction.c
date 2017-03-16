@@ -118,16 +118,28 @@ void ntyJsonLocationWIFIAction(C_DEVID fromId, C_DEVID toId, JSON_Value *json, U
 	sprintf(wifibuf, "%s/position?accesstype=1&imei=%s&macs=%s&output=json&key=%s", 
 		HTTP_GAODE_BASE_URL, pWIFIReq->IMEI, macs, HTTP_GAODE_KEY);
 	ntydbg(" wifibuf --> %s\n", wifibuf);
+	int length = strlen(wifibuf);
 
+#if 1 //Push to MessageQueue
 	MessageTag *pMessageTag = malloc(sizeof(MessageTag));
 	pMessageTag->Type = MSG_TYPE_LOCATION_WIFI_API;
 	pMessageTag->fromId = fromId;
 	pMessageTag->toId = toId;
-	pMessageTag->Tag = wifibuf;
-	pMessageTag->length = strlen(wifibuf);
-	pMessageTag->cb = ntyHttpQJKLocation;
+	pMessageTag->length = length;
+
+#if ENABLE_DAVE_MSGQUEUE_MALLOC
+	pMessageTag->Tag = malloc((length+1)*sizeof(U8));
+	memset(pMessageTag->Tag, 0, length+1);
+	memcpy(pMessageTag->Tag, wifibuf, length);
+#else
+	memset(pMessageTag->Tag, 0, length+1);
+	memcpy(pMessageTag->Tag, wifibuf, length);
+#endif
 	
+	pMessageTag->cb = ntyHttpQJKLocation;
+
 	int ret = ntyDaveMqPushMessage(pMessageTag);
+#endif
 	//int ret = ntyHttpQJKLocation(pMessageTag);
 	if (ret == -1) {
 		ntylog(" ntyHttpQJKLocation --> Http Exception\n");
@@ -170,20 +182,30 @@ void ntyJsonLocationLabAction(C_DEVID fromId, C_DEVID toId, JSON_Value *json, U8
 	sprintf(labbuf, "%s/position?accesstype=0&imei=%s&cdma=0&bts=%s&nearbts=%s&output=json&key=%s", 
 		HTTP_GAODE_BASE_URL, pLABReq->IMEI, pLABReq->lab.bts, nearbts, HTTP_GAODE_KEY);
 	ntydbg(" labbuf --> %s\n", labbuf);
+	int length = strlen(labbuf);
 
 	MessageTag *pMessageTag = malloc(sizeof(MessageTag));
 	pMessageTag->Type = MSG_TYPE_LOCATION_LAB_API;
 	pMessageTag->fromId = fromId;
 	pMessageTag->toId = toId;
-	pMessageTag->Tag = labbuf;
-	pMessageTag->length = strlen(labbuf);
+
+	pMessageTag->length = length;
+
+#if ENABLE_DAVE_MSGQUEUE_MALLOC
+	pMessageTag->Tag = malloc((length+1)*sizeof(U8));
+	memset(pMessageTag->Tag, 0, length+1);
+	memcpy(pMessageTag->Tag, labbuf, length);
+#else
+	memset(pMessageTag->Tag, 0, length+1);
+	memcpy(pMessageTag->Tag, labbuf, length);
+#endif
+	
 	pMessageTag->cb = ntyHttpQJKLocation;
 	
 	int n8LocationType = 0;
 	ntyJsonSetLocationType(pLABReq->category, &n8LocationType);
 	pMessageTag->u8LocationType = (U8)n8LocationType; 
 
-	
 	int ret = ntyDaveMqPushMessage(pMessageTag);
 	//int ret = ntyHttpQJKLocation(pMessageTag);
 	free(pMessageTag);
@@ -207,13 +229,23 @@ void ntyJsonWeatherAction(C_DEVID fromId, C_DEVID toId, JSON_Value *json, U8 *js
 	sprintf(weatherbuf, "%s/position?accesstype=0&imei=%s&cdma=0&bts=%s&output=json&key=%s", 
 		HTTP_GAODE_BASE_URL, pWeatherLocationReq->IMEI, pWeatherLocationReq->bts, HTTP_GAODE_KEY);
 	ntydbg(" weatherbuf --> %s\n", weatherbuf);
+	int length = strlen(weatherbuf);
 
 	MessageTag *pMessageTag = malloc(sizeof(MessageTag));
 	pMessageTag->Type = MSG_TYPE_WEATHER_API;
 	pMessageTag->fromId = fromId;
 	pMessageTag->toId = toId;
-	pMessageTag->Tag = weatherbuf;
-	pMessageTag->length = strlen(weatherbuf);
+	pMessageTag->length = length;
+	
+#if ENABLE_DAVE_MSGQUEUE_MALLOC
+	pMessageTag->Tag = malloc((length+1)*sizeof(U8));
+	memset(pMessageTag->Tag, 0, length+1);
+	memcpy(pMessageTag->Tag, weatherbuf, length);
+#else
+	memset(pMessageTag->Tag, 0, length+1);
+	memcpy(pMessageTag->Tag, weatherbuf, length);
+#endif
+	
 	pMessageTag->cb = ntyHttpQJKWeatherLocation;
 
 	int ret = ntyDaveMqPushMessage(pMessageTag);
@@ -227,6 +259,18 @@ void ntyJsonWeatherAction(C_DEVID fromId, C_DEVID toId, JSON_Value *json, U8 *js
 
 	free(pWeatherLocationReq);
 }
+
+#if 1 //
+int CheckNumber(char *num, int length) {
+	int i = 0;
+	for (i = 0;i < length;i ++) {
+		if (num[i] < 0x30 || num[i] > 0x39) {
+			return -1;
+		}
+	}
+	return 0;
+}
+#endif
 
 void ntyJsonAddEfenceAction(C_DEVID AppId, C_DEVID toId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
 	AddEfenceReq *pAddEfenceReq = (AddEfenceReq*)malloc(sizeof(AddEfenceReq));
@@ -251,8 +295,10 @@ void ntyJsonAddEfenceAction(C_DEVID AppId, C_DEVID toId, JSON_Value *json, U8 *j
 	U8 runtime[50] = {0};
 	sprintf(runtime, "%04d/%02d/%02d %02d:%02d:%02d", 1900+p->tm_year, 1+p->tm_mon, p->tm_hour, p->tm_hour, p->tm_min, p->tm_sec);
 
+	int index = atoi(pAddEfenceReq->index);
+
 	int id = 0;
-	int ret = ntyExecuteEfenceInsertHandle(AppId, devId, pAddEfenceReq->index, pAddEfenceReq->efence.size, points, runtime, &id);
+	int ret = ntyExecuteEfenceInsertHandle(AppId, devId, index, pAddEfenceReq->efence.size, points, runtime, &id);
 	if (ret == -1) {
 		ntylog(" ntyJsonEfenceAction --> DB Exception\n");
 		ret = 4;

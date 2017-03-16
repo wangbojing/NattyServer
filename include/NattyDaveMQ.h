@@ -82,7 +82,7 @@ typedef struct _MESSAGETAG {
 	C_DEVID fromId;
 	C_DEVID toId;
 	U8 u8LocationType;
-#if 0
+#if 1
 	DAVE_MESSAGE_CALLBACK cb;
 #else
 	int (*cb)(void *arg);

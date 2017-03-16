@@ -657,6 +657,11 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 			ntydbg("ntySendLocationBroadCastResult ok\n");
 		}
 	}
+
+#if 1 //Release Message
+	free(pMessageTag->Tag);
+	free(pMessageTag);
+#endif
 	
 	return 0;
 }
@@ -754,19 +759,36 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	sprintf(weatherbuf, "%s/v3/weather/daily.json?key=%s&location=%s&language=zh-Hans&unit=c&start=0&days=3", 
 		HTTP_WEATHER_BASE_URL, HTTP_WEATHER_KEY, latlng);
 	ntydbg(" weatherbuf --> %s\n", weatherbuf);
+	int length = strlen(weatherbuf);
 
 	MessageTag *pMessageSendTag = malloc(sizeof(MessageTag));
 	pMessageSendTag->Type = MSG_TYPE_WEATHER_API;
 	pMessageSendTag->fromId = pMessageTag->fromId;
 	pMessageSendTag->toId = pMessageTag->toId;
-	pMessageSendTag->Tag = weatherbuf;
-	pMessageSendTag->length = strlen(weatherbuf);
+	pMessageSendTag->length = length;
+
+#if ENABLE_DAVE_MSGQUEUE_MALLOC
+	pMessageSendTag->Tag = malloc((length+1)*sizeof(U8));
+	memset(pMessageSendTag->Tag, 0, length+1);
+	memcpy(pMessageSendTag->Tag, weatherbuf, length);
+#else
+	memset(pMessageSendTag->Tag, 0, length+1);
+	memcpy(pMessageSendTag->Tag, weatherbuf, length);
+#endif
+
 	pMessageSendTag->cb = ntyHttpQJKWeather;
 
 	int ret = ntyDaveMqPushMessage(pMessageSendTag);
 	ntylog("result : %d\n", ret);
 	free(pAMap);
 	ntylog("==================end ntyHttpQJKWeatherLocationHandleResult ============================\n");
+
+	
+#if 1 //Release Message
+	free(pMessageTag->Tag);
+	free(pMessageTag);
+#endif
+
 	return ret;
 }
 
@@ -834,9 +856,51 @@ static size_t ntyHttpQJKWeatherHandleResult(void* buffer, size_t size, size_t nm
 	U8 *jsonstring = buffer;
 	ntydbg("ntyHttpQJKWeatherHandleResult json --> %s\n", jsonstring);
 	ntydbg("ntyHttpQJKWeatherHandleResult url --> %s\n", pMessageTag->Tag);
-	
 
-	//ntySendWeatherPushResult(C_DEVID fromId,U8 * json,int length);
+	ntydbg("   pMessageTag->  fromId:%lld  toId:%lld\n", pMessageTag->fromId, pMessageTag->toId);
+
+	JSON_Value *json = ntyMallocJsonValue(jsonstring);
+	WeatherReq *pWeatherReq = malloc(sizeof(WeatherReq));
+	ntyJsonWeather(json, pWeatherReq);
+	if (pWeatherReq == NULL) {
+		return -1;
+	}
+
+	WeatherAck *pWeatherAck = (WeatherAck*)pWeatherReq;
+	size_t i,j;
+	for (i=0; i<pWeatherAck->size; i++) {
+		WeatherResults results = pWeatherAck->pResults[i];
+		for (j=0; j<results.size; j++) {
+			results.pDaily[j].date = NULL;
+			//results.pDaily[j].text_day = NULL;
+			//results.pDaily[j].code_day = NULL;
+			//results.pDaily[j].text_night = NULL;
+			//results.pDaily[j].code_night = NULL;
+			results.pDaily[j].high = NULL;
+			results.pDaily[j].low = NULL;
+			results.pDaily[j].precip = NULL;
+			//results.pDaily[j].wind_direction = NULL;
+			//results.pDaily[j].wind_direction_degree = NULL;
+			//results.pDaily[j].wind_speed = NULL;
+			//results.pDaily[j].wind_scale = NULL;
+		}
+	}
+
+	char *jsonresult = ntyJsonWriteWeather(pWeatherAck);
+	ntyJsonWeatherRelease(pWeatherReq);
+	free(pWeatherAck);
+
+	ntydbg("ntyHttpQJKWeatherHandleResult jsonresult --> %s\n", jsonresult);
+	
+	int ret = ntySendWeatherPushResult(pMessageTag->fromId, jsonresult, strlen(jsonresult));
+	if (ret >= 0) {
+		ntydbg("ntySendWeatherBroadCastResult ok\n");
+	}
+
+#if 1 //Release Message
+	free(pMessageTag->Tag);
+	free(pMessageTag);
+#endif
 	
 	return 0;
 }
