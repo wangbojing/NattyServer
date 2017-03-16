@@ -266,7 +266,7 @@ void ntyJsonAMap(JSON_Value *json, AMap *pAMap) {
 	pAMap->result.country = json_object_get_string(result_object, NATTY_AMAP_PROTOCOL_COUNTRY);
 	pAMap->result.city = json_object_get_string(result_object, NATTY_AMAP_PROTOCOL_CITY);
 	pAMap->result.citycode = json_object_get_string(result_object, NATTY_AMAP_PROTOCOL_CITYCODE);
-	pAMap->result.adcode= json_object_get_string(result_object, NATTY_AMAP_PROTOCOL_ADCODE);
+	pAMap->result.adcode = json_object_get_string(result_object, NATTY_AMAP_PROTOCOL_ADCODE);
 	pAMap->result.road = json_object_get_string(result_object, NATTY_AMAP_PROTOCOL_ROAD);
 	pAMap->result.street = json_object_get_string(result_object, NATTY_AMAP_PROTOCOL_STREET);
 	pAMap->result.poi = json_object_get_string(result_object, NATTY_AMAP_PROTOCOL_POI);

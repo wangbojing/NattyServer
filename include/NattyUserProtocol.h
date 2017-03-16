@@ -509,6 +509,7 @@ typedef struct _Afternoon {
 } Afternoon;
 
 typedef struct _TimeTablesItem {
+	const char *id;
 	const char *daily;
 	Morning morning;
 	Afternoon afternoon;

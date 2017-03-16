@@ -76,7 +76,7 @@ void ntyDisconnect(int arg) {
 }
 
 void ntyReconnected(int arg) {
-	ntydbg("ntyReconnected Success\n");
+	ntydbg("ntyReconnected\n");
 }
 
 void ntyBindResult(int arg) {
@@ -283,6 +283,18 @@ int main() {
 #endif
 
 		
+#endif
+#if 0
+		if (ntyGetNetworkStatus() == -1) {
+			ntydbg("Startup Client\n");
+			ntyStartupClient();
+			continue;
+		}
+		if (tempBuf[0] == 'c') {
+			ntydbg("Shutdown Client\n");
+			ntyShutdownClient();
+			continue;
+		}
 #endif
 		//memset(tempBuf, 0, RECV_BUFFER_SIZE);
 		//memcpy(tempBuf, url, strlen(url));

@@ -109,7 +109,7 @@
 //ÉÏ¿ÎÊ±¼ä 
 #define NTY_DB_SELECT_TIMETABLE				"CALL PROC_SELECT_TIMETABLE(%lld)"
 
-#define NTY_DB_UPDATE_TIMETABLE				"CALL PROC_UPDATE_TIMETABLE(%lld, '%s', %d, '%s', %d, '%s')"
+#define NTY_DB_UPDATE_TIMETABLE				"CALL PROC_UPDATE_TIMETABLE(%lld, '%s', %d, '%s', %d, '%s', %d)"
 
 //setup
 #define NTY_DB_SELECT_SETUP					"CALL PROC_SELECT_SETUP(%lld)"
@@ -253,7 +253,7 @@ int ntyExecuteScheduleUpdateHandle(C_DEVID aid, C_DEVID did, int id, const char 
 
 int ntyExecuteScheduleSelectHandle(C_DEVID aid, C_DEVID did, ScheduleAck *pScheduleAck, size_t size);
 
-int ntyExecuteTimeTablesUpdateHandle(C_DEVID aid, C_DEVID did, const char *morning, U8 morning_turn, const char *afternoon,  U8 afternoon_turn, const char *daily);
+int ntyExecuteTimeTablesUpdateHandle(C_DEVID aid, C_DEVID did, const char *morning, U8 morning_turn, const char *afternoon,  U8 afternoon_turn, const char *daily, int *id);
 
 int ntyExecuteICCIDSelectHandle(C_DEVID aid, C_DEVID did);
 

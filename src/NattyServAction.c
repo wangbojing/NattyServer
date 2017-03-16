@@ -520,9 +520,11 @@ void ntyJsonSelectScheduleAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json,
 void ntyJsonTimeTablesAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
 	TimeTablesReq *pTimeTablesReq = (TimeTablesReq*)malloc(sizeof(TimeTablesReq));
 	ntyJsonTimeTables(json, pTimeTablesReq);
-	
 	ntylog(" ntyJsonTimeTablesAction --> %s  \n", jsonstring);
 
+	char ids[20] = {0};
+
+	int id = 0;
 	int ret = 0;
 	size_t i;
 	for (i=0; i<pTimeTablesReq->size; i++) {	
@@ -534,7 +536,12 @@ void ntyJsonTimeTablesAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 
 		ret = ntyExecuteTimeTablesUpdateHandle(AppId, devId, 
 			morning, morning_status,
 			afternoon, afternoon_status,
-			pTimeTablesReq->pTimeTables[i].daily);
+			pTimeTablesReq->pTimeTables[i].daily,
+			&id);
+
+		sprintf(ids, "%d", id);
+		pTimeTablesReq->pTimeTables[i].id = ids;
+		
 		if (ret == -1) {
 			ntylog(" ntyJsonTimeTables --> DB Exception\n");
 			ret = 4;

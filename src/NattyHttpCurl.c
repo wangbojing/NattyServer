@@ -618,6 +618,8 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 		return -1;
 	}
 
+	ntydbg("   pMessageTag->  fromId:%lld  toId:%lld\n", pMessageTag->fromId, pMessageTag->toId);
+	
 	LocationAck *pLocationAck = malloc(sizeof(LocationAck));
 	pLocationAck->results.IMEI = ntyJsonDeviceIMEI(json);
 	pLocationAck->results.category = ntyJsonAppCategory(json);

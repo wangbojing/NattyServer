@@ -1124,7 +1124,7 @@ int ntyExecuteScheduleSelect(void *self, C_DEVID aid, C_DEVID did, ScheduleAck *
 
 
 //NTY_DB_UPDATE_TIMETABLE
-int ntyExecuteTimeTablesUpdate(void *self, C_DEVID aid, C_DEVID did, const char *morning, U8 morning_turn, const char *afternoon,  U8 afternoon_turn, const char *daily) {
+int ntyExecuteTimeTablesUpdate(void *self, C_DEVID aid, C_DEVID did, const char *morning, U8 morning_turn, const char *afternoon,  U8 afternoon_turn, const char *daily, int *id) {
 	ConnectionPool *pool = self;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
@@ -1138,7 +1138,10 @@ int ntyExecuteTimeTablesUpdate(void *self, C_DEVID aid, C_DEVID did, const char 
 		} else {
 			U8 buffer[512];
 			ntylog(" sql : %s\n", buffer);
-			Connection_execute(con, NTY_DB_UPDATE_TIMETABLE, did, morning, morning_turn, afternoon, afternoon_turn, daily);
+			ResultSet_T r =Connection_executeQuery(con, NTY_DB_UPDATE_TIMETABLE, did, morning, morning_turn, afternoon, afternoon_turn, daily, id);
+			while (ResultSet_next(r)) {
+				*id = ResultSet_getInt(r, 1);				
+			}
 		}
 	} 
 	CATCH(SQLException) 
@@ -1387,9 +1390,9 @@ int ntyExecuteScheduleSelectHandle(C_DEVID aid, C_DEVID did, ScheduleAck *pSched
 	return ntyExecuteScheduleSelect(pool, aid, did, pScheduleAck, size);
 }
 
-int ntyExecuteTimeTablesUpdateHandle(C_DEVID aid, C_DEVID did, const char *morning, U8 morning_turn, const char *afternoon,  U8 afternoon_turn, const char *daily) {
+int ntyExecuteTimeTablesUpdateHandle(C_DEVID aid, C_DEVID did, const char *morning, U8 morning_turn, const char *afternoon,  U8 afternoon_turn, const char *daily, int *id) {
 	void *pool = ntyConnectionPoolInstance();
-	return ntyExecuteTimeTablesUpdate(pool, aid, did, morning, morning_turn, afternoon, afternoon_turn, daily);
+	return ntyExecuteTimeTablesUpdate(pool, aid, did, morning, morning_turn, afternoon, afternoon_turn, daily, id);
 }
 
 int ntyExecuteICCIDSelectHandle(C_DEVID aid, C_DEVID did) {

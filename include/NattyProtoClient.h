@@ -86,6 +86,7 @@ U8* ntyGetRecvBuffer(void);
 void ntySetDevId(DEVID id);
 int ntyGetRecvBufferSize(void);
 void ntyReleaseNetwork(void);
+int ntyGetNetworkStatus(void);
 void ntySetBindResult(PROXY_CALLBACK_CLINET cb);
 void ntySetUnBindResult(PROXY_CALLBACK_CLINET cb);
 void ntySetProxyDisconnect(PROXY_CALLBACK_CLINET cb);
