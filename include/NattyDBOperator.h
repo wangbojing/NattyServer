@@ -151,13 +151,11 @@
 
 #define NTY_DB_INSERT_PHONEBOOK				"CALL PROC_INSERT_PHONEBOOK(%lld, %lld, %d, %d, '%s', '%s', '%s')"
 
-
-
 #define NTY_DB_DELETE_PHONEBOOK				"CALL PROCE_DELETE_PHONEBOOK(%lld, %d)"
 
 #define NTY_DB_UPDATE_PHONEBOOK_ADMIN		"CALL PROC_UPDATE_PHONEBOOK_ADMIN(%lld, %d, %lld)"
 
-#define NTY_DB_UPDATE_PHONEBOOK				"CALL PROC_UPDATE_PHONEBOOK(%lld, %d, '%s', '%s')"
+#define NTY_DB_UPDATE_PHONEBOOK				"CALL PROC_UPDATE_PHONEBOOK(%lld, %lld, %d, %d, '%s', '%s', '%s', %d)"
 
 #define NTY_DB_SELECT_PHONEBOOK				"CALL PROC_SELECT_PHONEBOOK(%lld)"
 
@@ -247,7 +245,11 @@ int ntyExecuteRuntimeTargetStepUpdateHandle(C_DEVID aid, C_DEVID did, int runtim
 
 int ntyExecuteTurnUpdateHandle(C_DEVID aid, C_DEVID did, U8 status, const char *ontime, const char *offtime);
 
-int ntyExecuteContactsInsertHandle(C_DEVID aid, C_DEVID did, Contacts *contacts, int *id);
+int ntyExecuteContactsInsertHandle(C_DEVID aid, C_DEVID did, Contacts *contacts, int *contactsId);
+
+int ntyExecuteContactsUpdateHandle(C_DEVID aid, C_DEVID did, Contacts *contacts, int contactsId);
+
+int ntyExecuteContactsDeleteHandle(C_DEVID aid, C_DEVID did, int contactsId);
 
 int ntyExecuteScheduleInsertHandle(C_DEVID aid, C_DEVID did, const char *daily, const char *time, const char *details, int *scheduleId);
 

@@ -973,20 +973,6 @@ int ntyExecuteTurnUpdate(void *self, C_DEVID aid, C_DEVID did, U8 status, const 
 }
 
 
-{
-    "Action": "Add",
-    "Category": "Contacts",
-    "Contact": {
-        "admin": "0",
-        "app": "0",
-        "image": "1",
-        "name": "үү",
-        "tel": "13838384383"
-    },
-    "IMEI": "355637052788650"
-}
-
-
 //NTY_DB_INSERT_PHONEBOOK
 int ntyExecuteContactsInsert(void *self, C_DEVID aid, C_DEVID did, Contacts *contacts, int *contactsId) {
 	ConnectionPool *pool = self;
@@ -1028,6 +1014,77 @@ int ntyExecuteContactsInsert(void *self, C_DEVID aid, C_DEVID did, Contacts *con
 	return ret;
 }
 
+
+//NTY_DB_UPDATE_PHONEBOOK
+int ntyExecuteContactsUpdate(void *self, C_DEVID aid, C_DEVID did, Contacts *contacts, int contactsId) {
+	ConnectionPool *pool = self;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+	U8 u8PhNum[20] = {0};
+
+	TRY
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			U8 admin = atoi(contacts->admin);
+			U8 app = atoi(contacts->app);
+			U8 buffer[512] = {0};
+			sprintf(buffer, NTY_DB_UPDATE_PHONEBOOK, aid,did,admin,app,contacts->image,contacts->name,contacts->telphone, contactsId);
+			ntylog(" sql : %s\n", buffer);
+			Connection_execute(con, NTY_DB_UPDATE_PHONEBOOK, aid,did,admin,app,contacts->image,contacts->name,contacts->telphone, contactsId);
+		}
+	}
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+
+//NTY_DB_DELETE_PHONEBOOK
+int ntyExecuteContactsDelete(void *self, C_DEVID aid, C_DEVID did, int contactsId) {
+	ConnectionPool *pool = self;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+	U8 u8PhNum[20] = {0};
+
+	TRY
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			U8 buffer[512] = {0};
+			sprintf(buffer, NTY_DB_DELETE_PHONEBOOK, did,contactsId);
+			ntylog(" sql : %s\n", buffer);
+			Connection_execute(con, NTY_DB_DELETE_PHONEBOOK, did, contactsId);
+		}
+	}
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
 
 
 //NTY_DB_INSERT_SCHEDULE
@@ -1430,9 +1487,19 @@ int ntyExecuteTurnUpdateHandle(C_DEVID aid, C_DEVID did, U8 status, const char *
 	return ntyExecuteTurnUpdate(pool, aid, did, status, ontime, offtime);
 }
 
-int ntyExecuteContactsInsertHandle(C_DEVID aid, C_DEVID did, Contacts *contacts, int *id) {
+int ntyExecuteContactsInsertHandle(C_DEVID aid, C_DEVID did, Contacts *contacts, int *contactsId) {
 	void *pool = ntyConnectionPoolInstance();
-	return ntyExecuteContactsInsert(pool, aid, did, contacts, id);
+	return ntyExecuteContactsInsert(pool, aid, did, contacts, contactsId);
+}
+
+int ntyExecuteContactsUpdateHandle(C_DEVID aid, C_DEVID did, Contacts *contacts, int contactsId) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteContactsUpdate(pool, aid, did, contacts, contactsId);
+}
+
+int ntyExecuteContactsDeleteHandle(C_DEVID aid, C_DEVID did, int contactsId) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteContactsDelete(pool, aid, did, contactsId);
 }
 
 int ntyExecuteScheduleInsertHandle(C_DEVID aid, C_DEVID did, const char *daily, const char *time, const char *details, int *scheduleId) {

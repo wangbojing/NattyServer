@@ -532,7 +532,7 @@ typedef struct _TimeTablesAck {
 typedef struct _Contacts {
 	const char *id;
 	const char *name;
-	const char *admin,
+	const char *admin;
 	const char *image;
 	const char *telphone;
 	const char *app;

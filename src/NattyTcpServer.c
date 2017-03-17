@@ -177,7 +177,8 @@ int ntyAddRelationMap(MessagePacket *msg) {
 			ASSERT(ret == NTY_RESULT_SUCCESS);
 #else
 			ret = ntyHashTableUpdate(hash, msg->watcher->fd, &payload);
-			ASSERT(ret == NTY_RESULT_SUCCESS);
+			//ASSERT(ret == NTY_RESULT_SUCCESS);
+			ntylog(" ntyHashTableUpdate --> ret:%d\n", ret);
 #endif
 		}
 		
@@ -368,9 +369,9 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		job->job_function  = ntyTcpServerJob;
 		job->user_data = msg;
 		ntyThreadPoolPush(pThreadPool, job);
-		ntyReleaseSocket(loop, watcher);
 
 		ntyHashTableDelete(hash, watcher->fd);
+		ntyReleaseSocket(loop, watcher);
 
 	} else {
 		int i = 0;

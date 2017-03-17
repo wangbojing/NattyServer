@@ -724,9 +724,9 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 			if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_ADD) == 0) {
 				ntyJsonAddContactsAction(fromId, toId, json, jsonstring, jsonlen);
 			} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_DELETE) == 0) {
-				//ntyJsonDelScheduleAction(fromId, toId, json, jsonstring, jsonlen);
+				ntyJsonDelContactsAction(fromId, toId, json, jsonstring, jsonlen);
 			} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_UPDATE) == 0) {
-				//ntyJsonUpdateScheduleAction(fromId, toId, json, jsonstring, jsonlen);
+				ntyJsonUpdateContactsAction(fromId, toId, json, jsonstring, jsonlen);
 			} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_SCHEDULE) == 0) {
 				//ntyJsonSelectScheduleAction(fromId, toId, json, jsonstring, jsonlen);
 			} else {
