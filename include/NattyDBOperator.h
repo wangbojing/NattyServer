@@ -249,11 +249,11 @@ int ntyExecuteTurnUpdateHandle(C_DEVID aid, C_DEVID did, U8 status, const char *
 
 int ntyExecuteContactsInsertHandle(C_DEVID aid, C_DEVID did, Contacts *contacts, int *id);
 
-int ntyExecuteScheduleInsertHandle(C_DEVID aid, C_DEVID did, const char *daily, const char *time, const char *details, int *id);
+int ntyExecuteScheduleInsertHandle(C_DEVID aid, C_DEVID did, const char *daily, const char *time, const char *details, int *scheduleId);
 
-int ntyExecuteScheduleDeleteHandle(C_DEVID aid, C_DEVID did, int id);
+int ntyExecuteScheduleDeleteHandle(C_DEVID aid, C_DEVID did, int scheduleId);
 
-int ntyExecuteScheduleUpdateHandle(C_DEVID aid, C_DEVID did, int id, const char *daily, const char *time, const char *details);
+int ntyExecuteScheduleUpdateHandle(C_DEVID aid, C_DEVID did, int scheduleId, const char *daily, const char *time, const char *details);
 
 int ntyExecuteScheduleSelectHandle(C_DEVID aid, C_DEVID did, ScheduleAck *pScheduleAck, size_t size);
 

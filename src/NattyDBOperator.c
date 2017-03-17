@@ -1048,13 +1048,11 @@ int ntyExecuteScheduleInsert(void *self, C_DEVID aid, C_DEVID did, const char *d
 			ntylog(" sql : %s\n", buffer);
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_SCHEDULE, did, daily, time, details);
 			if (ResultSet_next(r)) {
-				int aid = ResultSet_getInt(r, 1);
-				*scheduleId = aid;
-				ntylog("--------------8-----%d--------------\n", aid);
+				int tempId = ResultSet_getInt(r, 1);
+				*scheduleId = tempId;
 			}
-			
 		}
-	} 
+	}
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
@@ -1071,7 +1069,7 @@ int ntyExecuteScheduleInsert(void *self, C_DEVID aid, C_DEVID did, const char *d
 }
 
 //NTY_DB_DELETE_SCHEDULE
-int ntyExecuteScheduleDelete(void *self, C_DEVID aid, C_DEVID did, int id) {
+int ntyExecuteScheduleDelete(void *self, C_DEVID aid, C_DEVID did, int scheduleId) {
 	ConnectionPool *pool = self;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
@@ -1085,7 +1083,7 @@ int ntyExecuteScheduleDelete(void *self, C_DEVID aid, C_DEVID did, int id) {
 		} else {
 			U8 buffer[512];
 			ntylog(" sql : %s\n", buffer);
-			Connection_execute(con, NTY_DB_DELETE_SCHEDULE, did, id);
+			Connection_execute(con, NTY_DB_DELETE_SCHEDULE, did, scheduleId);
 		}
 	} 
 	CATCH(SQLException) 
@@ -1104,7 +1102,7 @@ int ntyExecuteScheduleDelete(void *self, C_DEVID aid, C_DEVID did, int id) {
 }
 
 //NTY_DB_UPDATE_SCHEDULE
-int ntyExecuteScheduleUpdate(void *self, C_DEVID aid, C_DEVID did, int id, const char *daily, const char *time, const char *details) {
+int ntyExecuteScheduleUpdate(void *self, C_DEVID aid, C_DEVID did, int scheduleId, const char *daily, const char *time, const char *details) {
 	ConnectionPool *pool = self;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
@@ -1118,7 +1116,7 @@ int ntyExecuteScheduleUpdate(void *self, C_DEVID aid, C_DEVID did, int id, const
 		} else {
 			U8 buffer[512];
 			ntylog(" sql : %s\n", buffer);
-			Connection_execute(con, NTY_DB_UPDATE_SCHEDULE, did, id, daily, time, details);
+			Connection_execute(con, NTY_DB_UPDATE_SCHEDULE, did, scheduleId, daily, time, details);
 		}
 	} 
 	CATCH(SQLException) 
@@ -1437,19 +1435,19 @@ int ntyExecuteContactsInsertHandle(C_DEVID aid, C_DEVID did, Contacts *contacts,
 	return ntyExecuteContactsInsert(pool, aid, did, contacts, id);
 }
 
-int ntyExecuteScheduleInsertHandle(C_DEVID aid, C_DEVID did, const char *daily, const char *time, const char *details, int *id) {
+int ntyExecuteScheduleInsertHandle(C_DEVID aid, C_DEVID did, const char *daily, const char *time, const char *details, int *scheduleId) {
 	void *pool = ntyConnectionPoolInstance();
-	return ntyExecuteScheduleInsert(pool, aid, did, daily, time, details, id);
+	return ntyExecuteScheduleInsert(pool, aid, did, daily, time, details, scheduleId);
 }
 
-int ntyExecuteScheduleDeleteHandle(C_DEVID aid, C_DEVID did, int id) {
+int ntyExecuteScheduleDeleteHandle(C_DEVID aid, C_DEVID did, int scheduleId) {
 	void *pool = ntyConnectionPoolInstance();
-	return ntyExecuteScheduleDelete(pool, aid, did, id);
+	return ntyExecuteScheduleDelete(pool, aid, did, scheduleId);
 }
 
-int ntyExecuteScheduleUpdateHandle(C_DEVID aid, C_DEVID did, int id, const char *daily, const char *time, const char *details) {
+int ntyExecuteScheduleUpdateHandle(C_DEVID aid, C_DEVID did, int scheduleId, const char *daily, const char *time, const char *details) {
 	void *pool = ntyConnectionPoolInstance();
-	return ntyExecuteScheduleUpdate(pool, aid, did, id, daily, time, details);
+	return ntyExecuteScheduleUpdate(pool, aid, did, scheduleId, daily, time, details);
 }
 
 int ntyExecuteScheduleSelectHandle(C_DEVID aid, C_DEVID did, ScheduleAck *pScheduleAck, size_t size) {
