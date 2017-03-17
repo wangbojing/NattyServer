@@ -573,6 +573,7 @@ void ntyJsonAddContacts(JSON_Value *json, AddContactsReq *pAddContactsReq) {
 	pAddContactsReq->contacts.image = json_object_get_string(contacts_object, NATTY_USER_PROTOCOL_IMAGE);
 	pAddContactsReq->contacts.telphone = json_object_get_string(contacts_object, NATTY_USER_PROTOCOL_TELPHONE);
 	pAddContactsReq->contacts.app = json_object_get_string(contacts_object, NATTY_USER_PROTOCOL_APP);
+	pAddContactsReq->contacts.admin = json_object_get_string(contacts_object, NATTY_USER_PROTOCOL_ADMIN);
 }
 
 void ntyJsonUpdateContacts(JSON_Value *json, UpdateContactsReq *pUpdateContactsReq) {
@@ -593,6 +594,7 @@ void ntyJsonUpdateContacts(JSON_Value *json, UpdateContactsReq *pUpdateContactsR
 	pUpdateContactsReq->contacts.image = json_object_get_string(contacts_object, NATTY_USER_PROTOCOL_IMAGE);
 	pUpdateContactsReq->contacts.telphone = json_object_get_string(contacts_object, NATTY_USER_PROTOCOL_TELPHONE);
 	pUpdateContactsReq->contacts.app = json_object_get_string(contacts_object, NATTY_USER_PROTOCOL_APP);
+	pUpdateContactsReq->contacts.admin = json_object_get_string(contacts_object, NATTY_USER_PROTOCOL_ADMIN);
 }
 
 void ntyJsonDelContacts(JSON_Value *json, DelContactsReq *pDelContactsReq) {
@@ -622,8 +624,8 @@ char * ntyJsonWriteCommon(CommonAck *pCommonAck) {
 
 	JSON_Value *schema = json_value_init_object();
 	JSON_Object *schema_obj = json_value_get_object(schema);
-	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULT, json_value_init_object());
-	JSON_Object *result_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULT);
+	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object());
+	JSON_Object *result_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULTS);
 	json_object_set_string(result_obj, NATTY_USER_PROTOCOL_CODE, pCommonAck->result.code);
 	json_object_set_string(result_obj, NATTY_USER_PROTOCOL_MESSAGE, pCommonAck->result.message);
 	
@@ -640,8 +642,8 @@ char * ntyJsonWriteCommonExtend(CommonExtendAck *pCommonExtendAck) {
 	JSON_Value *schema = json_value_init_object();
 	JSON_Object *schema_obj = json_value_get_object(schema);
 	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_ID, pCommonExtendAck->id);
-	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULT, json_value_init_object());
-	JSON_Object *result_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULT);
+	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object());
+	JSON_Object *result_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULTS);
 	json_object_set_string(result_obj, NATTY_USER_PROTOCOL_CODE, pCommonExtendAck->result.code);
 	json_object_set_string(result_obj, NATTY_USER_PROTOCOL_MESSAGE, pCommonExtendAck->result.message);
 	
@@ -857,8 +859,8 @@ char * ntyJsonWriteRunTime(RunTimeAck *pRunTimeAck) {
 	
 	JSON_Value *schema = json_value_init_object();
 	JSON_Object *schema_obj = json_value_get_object(schema);
-	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULT, json_value_init_object());
-	JSON_Object *results_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULT);
+	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object());
+	JSON_Object *results_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULTS);
 	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_IMEI, pRunTimeAck->result.IMEI);
 	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_CATEGORY, pRunTimeAck->result.category);
 
@@ -981,6 +983,7 @@ char * ntyJsonWriteContacts(ContactsAck *pContactsAck) {
 		json_object_set_string(contacts_obj, NATTY_USER_PROTOCOL_IMAGE, pContactsAck->results.pContacts[i].image);
 		json_object_set_string(contacts_obj, NATTY_USER_PROTOCOL_TELPHONE, pContactsAck->results.pContacts[i].telphone);
 		json_object_set_string(contacts_obj, NATTY_USER_PROTOCOL_APP, pContactsAck->results.pContacts[i].app);
+		json_object_set_string(contacts_obj, NATTY_USER_PROTOCOL_ADMIN, pContactsAck->results.pContacts[i].admin);
 	}
 
 	char *jsonstring =  json_serialize_to_string(schema);

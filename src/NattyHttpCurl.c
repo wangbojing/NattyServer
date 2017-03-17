@@ -55,7 +55,9 @@
 
 #include <curl/curl.h>
 #include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
+
 #include <wchar.h>
 
 #define JEMALLOC_NO_DEMANGLE 1
@@ -618,38 +620,27 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 		return -1;
 	}
 
-	ntydbg("   pMessageTag->  fromId:%lld  toId:%lld\n", pMessageTag->fromId, pMessageTag->toId);
-	
 	LocationAck *pLocationAck = malloc(sizeof(LocationAck));
-	pLocationAck->results.IMEI = ntyJsonDeviceIMEI(json);
-	pLocationAck->results.category = ntyJsonAppCategory(json);
-	if (pLocationAck->results.IMEI == NULL) {
-		ntydbg("   pLocationAck->results.IMEI  is null \n");
+
+	char bufIMEI[50] = {0};
+	sprintf(bufIMEI, "%llx", pMessageTag->fromId);
+	pLocationAck->results.IMEI = bufIMEI;
+
+	if (pMessageTag->Type== MSG_TYPE_LOCATION_WIFI_API) {
+		pLocationAck->results.category = NATTY_USER_PROTOCOL_WIFI;
+		pLocationAck->results.type = NATTY_USER_PROTOCOL_WIFI;
+	} else if (pMessageTag->Type == MSG_TYPE_LOCATION_LAB_API) {
+		pLocationAck->results.category = NATTY_USER_PROTOCOL_LAB;
+		pLocationAck->results.type = NATTY_USER_PROTOCOL_LAB;
 	}
-	if (pLocationAck->results.category == NULL) {
-		ntydbg("   pLocationAck->results.category  is null \n");
-	}
-	char type[20] = {0};
-	if (pAMap->result.type != NULL) {
-		ntydbg("   pLocationAck->results.type  %s \n", pLocationAck->results.type);
-		int nLocationType = atoi(pAMap->result.type);
-		ntyJsonGetLocationType(nLocationType, type);
-		pLocationAck->results.type = type;
-	} else {
-		ntydbg("   pLocationAck->results.type  is null \n");
-	}
+	
 	pLocationAck->results.location = pAMap->result.location;
 	pLocationAck->results.radius = pAMap->result.radius;
 	
 	char *jsonresult = ntyJsonWriteLocation(pLocationAck);
-	free(pAMap);
-	free(pLocationAck);
-
 	ntydbg("ntyHttpQJKLocationHandleResult jsonresult --> %s\n", jsonresult);
-	
 	int ret = ntySendLocationPushResult(pMessageTag->fromId, jsonresult, strlen(jsonresult));
 	if (ret > 0) {
-		ntydbg("ntySendLocationPushResult ok\n");
 		ret = ntySendLocationBroadCastResult(pMessageTag->fromId, pMessageTag->toId, jsonresult, strlen(jsonresult));
 		if (ret < 0) {
 			ntylog("ntyHttpQJKLocationHandleResult send error.\n");
@@ -658,6 +649,8 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 		}
 	}
 
+	free(pAMap);
+	free(pLocationAck);
 #if 1 //Release Message
 	free(pMessageTag->Tag);
 	free(pMessageTag);
@@ -905,6 +898,49 @@ static size_t ntyHttpQJKWeatherHandleResult(void* buffer, size_t size, size_t nm
 	return 0;
 }
 
+/*
+	
+//* curl 获取 https 请求 
+//* @param String $url		请求的url 
+//* @param Array	$data		要發送的數據 
+//* @param Array	$header 	请求时发送的header 
+//* @param int	$timeout	超时时间，默认30s 
+int ntyCurlHttps(const char *url, const char *data, const char *$header, int timeout) {
+	CURL *curl;	
+	curl = curl_easy_init();
+ 
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0); // 跳过证书检查  
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 1);  // 从证书中检查SSL加密算法是否存在  
+    curl_easy_setopt(curl, CURLOPT_URL, url);  
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, $header);  
+    curl_easy_setopt(curl, CURLOPT_POST, 1);  
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, http_build_query(data));  
+    curl_easy_setopt(curl, CURLOPT_RETURNTRANSFER, 1);   
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeout);  
+  
+    int response = curl_easy_exec(curl);  
+  
+    if($error=curl_error(curl)){  
+        die($error);  
+    }  
+  
+    curl_close(curl);  
+  
+    return response;  
+}
+ 
+int ntyCurlHttpsExec() {
+	// 调用  
+	char *url = "https://www.example.com/api/message.php"; 
+	char *data = array('name'=>'fdipzone');  
+	char *header = array();  
+  
+	int response = curl_https(url, data, header, 5);
+	ntydbg("");
+}
+		
+#endif
+*/
 
 int ntyHttpQJKWeather(void *arg) {
 	CURL *curl;	
@@ -926,6 +962,10 @@ int ntyHttpQJKWeather(void *arg) {
 	}
 
 	ntylog("QJK url:%s\n", tag);
+
+	
+	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);	// 跳过证书检查  
+	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 1);	// 从证书中检查SSL加密算法是否存在  
 
 	curl_easy_setopt(curl, CURLOPT_URL, tag); 
 	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L); 

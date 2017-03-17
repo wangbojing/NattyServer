@@ -141,7 +141,7 @@
 
 
 //作息时间 ，闹钟 
-#define NTY_DB_INSERT_SCHEDULE				"CALL PROC_INSERT_SCHEDULE(%lld, '%s', '%s', '%s', %d)"
+#define NTY_DB_INSERT_SCHEDULE				"CALL PROC_INSERT_SCHEDULE(%lld, '%s', '%s', '%s')"
 
 #define NTY_DB_DELETE_SCHEDULE				"CALL PROC_DELETE_SCHEDULE(%lld, %d)"
 
@@ -149,7 +149,9 @@
 
 #define NTY_DB_SELECT_SCHEDULE				"CALL PROC_SELECT_SCHEDULE(%lld)"
 
-#define NTY_DB_INSERT_PHONEBOOK				"CALL PROC_INSERT_PHONEBOOK(%lld, '%s', '%s')"
+#define NTY_DB_INSERT_PHONEBOOK				"CALL PROC_INSERT_PHONEBOOK(%lld, %lld, %d, %d, '%s', '%s', '%s')"
+
+
 
 #define NTY_DB_DELETE_PHONEBOOK				"CALL PROCE_DELETE_PHONEBOOK(%lld, %d)"
 
@@ -244,6 +246,8 @@ int ntyExecuteRuntimeBellUpdateHandle(C_DEVID aid, C_DEVID did, const char *runt
 int ntyExecuteRuntimeTargetStepUpdateHandle(C_DEVID aid, C_DEVID did, int runtime_param);
 
 int ntyExecuteTurnUpdateHandle(C_DEVID aid, C_DEVID did, U8 status, const char *ontime, const char *offtime);
+
+int ntyExecuteContactsInsertHandle(C_DEVID aid, C_DEVID did, Contacts *contacts, int *id);
 
 int ntyExecuteScheduleInsertHandle(C_DEVID aid, C_DEVID did, const char *daily, const char *time, const char *details, int *id);
 

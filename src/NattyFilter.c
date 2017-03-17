@@ -720,7 +720,18 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 		} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_TIMETABLES) == 0) {
 			ntyJsonTimeTablesAction(fromId, toId, json, jsonstring, jsonlen);
 		} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_CONTACTS) == 0) {
-			ntyJsonContactsAction(fromId, toId, json, jsonstring, jsonlen);
+			const char *action = ntyJsonAction(json);
+			if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_ADD) == 0) {
+				ntyJsonAddContactsAction(fromId, toId, json, jsonstring, jsonlen);
+			} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_DELETE) == 0) {
+				//ntyJsonDelScheduleAction(fromId, toId, json, jsonstring, jsonlen);
+			} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_UPDATE) == 0) {
+				//ntyJsonUpdateScheduleAction(fromId, toId, json, jsonstring, jsonlen);
+			} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_SCHEDULE) == 0) {
+				//ntyJsonSelectScheduleAction(fromId, toId, json, jsonstring, jsonlen);
+			} else {
+				ntylog("Can't find action with: %s\n", action);
+			}
 		} else {
 			ntylog("Can't find category with: %s\n", category);
 		}

@@ -313,6 +313,7 @@ int ntySendBuffer(ClientSocket *client, unsigned char *buffer, int length) {
 		if (ret == -1) {
 			ntylog(" tcp send errno : %d\n", errno);
 			//delete client all fromId;
+			ntyClientCleanup(client);
 		} else {
 			ntylog(" tcp send success : %d\n", ret);
 		}

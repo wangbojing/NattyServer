@@ -97,7 +97,7 @@
 #define NATTY_USER_PROTOCOL_PHONENUM		"PhoneNum"
 
 #define NATTY_USER_PROTOCOL_RESULTS			"Results"
-#define NATTY_USER_PROTOCOL_RESULT			"Result"
+//#define NATTY_USER_PROTOCOL_RESULT			"Result"
 #define NATTY_USER_PROTOCOL_TYPE			"Type"
 #define NATTY_USER_PROTOCOL_RADIUS			"Radius"
 #define NATTY_USER_PROTOCOL_LOCATION		"Location"
@@ -133,8 +133,9 @@
 #define NATTY_USER_PROTOCOL_CONTACTS 		"Contacts"
 #define NATTY_USER_PROTOCOL_NAME 			"Name"
 #define NATTY_USER_PROTOCOL_IMAGE 			"Image"
-#define NATTY_USER_PROTOCOL_TELPHONE 		"Telphone"
+#define NATTY_USER_PROTOCOL_TELPHONE 		"Tel"
 #define NATTY_USER_PROTOCOL_APP 			"App"
+#define NATTY_USER_PROTOCOL_ADMIN 			"Admin"
 
 #define NATTY_USER_PROTOCOL_ICCID 			"ICCID"
 #define NATTY_USER_PROTOCOL_CODE 			"Code"
@@ -531,9 +532,9 @@ typedef struct _TimeTablesAck {
 typedef struct _Contacts {
 	const char *id;
 	const char *name;
+	const char *admin,
 	const char *image;
 	const char *telphone;
-	const char *mana;
 	const char *app;
 } Contacts;
 
@@ -570,6 +571,7 @@ typedef struct _UpdateContactsReq {
 	const char *id;
 	Contacts contacts;
 } UpdateContactsReq;
+
 
 
 #endif

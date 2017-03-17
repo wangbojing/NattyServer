@@ -354,6 +354,8 @@ void ntyJsonRunTimeAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *js
 
 	int ret = 0;
 
+	ntydbg("---------------------1----------------------\n");
+	
 	if (pRunTimeReq->runtime.auto_connection != NULL) {
 		size_t len_auto_connection = strlen(pRunTimeReq->runtime.auto_connection);
 		if (len_auto_connection != 0) {
@@ -365,6 +367,7 @@ void ntyJsonRunTimeAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *js
 			}
 		}
 	}
+	ntydbg("---------------------2----------------------\n");
 
 	if (pRunTimeReq->runtime.loss_report != NULL) {
 		size_t len_loss_report = strlen(pRunTimeReq->runtime.loss_report);
@@ -377,7 +380,7 @@ void ntyJsonRunTimeAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *js
 			}
 		}
 	}
-
+	ntydbg("---------------------3----------------------\n");
 	if (pRunTimeReq->runtime.light_panel != NULL) {
 		size_t len_light_panel = strlen(pRunTimeReq->runtime.light_panel);
 		if (len_light_panel != 0) {
@@ -389,7 +392,7 @@ void ntyJsonRunTimeAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *js
 			}
 		}
 	}
-
+	ntydbg("---------------------4----------------------\n");
 	if (pRunTimeReq->runtime.watch_bell != NULL) {
 		size_t len_bell = strlen(pRunTimeReq->runtime.watch_bell);
 		if (len_bell != 0) {
@@ -400,6 +403,7 @@ void ntyJsonRunTimeAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *js
 			}
 		}
 	}
+	ntydbg("---------------------5----------------------\n");
 
 	if (pRunTimeReq->runtime.taget_step != NULL) {
 		size_t len_taget_step = strlen(pRunTimeReq->runtime.taget_step);
@@ -412,7 +416,7 @@ void ntyJsonRunTimeAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *js
 			}
 		}
 	}
-
+	ntydbg("---------------------6----------------------\n");
 	if (ret == 0) {
 		ret = ntySendCommonReq(devId, jsonstring, strlen(jsonstring));
 		if (ret >= 0) {
@@ -425,6 +429,7 @@ void ntyJsonRunTimeAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *js
 			free(pRunTimeAck);
 		}
 	}
+	ntydbg("---------------------7----------------------\n");
 	free(pRunTimeReq);
 }
 
@@ -624,10 +629,23 @@ void ntyJsonTimeTablesAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 
 
 
 
-void ntyJsonContactsAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
-	
-
+void ntyJsonAddContactsAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
+	AddContactsReq *pAddContactsReq = (AddContactsReq*)malloc(sizeof(AddContactsReq));
+	ntyJsonAddContacts(json, pAddContactsReq);
+	int id = 0;
+	int ret = ntyExecuteContactsInsertHandle(AppId, devId, &pAddContactsReq->contacts, id);
+	if (ret == -1) {
+		ntylog(" ntyJsonAddContactsAction --> DB Exception\n");
+		ret = 4;
+	} else if (ret >= 0) {
+		ret = ntySendCommonReq(devId, jsonstring, strlen(jsonstring));
+		if (ret >= 0) {
+			ntyJsonCommonExtendResult(AppId, NATTY_RESULT_CODE_SUCCESS, id);
+		}
+	}
+	free(pAddContactsReq);
 }
+
 
 
 
