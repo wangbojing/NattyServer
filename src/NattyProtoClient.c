@@ -83,6 +83,8 @@ void ntyProtoRelease(void);
 static int ntySendBigBuffer(void *self, U8 *u8Buffer, int length, C_DEVID gId);
 static int ntyReconnectCb(NITIMER_ID id, void *user_data, int len);
 
+static void *ntyProtoGetInstance(void);
+
 
 #if 1 //
 
@@ -212,6 +214,8 @@ typedef NattyProtoOpera NattyProtoHandle;
 extern DEVID g_devid;
 #endif
 
+
+
 void* ntyProtoClientCtor(void *_self, va_list *params) {
 	NattyProto *proto = _self;
 
@@ -268,6 +272,7 @@ void* ntyProtoClientCtor(void *_self, va_list *params) {
 	return proto;
 }
 
+
 void* ntyProtoClientDtor(void *_self) {
 	NattyProto *proto = _self;
 
@@ -304,7 +309,7 @@ void* ntyProtoClientDtor(void *_self) {
  * send to server addr
  */
 static int ntyHeartBeatCb (NITIMER_ID id, void *user_data, int len) {
-	NattyProto *proto = ntyProtoInstance();
+	NattyProto *proto = ntyProtoGetInstance();
 	ClientSocket *nSocket = ntyNetworkInstance();
 	int length, n;
 	U8 buffer[NTY_HEARTBEAT_ACK_LENGTH] = {0};	
@@ -658,6 +663,10 @@ void *ntyProtoInstance(void) { //Singleton
 	return pProtoOpera;
 }
 
+static void *ntyProtoGetInstance(void) {
+	return pProtoOpera;
+}
+
 void ntyProtoRelease(void) {
 	if (pProtoOpera != NULL) {
 		Delete(pProtoOpera);
@@ -844,7 +853,7 @@ void* ntyStartupClient(int *status) {
 }
 
 void ntyShutdownClient(void) {
-	NattyProto* proto = ntyProtoInstance();
+	NattyProto* proto = ntyProtoGetInstance();
 	if (proto) {
 		ntySendLogout(proto);
 	}
@@ -853,7 +862,7 @@ void ntyShutdownClient(void) {
 #if 1
 
 int ntyBindClient(C_DEVID did) {
-	NattyProto* proto = ntyProtoInstance();
+	NattyProto* proto = ntyProtoGetInstance();
 
 	if (proto) {
 		return ntyProtoClientBind(proto, did);
@@ -862,7 +871,7 @@ int ntyBindClient(C_DEVID did) {
 }
 
 int ntyUnBindClient(C_DEVID did) {
-	NattyProto* proto = ntyProtoInstance();
+	NattyProto* proto = ntyProtoGetInstance();
 
 	if (proto) {
 		return ntyProtoClientUnBind(proto, did);
@@ -871,7 +880,7 @@ int ntyUnBindClient(C_DEVID did) {
 }
 
 int ntyVoiceReqClient(U8 *json, U16 length) {
-	NattyProto* proto = ntyProtoInstance();
+	NattyProto* proto = ntyProtoGetInstance();
 	if (proto) {
 		return ntyProtoClientVoiceReq(proto, json, length);
 	}
@@ -879,7 +888,7 @@ int ntyVoiceReqClient(U8 *json, U16 length) {
 }
 
 int ntyVoiceAckClient(U8 *json, U16 length) {
-	NattyProto* proto = ntyProtoInstance();
+	NattyProto* proto = ntyProtoGetInstance();
 	if (proto) {
 		return ntyProtoClientVoiceAck(proto, json, length);
 	}
@@ -887,7 +896,7 @@ int ntyVoiceAckClient(U8 *json, U16 length) {
 }
 
 int ntyVoiceDataReqClient(C_DEVID gId, U8 *data, int length) {
-	NattyProto* proto = ntyProtoInstance();
+	NattyProto* proto = ntyProtoGetInstance();
 	if (proto) {
 		return ntyProtoClientVoiceDataReq(proto, gId, data, length);
 	}
@@ -895,7 +904,7 @@ int ntyVoiceDataReqClient(C_DEVID gId, U8 *data, int length) {
 }
 
 int ntyCommonReqClient(C_DEVID gId, U8 *json, U16 length) {
-	NattyProto* proto = ntyProtoInstance();
+	NattyProto* proto = ntyProtoGetInstance();
 	if (proto) {
 		return ntyProtoClientCommonReq(proto, gId, json, length);
 	}
@@ -903,7 +912,7 @@ int ntyCommonReqClient(C_DEVID gId, U8 *json, U16 length) {
 }
 
 int ntyLocationReqClient(C_DEVID gId, U8 *json, U16 length) {
-	NattyProto* proto = ntyProtoInstance();
+	NattyProto* proto = ntyProtoGetInstance();
 	if (proto) {
 		return ntyProtoClientLocationReq(proto, gId, json, length);
 	}
@@ -911,7 +920,7 @@ int ntyLocationReqClient(C_DEVID gId, U8 *json, U16 length) {
 }
 
 int ntyWeatherReqClient(C_DEVID gId, U8 *json, U16 length) {
-	NattyProto* proto = ntyProtoInstance();
+	NattyProto* proto = ntyProtoGetInstance();
 	if (proto) {
 		return ntyProtoClientWeatherReq(proto, gId, json, length);
 	}
@@ -919,7 +928,7 @@ int ntyWeatherReqClient(C_DEVID gId, U8 *json, U16 length) {
 }
 
 int ntyCommonAckClient(U8 *json, U16 length) {
-	NattyProto* proto = ntyProtoInstance();
+	NattyProto* proto = ntyProtoGetInstance();
 	if (proto) {
 		return ntyProtoClientCommonAck(proto, json, length);
 	}
@@ -927,7 +936,7 @@ int ntyCommonAckClient(U8 *json, U16 length) {
 }
 
 int ntyDataRouteClient(C_DEVID toId, U8 *json, U16 length) {
-	NattyProto* proto = ntyProtoInstance();
+	NattyProto* proto = ntyProtoGetInstance();
 
 	if (proto) {
 		return ntyProtoClientDataRoute(proto, toId, json, length);
@@ -938,7 +947,7 @@ int ntyDataRouteClient(C_DEVID toId, U8 *json, U16 length) {
 #endif
 
 U8* ntyGetRecvBuffer(void) {
-	NattyProto* proto = ntyProtoInstance();
+	NattyProto* proto = ntyProtoGetInstance();
 	if (proto) {
 		proto->recvBuffer[NTY_PROTO_DATAPACKET_CONTENT_IDX+proto->recvLen] = 0x0;
 		return proto->recvBuffer+NTY_PROTO_DATAPACKET_CONTENT_IDX;
@@ -947,23 +956,12 @@ U8* ntyGetRecvBuffer(void) {
 }
 
 int ntyGetRecvBufferSize(void) {
-	NattyProto* proto = ntyProtoInstance();
+	NattyProto* proto = ntyProtoGetInstance();
 	if (proto) {
 		return proto->recvLen;
 	}
 	return -1;
 }
-#if 0
-static void ntySendTimeout(int len) {
-	NattyProto* proto = ntyProtoInstance();
-	if (proto && proto->onProxyFailed) {
-		proto->onProxyFailed(STATUS_TIMEOUT);
-	}
-
-	//void* pTimer = ntyNetworkTimerInstance();
-	//ntyStopTimer(pTimer);
-}
-#endif
 
 static int ntyReconnectCb(NITIMER_ID id, void *user_data, int len) {
 	int status = 0;
@@ -971,7 +969,6 @@ static int ntyReconnectCb(NITIMER_ID id, void *user_data, int len) {
 	trace(" ntyReconnectCb ...\n");
 	NattyProto *proto = ntyStartupClient(&status);
 	if (status != -1 && (proto != NULL)) {
-		//NattyProto *proto = ntyProtoInstance();
 		trace(" ntyReconnectCb  Success... status:%d, flag:%d\n", status, proto->u8ConnectFlag);
 		if (proto->u8ConnectFlag) { //Reconnect Success
 			if (proto->onProxyReconnect)
@@ -989,22 +986,6 @@ static int ntyReconnectCb(NITIMER_ID id, void *user_data, int len) {
 	return NTY_RESULT_SUCCESS;
 }
 
-#if 0
-
-C_DEVID* ntyGetFriendsList(int *Count) {
-	NattyProto* proto = ntyProtoInstance();
-
-	//C_DEVID *list = ntyVectorGetNodeList(proto->friends, Count);
-
-	return NULL;
-}
-
-void ntyReleaseFriendsList(C_DEVID **list) {
-	C_DEVID *pList = *list;
-	free(pList);
-	pList = NULL;
-}
-#endif
 
 void ntyStartReconnectTimer(void) {
 //disconnect 
@@ -1114,7 +1095,7 @@ U8 *ntyGetSendBigBuffer(void) {
 }
 
 static int ntySendBigBufferCb(NITIMER_ID id, void *user_data, int len) {
-	NattyProto* proto = ntyProtoInstance();
+	NattyProto* proto = ntyProtoGetInstance();
 	if (proto && proto->onPacketSuccess) {
 		proto->onPacketSuccess(1); //Failed
 #if 0

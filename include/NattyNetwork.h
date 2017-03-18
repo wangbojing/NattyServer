@@ -189,7 +189,7 @@ typedef struct _NETWORKOPERA {
 	void* (*dtor)(void *_self);
 	int (*send)(void *_self, U8 *buffer, int len);
 	int (*recv)(void *_self, U8 *buffer, int len);
-	int (*resend)(void *_self);
+	int (*connect)(void *_self);
 	int (*reconnect)(void *_self);
 } NetworkOpera;
 

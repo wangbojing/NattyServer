@@ -667,7 +667,6 @@ int ntySendVoiceBroadCastIter(void *self, void *arg) {
 
 //
 int ntySendCommonReq(C_DEVID toId, U8 *buffer, int length) {
-	ntylog(" ntySendCommonReq --> %s \n", buffer);
 	
 	void *map = ntyMapInstance();
 	ClientSocket *client = ntyMapSearch(map, toId);

@@ -585,6 +585,7 @@ int ntyHashDelete(void *_self, U32 key) {
 		if (node->sockfd == key) {
 			//ntylog(" Delete Hash Table, ip:%d,port%d\n", load->srcip, load->sport);
 			//delete node
+			ntylog("ntyHashDelete --> %d value:%lld", key, node->info->id);
 			ntyHashDictionaryClear(node);
 			return NTY_RESULT_SUCCESS;
 
@@ -594,6 +595,8 @@ int ntyHashDelete(void *_self, U32 key) {
 				
 			while (iter != NULL) {
 				if (node->sockfd == key) {
+					ntylog("ntyHashDelete --> %d value:%lld", key, node->info->id);
+					
 					ntyHashLinkClear(iter);
 					pre->list = NULL;
 					return NTY_RESULT_SUCCESS;

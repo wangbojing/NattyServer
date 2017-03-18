@@ -172,14 +172,9 @@ int ntyAddRelationMap(MessagePacket *msg) {
 			void *hash = ntyHashTableInstance();
 			Payload payload;
 			payload.id = msg->client->devId;
-#if 0	//Update	
-			ret = ntyHashTableInsert(hash, msg->watcher->fd, &payload);
-			ASSERT(ret == NTY_RESULT_SUCCESS);
-#else
+
 			ret = ntyHashTableUpdate(hash, msg->watcher->fd, &payload);
-			//ASSERT(ret == NTY_RESULT_SUCCESS);
-			ntylog(" ntyHashTableUpdate --> ret:%d\n", ret);
-#endif
+			
 		}
 		
 	} else {
@@ -203,7 +198,7 @@ int ntyAddRelationMap(MessagePacket *msg) {
 				client_addr.sin_port);
 #if ENABLE_EV_WATCHER_MODE
 			//release before socket
-			//ntyReleaseSocket(tcp_mainloop, value->watcher);
+			ntyReleaseSocket(tcp_mainloop, value->watcher);
 			//save new socket io
 			value->watcher = msg->watcher;
 #else
@@ -223,6 +218,11 @@ int ntyDelRelationMap(C_DEVID id) {
 	
 	NValue * value = ntyMapSearch(map, id);
 	if (value != NULL) {
+		int sockfd = value->watcher->fd;
+		//delete hash table
+		void *hash = ntyHashTableInstance();
+		ret = ntyHashTableDelete(hash, sockfd);
+		
 		//release client socket
 		ntyReleaseSocket(tcp_mainloop, value->watcher);
 		//release value
@@ -232,6 +232,8 @@ int ntyDelRelationMap(C_DEVID id) {
 		if (ret == NTY_RESULT_FAILED || ret == NTY_RESULT_NOEXIST) {
 			ASSERT(0);
 		}	
+
+		
 	} else {
 		ntylog(" Map Have No Id --> %lld\n", id);
 	}
@@ -244,7 +246,7 @@ static void ntyTcpServerJob(Job *job) {
 	void* pFilter = ntyProtocolFilterInstance();
 	
 	ntyProtocolFilterProcess(pFilter, msg->buffer, msg->length, msg->client);
-
+	
 	freeRequestPacket(msg);
 	free(job);
 }
@@ -328,11 +330,12 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		void *hash = ntyHashTableInstance();
 		Payload *load = ntyHashTableSearch(hash, watcher->fd);
 		ASSERT(load != NULL);
-#if 1 //post to zeromq to remove id from rbtree and b+tree, 
-		// post token <id, action>		<load-id, delete>
-		//load->id
-#endif		
 
+#if 1	
+		//ntyHashTableDelete(hash, watcher->fd);
+		ntyDelRelationMap(load->id);
+		//ntyReleaseSocket(loop, watcher);
+#else
 		MessagePacket *msg = (MessagePacket*)allocRequestPacket();
 		if (msg == NULL) {
 			freeRequestPacket(msg);
@@ -369,9 +372,10 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		job->job_function  = ntyTcpServerJob;
 		job->user_data = msg;
 		ntyThreadPoolPush(pThreadPool, job);
-
+	
 		ntyHashTableDelete(hash, watcher->fd);
 		ntyReleaseSocket(loop, watcher);
+#endif	
 
 	} else {
 		int i = 0;
