@@ -616,8 +616,10 @@ int ntySendCommonBroadCastIter(void *self, void *arg) {
 int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int length) {
 	void *heap = ntyBHeapInstance();
 	NRecord *record = ntyBHeapSelect(heap, gId);
-
+	if (record == NULL) return NTY_RESULT_NOEXIST;
+	
 	Client *pClient = (Client*)record->value;
+	if (pClient == NULL) return NTY_RESULT_NOEXIST;
 	InterMsg *msg = (InterMsg*)malloc(sizeof(InterMsg));
 	msg->buffer = json;
 	msg->length = length;
@@ -631,6 +633,7 @@ int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int leng
 	ntyVectorIter(pClient->friends, ntySendCommonBroadCastIter, msg);
 #endif
 	free(msg);
+	if (pClient == NULL) return NTY_RESULT_SUCCESS;
 }
 
 
@@ -737,8 +740,11 @@ int ntySendLocationBroadCastIter(void *self, void *arg) {
 int ntySendLocationBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int length) {
 	void *heap = ntyBHeapInstance();
 	NRecord *record = ntyBHeapSelect(heap, gId);
-
+	if (record == NULL) return NTY_RESULT_NOEXIST;
+	
 	Client *pClient = (Client*)record->value;
+	if (pClient == NULL) return NTY_RESULT_NOEXIST;
+	
 	InterMsg *msg = (InterMsg*)malloc(sizeof(InterMsg));
 	msg->buffer = json;
 	msg->length = length;
@@ -750,6 +756,7 @@ int ntySendLocationBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int le
 	ntyVectorIter(pClient->friends, ntySendLocationBroadCastIter, msg);
 #endif
 	free(msg);
+	return NTY_RESULT_SUCCESS;
 }
 
 

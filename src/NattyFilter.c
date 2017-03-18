@@ -298,7 +298,8 @@ static int ntyAddClientHeap(const void * obj, RECORDTYPE *value) {
 #if ENABLE_NATTY_TIME_STAMP //TIME Stamp 	
 		pClient->stamp = ntyTimeStampGenrator();
 #endif
-
+		
+		ntylog(" ntyAddClientHeap 1111 \n");
 		if (pClient->friends == NULL) {
 			pClient->friends = ntyVectorCreator();
 #if ENABLE_CONNECTION_POOL
@@ -335,7 +336,8 @@ static int ntyAddClientHeap(const void * obj, RECORDTYPE *value) {
 		if (ret == NTY_RESULT_EXIST || ret == NTY_RESULT_FAILED) {
 			ntylog("ret : %d\n", ret);
 			free(pClient);
-			ASSERT(0);
+//			ASSERT(0);
+			return ret;
 		}
 		*value = pClient;
 		
@@ -460,7 +462,8 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 #endif
 			}
 		} else {	
-			ASSERT(0);
+//			ASSERT(0);
+			ntylog(" BHeap in the Processs\n");
 		}
 #endif
 		//ntylog("Login deal with: %d\n", buffer[NTY_PROTO_MSGTYPE_IDX]);		

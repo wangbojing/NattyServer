@@ -229,13 +229,16 @@ int ntyDelRelationMap(C_DEVID id) {
 		free(value);
 		
 		ret = ntyMapDelete(map, id);
-		if (ret == NTY_RESULT_FAILED || ret == NTY_RESULT_NOEXIST) {
+		if (ret == NTY_RESULT_FAILED) {
 			ASSERT(0);
-		}	
-
+		} else if (ret == NTY_RESULT_NOEXIST) {
+			ntylog("Map Delete ret : %d", ret);
+		}
+		return ret;
 		
 	} else {
 		ntylog(" Map Have No Id --> %lld\n", id);
+		return NTY_RESULT_NOEXIST;
 	}
 
 	return ret;
@@ -278,6 +281,9 @@ static void ntyReleaseClient(Job *job) {
 
 int ntyReleaseSocket(struct ev_loop *loop, struct ev_io *watcher) {
 	if (watcher == NULL) {
+		return NTY_RESULT_FAILED;
+	}
+	if (watcher->fd < 0) {
 		return NTY_RESULT_FAILED;
 	}
 
@@ -333,8 +339,11 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 
 #if 1	
 		//ntyHashTableDelete(hash, watcher->fd);
-		ntyDelRelationMap(load->id);
-		//ntyReleaseSocket(loop, watcher);
+		int ret = ntyDelRelationMap(load->id);
+		if (ret == NTY_RESULT_NOEXIST) {
+			ntyReleaseSocket(loop, watcher);
+		}
+		//
 #else
 		MessagePacket *msg = (MessagePacket*)allocRequestPacket();
 		if (msg == NULL) {
