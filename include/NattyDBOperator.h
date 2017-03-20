@@ -149,13 +149,13 @@
 
 #define NTY_DB_SELECT_SCHEDULE				"CALL PROC_SELECT_SCHEDULE(%lld)"
 
-#define NTY_DB_INSERT_PHONEBOOK				"CALL PROC_INSERT_PHONEBOOK(%lld, %lld, %d, %d, '%s', '%s', '%s')"
+#define NTY_DB_INSERT_PHONEBOOK				"CALL PROC_INSERT_PHONEBOOK(%lld, %lld, '%s', '%s', '%s')"
 
-#define NTY_DB_DELETE_PHONEBOOK				"CALL PROCE_DELETE_PHONEBOOK(%lld, %d)"
+#define NTY_DB_DELETE_PHONEBOOK				"CALL PROC_DELETE_PHONEBOOK(%lld, %d)"
 
 #define NTY_DB_UPDATE_PHONEBOOK_ADMIN		"CALL PROC_UPDATE_PHONEBOOK_ADMIN(%lld, %d, %lld)"
 
-#define NTY_DB_UPDATE_PHONEBOOK				"CALL PROC_UPDATE_PHONEBOOK(%lld, %lld, %d, %d, '%s', '%s', '%s', %d)"
+#define NTY_DB_UPDATE_PHONEBOOK				"CALL PROC_UPDATE_PHONEBOOK(%lld, %lld, '%s', '%s', '%s', %d)"
 
 #define NTY_DB_SELECT_PHONEBOOK				"CALL PROC_SELECT_PHONEBOOK(%lld)"
 

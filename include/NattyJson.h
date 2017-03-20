@@ -103,6 +103,8 @@ void ntyJsonICCID(JSON_Value *json, ICCIDReq *pICCIDReq);
 
 void ntyJsonCommon(JSON_Value *json, CommonReq *pCommonReq);
 
+void ntyJsonCommonExtend(JSON_Value *json, CommonReqExtend *pCommonReqExtend);
+
 void ntyJsonAddEfence(JSON_Value *json, AddEfenceReq *pAddEfenceReq);
 
 void ntyJsonAddEfencePointRelease(EfencePoints *pPoints);
@@ -133,6 +135,8 @@ char * ntyJsonWriteCommon(CommonAck *pCommonAck);
 
 char * ntyJsonWriteCommonExtend(CommonExtendAck *pCommonExtendAck);
 
+char * ntyJsonWriteCommonReqExtend(CommonReqExtend *pCommonReqExtend);
+
 char * ntyJsonWriteConfig(ConfigAck *pConfigAck);
 
 char * ntyJsonWritePower(PowerAck *pPowerAck);
@@ -156,6 +160,12 @@ char * ntyJsonWriteRunTime(RunTimeAck *pRunTimeAck);
 char * ntyJsonWriteSchedule(ScheduleAck *pScheduleAck);
 
 char * ntyJsonWriteTimeTables(TimeTablesAck *pTimeTablesAck);
+
+char * ntyJsonWriteAddContacts(AddContactsAck *pAddContactsAck);
+
+char * ntyJsonWriteUpdateContacts(UpdateContactsAck *pUpdateContactsAck);
+
+char * ntyJsonWriteDelContacts(DelContactsAck *pDelContactsAck);
 
 char * ntyJsonWriteContacts(ContactsAck *pContactsAck);
 

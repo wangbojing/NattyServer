@@ -669,6 +669,8 @@ static const ProtocolFilter ntyVoiceAckFilter = {
 
 
 void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
+	ntydbg("====================begin ntyCommonReqPacketHandleRequest action ==========================\n");
+	
 	const Client *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_COMMON_REQ) {
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_COMMON_REQ_DEVID_IDX);
@@ -680,6 +682,7 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 		memset(jsonstring, 0, jsonlen);
 		memcpy(jsonstring, buffer+NTY_PROTO_COMMON_REQ_JSON_CONTENT_IDX, jsonlen);
 
+		ntydbg("ntyCommonReqPacketHandleRequest --> %d %d %d\n", NTY_PROTO_COMMON_REQ_JSON_LENGTH_IDX, NTY_JSON_COUNT_LENGTH, NTY_PROTO_COMMON_REQ_JSON_CONTENT_IDX);
 		ntydbg("ntyCommonReqPacketHandleRequest --> fromId:%lld    toId:%lld\n", fromId, toId);
 		int ret = ntySendCommonReq(toId, buffer, length);
 		if (ret <= 0) {
@@ -687,10 +690,12 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 			return;
 		}
 		
-		ntydbg("====================begin ntyCommonReqPacketHandleRequest action ==========================\n");
 		ntydbg("ntyCommonReqPacketHandleRequest --> json : %s\n", jsonstring);
-	
 		JSON_Value *json = ntyMallocJsonValue(jsonstring);
+		if (json == NULL) {
+			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
+			return;
+		}
 		const char *category = ntyJsonAppCategory(json);
 		if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_EFENCE) == 0) {
 			const char *action = ntyJsonAction(json);
@@ -739,15 +744,15 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 			ntylog("Can't find category with: %s\n", category);
 		}
 		ntyFreeJsonValue(json);
-
 		free(jsonstring);
-		ntydbg("====================end ntyCommonReqPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
 	} else {
 		ntylog("Can't deal with: %d\n", buffer[NTY_PROTO_MSGTYPE_IDX]);
 	}
+
+	ntydbg("====================end ntyCommonReqPacketHandleRequest action ==========================\n");
 }
 
 static const ProtocolFilter ntyCommonReqFilter = {
@@ -1175,9 +1180,8 @@ void ntyLocationAsyncReqPacketHandleRequest(const void *_self, unsigned char *bu
 
 		JSON_Value *json = ntyMallocJsonValue(jsonstring);
 		if (json == NULL) {
-			ntydbg("json is null \n");
-		} else {
-			ntydbg("json not  null \n");
+			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
+			return;
 		}
 		
 		const char *category = ntyJsonAppCategory(json);
@@ -1221,11 +1225,15 @@ void ntyWeatherAsyncReqPacketHandleRequest(const void *_self, unsigned char *buf
 		memset(jsonstring, 0, jsonlen);
 		memcpy(jsonstring, buffer+NTY_PROTO_WEATHER_ASYNC_REQ_JSON_CONTENT_IDX, jsonlen);
 
-		C_DEVID clientId = *(C_DEVID*)(buffer+4);
+		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_WEATHER_ASYNC_REQ_DEVID_IDX);
 		ntydbg("ntyWeatherAsyncReqPacketHandleRequest --> json : %s\n", jsonstring);
 		
 		JSON_Value *json = ntyMallocJsonValue(jsonstring);
-		ntyJsonWeatherAction(clientId, client->devId, json, jsonstring, jsonlen);
+		if (json == NULL) {
+			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
+			return;
+		}
+		ntyJsonWeatherAction(fromId, client->devId, json, jsonstring, jsonlen);
 		ntyFreeJsonValue(json);
 		free(jsonstring);
 		ntydbg("====================end ntyWeatherAsyncReqPacketHandleRequest action ==========================\n");

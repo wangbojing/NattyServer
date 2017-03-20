@@ -880,16 +880,18 @@ static size_t ntyHttpQJKWeatherHandleResult(void* buffer, size_t size, size_t nm
 	}
 
 	char *jsonresult = ntyJsonWriteWeather(pWeatherAck);
-	ntyJsonWeatherRelease(pWeatherReq);
-	free(pWeatherAck);
-
+	if (jsonresult == NULL) {
+		return -1;
+	}
 	ntydbg("ntyHttpQJKWeatherHandleResult jsonresult --> %s\n", jsonresult);
-	
 	int ret = ntySendWeatherPushResult(pMessageTag->fromId, jsonresult, strlen(jsonresult));
 	if (ret >= 0) {
 		ntydbg("ntySendWeatherBroadCastResult ok\n");
 	}
-
+	
+	ntyJsonWeatherRelease(pWeatherReq);
+	free(pWeatherAck);
+	
 #if 1 //Release Message
 	free(pMessageTag->Tag);
 	free(pMessageTag);
@@ -964,8 +966,8 @@ int ntyHttpQJKWeather(void *arg) {
 	ntylog("QJK url:%s\n", tag);
 
 	
-	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);	// 跳过证书检查  
-	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 1);	// 从证书中检查SSL加密算法是否存在  
+	//curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);	// 跳过证书检查  
+	//curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 1);	// 从证书中检查SSL加密算法是否存在  
 
 	curl_easy_setopt(curl, CURLOPT_URL, tag); 
 	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L); 
@@ -990,7 +992,7 @@ int ntyHttpQJKWeather(void *arg) {
 				ntylog("default %d\n",res);		
 		}		
 		return -3;	
-	}	
+	}
 	
 	curl_easy_cleanup(curl);
 	

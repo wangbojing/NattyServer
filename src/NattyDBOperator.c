@@ -1053,13 +1053,13 @@ int ntyExecuteContactsInsert(void *self, C_DEVID aid, C_DEVID did, Contacts *con
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			U8 admin = atoi(contacts->admin);
-			U8 app = atoi(contacts->app);
+			//U8 admin = atoi(contacts->admin);
+			//U8 app = atoi(contacts->app);
 			U8 buffer[512] = {0};
-			sprintf(buffer, NTY_DB_INSERT_PHONEBOOK, aid,did,admin,app,contacts->image,contacts->name,contacts->telphone);
+			sprintf(buffer, NTY_DB_INSERT_PHONEBOOK, aid,did,contacts->image,contacts->name,contacts->telphone);
 			ntylog(" sql : %s\n", buffer);
 			ResultSet_T r = Connection_executeQuery(con, 
-				NTY_DB_INSERT_PHONEBOOK, aid,did,admin,app,contacts->image,contacts->name,contacts->telphone);
+				NTY_DB_INSERT_PHONEBOOK, aid,did,contacts->image,contacts->name,contacts->telphone);
 			if (ResultSet_next(r)) {
 				int tempId = ResultSet_getInt(r, 1);
 				*contactsId = tempId;
@@ -1095,12 +1095,12 @@ int ntyExecuteContactsUpdate(void *self, C_DEVID aid, C_DEVID did, Contacts *con
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			U8 admin = atoi(contacts->admin);
-			U8 app = atoi(contacts->app);
+			//U8 admin = atoi(contacts->admin);
+			//U8 app = atoi(contacts->app);
 			U8 buffer[512] = {0};
-			sprintf(buffer, NTY_DB_UPDATE_PHONEBOOK, aid,did,admin,app,contacts->image,contacts->name,contacts->telphone, contactsId);
+			sprintf(buffer, NTY_DB_UPDATE_PHONEBOOK, aid,did,contacts->image,contacts->name,contacts->telphone, contactsId);
 			ntylog(" sql : %s\n", buffer);
-			Connection_execute(con, NTY_DB_UPDATE_PHONEBOOK, aid,did,admin,app,contacts->image,contacts->name,contacts->telphone, contactsId);
+			Connection_execute(con, NTY_DB_UPDATE_PHONEBOOK, aid,did,contacts->image,contacts->name,contacts->telphone, contactsId);
 		}
 	}
 	CATCH(SQLException) 

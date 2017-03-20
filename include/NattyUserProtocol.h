@@ -52,7 +52,7 @@
 
 #define HTTP_QJK_BASE_URL		"http://app.quanjiakan.com"
 #define HTTP_GAODE_BASE_URL		"http://apilocate.amap.com"
-#define HTTP_WEATHER_BASE_URL	"https://api.thinkpage.cn"
+#define HTTP_WEATHER_BASE_URL	"http://api.thinkpage.cn"
 #define HTTP_GAODE_KEY			"fb44f91d1a1df4d4b6356f43183a329f"
 #define HTTP_WEATHER_KEY		"0pyd8z7jouficcil"
 
@@ -321,6 +321,12 @@ typedef struct _CommonReq {
 	const char *category; //Config  Power  Signal Location Fare
 } CommonReq;
 
+typedef struct _CommonReqExtend {
+	const char *IMEI;
+	const char *action;
+	const char *category; //Config  Power  Signal Location Fare
+	const char *id;
+} CommonReqExtend;
 
 typedef struct _ConfigItem {
 	const char *power;
@@ -454,6 +460,7 @@ typedef struct _ScheduleItem {
 	const char *daily;
 	const char *time;
 	const char *details;
+	const char *status;
 } ScheduleItem;
 
 typedef struct _AddScheduleReq {
@@ -532,16 +539,16 @@ typedef struct _TimeTablesAck {
 typedef struct _Contacts {
 	const char *id;
 	const char *name;
-	const char *admin;
 	const char *image;
 	const char *telphone;
-	const char *app;
+	//const char *admin;
+	//const char *app;
 } Contacts;
 
 typedef struct _ContactsResults {
 	const char *IMEI;
 	const char *category;
-	const char *num;
+	const char *action;
 	size_t size;
 	Contacts *pContacts;
 } ContactsResults;
@@ -555,23 +562,33 @@ typedef struct _AddContactsReq {
 	const char *category;
 	const char *action;
 	Contacts contacts;
-} AddContactsReq;
+} AddContactsReq, AddContactsResults;
 
 typedef struct _DelContactsReq {
 	const char *IMEI;
 	const char *category;
 	const char *action;
 	const char *id;
-} DelContactsReq;
+} DelContactsReq, DelContactsResults;
 
 typedef struct _UpdateContactsReq {
 	const char *IMEI;
 	const char *category;
 	const char *action;
-	const char *id;
 	Contacts contacts;
-} UpdateContactsReq;
+} UpdateContactsReq, UpdateContactsResults;
 
+typedef struct _AddContactsAck {
+	AddContactsResults results;
+} AddContactsAck;
+
+typedef struct _UpdateContactsAck {
+	UpdateContactsResults results;
+} UpdateContactsAck;
+
+typedef struct _DelContactsAck {
+	DelContactsResults results;
+} DelContactsAck;
 
 
 #endif

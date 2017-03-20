@@ -62,10 +62,12 @@ const char* ntyCommonResultMessage(const char *code) {
 	char *message = NULL;
 	if (code != NULL) {
 		if (strcmp(code, NATTY_RESULT_CODE_SUCCESS) == 0) {
-			message = "success";
+			message = "success";			//成功
 		} else if (strcmp(code, NATTY_RESULT_CODE_ERR_NOEXIST) == 0) {
-			message = "error no exist";
-		}
+			message = "Device not online";	//设备不在线
+		} else if (strcmp(code, NATTY_RESULT_CODE_ERR_JSON_FORMAT) == 0) {
+			message = "JSON format error";	//JSON格式错误
+		} 
 	}
 	return message;
 }
