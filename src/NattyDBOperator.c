@@ -368,6 +368,73 @@ static int ntyExecuteDevAppRelationDelete(void *self, C_DEVID aid, C_DEVID did) 
 }
 
 
+//NTY_DB_INSERT_GROUP
+static int ntyQueryDevAppGroupInsert(void *self, C_DEVID aid, C_DEVID imei, U8 *name) {
+	ConnectionPool *pool = self;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+
+	TRY 
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_GROUP, aid, imei, name);
+			while (ResultSet_next(r)) {
+				ret = ResultSet_getInt(r, 1);
+			}
+
+		}
+	} 
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+//NTY_DB_DEV_APP_DELETE_FORMAT
+static int ntyExecuteDevAppGroupDelete(void *self, C_DEVID aid, C_DEVID did) {
+	ConnectionPool *pool = self;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+
+	TRY 
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			Connection_execute(con, NTY_DB_DELETE_GROUP, aid, did);
+		}
+	} 
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+
+
 //NTY_DB_LOCATION_INSERT_FORMAT
 static int ntyExecuteLocationInsert(void *self, C_DEVID did, U8 *lng, U8 *lat, U8 type, U8 *info) {
 	ConnectionPool *pool = self;
@@ -1403,9 +1470,18 @@ int ntyQueryDevAppRelationInsertHandle(C_DEVID aid, U8 *imei) {
 	return ntyQueryDevAppRelationInsert(pool, aid, imei);
 }
 
-int ntyExecuteDevAppRelationDeleteHandle(C_DEVID aid, C_DEVID did) {
+
+int ntyQueryDevAppGroupInsertHandle(C_DEVID aid, C_DEVID did) {
 	void *pool = ntyConnectionPoolInstance();
-	return ntyExecuteDevAppRelationDelete(pool, aid, did);
+
+	U8 *Name = "Father";
+	return ntyQueryDevAppGroupInsert(pool, aid, did, Name);
+}
+
+
+int ntyExecuteDevAppGroupDeleteHandle(C_DEVID aid, C_DEVID did) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteDevAppGroupDelete(pool, aid, did);
 }
 
 int ntyExecuteLocationInsertHandle( C_DEVID did, U8 *lng, U8 *lat, U8 type, U8 *info) {

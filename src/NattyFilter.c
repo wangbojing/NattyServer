@@ -978,7 +978,11 @@ void ntyUnBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer
 		C_DEVID DeviceId = *(C_DEVID*)(buffer+NTY_PROTO_UNBIND_DEVICEID_IDX);
 
 #if ENABLE_CONNECTION_POOL
+#if 0
 		int ret = ntyExecuteDevAppRelationDeleteHandle(AppId, DeviceId);
+#else
+		int ret = ntyExecuteDevAppGroupDeleteHandle(AppId, DeviceId);
+#endif
 		if (ret == -1) {
 			ntylog(" ntyUnBindDevicePacketHandleRequest --> DB Exception\n");
 			ret = 4;
@@ -1046,29 +1050,17 @@ void ntyBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer, 
 		C_DEVID DeviceId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_DEVICEID_IDX);
 
 #if ENABLE_CONNECTION_POOL
+#if 0
 		U8 DevImei[16] = {0};
 		sprintf(DevImei, "%llx", DeviceId);
 		int ret = ntyQueryDevAppRelationInsertHandle(AppId, DevImei);
+#else
+		int ret = ntyQueryDevAppGroupInsertHandle(AppId, DeviceId);
+#endif
 		if (ret == -1) {
 			ntylog(" ntyBindDevicePacketHandleRequest --> DB Exception\n");
 			ret = 4;
 		} else if (ret == 0) { //Bind Success Update RBTree
-#if 0
-			void *pRBTree = ntyRBTreeInstance();
-			Client *aclient = (Client*)ntyRBTreeInterfaceSearch(pRBTree, AppId);
-			if (aclient != NULL) {
-				if (aclient->friends != NULL) {
-					ntyFriendsTreeInsert(aclient->friends, DeviceId);
-				}
-			}
-
-			Client *dclient = (Client*)ntyRBTreeInterfaceSearch(pRBTree, DeviceId);
-			if (dclient != NULL) {
-				if (dclient->friends != NULL) {
-					ntyFriendsTreeInsert(dclient->friends, AppId);
-				}
-			}
-#else
 
 			void *heap = ntyBHeapInstance();
 			NRecord *record = ntyBHeapSelect(heap, AppId);
@@ -1085,7 +1077,6 @@ void ntyBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer, 
 				ntyVectorAdd(dclient->friends, &DeviceId, sizeof(C_DEVID));
 			}
 
-#endif
 		}
 		ntyProtoBindAck(AppId, DeviceId, ret);
 #endif		
