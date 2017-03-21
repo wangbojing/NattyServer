@@ -797,65 +797,7 @@ U8 u8VoicePacket[NTY_VOICEREQ_COUNT_LENGTH*NTY_VOICEREQ_PACKET_LENGTH] = {0};
 void ntyVoiceDataReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const Client *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_VOICE_DATA_REQ) {
-#if 0
-		int i = 0;
-		U16 index = *(U16*)(buffer+NTY_PROTO_VOICE_DATA_REQ_PKTINDEX_IDX);
-		U16 Count = *(U16*)(buffer+NTY_PROTO_VOICE_DATA_REQ_PKTTOTLE_IDX);
-		U32 pktLength = *(U32*)(buffer+NTY_PROTO_VOICE_DATA_REQ_PKTLENGTH_IDX);
 
-		ntylog(" Count:%d, index:%d, pktLength:%d, length:%d, pktLength%d\n", 
-			Count, index, pktLength, length, NTY_PROTO_VOICEREQ_DESTID_IDX);
-
-		C_DEVID toId = 0, fromId = 0;
-		ntyU8ArrayToU64(buffer+NTY_PROTO_VOICE_DATA_REQ_DEVID_IDX, &fromId);
-		ntyU8ArrayToU64(buffer+NTY_PROTO_VOICE_DATA_REQ_GROUP_IDX, &toId);
-#if 0
-		for (i = 0;i < sizeof(C_DEVID);i ++) {
-			ntylog(" %2x", *(buffer+NTY_PROTO_VOICE_DATA_REQ_GROUP_IDX+i));
-		}
-#endif		
-		ntylog("\n toId %lld, fromId %lld\n", toId, fromId);
-#if 0
-		void *pRBTree = ntyRBTreeInstance();
-		Client *toClient = (Client*)ntyRBTreeInterfaceSearch(pRBTree, toId);
-#else
-		void *map = ntyMapInstance();
-		ClientSocket *toClient = ntyMapSearch(map, toId);
-#endif
-		if (toClient == NULL) { //no Exist
-			ntylog(" toClient is not Exist\n");
-
-			int online = 0;
-			int result = 0;
-#if 1 //select device Login status, this operator should use redis, select in redis 
-			if (client->deviceType == NTY_PROTO_CLIENT_WATCH) {
-				ntyQueryDeviceOnlineStatusHandle(toId, &online);
-			} else if (client->deviceType == NTY_PROTO_CLIENT_ANDROID
-				|| client->deviceType == NTY_PROTO_CLIENT_IOS) {
-				ntyQueryAppOnlineStatusHandle(toId, &online);
-			} else {
-				ntylog(" ntyUserDataPacketHandleRequest --> Packet : %x\n", client->deviceType);
-				ASSERT(0);
-			}
-#endif
-			ClientSocket *selfClient = ntyMapSearch(map, toId);
-#if ENABLE_MULTICAST_SYNC //multicast 
-			//buffer[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_MULTICAST_REQ;
-			if (online == 1) { //no exist
-				result = ntyMulticastSend(buffer, length);
-			} else if (online == 0) {
-				result = ntySendBuffer(selfClient, buffer, length);
-			} else {
-				ASSERT(0);
-			}
-#else
-			result = ntySendBuffer(selfClient, buffer, length);
-#endif
-
-			return ;
-		} 
-		ntyProxyBuffer(toClient, buffer, length);
-#else
 		int i = 0;
 		
 		U16 index = *(U16*)(buffer+NTY_PROTO_VOICE_DATA_REQ_PKTINDEX_IDX);
@@ -896,10 +838,10 @@ void ntyVoiceDataReqPacketHandleRequest(const void *_self, unsigned char *buffer
 			stamp = ntyTimeStampGenrator();
 #endif
 			sprintf(filename, NTY_VOICE_FILENAME_FORMAT, gId, fromId, stamp);
-			ntylog(" Voice FileName : %s\n", filename);
 
 			U32 dataLength = NTY_VOICEREQ_DATA_LENGTH*(Count-1) + pktLength;
-			ntyWriteDat(filename, client->rBuffer, dataLength);
+			ntylog(" Voice FileName : %s, %d\n", filename, dataLength);
+			ntyWriteDat(filename, pClient->rBuffer, dataLength);
 
 			//release rBuffer
 			free(pClient->rBuffer);
@@ -913,7 +855,7 @@ void ntyVoiceDataReqPacketHandleRequest(const void *_self, unsigned char *buffer
  * 
  */
 		}
-#endif
+
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
