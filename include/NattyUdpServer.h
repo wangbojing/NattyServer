@@ -138,6 +138,8 @@ typedef struct _Client {
 	U8 deviceType; //device type , android ,ios, web, java, device
 	U16 rLength; //recv length
 	U8 *recvBuffer; //recvBuffer
+	U8 *rBuffer; //voice recv buffer
+	U8 *sBuffer; //voice send buffer
 	void *friends; //client id list for this key
 	void *group; //group id list 
 	pthread_mutex_t bMutex; //big buffer write lock

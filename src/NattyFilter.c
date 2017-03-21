@@ -295,6 +295,10 @@ static int ntyAddClientHeap(const void * obj, RECORDTYPE *value) {
 		pClient->rLength = 0;
 		pClient->recvBuffer = malloc(PACKET_BUFFER_SIZE);
 
+		//voice buffer
+		pClient->rBuffer = NULL;
+		pClient->sBuffer = NULL;
+
 #if ENABLE_NATTY_TIME_STAMP //TIME Stamp 	
 		pClient->stamp = ntyTimeStampGenrator();
 #endif
@@ -793,22 +797,23 @@ U8 u8VoicePacket[NTY_VOICEREQ_COUNT_LENGTH*NTY_VOICEREQ_PACKET_LENGTH] = {0};
 void ntyVoiceDataReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const Client *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_VOICE_DATA_REQ) {
-#if 1
+#if 0
 		int i = 0;
-		U16 index = *(U16*)(buffer+NTY_PROTO_VOICEREQ_PKTINDEX_IDX);
-		U16 Count = *(U16*)(&buffer[NTY_PROTO_VOICEREQ_PKTTOTLE_IDX]);
-		U32 pktLength = *(U32*)(&buffer[NTY_PROTO_VOICEREQ_PKTLENGTH_IDX]);
+		U16 index = *(U16*)(buffer+NTY_PROTO_VOICE_DATA_REQ_PKTINDEX_IDX);
+		U16 Count = *(U16*)(buffer+NTY_PROTO_VOICE_DATA_REQ_PKTTOTLE_IDX);
+		U32 pktLength = *(U32*)(buffer+NTY_PROTO_VOICE_DATA_REQ_PKTLENGTH_IDX);
 
 		ntylog(" Count:%d, index:%d, pktLength:%d, length:%d, pktLength%d\n", 
 			Count, index, pktLength, length, NTY_PROTO_VOICEREQ_DESTID_IDX);
 
 		C_DEVID toId = 0, fromId = 0;
-		ntyU8ArrayToU64(buffer+NTY_PROTO_VOICEREQ_SELFID_IDX, &fromId);
-		ntyU8ArrayToU64(buffer+NTY_PROTO_VOICEREQ_DESTID_IDX, &toId);
-
+		ntyU8ArrayToU64(buffer+NTY_PROTO_VOICE_DATA_REQ_DEVID_IDX, &fromId);
+		ntyU8ArrayToU64(buffer+NTY_PROTO_VOICE_DATA_REQ_GROUP_IDX, &toId);
+#if 0
 		for (i = 0;i < sizeof(C_DEVID);i ++) {
-			ntylog(" %2x", *(buffer+NTY_PROTO_VOICEREQ_DESTID_IDX+i));
+			ntylog(" %2x", *(buffer+NTY_PROTO_VOICE_DATA_REQ_GROUP_IDX+i));
 		}
+#endif		
 		ntylog("\n toId %lld, fromId %lld\n", toId, fromId);
 #if 0
 		void *pRBTree = ntyRBTreeInstance();
@@ -853,22 +858,60 @@ void ntyVoiceDataReqPacketHandleRequest(const void *_self, unsigned char *buffer
 #else
 		int i = 0;
 		
-		U16 index = *(U16*)(buffer+NTY_PROTO_VOICEREQ_PKTINDEX_IDX);
-		U16 Count = *(U16*)(&buffer[NTY_PROTO_VOICEREQ_PKTTOTLE_IDX]);
-		U32 pktLength = *(U32*)(&buffer[NTY_PROTO_VOICEREQ_PKTLENGTH_IDX]);
+		U16 index = *(U16*)(buffer+NTY_PROTO_VOICE_DATA_REQ_PKTINDEX_IDX);
+		U16 Count = *(U16*)(&buffer[NTY_PROTO_VOICE_DATA_REQ_PKTTOTLE_IDX]);
+		U32 pktLength = *(U32*)(buffer+NTY_PROTO_VOICE_DATA_REQ_PKTLENGTH_IDX);
 
 		ntylog(" Count:%d, index:%d, pktLength:%d, length:%d, pktLength%d\n", 
-			Count, index, pktLength, length, NTY_PROTO_VOICEREQ_PKTLENGTH_IDX);
+			Count, index, pktLength, length, NTY_PROTO_VOICE_DATA_REQ_PKTLENGTH_IDX);
 
-		ntySendBuffer(client, buffer, length);
-		
-		for (i = 0;i < pktLength;i ++) {
-			u8VoicePacket[index * NTY_VOICEREQ_DATA_LENGTH + i] = buffer[NTY_VOICEREQ_HEADER_LENGTH + i];
+		void *heap = ntyBHeapInstance();
+		NRecord *record = ntyBHeapSelect(heap, client->devId);
+		if (record == NULL) {
+			ntylog(" ntyBHeapSelect is not exist %lld\n", client->devId);
+			return ;
 		}
-		if (index == Count-1) {
-			U32 dataLength = NTY_VOICEREQ_DATA_LENGTH*(Count-1) + pktLength;
-			ntyWriteDat("./rVoice.amr", u8VoicePacket, dataLength);
+		Client *pClient = (Client*)record->value;
 
+		if (pClient->rBuffer == NULL) {
+			pClient->rBuffer = malloc(NTY_VOICEREQ_COUNT_LENGTH*NTY_VOICEREQ_PACKET_LENGTH);
+			
+		}
+		if (index == 0) { //start voice packet
+			memset(pClient->rBuffer, 0, NTY_VOICEREQ_COUNT_LENGTH*NTY_VOICEREQ_PACKET_LENGTH);
+		}
+
+		for (i = 0;i < pktLength;i ++) {
+			pClient->rBuffer[index * NTY_VOICEREQ_DATA_LENGTH + i] = buffer[NTY_VOICEREQ_HEADER_LENGTH + i];
+		}
+		if (index == Count-1) { //save voice data
+			long stamp = 0;
+			C_DEVID gId = 0, fromId = 0;
+			U8 filename[NTY_VOICE_FILENAME_LENGTH] = {0};
+			
+			ntyU8ArrayToU64(buffer+NTY_PROTO_VOICE_DATA_REQ_DEVID_IDX, &fromId);
+			ntyU8ArrayToU64(buffer+NTY_PROTO_VOICE_DATA_REQ_GROUP_IDX, &gId);
+			
+#if ENABLE_NATTY_TIME_STAMP //TIME Stamp 	
+			stamp = ntyTimeStampGenrator();
+#endif
+			sprintf(filename, NTY_VOICE_FILENAME_FORMAT, gId, fromId, stamp);
+			ntylog(" Voice FileName : %s\n", filename);
+
+			U32 dataLength = NTY_VOICEREQ_DATA_LENGTH*(Count-1) + pktLength;
+			ntyWriteDat(filename, client->rBuffer, dataLength);
+
+			//release rBuffer
+			free(pClient->rBuffer);
+			pClient->rBuffer = NULL;
+
+/* enter to SrvAction
+ * VoiceBroadCast to gId
+ * 0. send data result to from Id 
+ * 1. save to DB
+ * 2. prepare to offline voice data
+ * 
+ */
 		}
 #endif
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
