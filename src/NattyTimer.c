@@ -240,10 +240,10 @@ static void *pWheelTimer = NULL; //Singleton
 void* ntyTimerInstance(void) {
 	if (pWheelTimer == NULL) {
 		int arg = 1;
-		void *pTimer = New(pNtyTimerHandle, arg);
-		if ((unsigned long)NULL != cmpxchg((void*)(&pWheelTimer), (unsigned long)NULL, (unsigned long)pTimer, WORD_WIDTH)) {
-			Delete(pTimer);
-		} 
+		pWheelTimer = New(pNtyTimerHandle, arg);
+		//if ((unsigned long)NULL != cmpxchg((void*)(&pWheelTimer), (unsigned long)NULL, (unsigned long)pTimer, WORD_WIDTH)) {
+		//	Delete(pTimer);
+		//}
 	}
 	return pWheelTimer;
 }

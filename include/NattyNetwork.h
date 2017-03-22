@@ -64,13 +64,10 @@ typedef long long C_DEVID;
 #endif
 
 #define SERVER_NAME		"112.93.116.189"   //"112.93.116.188" //"112.93.116.189" //"127.0.0.1" 
-//#define SERVER_HOSTNAME	"debug.quanjiakan.com"
-#define SERVER_HOSTNAME	"localhost"
-//#define SERVER_HOSTNAME	"watch.quanjiakan.com"
-
+#define SERVER_HOSTNAME	"watch.quanjiakan.com"
 #define SERVER_PORT		8888
 #define RECV_BUFFER_SIZE	1024
-#define NORMAL_BUFFER_SIZE	64
+#define NORMAL_BUFFER_SIZE	128
 #define SENT_TIMEOUT	3
 
 

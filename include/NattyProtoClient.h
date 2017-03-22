@@ -132,12 +132,10 @@ int ntyDataRouteClient(DEVID toId, U8 *json, U16 length);
 void ntyProtoClientSetToken(void *_self, U8 *tokens, int length);
 
 U8 *ntyGetRecvBigBuffer(void);
+U8 *ntyGetSendBigBuffer(void);
 int ntyGetRecvBigLength(void);
 
-
-
-//DEVID* ntyGetFriendsList(int *Count);
-//void ntyReleaseFriendsList(DEVID **list);
+char* ntyProtoClientGetVersion(void);
 
 #endif
 
