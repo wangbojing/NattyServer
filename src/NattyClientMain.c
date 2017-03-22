@@ -87,7 +87,7 @@ void ntyUnBindResult(int arg) {
 	ntydbg(" ntyUnBindResult --> arg: %d\n", arg);
 }
 
-void ntyPacketRecv(int arg) { //voice data recv success, arg: length of voice data
+void ntyPacketRecv(DEVID fromId, int arg) { //voice data recv success, arg: length of voice data
 	ntydbg(" ntyUnBindResult --> arg: %d\n", arg);
 
 	U8 *pBuffer = ntyGetRecvBigBuffer();	//
@@ -147,8 +147,8 @@ void ntyDataRoute(DEVID fromId, U8 *json, int length) {
 	ntydbg(" ntyDataRoute:%s\n", json);
 }
 
-void ntyDataResult(int status) {
-	ntydbg(" ntyDataResult:%d\n", status);
+void ntyDataResult(U8 *json, int length) {
+	ntydbg(" ntyDataResult:%d\n", length);
 }
 
 void ntyVoiceBroadCastResult(DEVID fromId, U8 *json, int length) {
