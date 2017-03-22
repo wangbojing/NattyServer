@@ -1236,6 +1236,7 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 	NattyProtoOpera * const *protoOpera = arg;
 	Network *pNetwork = ntyNetworkInstance();
 	U8 MSG = buf[NTY_PROTO_MSGTYPE_IDX];
+	buf[length-NTY_CRCNUM_LENGTH] = 0x0;
 
 	switch (MSG) {
 		case NTY_PROTO_LOGIN_ACK: {
@@ -1322,8 +1323,10 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 			if (ret == 1) {
 				U32 u32MsgId = 0;
 				C_DEVID fromId = 0;
+				C_DEVID gId = 0;
 				
 				ntyU8ArrayToU64(buf+NTY_PROTO_VOICE_DATA_REQ_DEVID_IDX, &fromId);
+				ntyU8ArrayToU64(buf+NTY_PROTO_VOICE_DATA_REQ_GROUP_IDX, &gId);
 				memcpy(&u32MsgId, buf+NTY_PROTO_VOICE_DATA_REQ_OFFLINEMSGID_IDX, sizeof(U32));
 
 				if (NTY_RESULT_FAILED == ntyVoiceAckClient(u32MsgId, NULL, 0)) {
@@ -1332,7 +1335,7 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 				}
 
 				if (proto->onPacketRecv) {
-					proto->onPacketRecv(fromId, u32DataLength);
+					proto->onPacketRecv(fromId, gId, u32DataLength);
 				}
 			}
 			break;
