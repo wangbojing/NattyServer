@@ -164,12 +164,17 @@ typedef enum  {
 #define P2P_HEARTBEAT_TIMEOUT	60
 #define P2P_HEARTBEAT_TIMEOUT_COUNTR	5
 
+#define NTY_BIGBUFFER_SIZE		30*1024
+
+
+
 typedef void (*PROXY_CALLBACK)(int len);
 typedef void (*PROXY_HANDLE_CB)(C_DEVID id, int len);
 
 typedef void (*NTY_STATUS_CALLBACK)(int status);
 typedef void (*NTY_PARAM_CALLBACK)(U8 *arg, int length);
 typedef void (*NTY_RETURN_CALLBACK)(C_DEVID fromId, U8 *arg, int length);
+typedef void (*NTY_PACKET_CALLBACK)(C_DEVID fromId, C_DEVID gId, int length);
 
 
 typedef struct _NETWORK {

@@ -633,7 +633,26 @@ int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int leng
 	ntyVectorIter(pClient->friends, ntySendCommonBroadCastIter, msg);
 #endif
 	free(msg);
-	if (pClient == NULL) return NTY_RESULT_SUCCESS;
+
+}
+
+
+//
+int ntySendCommonReq(C_DEVID toId, U8 *buffer, int length) {
+	ntydbg(" ntySendCommonReq --> json:%s %d", buffer, length);
+	
+	void *map = ntyMapInstance();
+	ClientSocket *client = ntyMapSearch(map, toId);
+
+	return ntySendBuffer(client, buffer, length);
+	
+}
+
+int ntySendDataRoute(C_DEVID toId, U8 *buffer, int length) {
+	void *map = ntyMapInstance();
+	ClientSocket *client = ntyMapSearch(map, toId);
+
+	return ntySendBuffer(client, buffer, length);
 }
 
 
@@ -668,24 +687,6 @@ int ntySendVoiceBroadCastIter(void *self, void *arg) {
 	return ntySendBuffer(client, buffer, length);
 }
 
-//
-int ntySendCommonReq(C_DEVID toId, U8 *buffer, int length) {
-	ntydbg(" ntySendCommonReq --> json:%s %d", buffer, length);
-	
-	void *map = ntyMapInstance();
-	ClientSocket *client = ntyMapSearch(map, toId);
-
-	return ntySendBuffer(client, buffer, length);
-	
-}
-
-int ntySendDataRoute(C_DEVID toId, U8 *buffer, int length) {
-	void *map = ntyMapInstance();
-	ClientSocket *client = ntyMapSearch(map, toId);
-
-	return ntySendBuffer(client, buffer, length);
-}
-
 
 int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int length) {
 	void *heap = ntyBHeapInstance();
@@ -703,6 +704,9 @@ int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int lengt
 	ntyVectorIter(pClient->friends, ntySendVoiceBroadCastIter, msg);
 #endif
 	free(msg);
+
+	return NTY_RESULT_SUCCESS;
+	
 }
 
 
@@ -887,6 +891,139 @@ int ntySendBindComfirmPushResult(C_DEVID fromId, U8 *json, int length) {
 
 	return ntySendBuffer(client, buffer, bLength);
 }
+
+
+#if 1
+
+
+int ntyBigPacketEncode(U8 *pBuffer, int length) {
+	int i = 0, j = 0, k = 0, idx = 0;
+	int pktCount = length / NTY_VOICEREQ_DATA_LENGTH;
+	int pktLength = pktCount * NTY_VOICEREQ_PACKET_LENGTH + (length % NTY_VOICEREQ_DATA_LENGTH) + NTY_VOICEREQ_EXTEND_LENGTH;
+	//U8 *pktIndex = pBuffer + pktCount * NTY_VOICEREQ_PACKET_LENGTH;
+
+	ntylog("pktLength :%d, pktCount:%d\n", pktLength, pktCount);
+	if (pktCount >= (NTY_VOICEREQ_COUNT_LENGTH-1)) return -1;
+
+	j = pktLength - NTY_CRCNUM_LENGTH;
+	k = length;
+
+	ntylog("j :%d, k :%d, pktCount:%d, last:%d\n", j, k, pktCount, (length % NTY_VOICEREQ_DATA_LENGTH));
+	for (idx = 0;idx < (length % NTY_VOICEREQ_DATA_LENGTH);idx ++) {
+		pBuffer[--j] = pBuffer[--k];
+	}	
+			
+
+	for (i = pktCount;i > 0;i --) {
+		j = i * NTY_VOICEREQ_PACKET_LENGTH - NTY_CRCNUM_LENGTH;
+		k = i * NTY_VOICEREQ_DATA_LENGTH;
+		ntylog("j :%d, k :%d\n", j, k);
+		for (idx = 0;idx < NTY_VOICEREQ_DATA_LENGTH;idx ++) {
+			pBuffer[--j] = pBuffer[--k];
+		}
+	}
+
+	return pktLength;
+}
+
+int ntySendBigPacket(U8 *buffer, int length, C_DEVID fromId, C_DEVID gId, C_DEVID toId, U32 index) {
+	U16 Count = length / NTY_VOICEREQ_PACKET_LENGTH + 1 ;
+	U32 pktLength = NTY_VOICEREQ_DATA_LENGTH, i;
+	U8 *pkt = buffer;
+	
+	int ret = -1;
+
+	ntylog(" destId:%d, pktIndex:%d, pktTotal:%d", NTY_PROTO_VOICE_DATA_REQ_GROUP_IDX,
+			NTY_PROTO_VOICE_DATA_REQ_PKTINDEX_IDX, NTY_PROTO_VOICE_DATA_REQ_PKTTOTLE_IDX);
+
+	void *map = ntyMapInstance();
+	ClientSocket *client = ntyMapSearch(map, toId);
+
+	for (i = 0;i < Count;i ++) {
+		pkt = buffer+(i*NTY_VOICEREQ_PACKET_LENGTH);
+
+		pkt[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
+		pkt[NTY_PROTO_DEVTYPE_IDX] = NTY_PROTO_CLIENT_ANDROID;
+		pkt[NTY_PROTO_PROTOTYPE_IDX] = (U8) MSG_REQ;	
+		pkt[NTY_PROTO_VOICEREQ_TYPE_IDX] = NTY_PROTO_VOICE_DATA_REQ;
+
+		memcpy(pkt+NTY_PROTO_VOICE_DATA_REQ_DEVID_IDX, &fromId, sizeof(C_DEVID));
+		memcpy(pkt+NTY_PROTO_VOICE_DATA_REQ_GROUP_IDX, &gId, sizeof(C_DEVID));
+
+		memcpy(pkt+NTY_PROTO_VOICE_DATA_REQ_PKTINDEX_IDX, &i, sizeof(U16));
+		memcpy(pkt+NTY_PROTO_VOICE_DATA_REQ_PKTTOTLE_IDX, &Count , sizeof(U16));
+		memcpy(pkt+NTY_PROTO_VOICE_DATA_REQ_OFFLINEMSGID_IDX, &index, sizeof(U32));
+
+		if (i == Count-1) { //last packet
+			pktLength = (length % NTY_VOICEREQ_PACKET_LENGTH) - NTY_VOICEREQ_EXTEND_LENGTH;
+		}
+
+		memcpy(pkt+NTY_PROTO_VOICE_DATA_REQ_PKTLENGTH_IDX, &pktLength, sizeof(U32));
+		
+		ntySendBuffer(client, pkt, pktLength+NTY_VOICEREQ_EXTEND_LENGTH);
+		
+		ntylog(" index : %d", i );
+		ntylog(" pktLength:%d, Count:%d, ret:%d, selfIdx:%d\n",
+			pktLength+NTY_VOICEREQ_EXTEND_LENGTH, Count, ret, NTY_PROTO_VOICEREQ_SELFID_IDX);
+
+		usleep(20 * 1000); //Window Send
+	}
+
+	return 0;
+}
+
+int ntySendBinBufferBroadCastIter(void *self, void *arg) {
+	C_DEVID toId = 0, selfId = 0;
+	memcpy(&toId, self, sizeof(C_DEVID));
+
+	InterMsg *msg = arg;
+	U8 *data = msg->buffer;
+	int length = msg->length;
+	Client *gClient = msg->group;
+	U32 index = (U32)msg->arg;
+	memcpy(&selfId, msg->self, sizeof(C_DEVID));
+
+	ntylog(" toId:%lld, selfId:%lld\n", toId, selfId);
+	if (toId == selfId) return 0;
+
+	ntySendBigPacket(data, length, selfId, gClient->devId, toId, index);
+}
+
+
+int ntySendBinBufferBroadCastResult(U8 *u8Buffer, int length, C_DEVID fromId, C_DEVID gId, U32 index) {
+	
+	int ret = ntyBigPacketEncode(u8Buffer, length);
+	ntylog(" ntySendBigBuffer --> Ret %d, %x, %lld\n", ret, u8Buffer[0], gId);
+#if 0
+	ntySendBigPacket(u8Buffer, length, gId, index);
+#else
+
+	void *heap = ntyBHeapInstance();
+	NRecord *record = ntyBHeapSelect(heap, gId);
+	if (record == NULL) return NTY_RESULT_NOEXIST;
+	
+	Client *pClient = (Client*)record->value;
+	if (pClient == NULL) return NTY_RESULT_NOEXIST;
+
+
+	InterMsg *msg = (InterMsg*)malloc(sizeof(InterMsg));
+	msg->buffer = u8Buffer;
+	msg->length = length;
+	msg->group = pClient;
+	msg->self = &fromId;
+	msg->arg = index;
+#endif
+
+	ntyVectorIter(pClient->friends, ntySendCommonBroadCastIter, msg);
+
+	free(msg);
+
+	return NTY_RESULT_SUCCESS;
+}
+
+
+#endif
+
 
 
 

@@ -87,7 +87,7 @@ void ntyUnBindResult(int arg) {
 	ntydbg(" ntyUnBindResult --> arg: %d\n", arg);
 }
 
-void ntyPacketRecv(DEVID fromId, int arg) { //voice data recv success, arg: length of voice data
+void ntyPacketRecv(DEVID fromId, DEVID gId, int arg) { //voice data recv success, arg: length of voice data
 	ntydbg(" ntyUnBindResult --> arg: %d\n", arg);
 
 	U8 *pBuffer = ntyGetRecvBigBuffer();	//

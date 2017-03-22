@@ -55,6 +55,7 @@ typedef struct _INTER_MSG {
 	void *group;
 	U8 *buffer;
 	int length;
+	int arg;
 } InterMsg;
 
 
@@ -95,7 +96,7 @@ int ntySendDataRoute(C_DEVID toId, U8 *buffer, int length);
 int ntySendLocationPushResult(C_DEVID fromId, U8 *json, int length);
 int ntySendWeatherPushResult(C_DEVID fromId, U8 *json, int length);
 
-
+int ntySendBinBufferBroadCastResult(U8 *u8Buffer, int length, C_DEVID fromId, C_DEVID gId, U32 index);
 
 
 

@@ -53,7 +53,7 @@
 #include <unistd.h>
 
 
-#include "NattyProtoClient.h"
+//#include "NattyProtoClient.h"
 #include "NattyTimer.h"
 #include "NattyUtils.h"
 #include "NattyNetwork.h"
@@ -1437,12 +1437,12 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 			break;
 		}
 		case NTY_PROTO_COMMON_BROADCAST: {
-			DEVID fromId = 0;
+			C_DEVID fromId = 0;
 			U8 *json = NULL;
 			U16 u16Length = 0;
 			U32 u32MsgId = 0;
 			
-			memcpy(&fromId, buf+NTY_PROTO_COMMON_BROADCAST_DEVID_IDX, sizeof(DEVID));
+			memcpy(&fromId, buf+NTY_PROTO_COMMON_BROADCAST_DEVID_IDX, sizeof(C_DEVID));
 			memcpy(&u32MsgId, buf+NTY_PROTO_COMMON_BROADCAST_MSGID_IDX, sizeof(U32));
 			memcpy(&u16Length, buf+NTY_PROTO_COMMON_BROADCAST_JSON_LENGTH_IDX, sizeof(U16));
 
