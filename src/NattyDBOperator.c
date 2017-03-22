@@ -380,11 +380,10 @@ static int ntyQueryDevAppGroupInsert(void *self, C_DEVID aid, C_DEVID imei, U8 *
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			ntydbg(" ntyQueryDevAppGroupInsert 1 --> %lld, %lld", aid, imei);
+
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_GROUP, imei, aid, name);
 			while (ResultSet_next(r)) {
 				ret = ResultSet_getInt(r, 1);
-				ntydbg(" ntyQueryDevAppGroupInsert --> %lld, %lld, %d", aid, imei, ret);
 			}
 
 		}

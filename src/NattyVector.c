@@ -144,10 +144,11 @@ void *ntyVectorGetNodeList(void *self, int *num) {
 	NKnot *knot = LIST_FIRST(&vector->header);
 
 	*num = count;
-	ntylog(" ntyVectorGetNodeList : %d\n", count);
+	ntydbg(" ntyVectorGetNodeList : %d\n", count);
 	if (count == 0) return NULL;
 	char *list = malloc(count * (knot->len));
 	if (list == NULL) ASSERT(0);
+	
 	for (knot = vector->header.lh_first;(knot != NULL) && (i < count);knot = knot->entries.le_next) {
 		memcpy(list+(i*knot->len), knot->data, knot->len);
 		i ++;

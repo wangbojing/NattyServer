@@ -1066,8 +1066,6 @@ static const ProtocolFilter ntyUnBindDeviceFilter = {
 
 void ntyBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const Client *client = obj;
-
-	ntydbg(" ntyBindDevicePacketHandleRequest --> %d %d \n", buffer[NTY_PROTO_MSGTYPE_IDX], NTY_PROTO_BIND_REQ);
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_BIND_REQ) {
 		C_DEVID AppId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_APPID_IDX);
 		C_DEVID DeviceId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_DEVICEID_IDX);

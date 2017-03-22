@@ -121,11 +121,11 @@ int ntyBindClient(DEVID did);
 int ntyUnBindClient(DEVID did);
 
 int ntyVoiceReqClient(U8 *json, U16 length);
-int ntyVoiceAckClient(U8 *json, U16 length);
+int ntyVoiceAckClient(U32 msgId, U8 *json, U16 length);
 int ntyVoiceDataReqClient(DEVID gId, U8 *data, int length);
 
 int ntyCommonReqClient(DEVID gId, U8 *json, U16 length);
-int ntyCommonAckClient(U8 *json, U16 length);
+int ntyCommonAckClient(U32 msgId, U8 *json, U16 length);
 int ntyDataRouteClient(DEVID toId, U8 *json, U16 length);
 
 void ntyProtoClientSetToken(void *_self, U8 *tokens, int length);

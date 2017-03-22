@@ -854,8 +854,8 @@ int ntySendHeartBeatResult(C_DEVID fromId) {
 	
 	buffer[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
 	buffer[NTY_PROTO_DEVTYPE_IDX] = NTY_PROTO_CLIENT_DEFAULT;
-	buffer[NTY_PROTO_PROTOTYPE_IDX] = PROTO_PUSH;
-	buffer[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_WEATHER_PUSH;
+	buffer[NTY_PROTO_PROTOTYPE_IDX] = PROTO_ACK;
+	buffer[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_HEARTBEAT_ACK;
 
 	buffer[NTY_PROTO_HEARTBEAT_ACK_STATUS_IDX] = 200;
 
@@ -867,7 +867,26 @@ int ntySendHeartBeatResult(C_DEVID fromId) {
 	return ntySendBuffer(client, buffer, length);
 }
 
+int ntySendBindComfirmPushResult(C_DEVID fromId, U8 *json, int length) {
+	U16 bLength = (U16)length;
+	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
+	
+	buffer[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
+	buffer[NTY_PROTO_DEVTYPE_IDX] = NTY_PROTO_CLIENT_DEFAULT;
+	buffer[NTY_PROTO_PROTOTYPE_IDX] = PROTO_PUSH;
+	buffer[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_BIND_CONFIRM_PUSH;
 
+	memcpy(&buffer[NTY_PROTO_BIND_CONFIRM_PUSH_DEVICEID_IDX], &fromId, sizeof(C_DEVID));
+	memcpy(&buffer[NTY_PROTO_BIND_CONFIRM_PUSH_JSON_LENGTH_IDX], &bLength, sizeof(U16));
+	memcpy(&buffer[NTY_PROTO_BIND_CONFIRM_PUSH_JSON_CONTENT_IDX], json, bLength);
+
+	bLength = bLength + NTY_PROTO_BIND_CONFIRM_PUSH_JSON_CONTENT_IDX + sizeof(U32);
+
+	void *map = ntyMapInstance();
+	ClientSocket *client = ntyMapSearch(map, fromId);
+
+	return ntySendBuffer(client, buffer, bLength);
+}
 
 
 

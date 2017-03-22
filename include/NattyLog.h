@@ -61,6 +61,9 @@ typedef zlog_category_t nLogCategory;
 
 //#define nLogInfo(format, ...)	zlog_info(NATTY_LOG_OUTSTREAM, format, ##__VA_ARGS__)
 
+void ntyLogShow(const char *format, ...);
+
+
 
 typedef struct _NLOG {
 	const void *_;

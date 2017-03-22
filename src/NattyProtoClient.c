@@ -125,7 +125,9 @@ NTY_STATUS_CALLBACK onDataResult = NULL; //RECV DATA_RESULT
 NTY_RETURN_CALLBACK onVoiceBroadCastResult = NULL; //RECV VOICE_BROADCAST
 NTY_RETURN_CALLBACK onLocationBroadCastResult = NULL; //RECV LOCATION_BROADCAST
 NTY_RETURN_CALLBACK onCommonBroadCastResult = NULL; //RECV COMMON_BROADCAST
-	
+NTY_RETURN_CALLBACK onBindComfirmResult = NULL;
+
+
 U8 u8ConnectFlag = 0;;
 
 
@@ -174,7 +176,7 @@ typedef struct _NATTYPROTOCOL {
 	NTY_RETURN_CALLBACK onVoiceBroadCastResult; //RECV VOICE_BROADCAST
 	NTY_RETURN_CALLBACK onLocationBroadCastResult; //RECV LOCATION_BROADCAST
 	NTY_RETURN_CALLBACK onCommonBroadCastResult; //RECV COMMON_BROADCAST
-	
+	NTY_RETURN_CALLBACK onBindComfirmResult; //RECV COMMON_BROADCAST
 #endif
 	pthread_t recvThreadId;
 	U8 u8RecvExitFlag;
@@ -195,15 +197,16 @@ typedef struct _NATTYPROTO_OPERA {
 	void (*fenceAck)(void *_self, C_DEVID friId, U32 ack);
 #else
 	int (*voiceReq)(void *_self, U8 *json, U16 length);
-	int (*voiceAck)(void *_self, U8 *json, U16 length);
+	int (*voiceAck)(void *_self, U32 msgId, U8 *json, U16 length);
 	int (*voiceDataReq)(void *_self, C_DEVID gId, U8 *data, int length);
 	int (*commonReq)(void *_self, C_DEVID gId, U8 *json, U16 length);
-	int (*commonAck)(void *_self, U8 *json, U16 length);
+	int (*commonAck)(void *_self, U32 msgId, U8 *json, U16 length);
 	int (*offlineMsgReq)(void *_self);
 	int (*dataRoute)(void *_self, C_DEVID toId, U8 *json, U16 length);
 #endif
 	int (*bind)(void *_self, C_DEVID did);
 	int (*unbind)(void *_self, C_DEVID did);
+	int (*comfirmReq)(void *_self, U8 *json, U16 length);
 
 } NattyProtoOpera;
 
@@ -255,6 +258,7 @@ void* ntyProtoClientCtor(void *_self, va_list *params) {
 	proto->onVoiceBroadCastResult = onVoiceBroadCastResult; //RECV VOICE_BROADCAST
 	proto->onLocationBroadCastResult = onLocationBroadCastResult; //RECV LOCATION_BROADCAST
 	proto->onCommonBroadCastResult = onCommonBroadCastResult; //RECV COMMON_BROADCAST
+	proto->onBindComfirmResult = onBindComfirmResult;
 	
 	ntyGenCrcTable();
 	//Setup Socket Connection
@@ -491,7 +495,7 @@ int ntyProtoClientVoiceReq(void *_self, U8 *json, U16 length) {
  * @Param: U16 length, json length
  * 
  */
-int ntyProtoClientVoiceAck(void *_self, U8 *json, U16 length) {
+int ntyProtoClientVoiceAck(void *_self, U32 msgId, U8 *json, U16 length) {
 	NattyProto *proto = _self;
 	U8 buf[RECV_BUFFER_SIZE] = {0}; 
 	
@@ -500,6 +504,8 @@ int ntyProtoClientVoiceAck(void *_self, U8 *json, U16 length) {
 	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_VOICE_ACK;
 
 	memcpy(&buf[NTY_PROTO_VOICE_ACK_DEVID_IDX], &proto->selfId, sizeof(C_DEVID));
+	memcpy(&buf[NTY_PROTO_VOICE_ACK_MSGID_IDX], &msgId, sizeof(U32));
+	
 	memcpy(&buf[NTY_PROTO_VOICE_ACK_JSON_LENGTH_IDX], &length, sizeof(U16));
 	memcpy(&buf[NTY_PROTO_VOICE_ACK_JSON_CONTENT_IDX], json, length);
 
@@ -589,7 +595,7 @@ int ntyProtoClientICCIDReq(void *_self, C_DEVID gId, U8 *json, U16 length) {
 	return ntySendFrame(pNetwork, buf, length);
 }
 
-int ntyProtoClientCommonAck(void *_self, U8 *json, U16 length) {
+int ntyProtoClientCommonAck(void *_self, U32 msgId, U8 *json, U16 length) {
 	NattyProto *proto = _self;
 
 	U8 buf[RECV_BUFFER_SIZE] = {0};
@@ -598,6 +604,7 @@ int ntyProtoClientCommonAck(void *_self, U8 *json, U16 length) {
 	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_COMMON_ACK;
 
 	memcpy(&buf[NTY_PROTO_COMMON_ACK_DEVID_IDX], &proto->selfId, sizeof(C_DEVID));
+	memcpy(&buf[NTY_PROTO_COMMON_ACK_MSGID_IDX], &msgId, sizeof(U32));
 	memcpy(&buf[NTY_PROTO_COMMON_ACK_JSON_LENGTH_IDX], &length, sizeof(U16));
 
 	memcpy(&buf[NTY_PROTO_COMMON_ACK_JSON_CONTENT_IDX], json, length);
@@ -645,6 +652,24 @@ int ntyProtoClientDataRoute(void *_self, C_DEVID toId, U8 *json, U16 length) {
 	return ntySendFrame(pNetwork, buf, length);
 }
 
+int ntyProtoClientConfirmReq(void *_self, U8 *json, U16 length) {
+	NattyProto *proto = _self;	
+	U8 buf[RECV_BUFFER_SIZE] = {0}; 
+
+	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
+	buf[NTY_PROTO_PROTOTYPE_IDX] = (U8) PROTO_REQ; 
+	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_BIND_CONFIRM_REQ;
+
+	memcpy(&buf[NTY_PROTO_BIND_CONFIRM_REQ_DEVICEID_IDX], &proto->selfId, sizeof(C_DEVID));
+	memcpy(&buf[NTY_PROTO_BIND_CONFIRM_REQ_JSON_LENGTH_IDX], &length, sizeof(U16));
+	memcpy(&buf[NTY_PROTO_BIND_CONFIRM_REQ_JSON_CONTENT_IDX], json, length);
+
+	length = NTY_PROTO_BIND_CONFIRM_REQ_JSON_CONTENT_IDX+length+sizeof(U32);
+
+	void *pNetwork = ntyNetworkInstance();
+	return ntySendFrame(pNetwork, buf, length);
+}
+
 
 static const NattyProtoHandle ntyProtoOpera = {
 	sizeof(NattyProto),
@@ -663,6 +688,7 @@ static const NattyProtoHandle ntyProtoOpera = {
 	
 	ntyProtoClientBind,
 	ntyProtoClientUnBind,
+	ntyProtoClientConfirmReq,
 };
 
 const void *pNattyProtoOpera = &ntyProtoOpera;
@@ -830,6 +856,9 @@ void ntySetCommonBroadCastResult(NTY_RETURN_CALLBACK cb) {
 	onCommonBroadCastResult = cb;
 }
 
+void ntySetBindComfirmResult(NTY_RETURN_CALLBACK cb) {
+	onBindComfirmResult = cb;
+}
 
 int ntyCheckProtoClientStatus(void) {
 	
@@ -904,10 +933,10 @@ int ntyVoiceReqClient(U8 *json, U16 length) {
 	return -1;
 }
 
-int ntyVoiceAckClient(U8 *json, U16 length) {
+int ntyVoiceAckClient(U32 msgId, U8 *json, U16 length) {
 	NattyProto* proto = ntyProtoGetInstance();
 	if (proto) {
-		return ntyProtoClientVoiceAck(proto, json, length);
+		return ntyProtoClientVoiceAck(proto, msgId, json, length);
 	}
 	return -1;
 }
@@ -952,10 +981,10 @@ int ntyICCIDReqClient(C_DEVID gId, U8 *json, U16 length) {
 	return -1;
 }
 
-int ntyCommonAckClient(U8 *json, U16 length) {
+int ntyCommonAckClient(U32 msgId, U8 *json, U16 length) {
 	NattyProto* proto = ntyProtoGetInstance();
 	if (proto) {
-		return ntyProtoClientCommonAck(proto, json, length);
+		return ntyProtoClientCommonAck(proto, msgId, json, length);
 	}
 	return -1;
 }
@@ -968,6 +997,16 @@ int ntyDataRouteClient(C_DEVID toId, U8 *json, U16 length) {
 	}
 	return -1;
 }
+
+int ntyBindConfirmReqClient(C_DEVID toId, U8 *json, U16 length) {
+	NattyProto* proto = ntyProtoGetInstance();
+
+	if (proto) {
+		return ntyProtoClientConfirmReq(proto, json, length);
+	}
+	return -1;
+}
+
 
 #endif
 
@@ -1014,7 +1053,7 @@ static int ntyReconnectCb(NITIMER_ID id, void *user_data, int len) {
 
 void ntyStartReconnectTimer(void) {
 //disconnect 
-	ntylog(" setup ntyStartReconnectTimer \n");
+	ntydbg(" setup ntyStartReconnectTimer \n");
 	if (nReconnectTimer == NULL) {
 		void *nTimerList = ntyTimerInstance();
 		nReconnectTimer = ntyTimerAdd(nTimerList, 15, ntyReconnectCb, NULL, 0);
@@ -1275,9 +1314,16 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 		case NTY_PROTO_VOICE_DATA_REQ: {
 			int ret = ntyAudioRecodeDepacket(buf, length);
 			if (ret == 1) {
-				
+				U32 u32MsgId = 0;
 				C_DEVID fromId = 0;
+				
 				ntyU8ArrayToU64(buf+NTY_PROTO_VOICE_DATA_REQ_DEVID_IDX, &fromId);
+				memcpy(&u32MsgId, buf+NTY_PROTO_VOICE_DATA_REQ_OFFLINEMSGID_IDX, sizeof(U32));
+
+				if (NTY_RESULT_FAILED == ntyVoiceAckClient(u32MsgId, NULL, 0)) {
+					//Server Disconnect
+					break;
+				}
 
 				if (proto->onPacketRecv) {
 					proto->onPacketRecv(u32DataLength);
@@ -1372,11 +1418,18 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 			DEVID fromId = 0;
 			U8 *json = NULL;
 			U16 u16Length = 0;
+			U32 u32MsgId = 0;
 			
 			memcpy(&fromId, buf+NTY_PROTO_COMMON_BROADCAST_DEVID_IDX, sizeof(DEVID));
+			memcpy(&u32MsgId, buf+NTY_PROTO_COMMON_BROADCAST_MSGID_IDX, sizeof(U32));
 			memcpy(&u16Length, buf+NTY_PROTO_COMMON_BROADCAST_JSON_LENGTH_IDX, sizeof(U16));
 
 			json = buf+NTY_PROTO_COMMON_BROADCAST_JSON_CONTENT_IDX;
+
+			if (NTY_RESULT_FAILED == ntyCommonAckClient(u32MsgId, NULL, 0)) {
+				//Server Disconnect
+				break;
+			}
 			
 			if (proto->onCommonBroadCastResult) {
 				proto->onCommonBroadCastResult(fromId, json, u16Length);
@@ -1413,6 +1466,23 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 			break;
 		}
 #endif		
+#if (NTY_PROTO_SELFTYPE != NTY_PROTO_CLIENT_WATCH || NTY_PROTO_SELFTYPE != NTY_PROTO_SERVER) 	
+		case NTY_PROTO_BIND_CONFIRM_PUSH: {
+			U8 *json = NULL;
+			U16 u16Length = 0;
+			C_DEVID fromId = 0;
+
+			memcpy(&fromId, buf+NTY_PROTO_BIND_CONFIRM_PUSH_DEVICEID_IDX, sizeof(C_DEVID));
+			memcpy(&u16Length, buf+NTY_PROTO_BIND_CONFIRM_PUSH_JSON_LENGTH_IDX, sizeof(U16));
+			json = buf+NTY_PROTO_BIND_CONFIRM_PUSH_JSON_CONTENT_IDX;
+
+			if (proto->onBindComfirmResult) {
+				proto->onBindComfirmResult(fromId, json, u16Length);
+			}
+			
+			break;
+		}
+#endif
 	}
 }
 

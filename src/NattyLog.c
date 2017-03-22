@@ -104,6 +104,14 @@ void nLogInfoWithTimePrefix(nLogCategory *cat, const char *format) {
 }
 
 
+void nLogConsoleShow(const char *format) {
+	
+	TimeStamp *tblock = ntyGetSystemTime();
+	fprintf(stdout, " [%d-%d-%d %d:%d:%d] --> %s", tblock->tm_year % 100 + 2000, tblock->tm_mon+1, tblock->tm_mday,
+		tblock->tm_hour, tblock->tm_min, tblock->tm_sec, format);
+	
+}
+
 #endif
 
 void* ntyLogInitialize(nLog *log) {
@@ -173,6 +181,19 @@ void ntyLogInfo(const char *format, ...) {
 	
 	va_end(params);
 }
+
+void ntyLogShow(const char *format, ...) {
+	U8 catBuffer[NATTY_LOG_BUFFER_LENGTH] = {0};
+
+	va_list params;
+	va_start(params, format);
+	
+	vsprintf(catBuffer, format, params);
+	nLogConsoleShow(catBuffer);
+	
+	va_end(params);
+}
+
 
 
 //#define ntylog(format, ...) 		fprintf(stdout, format, ##__VA_ARGS__)
