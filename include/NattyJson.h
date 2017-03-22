@@ -131,6 +131,8 @@ void ntyJsonUpdateContacts(JSON_Value *json, UpdateContactsReq *pUpdateContactsR
 
 void ntyJsonDelContacts(JSON_Value *json, DelContactsReq *pDelContactsReq);
 
+char * ntyJsonWriteICCID(ICCIDAck *pICCIDAck);
+
 char * ntyJsonWriteCommon(CommonAck *pCommonAck);
 
 char * ntyJsonWriteCommonExtend(CommonExtendAck *pCommonExtendAck);
@@ -156,6 +158,16 @@ char * ntyJsonWriteAddEfence(AddEfenceAck *pAddEfenceAck);
 char * ntyJsonWriteDelEfence(DelEfenceAck *pDelEfenceAck);
 
 char * ntyJsonWriteRunTime(RunTimeAck *pRunTimeAck);
+
+char * ntyJsonWriteTurn(TurnAck *pTurnAck);
+
+char * ntyJsonWriteAddSchedule(AddScheduleAck *pAddScheduleAck);
+
+char * ntyJsonWriteDeviceAddSchedule(DeviceAddScheduleAck *pDeviceAddScheduleAck);
+
+char * ntyJsonWriteDelSchedule(DelScheduleAck *pDelScheduleAck);
+
+char * ntyJsonWriteUpdateSchedule(UpdateScheduleAck *pUpdateScheduleAck);
 
 char * ntyJsonWriteSchedule(ScheduleAck *pScheduleAck);
 

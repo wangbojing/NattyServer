@@ -61,11 +61,11 @@ void ntyJsonAddEfenceAction(C_DEVID AppId, C_DEVID toId, JSON_Value *json, U8 *j
 
 void ntyJsonDelEfenceAction(C_DEVID AppId, C_DEVID toId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
 
+void ntyJsonICCIDAction(C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
+
 void ntyJsonRunTimeAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
 
 void ntyJsonTurnAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
-
-void ntyJsonICCIDAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
 
 void ntyJsonAddScheduleAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
 

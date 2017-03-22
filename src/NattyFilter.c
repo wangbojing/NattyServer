@@ -498,7 +498,9 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 	const UdpClient *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_HEARTBEAT_REQ) {
 		Client *pClient = NULL;
-		ntyAddClientHeap(client, (RECORDTYPE *)&pClient);
+
+		ntydbg("---ntyHeartBeatPacketHandleRequest-------->\n ");
+		//ntyAddClientHeap(client, (RECORDTYPE *)&pClient);
 		
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
@@ -581,37 +583,70 @@ static const ProtocolFilter ntyTimeCheckFilter = {
 void ntyICCIDReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const Client *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_ICCID_REQ) {
-		C_DEVID selfId = 0;
-		
-#define NTY_ICCID_LENGTH				20
-#define NTY_ICCID_HEADER_LENGTH			6
-#define NTY_ICCID_PHNUM_LENGTH			16
+		ntydbg("====================begin ntyICCIDReqPacketHandleRequest action ==========================\n");
 
-		U8 iccid[NTY_ICCID_LENGTH] = {0}, *pICCID; 
-		U8 phnum[NTY_ICCID_PHNUM_LENGTH] = {0};
-		U16 len = 0;
-		
-		ntyU8ArrayToU64(buffer+NTY_PROTO_ICCIDREQ_SLFID_IDX, &selfId);
-		len = *(U16*)(buffer+NTY_PROTO_ICCIDREQ_CONTENT_COUNT_IDX);
-		if (len != NTY_ICCID_LENGTH) {
-			ntylog(" ntyICCIDReqPacketHandleRequest --> iccid is Error %d, %s\n", len, buffer+NTY_PROTO_ICCIDREQ_CONTENT_IDX);
-			return ;
-		} 
-		memcpy(iccid, buffer+NTY_PROTO_ICCIDREQ_CONTENT_IDX, NTY_ICCID_LENGTH);
-#if 1 //iccid parse
-		iccid[NTY_ICCID_LENGTH-1] = 0x0; //Chsum Cancel
-		pICCID = iccid + NTY_ICCID_HEADER_LENGTH; //iccid header
-#endif
-		ntyQueryPhNumSelectHandle(selfId, pICCID, phnum);
-		ntylog(" ntyICCIDReqPacketHandleRequest --> phnum:%s, %ld\n", phnum, strlen(phnum));
+		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_ICCID_REQ_DEVID_IDX);
 
-		ntyProtoICCIDAck(selfId, phnum, strlen(phnum));
+		U16 jsonlen = 0;
+		memcpy(&jsonlen, buffer+NTY_PROTO_ICCID_REQ_JSON_LENGTH_IDX, NTY_JSON_COUNT_LENGTH);
+		char *jsonstring = malloc(jsonlen);
+		memset(jsonstring, 0, jsonlen);
+		memcpy(jsonstring, buffer+NTY_PROTO_ICCID_REQ_JSON_CONTENT_IDX, jsonlen);
+
+		ntydbg("ntyICCIDReqPacketHandleRequest --> json : %s\n", jsonstring);
+		JSON_Value *json = ntyMallocJsonValue(jsonstring);
+		if (json == NULL) {
+			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
+			return;
+		}
+		
+		ntyJsonICCIDAction(fromId, json, jsonstring, jsonlen);
+		ntyFreeJsonValue(json);
+		free(jsonstring);
+
+		ntydbg("====================end ntyICCIDReqPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
 	} else {
 		ntylog("Can't deal with: %d\n", buffer[NTY_PROTO_MSGTYPE_IDX]);
 	}
+	
+/*
+
+	const Client *client = obj;
+	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_ICCID_REQ) {
+		return;
+		ntydbg("====================begin ntyICCIDReqPacketHandleRequest action ==========================\n");
+		
+		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_ICCID_REQ_DEVID_IDX);
+
+		U16 jsonlen = 0;
+		memcpy(&jsonlen, buffer+NTY_PROTO_ICCID_REQ_JSON_LENGTH_IDX, NTY_JSON_COUNT_LENGTH);
+		char *jsonstring = malloc(jsonlen);
+		memset(jsonstring, 0, jsonlen);
+		memcpy(jsonstring, buffer+NTY_PROTO_ICCID_REQ_JSON_CONTENT_IDX, jsonlen);
+
+		
+		ntydbg("ntyICCIDReqPacketHandleRequest --> json : %s\n", jsonstring);
+		JSON_Value *json = ntyMallocJsonValue(jsonstring);
+		if (json == NULL) {
+			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
+			return;
+		}
+		
+		ntyJsonICCIDAction(fromId, json, jsonstring, jsonlen);
+		ntyFreeJsonValue(json);
+		free(jsonstring);
+
+		ntydbg("====================end ntyICCIDReqPacketHandleRequest action ==========================\n");
+	} else if (ntyPacketGetSuccessor(_self) != NULL) {
+		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
+		(*succ)->handleRequest(succ, buffer, length, obj);
+	} else {
+		ntylog("Can't deal with: %d\n", buffer[NTY_PROTO_MSGTYPE_IDX]);
+	}
+	*/
 }
 
 
@@ -673,10 +708,10 @@ static const ProtocolFilter ntyVoiceAckFilter = {
 
 
 void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
-	ntydbg("====================begin ntyCommonReqPacketHandleRequest action ==========================\n");
-	
 	const Client *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_COMMON_REQ) {
+		ntydbg("====================begin ntyCommonReqPacketHandleRequest action ==========================\n");
+
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_COMMON_REQ_DEVID_IDX);
 		C_DEVID toId = *(C_DEVID*)(buffer+NTY_PROTO_COMMON_REQ_RECVID_IDX);
 
@@ -686,11 +721,10 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 		memset(jsonstring, 0, jsonlen);
 		memcpy(jsonstring, buffer+NTY_PROTO_COMMON_REQ_JSON_CONTENT_IDX, jsonlen);
 
-		ntydbg("ntyCommonReqPacketHandleRequest --> %d %d %d\n", NTY_PROTO_COMMON_REQ_JSON_LENGTH_IDX, NTY_JSON_COUNT_LENGTH, NTY_PROTO_COMMON_REQ_JSON_CONTENT_IDX);
 		ntydbg("ntyCommonReqPacketHandleRequest --> fromId:%lld    toId:%lld\n", fromId, toId);
 		int ret = ntySendCommonReq(toId, buffer, length);
 		if (ret <= 0) {
-			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_NOEXIST);
+			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
 			return;
 		}
 		
@@ -714,8 +748,6 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 			ntyJsonRunTimeAction(fromId, toId, json, jsonstring, jsonlen);
 		} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_TURN) == 0) {
 			ntyJsonTurnAction(fromId, toId, json, jsonstring, jsonlen);
-		} else if (strcmp(category, NATTY_USER_PROTOCOL_ICCID) == 0) {
-			ntyJsonICCIDAction(fromId, toId, json, jsonstring, jsonlen);
 		} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_SCHEDULE) == 0) {
 			const char *action = ntyJsonAction(json);
 			if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_ADD) == 0) {
@@ -739,8 +771,6 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 				ntyJsonDelContactsAction(fromId, toId, json, jsonstring, jsonlen);
 			} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_UPDATE) == 0) {
 				ntyJsonUpdateContactsAction(fromId, toId, json, jsonstring, jsonlen);
-			} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_SCHEDULE) == 0) {
-				//ntyJsonSelectScheduleAction(fromId, toId, json, jsonstring, jsonlen);
 			} else {
 				ntylog("Can't find action with: %s\n", action);
 			}
@@ -749,14 +779,15 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 		}
 		ntyFreeJsonValue(json);
 		free(jsonstring);
+
+		ntydbg("====================end ntyCommonReqPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
 	} else {
 		ntylog("Can't deal with: %d\n", buffer[NTY_PROTO_MSGTYPE_IDX]);
 	}
-
-	ntydbg("====================end ntyCommonReqPacketHandleRequest action ==========================\n");
+	
 }
 
 static const ProtocolFilter ntyCommonReqFilter = {
@@ -1035,6 +1066,8 @@ static const ProtocolFilter ntyUnBindDeviceFilter = {
 
 void ntyBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const Client *client = obj;
+
+	ntydbg(" ntyBindDevicePacketHandleRequest --> %d %d \n", buffer[NTY_PROTO_MSGTYPE_IDX], NTY_PROTO_BIND_REQ);
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_BIND_REQ) {
 		C_DEVID AppId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_APPID_IDX);
 		C_DEVID DeviceId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_DEVICEID_IDX);
@@ -1273,7 +1306,7 @@ void ntyRoutePacketHandleRequest(const void *_self, unsigned char *buffer, int l
 		} else {
 			ntydbg("ntySendDataRoute no exist \n");
 			if (1){//client->deviceType == NTY_PROTO_CLIENT_WATCH) {
-				ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_NOEXIST);
+				ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
 			} else {
 			/*
 				U16 jsonlen = 0;

@@ -103,6 +103,9 @@
 #define NTY_DB_SELECT_EFENCE				"CALL PROC_SELECT_EFENCE(%lld)"
 
 
+#define NTY_DB_SELECT_ICCID					"CALL PROC_SELECT_ICCID('%s')"
+
+
 //#define NTY_DB_INSERT_TIMETABLE				"CALL PROC_INSERT_TIMETABLE(%lld)"
 
 //#define NTY_DB_DELETE_TIMETABLE				"CALL PROC_DELETE_TIMETABLE(%lld)"
@@ -233,6 +236,8 @@ int ntyExecuteEfenceInsertHandle(C_DEVID aid, C_DEVID did, int index, int num, U
 
 int ntyExecuteEfenceDeleteHandle(C_DEVID aid, C_DEVID did, int index);
 
+int ntyExecuteICCIDSelectHandle(C_DEVID did, const char *iccid, char *phonenum);
+
 int ntyExecuteRuntimeUpdateHandle(C_DEVID aid, C_DEVID did, int auto_conn, U8 loss_report, U8 light_panel, const char *bell, int target_step);
 
 int ntyExecuteRuntimeAutoConnUpdateHandle(C_DEVID aid, C_DEVID did, int runtime_param);
@@ -262,10 +267,6 @@ int ntyExecuteScheduleUpdateHandle(C_DEVID aid, C_DEVID did, int scheduleId, con
 int ntyExecuteScheduleSelectHandle(C_DEVID aid, C_DEVID did, ScheduleAck *pScheduleAck, size_t size);
 
 int ntyExecuteTimeTablesUpdateHandle(C_DEVID aid, C_DEVID did, const char *morning, U8 morning_turn, const char *afternoon,  U8 afternoon_turn, const char *daily, int *id);
-
-int ntyExecuteICCIDSelectHandle(C_DEVID aid, C_DEVID did);
-
-
 
 int ntyQueryPhNumSelect(void *self, C_DEVID did, U8 *imei, U8 *phnum);
 

@@ -860,25 +860,26 @@ static size_t ntyHttpQJKWeatherHandleResult(void* buffer, size_t size, size_t nm
 	}
 
 	WeatherAck *pWeatherAck = (WeatherAck*)pWeatherReq;
+	/*
 	size_t i,j;
 	for (i=0; i<pWeatherAck->size; i++) {
-		WeatherResults results = pWeatherAck->pResults[i];
-		for (j=0; j<results.size; j++) {
-			results.pDaily[j].date = NULL;
+		WeatherResults *results = &(pWeatherAck->pResults[i]);
+		for (j=0; j<results->size; j++) {
+			//results.pDaily[j].date = NULL;
 			//results.pDaily[j].text_day = NULL;
 			//results.pDaily[j].code_day = NULL;
 			//results.pDaily[j].text_night = NULL;
 			//results.pDaily[j].code_night = NULL;
-			results.pDaily[j].high = NULL;
-			results.pDaily[j].low = NULL;
-			results.pDaily[j].precip = NULL;
-			//results.pDaily[j].wind_direction = NULL;
-			//results.pDaily[j].wind_direction_degree = NULL;
-			//results.pDaily[j].wind_speed = NULL;
-			//results.pDaily[j].wind_scale = NULL;
+			//results.pDaily[j].high = NULL;
+			//results.pDaily[j].low = NULL;
+			results->pDaily[j].precip = NULL;
+			results->pDaily[j].wind_direction = NULL;
+			results->pDaily[j].wind_direction_degree = NULL;
+			results->pDaily[j].wind_speed = NULL;
+			results->pDaily[j].wind_scale = NULL;
 		}
 	}
-
+	*/
 	char *jsonresult = ntyJsonWriteWeather(pWeatherAck);
 	if (jsonresult == NULL) {
 		return -1;
@@ -890,7 +891,7 @@ static size_t ntyHttpQJKWeatherHandleResult(void* buffer, size_t size, size_t nm
 	}
 	
 	ntyJsonWeatherRelease(pWeatherReq);
-	free(pWeatherAck);
+	free(pWeatherReq);
 	
 #if 1 //Release Message
 	free(pMessageTag->Tag);

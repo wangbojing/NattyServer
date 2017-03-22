@@ -348,6 +348,48 @@ void ntyJsonDelEfenceAction(C_DEVID AppId, C_DEVID toId, JSON_Value *json, U8 *j
 	free(pDelEfenceReq);
 }
 
+void ntyJsonICCIDAction(C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
+	ICCIDReq *pICCIDReq = (ICCIDReq*)malloc(sizeof(ICCIDReq));
+	ntyJsonICCID(json, pICCIDReq);
+	if (pICCIDReq==NULL) {
+		ntyJsonCommonResult(devId, NATTY_RESULT_CODE_ERR_JSON_CONVERT);
+		return;
+	}
+	if (pICCIDReq->ICCID==NULL) {
+		ntyJsonCommonResult(devId, NATTY_RESULT_CODE_ERR_JSON_CONVERT);
+		return;
+	}
+	int len = strlen(pICCIDReq->ICCID);
+	if (len!=20) {
+		ntyJsonCommonResult(devId, NATTY_RESULT_CODE_ERR_JSON_CONVERT);
+		return;
+	}
+	char iccid[14] = {0};
+	memset(iccid, 0, 14);
+	memcpy(iccid, pICCIDReq->ICCID+6, 13);
+	char phonenum[20] = {0};
+	memset(phonenum, 0, 20);
+	int ret = ntyExecuteICCIDSelectHandle(devId, iccid, phonenum);
+	ntydbg(" phonenum:%s\n", phonenum);
+	if (ret == -1) {
+		ntylog(" ntyJsonICCIDAction --> DB Exception\n");
+		ret = 4;
+	} else if (ret >= 0) {
+		if (strlen(phonenum) == 0) {
+			ntyJsonCommonResult(devId, NATTY_RESULT_CODE_ERR_ICCID_NOTPHONENUM);
+			return;
+		}
+		
+		ICCIDAck *pICCIDAck = (ICCIDAck*)malloc(sizeof(ICCIDAck));
+		pICCIDAck->IMEI = pICCIDReq->IMEI;
+		pICCIDAck->phone_num = phonenum;
+		char *jsonstringICCID = ntyJsonWriteICCID(pICCIDAck);
+		ntySendCommonReq(devId, jsonstringICCID, strlen(jsonstringICCID));
+		free(pICCIDAck);
+	}
+	free(pICCIDReq);
+}
+
 void ntyJsonRunTimeAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
 	RunTimeReq *pRunTimeReq = (RunTimeReq*)malloc(sizeof(RunTimeReq));
 	ntyJsonRuntime(json, pRunTimeReq);
@@ -448,26 +490,15 @@ void ntyJsonTurnAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsons
 		ret = ntySendCommonReq(devId, jsonstring, strlen(jsonstring));
 		if (ret >= 0) {
 			ntyJsonCommonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
+			TurnAck *pTurnAck = (TurnAck*)malloc(sizeof(TurnAck));
+			pTurnAck->result = *(TurnResult*)pTurnReq;
+			char *jsonresult = ntyJsonWriteTurn(pTurnAck);
+			ntyJsonBroadCastRecvResult(AppId, devId, jsonresult);
+			ntyJsonFree(jsonresult);
+			free(pTurnAck);
 		}
 	}
 	free(pTurnReq);
-}
-
-void ntyJsonICCIDAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
-	ICCIDReq *pICCIDReq = (ICCIDReq*)malloc(sizeof(ICCIDReq));
-	ntyJsonICCID(json, pICCIDReq);
-
-	int ret = ntyExecuteICCIDSelectHandle(AppId, devId);
-	if (ret == -1) {
-		ntylog(" ntyJsonICCIDAction --> DB Exception\n");
-		ret = 4;
-	} else if (ret >= 0) {
-		ret = ntySendCommonReq(devId, jsonstring, strlen(jsonstring));
-		if (ret >= 0) {
-			ntyJsonCommonResult(devId, NATTY_RESULT_CODE_SUCCESS);
-		}
-	}
-	free(pICCIDReq);
 }
 
 void ntyJsonAddScheduleAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
@@ -489,6 +520,20 @@ void ntyJsonAddScheduleAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8
 			return;
 		}
 
+		char ids[20] = {0};
+		sprintf(ids, "%d", scheduleId);
+		pAddScheduleReq->id = ids;
+
+		DeviceAddScheduleAck *pDeviceAddScheduleAck = (DeviceAddScheduleAck*)malloc(sizeof(DeviceAddScheduleAck));
+		pDeviceAddScheduleAck = (DeviceAddScheduleAck*)pAddScheduleReq;
+		char *jsondeviceresult = ntyJsonWriteDeviceAddSchedule(pDeviceAddScheduleAck);
+		ret = ntySendCommonReq(devId, jsondeviceresult, strlen(jsondeviceresult));
+		ntyJsonFree(jsondeviceresult);
+		free(pDeviceAddScheduleAck);
+
+		
+		//char *jsonstringTemp = ntyJsonWriteCommonReqExtend(pAddScheduleReq);
+		/*
 		CommonReq *pCommonReq = malloc(sizeof(CommonReq));
 		ntyJsonCommon(json, pCommonReq);
 		CommonReqExtend *pCommonReqExtend = malloc(sizeof(CommonReqExtend));
@@ -497,17 +542,24 @@ void ntyJsonAddScheduleAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8
 		pCommonReqExtend->action = pCommonReq->action;
 		char ids[20] = {0};
 		sprintf(ids, "%d", scheduleId);
-		char *jsonstringTemp = ntyJsonWriteCommonReqExtend(pCommonReqExtend);
 		pCommonReqExtend->id = ids;
-		ret = ntySendCommonReq(devId, jsonstringTemp, strlen(jsonstringTemp));
+		char *jsonstringTemp = ntyJsonWriteCommonReqExtend(pCommonReqExtend);
+		*/
+
+		//free(pCommonReq);
+		//free(pCommonReqExtend);
+		
 		if (ret >= 0) {
+			AddScheduleAck *pAddScheduleAck = (AddScheduleAck*)malloc(sizeof(AddScheduleAck));
+			pAddScheduleAck->result = *(AddScheduleResult*)pAddScheduleReq;
+			pAddScheduleAck->result.id = ids;
+			char *jsonresult = ntyJsonWriteAddSchedule(pAddScheduleAck);
 			ntyJsonCommonExtendResult(AppId, NATTY_RESULT_CODE_SUCCESS, scheduleId);
-
-
+			ntyJsonBroadCastRecvResult(AppId, devId, jsonresult);
+			ntyJsonFree(jsonresult);
+			free(pAddScheduleAck);
 		}
 
-		free(pCommonReq);
-		free(pCommonReqExtend);
 		ntyFreeJsonValue(json);
 	}
 	free(pAddScheduleReq);
@@ -531,6 +583,13 @@ void ntyJsonDelScheduleAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8
 		ret = ntySendCommonReq(devId, jsonstring, strlen(jsonstring));
 		if (ret >= 0) {
 			ntyJsonCommonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
+
+			DelScheduleAck *pDelScheduleAck = (DelScheduleAck*)malloc(sizeof(DelScheduleAck));
+			pDelScheduleAck->result = *(DelScheduleResult*)pDelScheduleReq;
+			char *jsonresult = ntyJsonWriteDelSchedule(pDelScheduleAck);
+			ntyJsonBroadCastRecvResult(AppId, devId, jsonresult);
+			ntyJsonFree(jsonresult);
+			free(pDelScheduleAck);
 		}
 	}
 	free(pDelScheduleReq);
@@ -558,6 +617,13 @@ void ntyJsonUpdateScheduleAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json,
 		ret = ntySendCommonReq(devId, jsonstring, strlen(jsonstring));
 		if (ret >= 0) {
 			ntyJsonCommonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
+
+			UpdateScheduleAck *pUpdateScheduleAck = (UpdateScheduleAck*)malloc(sizeof(UpdateScheduleAck));
+			pUpdateScheduleAck->result = *(UpdateScheduleResult*)pUpdateScheduleReq;
+			char *jsonresult = ntyJsonWriteUpdateSchedule(pUpdateScheduleAck);
+			ntyJsonBroadCastRecvResult(AppId, devId, jsonresult);
+			ntyJsonFree(jsonresult);
+			free(pUpdateScheduleAck);
 		}
 	}
 	free(pUpdateScheduleReq);
@@ -647,8 +713,6 @@ void ntyJsonTimeTablesAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 
 	ntyJsonTimeTablesItemRelease(pTimeTablesReq->pTimeTables);
 	free(pTimeTablesReq);
 }
-
-
 
 void ntyJsonAddContactsAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
 	AddContactsReq *pAddContactsReq = (AddContactsReq*)malloc(sizeof(AddContactsReq));

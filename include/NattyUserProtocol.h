@@ -78,8 +78,6 @@
 #define NATTY_USER_PROTOCOL_CATEGORY_CONTACTS		"Contacts"
 
 
-
-
 #define NATTY_USER_PROTOCOL_WIFI			"WIFI"
 #define NATTY_USER_PROTOCOL_SSID			"SSID"
 #define NATTY_USER_PROTOCOL_MAC				"MAC"
@@ -141,6 +139,7 @@
 #define NATTY_USER_PROTOCOL_CODE 			"Code"
 #define NATTY_USER_PROTOCOL_MESSAGE 		"Message"
 #define NATTY_USER_PROTOCOL_STATUS 			"Status"
+#define NATTY_USER_PROTOCOL_PHONENUM 		"PhoneNum"
 
 
 #define NATTY_AMAP_PROTOCOL_STATUS 			"status"
@@ -298,6 +297,7 @@ typedef struct _WeatherLocationReq {
 
 typedef struct _ICCIDReq {
 	const char *IMEI;
+	const char *ICCID;
 } ICCIDReq;
 
 typedef struct _ICCIDAck {
@@ -467,15 +467,26 @@ typedef struct _AddScheduleReq {
 	const char *IMEI;
 	const char *category;
 	const char *action;
+	const char *id;
 	ScheduleItem schedule;
-} AddScheduleReq;
+} AddScheduleReq, AddScheduleResult, DeviceAddScheduleAck;
+
+typedef struct _AddScheduleAck {
+	AddScheduleResult result;
+} AddScheduleAck;
+
 
 typedef struct _DelScheduleReq {
 	const char *IMEI;
 	const char *category;
 	const char *action;
 	const char *id;
-} DelScheduleReq;
+} DelScheduleReq, DelScheduleResult;
+
+typedef struct _DelScheduleAck {
+	DelScheduleResult result;
+} DelScheduleAck;
+
 
 typedef struct _UpdateScheduleReq {
 	const char *IMEI;
@@ -483,7 +494,13 @@ typedef struct _UpdateScheduleReq {
 	const char *action;
 	const char *id;
 	ScheduleItem schedule;
-} UpdateScheduleReq;
+} UpdateScheduleReq, UpdateScheduleResult;
+
+
+typedef struct _UpdateScheduleAck {
+	UpdateScheduleResult result;
+} UpdateScheduleAck;
+
 
 typedef struct _ScheduleResults {
 	const char *IMEI;

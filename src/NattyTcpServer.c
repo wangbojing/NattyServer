@@ -396,7 +396,6 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 			freeRequestPacket(msg);
 			return ;
 		}
-
 		
 		struct sockaddr_in client_addr;
 		getpeername(watcher->fd,(struct sockaddr*)&client_addr, &nSize);
@@ -418,7 +417,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 			free(msg->client);
 			free(msg);
 			return;
-		}	
+		}
 
 		memset(msg->buffer, 0, rLen);
 		memcpy(msg->buffer, buffer, rLen); //xiao lv
@@ -429,7 +428,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		if (job == NULL) {
 			ntylog("malloc Job failed\n");
 			freeRequestPacket(msg);
-			return ;
+			return;
 		}
 		job->job_function  = ntyTcpServerJob;
 		job->user_data = msg;
@@ -437,7 +436,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 
 	}
 
-	return ;
+	return;
 }
 
 void ntyOnTimeoutEvent(struct ev_loop *loop, struct ev_timer *watcher, int revents) {
@@ -445,7 +444,7 @@ void ntyOnTimeoutEvent(struct ev_loop *loop, struct ev_timer *watcher, int reven
 
 	if (EV_ERROR & revents) {
 		ntylog("error event in accept\n");
-		return ;
+		return;
 	}
 
 	//ntyHeartBeatDetectTraversal(loop);	

@@ -50,10 +50,12 @@
 
 //#include "NattyUserProtocol.h"
 
-#define NATTY_RESULT_CODE_SUCCESS 			"200"		//
-#define NATTY_RESULT_CODE_ERR_NOEXIST 		"10001"		//
-#define NATTY_RESULT_CODE_ERR_JSON_FORMAT 	"10002"		//
-#define NATTY_RESULT_CODE_ERR_03 			"10003"		//
+#define NATTY_RESULT_CODE_SUCCESS 					"200"		//
+#define NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE 		"10001"		//设备不在线
+#define NATTY_RESULT_CODE_ERR_JSON_FORMAT 			"10002"		//JSOn格式错误
+#define NATTY_RESULT_CODE_ERR_JSON_CONVERT			"10003"		//JSON转换错误
+
+#define NATTY_RESULT_CODE_ERR_ICCID_NOTPHONENUM		"10004"		//JSON转换错误
 
 
 //void ntyCommonResultMessage(CommonResult *pCommonResult);
