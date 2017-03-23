@@ -1504,7 +1504,7 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 			
 			break;
 		}
-#endif
+#endif		
 	}
 }
 

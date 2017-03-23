@@ -609,7 +609,6 @@ int ntyHttpCurlGlobalInit(void) {
 static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
 	MessageTag *pMessageTag = (MessageTag *)stream;
 	U8 *jsonstring = buffer;
-
 	ntydbg("ntyHttpQJKLocationHandleResult json --> %s\n", jsonstring);
 	ntydbg("ntyHttpQJKLocationHandleResult url --> %s\n", pMessageTag->Tag);
 
@@ -619,7 +618,6 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 	if (pAMap == NULL) {
 		return -1;
 	}
-
 	LocationAck *pLocationAck = malloc(sizeof(LocationAck));
 
 	char bufIMEI[50] = {0};
@@ -636,19 +634,17 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 	
 	pLocationAck->results.location = pAMap->result.location;
 	pLocationAck->results.radius = pAMap->result.radius;
-	
-	char *jsonresult = ntyJsonWriteLocation(pLocationAck);
-	ntydbg("ntyHttpQJKLocationHandleResult jsonresult --> %s\n", jsonresult);
-	int ret = ntySendLocationPushResult(pMessageTag->fromId, jsonresult, strlen(jsonresult));
-	if (ret > 0) {
-		ret = ntySendLocationBroadCastResult(pMessageTag->fromId, pMessageTag->toId, jsonresult, strlen(jsonresult));
-		if (ret < 0) {
-			ntylog("ntyHttpQJKLocationHandleResult send error.\n");
-		} else {
-			ntydbg("ntySendLocationBroadCastResult ok\n");
+
+	int ret = ntyExecuteLocationNewInsertHandle(pMessageTag->toId, (U8)pMessageTag->Type, pAMap->result.location, pAMap->info, pAMap->result.desc);
+	if (ret>0) {
+		char *jsonresult = ntyJsonWriteLocation(pLocationAck);
+		ntydbg("ntyHttpQJKLocationHandleResult jsonresult --> %s\n", jsonresult);
+		ret = ntySendLocationPushResult(pMessageTag->toId, jsonresult, strlen(jsonresult));
+		if (ret > 0) {
+			ntySendLocationBroadCastResult(pMessageTag->fromId, pMessageTag->toId, jsonresult, strlen(jsonresult));
 		}
 	}
-
+	
 	free(pAMap);
 	free(pLocationAck);
 #if 1 //Release Message

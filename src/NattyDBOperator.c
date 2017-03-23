@@ -380,10 +380,11 @@ static int ntyQueryDevAppGroupInsert(void *self, C_DEVID aid, C_DEVID imei, U8 *
 		if (con == NULL) {
 			ret = -1;
 		} else {
-
+			ntydbg(" ntyQueryDevAppGroupInsert 1 --> %lld, %lld", aid, imei);
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_GROUP, imei, aid, name);
 			while (ResultSet_next(r)) {
 				ret = ResultSet_getInt(r, 1);
+				ntydbg(" ntyQueryDevAppGroupInsert --> %lld, %lld, %d", aid, imei, ret);
 			}
 
 		}
@@ -434,9 +435,41 @@ static int ntyExecuteDevAppGroupDelete(void *self, C_DEVID aid, C_DEVID did) {
 }
 
 
-
 //NTY_DB_LOCATION_INSERT_FORMAT
-static int ntyExecuteLocationInsert(void *self, C_DEVID did, U8 *lng, U8 *lat, U8 type, U8 *info) {
+static int ntyExecuteLocationInsert(void *self, C_DEVID did, U8 *lng, U8 *lat, U8 type, U8 *info) {	
+	ConnectionPool *pool = self;	
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);	
+	int ret = 0;	
+	TRY
+	{		
+		con = ntyCheckConnection(self, con);		
+		if (con == NULL) {			
+			ret = -1;		
+		} else {
+			U8 sql[256];
+			Connection_execute(con, NTY_DB_NAMES_UTF8_SET_FORMAT);			
+			sprintf(sql, NTY_DB_LOCATION_INSERT_FORMAT, did, lng, lat, type, info);			
+			ntylog("%s", sql);			
+			Connection_execute(con, NTY_DB_LOCATION_INSERT_FORMAT, did, lng, lat, type, info);		
+		}	
+	}
+	CATCH(SQLException)
+	{		
+		ntylog(" SQLException --> %s\n", Exception_frame.message);		
+		ret = -1;	
+	}
+	FINALLY
+	{		
+		ntylog(" %s --> Connection_close\n", __func__);		ntyConnectionClose(con);	
+	}	
+	END_TRY;	
+	return ret;
+}
+
+
+
+//NTY_DB_INSERT_LOCATION
+static int ntyExecuteLocationNewInsert(void *self, C_DEVID did, U8 type, const char *lnglat, const char *info, const char *desc) {
 	ConnectionPool *pool = self;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
@@ -448,10 +481,9 @@ static int ntyExecuteLocationInsert(void *self, C_DEVID did, U8 *lng, U8 *lat, U
 			ret = -1;
 		} else {
 			U8 sql[256];
-			Connection_execute(con, NTY_DB_NAMES_UTF8_SET_FORMAT);
-			sprintf(sql, NTY_DB_LOCATION_INSERT_FORMAT, did, lng, lat, type, info);
-			ntylog("%s", sql);
-			Connection_execute(con, NTY_DB_LOCATION_INSERT_FORMAT, did, lng, lat, type, info);
+			sprintf(sql, NTY_DB_INSERT_LOCATION, did, type, lnglat, info, desc);
+			ntylog(" sql :%s", sql);
+			Connection_execute(con, NTY_DB_INSERT_LOCATION, did, type, info, lnglat, desc);
 		}
 	} 
 	CATCH(SQLException) 
@@ -1485,9 +1517,14 @@ int ntyExecuteDevAppGroupDeleteHandle(C_DEVID aid, C_DEVID did) {
 	return ntyExecuteDevAppGroupDelete(pool, aid, did);
 }
 
-int ntyExecuteLocationInsertHandle( C_DEVID did, U8 *lng, U8 *lat, U8 type, U8 *info) {
+int ntyExecuteLocationInsertHandle(C_DEVID did, U8 *lng, U8 *lat, U8 type, U8 *info) {
 	void *pool = ntyConnectionPoolInstance();
 	return ntyExecuteLocationInsert(pool, did, lng, lat, type, info);
+}
+
+int ntyExecuteLocationNewInsertHandle(C_DEVID did, U8 type, const char *lnglat, const char *info, const char *desc) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteLocationNewInsert(pool, did, type, lnglat, info, desc);
 }
 
 int ntyExecuteStepInsertHandle(C_DEVID did, int value) {

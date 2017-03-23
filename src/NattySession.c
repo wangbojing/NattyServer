@@ -687,6 +687,24 @@ int ntySendVoiceBroadCastIter(void *self, void *arg) {
 	return ntySendBuffer(client, buffer, length);
 }
 
+/*
+int ntySendCommonReq(C_DEVID toId, U8 *buffer, int length) {
+	ntydbg(" ntySendCommonReq --> json:%lld %s %d", toId, buffer, length);
+	
+	void *map = ntyMapInstance();
+	ClientSocket *client = ntyMapSearch(map, toId);
+
+	return ntySendBuffer(client, buffer, length);
+	
+}
+
+int ntySendDataRoute(C_DEVID toId, U8 *buffer, int length) {
+	void *map = ntyMapInstance();
+	ClientSocket *client = ntyMapSearch(map, toId);
+
+	return ntySendBuffer(client, buffer, length);
+}
+*/
 
 int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int length) {
 	void *heap = ntyBHeapInstance();
@@ -871,6 +889,58 @@ int ntySendHeartBeatResult(C_DEVID fromId) {
 	return ntySendBuffer(client, buffer, length);
 }
 
+
+int ntySendICCIDAckResult(C_DEVID fromId, U8 *json, int length, U16 status) {
+	U16 bLength = (U16)length;
+	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
+
+	
+	buffer[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
+	buffer[NTY_PROTO_DEVTYPE_IDX] = NTY_PROTO_CLIENT_DEFAULT;
+	buffer[NTY_PROTO_PROTOTYPE_IDX] = PROTO_ACK;
+	buffer[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_ICCID_ACK;
+
+	*(U16*)(buffer+NTY_PROTO_ICCID_ACK_STATUS_IDX) = status;
+	memcpy(&buffer[NTY_PROTO_ICCID_ACK_JSON_LENGTH_IDX], &bLength, sizeof(U16));
+	memcpy(&buffer[NTY_PROTO_ICCID_ACK_JSON_CONTENT_IDX], json, bLength);
+
+	ntylog("\n ntySendICCIDAckResult:%s, length:%d\n", json, length);
+	ntylog(" NTY_PROTO_ICCID_ACK_JSON_CONTENT_IDX:%s, length:%d\n", buffer+NTY_PROTO_ICCID_ACK_JSON_CONTENT_IDX, length);
+	bLength = bLength + NTY_PROTO_ICCID_ACK_JSON_CONTENT_IDX + sizeof(U32);
+
+	void *map = ntyMapInstance();
+	ClientSocket *client = ntyMapSearch(map, fromId);
+	
+	return ntySendBuffer(client, buffer, bLength);
+}
+
+
+int ntySendRecodeJsonPacket(C_DEVID fromId, C_DEVID toId, U8 *json, int length) {
+
+	U16 bLength = (U16)length;
+	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
+
+	buffer[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
+	buffer[NTY_PROTO_DEVTYPE_IDX] = NTY_PROTO_CLIENT_DEFAULT;
+	buffer[NTY_PROTO_PROTOTYPE_IDX] = PROTO_REQ;
+	buffer[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_COMMON_REQ;
+
+
+	memcpy(&buffer[NTY_PROTO_COMMON_REQ_DEVID_IDX], &fromId, sizeof(C_DEVID));
+	memcpy(&buffer[NTY_PROTO_COMMON_REQ_RECVID_IDX], &fromId, sizeof(C_DEVID));
+	memcpy(&buffer[NTY_PROTO_COMMON_REQ_JSON_LENGTH_IDX], &bLength, sizeof(U16));
+	memcpy(&buffer[NTY_PROTO_COMMON_REQ_JSON_CONTENT_IDX], json, bLength);
+
+	bLength = bLength + NTY_PROTO_COMMON_REQ_JSON_CONTENT_IDX + sizeof(U32);
+
+	void *map = ntyMapInstance();
+	ClientSocket *client = ntyMapSearch(map, toId);
+
+	return ntySendBuffer(client, buffer, length);
+
+}
+
+
 int ntySendBindComfirmPushResult(C_DEVID fromId, U8 *json, int length) {
 	U16 bLength = (U16)length;
 	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
@@ -1023,7 +1093,4 @@ int ntySendBinBufferBroadCastResult(U8 *u8Buffer, int length, C_DEVID fromId, C_
 
 
 #endif
-
-
-
 

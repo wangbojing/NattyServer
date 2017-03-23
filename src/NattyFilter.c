@@ -599,7 +599,6 @@ void ntyICCIDReqPacketHandleRequest(const void *_self, unsigned char *buffer, in
 			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
 			return;
 		}
-		
 		ntyJsonICCIDAction(fromId, json, jsonstring, jsonlen);
 		ntyFreeJsonValue(json);
 		free(jsonstring);
@@ -722,18 +721,20 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 		memcpy(jsonstring, buffer+NTY_PROTO_COMMON_REQ_JSON_CONTENT_IDX, jsonlen);
 
 		ntydbg("ntyCommonReqPacketHandleRequest --> fromId:%lld    toId:%lld\n", fromId, toId);
+#if 0 //Move to SevAction
 		int ret = ntySendCommonReq(toId, buffer, length);
 		if (ret <= 0) {
 			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
 			return;
 		}
-		
+#endif		
 		ntydbg("ntyCommonReqPacketHandleRequest --> json : %s\n", jsonstring);
 		JSON_Value *json = ntyMallocJsonValue(jsonstring);
-		if (json == NULL) {
+		if (json == NULL) { //JSON Error and send Code to FromId Device
 			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
 			return;
 		}
+		
 		const char *category = ntyJsonAppCategory(json);
 		if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_EFENCE) == 0) {
 			const char *action = ntyJsonAction(json);
@@ -1066,6 +1067,8 @@ static const ProtocolFilter ntyUnBindDeviceFilter = {
 
 void ntyBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const Client *client = obj;
+
+	ntydbg(" ntyBindDevicePacketHandleRequest --> %d %d \n", buffer[NTY_PROTO_MSGTYPE_IDX], NTY_PROTO_BIND_REQ);
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_BIND_REQ) {
 		C_DEVID AppId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_APPID_IDX);
 		C_DEVID DeviceId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_DEVICEID_IDX);
@@ -1192,20 +1195,21 @@ void ntyLocationAsyncReqPacketHandleRequest(const void *_self, unsigned char *bu
 		memset(jsonstring, 0, jsonlen);
 		memcpy(jsonstring, buffer+NTY_PROTO_LOCATION_ASYNC_REQ_JSON_CONTENT_IDX, jsonlen);
 
-		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_LOCATION_ASYNC_REQ_DEVID_IDX);
+		C_DEVID deviceId = *(C_DEVID*)(buffer+NTY_PROTO_LOCATION_ASYNC_REQ_DEVID_IDX);
 
 		JSON_Value *json = ntyMallocJsonValue(jsonstring);
 		if (json == NULL) {
-			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
+			ntyJsonCommonResult(deviceId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
 			return;
 		}
 		
 		const char *category = ntyJsonAppCategory(json);
 		ntydbg(" category %s\n", category);
 		if (strcmp(category, NATTY_USER_PROTOCOL_WIFI) == 0) {
-			ntyJsonLocationWIFIAction(fromId, fromId, json, jsonstring, jsonlen);
+			ntydbg(" client->devId %lld deviceId:%lld\n", client->devId, deviceId);
+			ntyJsonLocationWIFIAction(client->devId, deviceId, json, jsonstring, jsonlen);
 		} else if (strcmp(category, NATTY_USER_PROTOCOL_LAB) == 0) {
-			ntyJsonLocationLabAction(fromId, fromId, json, jsonstring, jsonlen);
+			ntyJsonLocationLabAction(client->devId, deviceId, json, jsonstring, jsonlen);
 		} else {
 			ntylog("Can't find category with: %s\n", category);
 		}

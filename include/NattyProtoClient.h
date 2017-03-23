@@ -68,7 +68,6 @@ typedef void (*NTY_PACKET_CALLBACK)(DEVID fromId, DEVID gId, int length);
 #define NTY_BIGBUFFER_SIZE		30*1024
 #define NTY_TIMER_SIZE			32
 
-
 #ifndef ntydbg
 #define ntydbg(format, ...) 		fprintf(stdout, format, ##__VA_ARGS__)
 #endif
@@ -136,6 +135,9 @@ U8 *ntyGetSendBigBuffer(void);
 int ntyGetRecvBigLength(void);
 
 char* ntyProtoClientGetVersion(void);
+
+//DEVID* ntyGetFriendsList(int *Count);
+//void ntyReleaseFriendsList(DEVID **list);
 
 #endif
 

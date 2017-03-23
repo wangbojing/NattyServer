@@ -67,7 +67,7 @@
 
 #define NTY_DB_DEV_APP_DELETE_FORMAT		"CALL PROC_DEV_APP_RELATION_DELETE(%lld, %lld)"
 
-#define NTY_DB_LOCATION_INSERT_FORMAT		"CALL PROC_LOCATION_DID_INSERT(%lld, '%s', '%s', '%d','%s')"				//CALL PROC_LOCATION_DID_INSERT(239307951255536007, '112.4563212', '23.3456321', '')
+#define NTY_DB_LOCATION_INSERT_FORMAT		"CALL PROC_LOCATION_DID_INSERT(%lld, '%s', '%s', '%d', '%s')"				//CALL PROC_LOCATION_DID_INSERT(239307951255536007, '112.4563212', '23.3456321', '')
 
 #define NTY_DB_STEP_INSERT_FORMAT			"CALL PROC_STEP_DID_INSERT(%lld, %d)"
 
@@ -94,6 +94,7 @@
 
 
 /* ** **** ******** **************** Natty V3.2 **************** ******** **** ** */
+
 #define NTY_DB_INSERT_EFENCE				"CALL PROC_INSERT_EFENCE(%lld, %d, %d, '%s', '%s');"
 
 #define NTY_DB_DELETE_EFENCE				"CALL PROC_DELETE_EFENCE(%lld, %d)"
@@ -170,6 +171,9 @@
 
 #define NTY_DB_INSERT_LOCATION 				"CALL PROC_INSERT_LOCATION(%lld, %d, '%s', '%s', '%s')"
 
+
+
+
 #define NTY_DB_SELECT_LOCATION				"CALL PROC_SELECT_LOCATION(%lld)"
 
 //绑定关系  带返回结果
@@ -221,6 +225,7 @@ int ntyExecuteDevAppRelationDeleteHandle(C_DEVID aid, C_DEVID did);
 int ntyQueryDevAppGroupInsertHandle(C_DEVID aid, C_DEVID did);
 int ntyExecuteDevAppGroupDeleteHandle(C_DEVID aid, C_DEVID did);
 int ntyExecuteLocationInsertHandle(C_DEVID did, U8 *lng, U8 *lat, U8 type, U8 *info);
+int ntyExecuteLocationNewInsertHandle( C_DEVID did, U8 type, const char *lnglat, const char *info, const char *desc);
 int ntyExecuteStepInsertHandle(C_DEVID did, int value);
 int ntyExecuteHeartRateInsertHandle(C_DEVID did, int value);
 
