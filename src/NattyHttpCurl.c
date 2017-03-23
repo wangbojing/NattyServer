@@ -745,7 +745,7 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 
 
 	U8 weatherbuf[500] = {0};
-	sprintf(weatherbuf, "%s/v3/weather/daily.json?key=%s&location=%s&language=zh-Hans&unit=c&start=0&days=3", 
+	sprintf(weatherbuf, "%s/v3/weather/daily.json?key=%s&location=%s&language=zh-Hans&unit=c&start=0&days=2", 
 		HTTP_WEATHER_BASE_URL, HTTP_WEATHER_KEY, latlng);
 	ntydbg(" weatherbuf --> %s\n", weatherbuf);
 	int length = strlen(weatherbuf);
@@ -795,35 +795,35 @@ int ntyHttpQJKWeatherLocation(void *arg) {
 	}
 #endif
 	curl = curl_easy_init();
-	if (!curl)	{		
-		ntylog("curl init failed\n");		
-		return -2;	
+	if (!curl)	{
+		ntylog("curl init failed\n");	
+		return -2;
 	}
 
 	ntylog("QJK url:%s\n", tag);
 
-	curl_easy_setopt(curl, CURLOPT_URL, tag); 
-	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L); 
+	curl_easy_setopt(curl, CURLOPT_URL, tag);
+	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
 #if 1
 	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
 #endif
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ntyHttpQJKWeatherLocationHandleResult); 
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, arg); 
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ntyHttpQJKWeatherLocationHandleResult);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, arg);
 
-	res = curl_easy_perform(curl);	
-	if (res != CURLE_OK)	{		
-		switch(res)		{			
-			case CURLE_UNSUPPORTED_PROTOCOL:				
-				ntylog("CURLE_UNSUPPORTED_PROTOCOL\n");			
-			case CURLE_COULDNT_CONNECT:				
-				ntylog("CURLE_COULDNT_CONNECT\n");			
-			case CURLE_HTTP_RETURNED_ERROR:				
-				ntylog("CURLE_HTTP_RETURNED_ERROR\n");			
-			case CURLE_READ_ERROR:				
-				ntylog("CURLE_READ_ERROR\n");			
+	res = curl_easy_perform(curl);
+	if (res != CURLE_OK)	{
+		switch(res)		{
+			case CURLE_UNSUPPORTED_PROTOCOL:	
+				ntylog("CURLE_UNSUPPORTED_PROTOCOL\n");	
+			case CURLE_COULDNT_CONNECT:
+				ntylog("CURLE_COULDNT_CONNECT\n");	
+			case CURLE_HTTP_RETURNED_ERROR:
+				ntylog("CURLE_HTTP_RETURNED_ERROR\n");		
+			case CURLE_READ_ERROR:
+				ntylog("CURLE_READ_ERROR\n");		
 			default:				
 				ntylog("default %d\n",res);		
-		}		
+		}
 		return -3;	
 	}	
 	

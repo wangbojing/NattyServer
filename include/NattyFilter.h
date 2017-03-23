@@ -55,7 +55,7 @@
 #include <ev.h>
 
 
-#define NTY_VOICE_FILENAME_LENGTH		128
+#define NTY_VOICE_FILENAME_LENGTH		64
 #define NTY_VOICE_FILENAME_FORMAT		"./%lld_%lld_%ld.amr" //gId_fromId_stamp.amr
 
 

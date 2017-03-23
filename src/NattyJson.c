@@ -580,7 +580,6 @@ void ntyJsonAddContacts(JSON_Value *json, AddContactsReq *pAddContactsReq) {
 	pAddContactsReq->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
 	pAddContactsReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
 	pAddContactsReq->action = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ACTION);
-	ntydbg("IMEI:%s   Category:%s  Action:%s\n", pAddContactsReq->IMEI, pAddContactsReq->category, pAddContactsReq->action);
 
 	JSON_Object *contacts_object = json_object_get_object(root_object, NATTY_USER_PROTOCOL_CONTACTS);
 	pAddContactsReq->contacts.name = json_object_get_string(contacts_object, NATTY_USER_PROTOCOL_NAME);
@@ -600,7 +599,6 @@ void ntyJsonUpdateContacts(JSON_Value *json, UpdateContactsReq *pUpdateContactsR
 	pUpdateContactsReq->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
 	pUpdateContactsReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
 	pUpdateContactsReq->action = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ACTION);
-	ntydbg("IMEI:%s   Category:%s  Action:%s\n", pUpdateContactsReq->IMEI, pUpdateContactsReq->category, pUpdateContactsReq->action);
 
 	JSON_Object *contacts_object = json_object_get_object(root_object, NATTY_USER_PROTOCOL_CONTACTS);
 	pUpdateContactsReq->contacts.id = json_object_get_string(contacts_object, NATTY_USER_PROTOCOL_ID);
@@ -622,7 +620,6 @@ void ntyJsonDelContacts(JSON_Value *json, DelContactsReq *pDelContactsReq) {
 	pDelContactsReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
 	pDelContactsReq->action = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ACTION);
 	pDelContactsReq->id = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ID);
-	ntydbg("IMEI:%s   Category:%s  Action:%s  id:%s\n", pDelContactsReq->IMEI, pDelContactsReq->category, pDelContactsReq->action, pDelContactsReq->id);
 }
 
 void ntyJsonTimeTablesItemRelease(TimeTablesItem *pTimeTables) {
@@ -852,6 +849,11 @@ char *ntyJsonWriteWeather(WeatherAck *pWeatherAck) {
 	for (i = 0; i < pWeatherAck->size; i++) {
 		json_array_append_value(results_arr, json_value_init_object());
 		JSON_Object *results_obj = json_array_get_object(results_arr, i);
+
+		json_object_set_value(results_obj, NATTY_WEATHER_PROTOCOL_LOCATION, json_value_init_object());
+		JSON_Object *location_obj = json_object_get_object(results_obj, NATTY_WEATHER_PROTOCOL_LOCATION);
+		json_object_set_string(location_obj, NATTY_WEATHER_PROTOCOL_NAME, pWeatherAck->pResults[i].location.name);
+
 		json_object_set_value(results_obj, NATTY_WEATHER_PROTOCOL_DAILY, json_value_init_array());
 		JSON_Array *daily_arr = json_object_get_array(results_obj, NATTY_WEATHER_PROTOCOL_DAILY);
 		for (j = 0; j < pWeatherAck->pResults[i].size; j++) {
@@ -940,13 +942,6 @@ char * ntyJsonWriteRunTime(RunTimeAck *pRunTimeAck) {
 
 	json_object_set_value(results_obj, NATTY_USER_PROTOCOL_RUNTIME, json_value_init_object());
 	JSON_Object *runtime_obj = json_object_get_object(results_obj, NATTY_USER_PROTOCOL_RUNTIME);
-	
-	ntydbg("-->--> pRunTimeAck->result.runtime.auto_connection: %s\n", pRunTimeAck->result.runtime.auto_connection);
-	ntydbg("-->--> pRunTimeAck->result.runtime.loss_report: %s\n", pRunTimeAck->result.runtime.loss_report);
-	ntydbg("-->--> pRunTimeAck->result.runtime.light_panel: %s\n", pRunTimeAck->result.runtime.light_panel);
-	ntydbg("-->--> pRunTimeAck->result.runtime.watch_bell: %s\n", pRunTimeAck->result.runtime.watch_bell);
-	ntydbg("-->--> pRunTimeAck->result.runtime.taget_step: %s\n", pRunTimeAck->result.runtime.taget_step);
-	
 	json_object_set_string(runtime_obj, NATTY_USER_PROTOCOL_AUTOCONNECTION, pRunTimeAck->result.runtime.auto_connection);
 	json_object_set_string(runtime_obj, NATTY_USER_PROTOCOL_LOSSREPORT, pRunTimeAck->result.runtime.loss_report);
 	json_object_set_string(runtime_obj, NATTY_USER_PROTOCOL_LIGHTPANEL, pRunTimeAck->result.runtime.light_panel);
@@ -1128,7 +1123,7 @@ char * ntyJsonWriteTimeTables(TimeTablesAck *pTimeTablesAck) {
 	for (i = 0; i < pTimeTablesAck->results.size; i++) {
 		json_array_append_value(timetables_arr, json_value_init_object());
 		JSON_Object *timetables_obj = json_array_get_object(timetables_arr, i);
-		json_object_set_string(timetables_obj, NATTY_USER_PROTOCOL_ID, pTimeTablesAck->results.pTimeTables[i].id);
+		//json_object_set_string(timetables_obj, NATTY_USER_PROTOCOL_ID, pTimeTablesAck->results.pTimeTables[i].id);
 		json_object_set_string(timetables_obj, NATTY_USER_PROTOCOL_DAILY, pTimeTablesAck->results.pTimeTables[i].daily);
 
 		json_object_set_value(timetables_obj, NATTY_USER_PROTOCOL_MORNING, json_value_init_object());

@@ -82,10 +82,5 @@ int ntyCharToWchar(U8 *src, int length, wchar_t *dest);
 TIMESTAMP ntyTimeStampGenrator(void);
 
 
-int ntyReadDat(const char *filename, char *data, int len);
-int ntyWriteDat(const char *filename, const char *data, int len);
-
-
-
 #endif
 

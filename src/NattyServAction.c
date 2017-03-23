@@ -46,12 +46,68 @@
 #include "NattyMessage.h"
 #include "NattyHttpCurl.h"
 
-#include "NattyResult.h"
-#include "NattyFilter.h"
 
 #include <string.h>
 #include <time.h>
 
+void ntyCommonReqAction(C_DEVID fromId, C_DEVID toId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
+	ntydbg("ntyCommonReqPacketHandleRequest --> fromId:%lld    toId:%lld\n", fromId, toId);
+
+#if 0 //Move to SevAction
+	int ret = ntySendRecodeJsonPacket(toId, buffer, length);
+	if (ret <= 0) {
+		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
+		return;
+	}
+#endif
+	ntydbg("ntyCommonReqPacketHandleRequest --> json : %s\n", jsonstring);
+
+	const char *category = ntyJsonAppCategory(json);
+	if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_EFENCE) == 0) {
+		const char *action = ntyJsonAction(json);
+		if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_ADD) == 0) {
+			ntyJsonAddEfenceAction(fromId, toId, json, jsonstring, jsonlen);
+		} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_DELETE) == 0) {
+			ntyJsonDelEfenceAction(fromId, toId, json, jsonstring, jsonlen);
+		} else {
+			ntylog("Can't find action with: %s\n", action);
+		}
+	} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_RUNTIME) == 0) {
+		ntyJsonRunTimeAction(fromId, toId, json, jsonstring, jsonlen);
+	} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_TURN) == 0) {
+		ntyJsonTurnAction(fromId, toId, json, jsonstring, jsonlen);
+	} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_SCHEDULE) == 0) {
+		const char *action = ntyJsonAction(json);
+		if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_ADD) == 0) {
+			ntyJsonAddScheduleAction(fromId, toId, json, jsonstring, jsonlen);
+		} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_DELETE) == 0) {
+			ntyJsonDelScheduleAction(fromId, toId, json, jsonstring, jsonlen);
+		} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_UPDATE) == 0) {
+			ntyJsonUpdateScheduleAction(fromId, toId, json, jsonstring, jsonlen);
+		} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_SCHEDULE) == 0) {
+			ntyJsonSelectScheduleAction(fromId, toId, json, jsonstring, jsonlen);
+		} else {
+			ntylog("Can't find action with: %s\n", action);
+		}
+	} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_TIMETABLES) == 0) {
+		ntyJsonTimeTablesAction(fromId, toId, json, jsonstring, jsonlen);
+	} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_CONTACTS) == 0) {
+		const char *action = ntyJsonAction(json);
+		if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_ADD) == 0) {
+			ntyJsonAddContactsAction(fromId, toId, json, jsonstring, jsonlen);
+		} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_DELETE) == 0) {
+			ntyJsonDelContactsAction(fromId, toId, json, jsonstring, jsonlen);
+		} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_UPDATE) == 0) {
+			ntyJsonUpdateContactsAction(fromId, toId, json, jsonstring, jsonlen);
+		} else {
+			ntylog("Can't find action with: %s\n", action);
+		}
+	} else {
+		ntylog("Can't find category with: %s\n", category);
+	}
+	ntyFreeJsonValue(json);
+	free(jsonstring);
+}
 
 void ntyJsonBroadCastRecvResult(C_DEVID selfId, C_DEVID gId, char *jsonresult) {
 	if (jsonresult == NULL) {
@@ -464,7 +520,10 @@ void ntyJsonRunTimeAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *js
 		}
 	}
 	ntydbg("---------------------6----------------------\n");
-	if (ret == 0) {
+	if (ret == -1) {
+		ntylog(" ntyJsonRunTimeAction --> DB Exception\n");
+		ret = 4;
+	} else if (ret >= 0) {
 		ret = ntySendRecodeJsonPacket(devId, jsonstring, strlen(jsonstring));
 		if (ret >= 0) {
 			ntyJsonCommonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
@@ -702,13 +761,29 @@ void ntyJsonTimeTablesAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 
 	free(pTimeTablesReq);
 }
 
+int checkStringIsAllNumber(const char *content) {
+	if (content == NULL) {
+		return 0;
+	}
+
+	size_t len = strlen(content);
+	size_t i;
+	for (i=0; i<len; i++) {
+		char c = content[i];
+		if (c<0x30 || c>0x39) {
+			return -1;
+		}
+	}
+
+	return 1;
+}
+
 void ntyJsonAddContactsAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
 	AddContactsReq *pAddContactsReq = (AddContactsReq*)malloc(sizeof(AddContactsReq));
 	ntyJsonAddContacts(json, pAddContactsReq);
-	if ((strcmp(pAddContactsReq->contacts.telphone, "(null)") == 0) ||
-		(strcmp(pAddContactsReq->contacts.id, "(null)") == 0)) {
+	if (checkStringIsAllNumber(pAddContactsReq->contacts.telphone) != 1) {
 		ntyJsonCommonResult(AppId, NATTY_RESULT_CODE_ERR_JSON_CONVERT);
-	} else {	
+	} else {
 		int contactsId = 0;
 		int ret = ntyExecuteContactsInsertHandle(AppId, devId, &pAddContactsReq->contacts, &contactsId);
 		char ids[20] = {0};
@@ -731,7 +806,6 @@ void ntyJsonAddContactsAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8
 			ret = ntySendRecodeJsonPacket(AppId, devId, jsonstringTemp, strlen(jsonstringTemp));
 			if (ret >= 0) {
 				ntyJsonCommonExtendResult(AppId, NATTY_RESULT_CODE_SUCCESS, contactsId);
-
 				AddContactsAck *pAddContactsAck = malloc(sizeof(AddContactsAck));
 				pAddContactsAck->results = *(AddContactsResults*)pAddContactsReq;
 				char *jsonresult = ntyJsonWriteAddContacts(pAddContactsAck);
@@ -807,69 +881,35 @@ void ntyJsonDelContactsAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8
 }
 
 
-int ntyVoiceDataReqAction(C_DEVID senderId, C_DEVID gId, char *filename) {
+void ntyJsonOfflineMsgReqAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen) {
+	DelContactsReq *pDelContactsReq = (DelContactsReq*)malloc(sizeof(DelContactsReq));
+	ntyJsonDelContacts(json, pDelContactsReq);
 
-	U32 msgId = 0;
-
-	//insert voice msg to db
-	int ret = ntyQueryVoiceMsgInsertHandle(senderId, gId, filename, &msgId);
-	if (ret != NTY_RESULT_FAILED) {
-		ntyJsonCommonResult(senderId, NATTY_RESULT_CODE_SUCCESS);
-	} else { //
-		ntyJsonCommonResult(senderId, NATTY_RESULT_CODE_ERR_DB_OPERATION);
-		return ret;
+	int contactsId = 0;
+	if (pDelContactsReq->id != NULL) {
+		if (strlen(pDelContactsReq->id) != 0) {
+			contactsId = atoi(pDelContactsReq->id);
+		}
 	}
-	//broadcast to all id
-	//json is null, length is 0
-	ntySendVoiceBroadCastResult(senderId, gId, NULL, 0, msgId);
+	int ret = ntyExecuteContactsDeleteHandle(AppId, devId, contactsId);
+	if (ret == -1) {
+		ntylog(" ntyJsonDelContactsAction --> DB Exception\n");
+		ret = 4;
+	} else if (ret >= 0) {
+		ret = ntySendRecodeJsonPacket(AppId, devId, jsonstring, strlen(jsonstring));
+		if (ret >= 0) {
+			ntyJsonCommonResult(AppId, NATTY_RESULT_CODE_SUCCESS);
 
-}
-
-int ntyVoiceReqAction(C_DEVID fromId, U32 msgId) {
-
-	C_DEVID senderId = 0;
-	C_DEVID gId = 0;
-	U8 filename[NTY_VOICE_FILENAME_LENGTH] = {0};
-	long stamp = 0;
-	
-	int ret = ntyQueryVoiceMsgSelectHandle(msgId, &senderId, &gId, filename, &stamp);
-	if (ret == NTY_RESULT_FAILED) {
-		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_NOEXIST);
-		return ret;
+			DelContactsAck *pDelContactsAck = malloc(sizeof(DelContactsAck));
+			pDelContactsAck->results = *(DelContactsResults*)pDelContactsReq;
+			char *jsonresult = ntyJsonWriteDelContacts(pDelContactsAck);
+			ntySendCommonBroadCastResult(AppId, devId, (U8*)jsonresult, strlen(jsonresult));
+			ntyJsonFree(jsonresult);
+			free(pDelContactsAck);
+		}
 	}
-
-	ntylog(" ntyVoiceReqAction --> senderId:%lld, gId:%lld, filename:%s\n", senderId, gId, filename);
-	U8 *pData = (U8 *)malloc(NTY_VOICEREQ_COUNT_LENGTH*NTY_VOICEREQ_PACKET_LENGTH);
-	int size = ntyReadDat(filename, pData, NTY_VOICEREQ_COUNT_LENGTH*NTY_VOICEREQ_PACKET_LENGTH);
-	
-	ntylog(" ntyVoiceReqAction --> size:%d\n", size);
-
-	ret = ntySendVoiceBufferResult(pData, size, senderId, gId, fromId, msgId);
-
-	free(pData);
-
-	return ret;
+	free(pDelContactsReq);
 }
 
-int ntyVoiceAckAction(C_DEVID fromId, U32 msgId) {
-
-	int ret = ntyExecuteVoiceOfflineMsgDeleteHandle(msgId, fromId);
-	if (ret == NTY_RESULT_FAILED) {
-		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_NOEXIST);
-		return ret;
-	}
-
-	ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
-
-	//next voice packet
-	//
-	return NTY_RESULT_SUCCESS;
-}
-
-int ntyCommonReqSaveDBAction(C_DEVID fromId, C_DEVID gId, U8 *json) {
-
-	
-	
-}
 
 

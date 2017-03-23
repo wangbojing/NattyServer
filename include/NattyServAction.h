@@ -49,6 +49,8 @@
 #include "NattyAbstractClass.h"
 #include "NattyJson.h"
 
+void ntyCommonReqAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
+
 void ntyJsonRecvResult(C_DEVID devId, char *jsonresult);
 
 void ntyJsonBroadCastRecvResult(C_DEVID selfId, C_DEVID gId, char *jsonresult);
@@ -89,14 +91,7 @@ void ntyJsonUpdateContactsAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json,
 
 void ntyJsonDelContactsAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
 
-
-int ntyVoiceDataReqAction(C_DEVID senderId, C_DEVID gId, char *filename);
-
-int ntyVoiceReqAction(C_DEVID fromId, U32 msgId);
-
-int ntyVoiceAckAction(C_DEVID fromId, U32 msgId);
-
-
+void ntyJsonOfflineMsgReqAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
 
 #endif // __NATTY_SERVACTION_H__
 

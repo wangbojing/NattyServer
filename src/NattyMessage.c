@@ -44,20 +44,6 @@
 
 #include "NattyMessage.h"
 
-/*
-void ntyCommonResultMessage(CommonResult *pCommonResult) {
-	if (pCommonResult != NULL) {
-		if (pCommonResult->code != NULL) {
-			if (strcmp(pCommonResult->code, NATTY_RESULT_CODE_SUCCESS) == 0) {
-				pCommonResult->message = "success";
-			} else if (strcmp(pCommonResult->code, NATTY_RESULT_CODE_ERR_NOEXIST) == 0) {
-				pCommonResult->message = "error no exist";
-			}
-		}
-	}
-}
-*/
-
 const char* ntyCommonResultMessage(const char *code) {
 	char *message = NULL;
 	if (code != NULL) {
@@ -69,8 +55,8 @@ const char* ntyCommonResultMessage(const char *code) {
 			message = "JSON format error";	//JSON¸ñÊ½´íÎó
 		} else if (strcmp(code, NATTY_RESULT_CODE_ERR_JSON_CONVERT) == 0) {
 			message = "JSON convert error";	//JSON×ª»»´íÎó
-		} else if (strcmp(code, NATTY_RESULT_CODE_ERR_JSON_CONVERT) == 0) {
-			message = "JSON convert error";	//JSON×ª»»´íÎó
+		} else if (strcmp(code, NATTY_RESULT_CODE_ERR_ICCID_NOTPHONENUM) == 0) {
+			message = "ICCID not band phone number error";	//JSON×ª»»´íÎó
 		}
 
 	}

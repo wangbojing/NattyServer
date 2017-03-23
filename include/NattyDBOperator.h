@@ -195,19 +195,6 @@
 
 
 
-#define NTY_DB_CHECK_GROUP					"CALL PROC_CHECK_GROUP(%lld, %lld)"
-
-#define NTY_DB_SELECT_ADMIN					"CALL PROC_SELECT_ADMIN(%lld)"
-
-#define NTY_DB_INSERT_VOICE_MSG				"CALL PROC_INSERT_VOICE_MSG(%lld, %lld, '%s')"
-
-#define NTY_DB_DELETE_VOICE_OFFLINE_MSG		"CALL PROC_DELETE_VOICE_OFFLINE_MSG(%d, %lld)"
-
-#define NTY_DB_SELECT_VOICE_MSG				"CALL PROC_SELECT_VOICE_MSG(%d)"
-
-
-
-
 
 
 
@@ -293,9 +280,6 @@ int ntyQueryAppOnlineStatusHandle(C_DEVID did, int *online);
 int ntyQueryDeviceOnlineStatusHandle(C_DEVID did, int *online);
 
 
-int ntyQueryVoiceMsgInsertHandle(C_DEVID senderId, C_DEVID gId, char *filename, U32 *msgId);
-int ntyExecuteVoiceOfflineMsgDeleteHandle(U32 index, C_DEVID userId);
-int ntyQueryVoiceMsgSelectHandle(U32 index, C_DEVID *senderId, C_DEVID *gId, U8 *filename, long *stamp);
 
 
 

@@ -55,11 +55,7 @@
 #define NATTY_RESULT_CODE_ERR_JSON_FORMAT 			"10002"		//JSOn格式错误
 #define NATTY_RESULT_CODE_ERR_JSON_CONVERT			"10003"		//JSON转换错误
 
-#define NATTY_RESULT_CODE_ERR_ICCID_NOTPHONENUM		"10004"		//JSON转换错误
-#define NATTY_RESULT_CODE_ERR_DB_OPERATION			"10005"		
-#define NATTY_RESULT_CODE_ERR_DB_NOEXIST			"10006"		
-
-//void ntyCommonResultMessage(CommonResult *pCommonResult);
+#define NATTY_RESULT_CODE_ERR_ICCID_NOTPHONENUM		"10004"		//ICCID没有绑定手机号码
 
 const char* ntyCommonResultMessage(const char *code);
 
