@@ -678,7 +678,7 @@ int ntySendVoiceBroadCast(C_DEVID fromId, C_DEVID toId, U8 *json, int length, in
 }
 
 int ntySendVoiceBroadCastIter(void *self, void *arg) {
-	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
+	//U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
 	C_DEVID toId = 0, selfId = 0;
 	memcpy(&toId, self, sizeof(C_DEVID));
 
@@ -716,11 +716,31 @@ int ntySendVoiceBroadCastIter(void *self, void *arg) {
 
 
 int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int length, int index) {
+	//get fromId group all
+	//fromId type
 	void *heap = ntyBHeapInstance();
-	NRecord *record = ntyBHeapSelect(heap, gId);
-
+	NRecord *record = ntyBHeapSelect(heap, fromId);
 	Client *pClient = (Client*)record->value;
+	if (pClient == NULL) return NTY_RESULT_FAILED;
+
+	void *group = NULL;
+	if (pClient->deviceType == NTY_PROTO_CLIENT_ANDROID 
+		|| pClient->deviceType == NTY_PROTO_CLIENT_IOS) {
+		group = ntyVectorCreator();
+
+		if(-1 == ntyQueryAppIDListSelectHandle(gId, group)) {
+			ntylog(" ntyQueryWatchIDListSelectHandle Failed \n");
+		}
+	} else if (pClient->deviceType == NTY_PROTO_CLIENT_WATCH) {
+		group = pClient->friends;
+	} else {
+		ntylog(" Protocol Device Type is Error : %c\n", pClient->deviceType);
+	}
+
+
 	InterMsg *msg = (InterMsg*)malloc(sizeof(InterMsg));
+	if (msg == NULL) return NTY_RESULT_ERROR;
+	
 	msg->buffer = json;
 	msg->length = length;
 	msg->group = pClient;
@@ -729,20 +749,22 @@ int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int lengt
 #if 0
 	ntyVectorIterator(pClient->friends, ntySendVoiceBroadCastIter, msg);
 #else
-	ntyVectorIter(pClient->friends, ntySendVoiceBroadCastIter, msg);
+	ntylog(" ntySendVoiceBroadCastResult --> ntyVectorIter\n");
 
+	ntyVectorIter(group, ntySendVoiceBroadCastIter, msg);
 	
-	NRecord *sRecord = ntyBHeapSelect(heap, gId);
-	Client *sClient = (Client*)sRecord->value;
+	free(msg);
+	ntyVectorDestory(group);
+
+
 	//if fromId is AppId, need to send gId self
 	//else don't do that
-	ntylog(" ntySendVoiceBroadCastResult --> %d\n", sClient->deviceType);
-	if (sClient->deviceType != NTY_PROTO_CLIENT_WATCH) {
+	if (pClient->deviceType == NTY_PROTO_CLIENT_ANDROID 
+		|| pClient->deviceType == NTY_PROTO_CLIENT_IOS) {
 		ntySendVoiceBroadCast(fromId, gId, json, length, index);
 	}
 
 #endif
-	free(msg);
 
 	return NTY_RESULT_SUCCESS;
 	
