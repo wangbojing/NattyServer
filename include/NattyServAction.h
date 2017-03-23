@@ -93,6 +93,11 @@ void ntyJsonDelContactsAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8
 
 void ntyJsonOfflineMsgReqAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
 
+int ntyVoiceDataReqAction(C_DEVID senderId, C_DEVID gId, char *filename);
+
+int ntyVoiceReqAction(C_DEVID fromId, U32 msgId);
+
+int ntyVoiceAckAction(C_DEVID fromId, U32 msgId);
 #endif // __NATTY_SERVACTION_H__
 
 

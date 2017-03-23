@@ -46,6 +46,8 @@
 #include "NattyMessage.h"
 #include "NattyHttpCurl.h"
 
+#include "NattyResult.h"
+#include "NattyFilter.h"
 
 #include <string.h>
 #include <time.h>
@@ -911,5 +913,69 @@ void ntyJsonOfflineMsgReqAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, 
 	free(pDelContactsReq);
 }
 
+int ntyVoiceDataReqAction(C_DEVID senderId, C_DEVID gId, char *filename) {
+
+	U32 msgId = 0;
+
+	//insert voice msg to db
+	int ret = ntyQueryVoiceMsgInsertHandle(senderId, gId, filename, &msgId);
+	if (ret != NTY_RESULT_FAILED) {
+		ntyJsonCommonResult(senderId, NATTY_RESULT_CODE_SUCCESS);
+	} else { //
+		ntyJsonCommonResult(senderId, NATTY_RESULT_CODE_ERR_DB_OPERATION);
+		return ret;
+	}
+	//broadcast to all id
+	//json is null, length is 0
+	ntySendVoiceBroadCastResult(senderId, gId, NULL, 0, msgId);
+
+}
+
+int ntyVoiceReqAction(C_DEVID fromId, U32 msgId) {
+
+	C_DEVID senderId = 0;
+	C_DEVID gId = 0;
+	U8 filename[NTY_VOICE_FILENAME_LENGTH] = {0};
+	long stamp = 0;
+	
+	int ret = ntyQueryVoiceMsgSelectHandle(msgId, &senderId, &gId, filename, &stamp);
+	if (ret == NTY_RESULT_FAILED) {
+		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_NOEXIST);
+		return ret;
+	}
+
+	ntylog(" ntyVoiceReqAction --> senderId:%lld, gId:%lld, filename:%s\n", senderId, gId, filename);
+	U8 *pData = (U8 *)malloc(NTY_VOICEREQ_COUNT_LENGTH*NTY_VOICEREQ_PACKET_LENGTH);
+	int size = ntyReadDat(filename, pData, NTY_VOICEREQ_COUNT_LENGTH*NTY_VOICEREQ_PACKET_LENGTH);
+	
+	ntylog(" ntyVoiceReqAction --> size:%d\n", size);
+
+	ret = ntySendVoiceBufferResult(pData, size, senderId, gId, fromId, msgId);
+
+	free(pData);
+
+	return ret;
+}
+
+int ntyVoiceAckAction(C_DEVID fromId, U32 msgId) {
+
+	int ret = ntyExecuteVoiceOfflineMsgDeleteHandle(msgId, fromId);
+	if (ret == NTY_RESULT_FAILED) {
+		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_NOEXIST);
+		return ret;
+	}
+
+	ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
+
+	//next voice packet
+	//
+	return NTY_RESULT_SUCCESS;
+}
+
+int ntyCommonReqSaveDBAction(C_DEVID fromId, C_DEVID gId, U8 *json) {
+
+	
+	
+}
 
 

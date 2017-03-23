@@ -87,7 +87,7 @@ int ntyIterFriendsMessage(void *self, void *arg);
 int ntySendOfflineMsgAckResult(C_DEVID toId, U8 *json, int length, U16 status);
 int ntySendLoginAckResult(C_DEVID fromId, U8 *json, int length, U16 status);
 int ntySendLocationBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int length);
-int ntySendVoiceBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int length);
+int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int length, int index);
 int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int length);
 int ntySendDataResult(C_DEVID toId, U8 *json, int length, U16 status);
 int ntySendDataRoute(C_DEVID toId, U8 *buffer, int length);
@@ -99,6 +99,7 @@ int ntySendWeatherPushResult(C_DEVID fromId, U8 *json, int length);
 int ntySendICCIDAckResult(C_DEVID fromId, U8 *json, int length, U16 status);
 int ntySendRecodeJsonPacket(C_DEVID fromId, C_DEVID toId, U8 *json, int length);
 
+int ntySendBinBufferBroadCastResult(U8 *u8Buffer, int length, C_DEVID fromId, C_DEVID gId, U32 index);
 
 
 

@@ -626,7 +626,12 @@ void ntyVoiceReqPacketHandleRequest(const void *_self, unsigned char *buffer, in
 	const Client *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_VOICE_REQ) {
 		
-		
+		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_VOICE_REQ_DEVID_IDX);
+		U32 msgId = *(U32*)(buffer+NTY_PROTO_VOICE_REQ_MSGID_IDX);
+
+		ntylog(" ntyVoiceReqPacketHandleRequest --> %lld, msgId:%d\n", fromId, msgId);
+
+		ntyVoiceReqAction(fromId, msgId);
 		
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
@@ -649,8 +654,13 @@ static const ProtocolFilter ntyVoiceReqFilter = {
 void ntyVoiceAckPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const Client *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_VOICE_ACK) {
-		
-		
+
+		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_VOICE_ACK_DEVID_IDX);
+		U32 msgId = *(U32*)(buffer+NTY_PROTO_VOICE_ACK_MSGID_IDX);
+
+		ntylog(" ntyVoiceAckPacketHandleRequest --> %lld, msgId:%d\n", fromId, msgId);
+
+		ntyVoiceAckAction(fromId, msgId);
 		
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
@@ -795,7 +805,10 @@ void ntyVoiceDataReqPacketHandleRequest(const void *_self, unsigned char *buffer
  * 1. save to DB
  * 2. prepare to offline voice data
  * 
- */
+ */			
+ 			ntyVoiceDataReqAction(fromId, gId, filename);
+			
+
 		}
 
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
@@ -992,8 +1005,6 @@ static const ProtocolFilter ntyUnBindDeviceFilter = {
 
 void ntyBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const Client *client = obj;
-
-	ntydbg(" ntyBindDevicePacketHandleRequest --> %d %d \n", buffer[NTY_PROTO_MSGTYPE_IDX], NTY_PROTO_BIND_REQ);
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_BIND_REQ) {
 		C_DEVID AppId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_APPID_IDX);
 		C_DEVID DeviceId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_DEVICEID_IDX);
