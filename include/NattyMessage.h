@@ -56,7 +56,8 @@
 #define NATTY_RESULT_CODE_ERR_JSON_CONVERT			"10003"		//JSON×ª»»´íÎó
 
 #define NATTY_RESULT_CODE_ERR_ICCID_NOTPHONENUM		"10004"		//JSON×ª»»´íÎó
-
+#define NATTY_RESULT_CODE_ERR_DB_OPERATION			"10005"		
+#define NATTY_RESULT_CODE_ERR_DB_NOEXIST			"10006"		
 
 //void ntyCommonResultMessage(CommonResult *pCommonResult);
 

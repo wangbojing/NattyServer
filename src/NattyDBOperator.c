@@ -1482,6 +1482,120 @@ int ntyQueryAppOnlineStatus(void *self, C_DEVID aid, int *online) {
 	return ret;
 }
 
+//NTY_DB_INSERT_VOICE_MSG
+int ntyQueryVoiceMsgInsert(void *self, C_DEVID senderId, C_DEVID gId, char *filename, int *msgId) {
+	ConnectionPool *pool = self;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+	U8 u8PhNum[20] = {0};
+
+	TRY
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_VOICE_MSG, senderId, gId, filename);
+			while (ResultSet_next(r)) {
+				*msgId = ResultSet_getInt(r, 1);				
+			}
+		}
+	} 
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+//NTY_DB_DELETE_VOICE_OFFLINE_MSG
+int ntyExecuteVoiceOfflineMsgDelete(void *self, int index, C_DEVID userId) {
+	ConnectionPool *pool = self;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+
+	TRY
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			Connection_execute(con, NTY_DB_DELETE_VOICE_OFFLINE_MSG, index, userId);
+		}
+	} 
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+//NTY_DB_SELECT_VOICE_MSG
+int ntyQueryVoiceMsgSelect(void *self, int index,C_DEVID *senderId, C_DEVID *gId, U8 *filename, long *stamp) {
+	ConnectionPool *pool = self;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+	U8 u8PhNum[20] = {0};
+
+	TRY
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			
+			ResultSet_T r =Connection_executeQuery(con, NTY_DB_SELECT_VOICE_MSG, index);
+			while (ResultSet_next(r)) {
+				//*id = ResultSet_getInt(r, 1);	
+				*senderId = ResultSet_getLLong(r, 2);
+				*gId = ResultSet_getLLong(r, 3);
+
+				const char *details = ResultSet_getString(r, 4);
+				int length = strlen(details);
+
+				time_t nStamp = ResultSet_getTimestamp(r, 5);
+				*stamp = nStamp;
+
+				memcpy(filename, details, length);
+
+				ntylog(" ntyQueryVoiceMsgSelect --> sender:%lld, gId:%lld\n", *senderId, *gId);
+				ntylog(" ntyQueryVoiceMsgSelect --> details : %s\n", details);
+			}
+		}
+	} 
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+
+
+
 int ntyExecuteWatchInsertHandle(U8 *imei) {
 	void *pool = ntyConnectionPoolInstance();
 	return ntyExecuteWatchInsert(pool, imei);
@@ -1645,6 +1759,24 @@ int ntyExecuteTimeTablesUpdateHandle(C_DEVID aid, C_DEVID did, const char *morni
 	void *pool = ntyConnectionPoolInstance();
 	return ntyExecuteTimeTablesUpdate(pool, aid, did, morning, morning_turn, afternoon, afternoon_turn, daily, id);
 }
+
+
+int ntyQueryVoiceMsgInsertHandle(C_DEVID senderId, C_DEVID gId, char *filename, U32 *msgId) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyQueryVoiceMsgInsert(pool, senderId, gId, filename, msgId);
+}
+
+int ntyExecuteVoiceOfflineMsgDeleteHandle(U32 index, C_DEVID userId) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteVoiceOfflineMsgDelete(pool, index, userId);
+}
+
+int ntyQueryVoiceMsgSelectHandle(U32 index, C_DEVID *senderId, C_DEVID *gId, U8 *filename, long *stamp) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyQueryVoiceMsgSelect(pool, index, senderId, gId, filename, stamp);
+}
+
+
 
 int ntyQueryPhNumSelectHandle(C_DEVID did, U8 *iccid, U8 *phnum) {
 	void *pool = ntyConnectionPoolInstance();
