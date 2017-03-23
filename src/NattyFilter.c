@@ -599,7 +599,17 @@ void ntyICCIDReqPacketHandleRequest(const void *_self, unsigned char *buffer, in
 			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
 			return;
 		}
-		ntyJsonICCIDAction(fromId, json, jsonstring, jsonlen);
+
+		ActionParam *pActionParam = malloc(sizeof(ActionParam));
+		pActionParam->fromId = fromId;
+		pActionParam->toId = fromId;
+		pActionParam->json = json;
+		pActionParam->jsonstring = jsonstring;
+		pActionParam->jsonlen = jsonlen;
+		pActionParam->index = 0;
+		ntyJsonICCIDAction(pActionParam);
+		free(pActionParam);
+
 		ntyFreeJsonValue(json);
 		free(jsonstring);
 
@@ -699,8 +709,20 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
 			return;
 		}
-		ntyCommonReqAction(fromId, toId, json, jsonstring, jsonlen);
 
+		ActionParam *pActionParam = malloc(sizeof(ActionParam));
+		pActionParam->fromId = fromId;
+		pActionParam->toId = toId;
+		pActionParam->json = json;
+		pActionParam->jsonstring= jsonstring;
+		pActionParam->jsonlen = jsonlen;
+		pActionParam->index = 0;
+		ntyCommonReqAction(pActionParam);
+		free(pActionParam);
+
+		ntyFreeJsonValue(json);
+		free(jsonstring);
+		
 		ntydbg("====================end ntyCommonReqPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
@@ -871,6 +893,7 @@ void ntyOfflineMsgReqPacketHandleRequest(const void *_self, unsigned char *buffe
 	const Client *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_OFFLINE_MSG_REQ) {
 		ntydbg("====================begin ntyOfflineMsgReqPacketHandleRequest action ==========================\n");
+		/*
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_OFFLINE_MSG_REQ_DEVICEID_IDX);
 
 		U16 jsonlen = 0;
@@ -888,7 +911,7 @@ void ntyOfflineMsgReqPacketHandleRequest(const void *_self, unsigned char *buffe
 		ntyJsonOfflineMsgReqAction(fromId, fromId, json, jsonstring, jsonlen);
 		ntyFreeJsonValue(json);
 		free(jsonstring);
-		
+		*/
 		ntydbg("====================end ntyOfflineMsgReqPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
@@ -1137,17 +1160,26 @@ void ntyLocationAsyncReqPacketHandleRequest(const void *_self, unsigned char *bu
 			ntyJsonCommonResult(deviceId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
 			return;
 		}
-		
+
+		ActionParam *pActionParam = malloc(sizeof(ActionParam));
+		pActionParam->fromId = client->devId;
+		pActionParam->toId = deviceId;
+		pActionParam->json = json;
+		pActionParam->jsonstring= jsonstring;
+		pActionParam->jsonlen = jsonlen;
+		pActionParam->index = 0;
 		const char *category = ntyJsonAppCategory(json);
 		ntydbg(" category %s\n", category);
 		if (strcmp(category, NATTY_USER_PROTOCOL_WIFI) == 0) {
-			ntydbg(" client->devId %lld deviceId:%lld\n", client->devId, deviceId);
-			ntyJsonLocationWIFIAction(client->devId, deviceId, json, jsonstring, jsonlen);
+			ntydbg(" client->fromId %lld toId:%lld\n", pActionParam->fromId, pActionParam->toId);
+			ntyJsonLocationWIFIAction(pActionParam);
 		} else if (strcmp(category, NATTY_USER_PROTOCOL_LAB) == 0) {
-			ntyJsonLocationLabAction(client->devId, deviceId, json, jsonstring, jsonlen);
+			ntyJsonLocationLabAction(pActionParam);
 		} else {
 			ntylog("Can't find category with: %s\n", category);
 		}
+		
+		free(pActionParam);
 		ntyFreeJsonValue(json);
 		free(jsonstring);
 		ntydbg("====================end ntyLocationAsyncReqPacketHandleRequest action ==========================\n");
@@ -1185,7 +1217,16 @@ void ntyWeatherAsyncReqPacketHandleRequest(const void *_self, unsigned char *buf
 			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
 			return;
 		}
-		ntyJsonWeatherAction(fromId, client->devId, json, jsonstring, jsonlen);
+
+		ActionParam *pActionParam = malloc(sizeof(ActionParam));
+		pActionParam->fromId = fromId;
+		pActionParam->toId = client->devId;
+		pActionParam->json = json;
+		pActionParam->jsonstring= jsonstring;
+		pActionParam->jsonlen = jsonlen;
+		pActionParam->index = 0;
+		ntyJsonWeatherAction(pActionParam);
+		free(pActionParam);
 		ntyFreeJsonValue(json);
 		free(jsonstring);
 		ntydbg("====================end ntyWeatherAsyncReqPacketHandleRequest action ==========================\n");

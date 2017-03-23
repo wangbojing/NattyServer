@@ -49,49 +49,59 @@
 #include "NattyAbstractClass.h"
 #include "NattyJson.h"
 
-void ntyCommonReqAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
+typedef struct _ActionParam {
+	C_DEVID fromId; 
+	C_DEVID toId;
+	JSON_Value *json; 
+	char *jsonstring; 
+	U16 jsonlen;
+	int index;
+} ActionParam;
+
 
 void ntyJsonRecvResult(C_DEVID devId, char *jsonresult);
 
-void ntyJsonBroadCastRecvResult(C_DEVID selfId, C_DEVID gId, char *jsonresult);
+void ntyJsonBroadCastRecvResult(C_DEVID fromId, C_DEVID toId, char *jsonresult, U32 index);
 
 void ntyJsonCommonResult(C_DEVID devId, const char *code);
 
 void ntyJsonCommonExtendResult(C_DEVID devId, const char * code, int id);
 
-void ntyJsonAddEfenceAction(C_DEVID AppId, C_DEVID toId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
+void ntyCommonReqAction(ActionParam *pActionParam);
 
-void ntyJsonDelEfenceAction(C_DEVID AppId, C_DEVID toId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
+void ntyJsonAddEfenceAction(ActionParam *pActionParam);
 
-void ntyJsonICCIDAction(C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
+void ntyJsonDelEfenceAction(ActionParam *pActionParam);
 
-void ntyJsonRunTimeAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
+void ntyJsonRunTimeAction(ActionParam *pActionParam);
 
-void ntyJsonTurnAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
+void ntyJsonTurnAction(ActionParam *pActionParam);
 
-void ntyJsonAddScheduleAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
+void ntyJsonAddScheduleAction(ActionParam *pActionParam);
 
-void ntyJsonDelScheduleAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
+void ntyJsonDelScheduleAction(ActionParam *pActionParam);
 
-void ntyJsonUpdateScheduleAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
+void ntyJsonUpdateScheduleAction(ActionParam *pActionParam);
 
-void ntyJsonSelectScheduleAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
+void ntyJsonSelectScheduleAction(ActionParam *pActionParam);
 
-void ntyJsonTimeTablesAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
+void ntyJsonTimeTablesAction(ActionParam *pActionParam);
 
-void ntyJsonLocationWIFIAction(C_DEVID fromId, C_DEVID toId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
+void ntyJsonLocationWIFIAction(ActionParam *pActionParam);
 
-void ntyJsonLocationLabAction(C_DEVID fromId, C_DEVID toId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
+void ntyJsonLocationLabAction(ActionParam *pActionParam);
 
-void ntyJsonWeatherAction(C_DEVID clientId, C_DEVID toId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
+void ntyJsonWeatherAction(ActionParam *pActionParam);
 
-void ntyJsonAddContactsAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
+void ntyJsonAddContactsAction(ActionParam *pActionParam);
 
-void ntyJsonUpdateContactsAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
+void ntyJsonUpdateContactsAction(ActionParam *pActionParam);
 
-void ntyJsonDelContactsAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
+void ntyJsonDelContactsAction(ActionParam *pActionParam);
 
-void ntyJsonOfflineMsgReqAction(C_DEVID AppId, C_DEVID devId, JSON_Value *json, U8 *jsonstring, U16 jsonlen);
+void ntyJsonICCIDAction(ActionParam *pActionParam);
+
+void ntyJsonOfflineMsgReqAction(ActionParam *pActionParam);
 
 int ntyVoiceDataReqAction(C_DEVID senderId, C_DEVID gId, char *filename);
 

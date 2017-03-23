@@ -286,6 +286,8 @@ int ntyExecuteScheduleSelectHandle(C_DEVID aid, C_DEVID did, ScheduleAck *pSched
 
 int ntyExecuteTimeTablesUpdateHandle(C_DEVID aid, C_DEVID did, const char *morning, U8 morning_turn, const char *afternoon,  U8 afternoon_turn, const char *daily, int *id);
 
+int ntyExecuteCommonMsgInsertHandle(C_DEVID sid, C_DEVID gid, const char *detatils, int *msg);
+
 int ntyQueryPhNumSelect(void *self, C_DEVID did, U8 *imei, U8 *phnum);
 
 

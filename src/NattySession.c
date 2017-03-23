@@ -588,6 +588,7 @@ int ntySendCommonBroadCastIter(void *self, void *arg) {
 	U8 *json = msg->buffer;
 	U16 length = (U16)msg->length;
 	Client *client = msg->group;
+	U32 index = (U32)msg->arg;
 	memcpy(&selfId, msg->self, sizeof(C_DEVID));
 
 	ntylog(" toId:%lld, selfId:%lld\n", toId, selfId);
@@ -602,6 +603,7 @@ int ntySendCommonBroadCastIter(void *self, void *arg) {
 	buffer[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_COMMON_BROADCAST;
 
 	memcpy(&buffer[NTY_PROTO_COMMON_BROADCAST_DEVID_IDX], &selfId, sizeof(C_DEVID));
+	memcpy(&buffer[NTY_PROTO_COMMON_BROADCAST_MSGID_IDX], &index, sizeof(U32));
 	memcpy(&buffer[NTY_PROTO_COMMON_BROADCAST_JSON_LENGTH_IDX], &length, sizeof(U16));
 	memcpy(buffer+NTY_PROTO_COMMON_BROADCAST_JSON_CONTENT_IDX, json, length);
 
@@ -613,7 +615,7 @@ int ntySendCommonBroadCastIter(void *self, void *arg) {
 
 //gId stand for devid
 //selfId AppId
-int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int length) {
+int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int length, int index) {
 	void *heap = ntyBHeapInstance();
 	NRecord *record = ntyBHeapSelect(heap, gId);
 	if (record == NULL) return NTY_RESULT_NOEXIST;
@@ -625,6 +627,7 @@ int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int leng
 	msg->length = length;
 	msg->group = pClient;
 	msg->self = &selfId;
+	msg->arg = index;
 
 	ntylog(" -->> ntySendCommonBroadCastResult --> %s \n", json);
 #if 0

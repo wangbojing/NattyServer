@@ -57,8 +57,9 @@ const char* ntyCommonResultMessage(const char *code) {
 			message = "JSON convert error";	//JSON×ª»»´íÎó
 		} else if (strcmp(code, NATTY_RESULT_CODE_ERR_ICCID_NOTPHONENUM) == 0) {
 			message = "ICCID not band phone number error";	//JSON×ª»»´íÎó
+		} else if (strcmp(code, NATTY_RESULT_CODE_ERR_DB_SAVE_OFFLINE) == 0) {
+			message = "Cannot save offline data";
 		}
-
 	}
 	return message;
 }

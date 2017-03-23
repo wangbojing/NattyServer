@@ -1413,6 +1413,46 @@ int ntyExecuteTimeTablesUpdate(void *self, C_DEVID aid, C_DEVID did, const char 
 	return ret;
 }
 
+//NTY_DB_INSERT_COMMON_MSG
+int ntyExecuteCommonMsgInsert(void *self, C_DEVID sid, C_DEVID gid, const char *detatils, int *msg) {
+	ConnectionPool *pool = self;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+	U8 u8PhNum[20] = {0};
+
+	TRY
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			U8 buffer[512];
+			sprintf(buffer, NTY_DB_INSERT_COMMON_MSG, sid, gid, detatils);
+			ntylog(" sql : %s\n", buffer);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_COMMON_MSG, sid, gid, detatils);
+			while (ResultSet_next(r)) {
+				*msg = ResultSet_getInt(r, 1);				
+			}
+		}
+	} 
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+
+
+
 //NTY_DB_DEVICE_STATUS_RESET_FORMAT
 int ntyQueryDeviceOnlineStatus(void *self, C_DEVID did, int *online) {
 	ConnectionPool *pool = self;
@@ -1759,6 +1799,10 @@ int ntyExecuteTimeTablesUpdateHandle(C_DEVID aid, C_DEVID did, const char *morni
 	return ntyExecuteTimeTablesUpdate(pool, aid, did, morning, morning_turn, afternoon, afternoon_turn, daily, id);
 }
 
+int ntyExecuteCommonMsgInsertHandle(C_DEVID sid, C_DEVID gid, const char *detatils, int *msg) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteCommonMsgInsert(pool, sid, gid, detatils, msg);
+}
 
 int ntyQueryVoiceMsgInsertHandle(C_DEVID senderId, C_DEVID gId, char *filename, U32 *msgId) {
 	void *pool = ntyConnectionPoolInstance();
