@@ -609,8 +609,8 @@ int ntyHttpCurlGlobalInit(void) {
 static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
 	MessageTag *pMessageTag = (MessageTag *)stream;
 	U8 *jsonstring = buffer;
-	ntydbg("ntyHttpQJKLocationHandleResult json --> %s\n", jsonstring);
-	ntydbg("ntyHttpQJKLocationHandleResult url --> %s\n", pMessageTag->Tag);
+	ntylog("ntyHttpQJKLocationHandleResult json --> %s\n", jsonstring);
+	ntylog("ntyHttpQJKLocationHandleResult url --> %s\n", pMessageTag->Tag);
 
 	JSON_Value *json = ntyMallocJsonValue(jsonstring);
 	AMap *pAMap = malloc(sizeof(AMap));
@@ -638,7 +638,7 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 	int ret = ntyExecuteLocationNewInsertHandle(pMessageTag->toId, (U8)pMessageTag->Type, pAMap->result.location, pAMap->info, pAMap->result.desc);
 	if (ret>0) {
 		char *jsonresult = ntyJsonWriteLocation(pLocationAck);
-		ntydbg("ntyHttpQJKLocationHandleResult jsonresult --> %s\n", jsonresult);
+		ntylog("ntyHttpQJKLocationHandleResult jsonresult --> %s\n", jsonresult);
 		ret = ntySendLocationPushResult(pMessageTag->toId, jsonresult, strlen(jsonresult));
 		if (ret > 0) {
 			ntySendLocationBroadCastResult(pMessageTag->fromId, pMessageTag->toId, jsonresult, strlen(jsonresult));
@@ -718,8 +718,8 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	ntylog("==================begin ntyHttpQJKWeatherLocationHandleResult ==========================\n");
 	MessageTag *pMessageTag = (MessageTag *)stream;
 	U8 *jsonstring = buffer;
-	ntydbg("ntyHttpQJKWeatherLocationHandleResult json --> %s\n", jsonstring);
-	ntydbg("ntyHttpQJKWeatherLocationHandleResult url --> %s\n", pMessageTag->Tag);
+	ntylog("ntyHttpQJKWeatherLocationHandleResult json --> %s\n", jsonstring);
+	ntylog("ntyHttpQJKWeatherLocationHandleResult url --> %s\n", pMessageTag->Tag);
 	
 	JSON_Value *json = ntyMallocJsonValue(jsonstring);
 	AMap *pAMap = (AMap*)malloc(sizeof(AMap));
@@ -747,7 +747,7 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	U8 weatherbuf[500] = {0};
 	sprintf(weatherbuf, "%s/v3/weather/daily.json?key=%s&location=%s&language=zh-Hans&unit=c&start=0&days=2", 
 		HTTP_WEATHER_BASE_URL, HTTP_WEATHER_KEY, latlng);
-	ntydbg(" weatherbuf --> %s\n", weatherbuf);
+	ntylog(" weatherbuf --> %s\n", weatherbuf);
 	int length = strlen(weatherbuf);
 
 	MessageTag *pMessageSendTag = malloc(sizeof(MessageTag));
@@ -840,13 +840,10 @@ int ntyHttpQJKWeatherLocation(void *arg) {
 
 static size_t ntyHttpQJKWeatherHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
 	ntylog("==================begin ntyHttpQJKWeatherHandleResult ==========================\n");
-	ntydbg("ntyHttpQJKWeatherHandleResult --> length:%ld\n", size*nmemb);
 	MessageTag *pMessageTag = (MessageTag *)stream;
 	U8 *jsonstring = buffer;
-	ntydbg("ntyHttpQJKWeatherHandleResult json --> %s\n", jsonstring);
-	ntydbg("ntyHttpQJKWeatherHandleResult url --> %s\n", pMessageTag->Tag);
-
-	ntydbg("   pMessageTag->  fromId:%lld  toId:%lld\n", pMessageTag->fromId, pMessageTag->toId);
+	ntylog("ntyHttpQJKWeatherHandleResult json --> %s\n", jsonstring);
+	ntylog("ntyHttpQJKWeatherHandleResult url --> %s\n", pMessageTag->Tag);
 
 	JSON_Value *json = ntyMallocJsonValue(jsonstring);
 	WeatherReq *pWeatherReq = malloc(sizeof(WeatherReq));
@@ -880,7 +877,7 @@ static size_t ntyHttpQJKWeatherHandleResult(void* buffer, size_t size, size_t nm
 	if (jsonresult == NULL) {
 		return -1;
 	}
-	ntydbg("ntyHttpQJKWeatherHandleResult jsonresult --> %s\n", jsonresult);
+	ntylog("ntyHttpQJKWeatherHandleResult jsonresult --> %s\n", jsonresult);
 	int ret = ntySendWeatherPushResult(pMessageTag->fromId, jsonresult, strlen(jsonresult));
 	if (ret >= 0) {
 		ntydbg("ntySendWeatherBroadCastResult ok\n");

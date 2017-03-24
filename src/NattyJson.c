@@ -181,7 +181,7 @@ const char * ntyJsonAction(JSON_Value *json) {
 
 void ntyJsonWIFI(JSON_Value *json, WIFIReq *pWIFIReq) {
 	if (json == NULL || pWIFIReq == NULL) {
-		ntydbg("param is null.\n");
+		ntylog("param is null.\n");
 		return;
 	}
 	
@@ -214,18 +214,16 @@ void ntyJsonWIFIItemRelease(WIFIItem *pWIFI) {
 
 void ntyJsonLAB(JSON_Value *json, LABReq *pLABReq) {
 	if (json == NULL || pLABReq == NULL) {
-		ntydbg("param is null.\n");
+		ntylog("param is null.\n");
 		return;
 	}
 
 	JSON_Object *root_object = json_value_get_object(json);
 	pLABReq->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
 	pLABReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
-	//ntydbg("IMEI:%s   Category:%s\n", pLABReq->IMEI, pLABReq->category);
 
 	JSON_Object *lab_object = json_object_get_object(root_object, NATTY_USER_PROTOCOL_LAB);
 	pLABReq->lab.bts = json_object_get_string(lab_object, NATTY_USER_PROTOCOL_BTS);
-	//ntydbg("bts:%s\n", pLABReq->lab.bts);
 
 	JSON_Object *nearbts_object = NULL;
 	JSON_Array *nearbts_array = json_object_get_array(lab_object, NATTY_USER_PROTOCOL_NEARBTS);
@@ -249,7 +247,7 @@ void ntyJsonLABItemRelease(Nearbts *pNearbts) {
 
 void ntyJsonAMap(JSON_Value *json, AMap *pAMap) {
 	if (json == NULL || pAMap == NULL) {
-		ntydbg("param is null.\n");
+		ntylog("param is null.\n");
 		return;
 	}
 
@@ -276,7 +274,7 @@ void ntyJsonAMap(JSON_Value *json, AMap *pAMap) {
 
 void ntyJsonWeatherLocation(JSON_Value *json, WeatherLocationReq *pWeatherLocationReq) {
 	if (json == NULL || pWeatherLocationReq == NULL) {
-		ntydbg("param is null.\n");
+		ntylog("param is null.\n");
 		return;
 	}
 
@@ -290,7 +288,7 @@ void ntyJsonWeatherLocation(JSON_Value *json, WeatherLocationReq *pWeatherLocati
 
 void ntyJsonWeather(JSON_Value *json, WeatherReq *pWeatherReq) {
 	if (json == NULL || pWeatherReq == NULL) {
-		ntydbg("param is null.\n");
+		ntylog("param is null.\n");
 		return;
 	}
 
@@ -354,7 +352,7 @@ void ntyJsonWeatherRelease(WeatherReq *pWeatherReq) {
 
 void ntyJsonICCID(JSON_Value *json, ICCIDReq *pICCIDReq) {
 	if (json == NULL || pICCIDReq == NULL) {
-		ntydbg("param is null.\n");
+		ntylog("param is null.\n");
 		return;
 	}
 	
@@ -367,7 +365,7 @@ void ntyJsonICCID(JSON_Value *json, ICCIDReq *pICCIDReq) {
 
 void ntyJsonCommon(JSON_Value *json, CommonReq *pCommonReq) {
 	if (json == NULL || pCommonReq == NULL) {
-		ntydbg("param is null.\n");
+		ntylog("param is null.\n");
 		return;
 	}
 
@@ -379,7 +377,7 @@ void ntyJsonCommon(JSON_Value *json, CommonReq *pCommonReq) {
 
 void ntyJsonCommonExtend(JSON_Value *json, CommonReqExtend *pCommonReqExtend) {
 	if (json == NULL || pCommonReqExtend == NULL) {
-		ntydbg("param is null.\n");
+		ntylog("param is null.\n");
 		return;
 	}
 
@@ -392,7 +390,7 @@ void ntyJsonCommonExtend(JSON_Value *json, CommonReqExtend *pCommonReqExtend) {
 
 void ntyJsonAddEfence(JSON_Value *json, AddEfenceReq *pAddEfenceReq) {
 	if (json == NULL || pAddEfenceReq == NULL) {
-		ntydbg("param is null.\n");
+		ntylog("param is null.\n");
 		return;
 	}
 
@@ -427,7 +425,7 @@ void ntyJsonAddEfencePointRelease(EfencePoints *pPoints) {
 
 void ntyJsonDelEfence(JSON_Value *json, DelEfenceReq *pDelEfenceReq) {
 	if (json == NULL || pDelEfenceReq == NULL) {
-		ntydbg("param is null.\n");
+		ntylog("param is null.\n");
 		return;
 	}
 
@@ -440,7 +438,7 @@ void ntyJsonDelEfence(JSON_Value *json, DelEfenceReq *pDelEfenceReq) {
 
 void ntyJsonRuntime(JSON_Value *json, RunTimeReq *pRunTimeReq) {
 	if (json == NULL || pRunTimeReq == NULL) {
-		ntydbg("param is null.\n");
+		ntylog("param is null.\n");
 		return;
 	}
 
@@ -466,7 +464,7 @@ void ntyJsonRuntime(JSON_Value *json, RunTimeReq *pRunTimeReq) {
 
 void ntyJsonTurn(JSON_Value *json, TurnReq *pTurnReq) {
 	if (json == NULL || pTurnReq == NULL) {
-		ntydbg("param is null.\n");
+		ntylog("param is null.\n");
 		return;
 	}
 
@@ -485,7 +483,7 @@ void ntyJsonTurn(JSON_Value *json, TurnReq *pTurnReq) {
 
 void ntyJsonAddSchedule(JSON_Value *json, AddScheduleReq *pAddScheduleReq) {
 	if (json == NULL || pAddScheduleReq == NULL) {
-		ntydbg("param is null.\n");
+		ntylog("param is null.\n");
 		return;
 	}
 
@@ -504,7 +502,7 @@ void ntyJsonAddSchedule(JSON_Value *json, AddScheduleReq *pAddScheduleReq) {
 
 void ntyJsonUpdateSchedule(JSON_Value *json, UpdateScheduleReq *pUpdateScheduleReq) {
 	if (json == NULL || pUpdateScheduleReq == NULL) {
-		ntydbg("param is null.\n");
+		ntylog("param is null.\n");
 		return;
 	}
 	
@@ -524,7 +522,7 @@ void ntyJsonUpdateSchedule(JSON_Value *json, UpdateScheduleReq *pUpdateScheduleR
 
 void ntyJsonDelSchedule(JSON_Value *json, DelScheduleReq *pDelScheduleReq) {
 	if (json == NULL || pDelScheduleReq == NULL) {
-		ntydbg("param is null.\n");
+		ntylog("param is null.\n");
 		return;
 	}
 	
@@ -538,7 +536,7 @@ void ntyJsonDelSchedule(JSON_Value *json, DelScheduleReq *pDelScheduleReq) {
 
 void ntyJsonTimeTables(JSON_Value *json, TimeTablesReq *pTimeTablesReq) {
 	if (json == NULL || pTimeTablesReq == NULL) {
-		ntydbg("param is null.\n");
+		ntylog("param is null.\n");
 		return;
 	}
 
@@ -558,7 +556,7 @@ void ntyJsonTimeTables(JSON_Value *json, TimeTablesReq *pTimeTablesReq) {
 	size_t i,j;
 	for (i = 0; i < pTimeTablesReq->size; i++) {
 		timetables_object = json_array_get_object(timetables_array, i);
-		pTimeTables[i].daily = json_object_get_string(root_object, NATTY_USER_PROTOCOL_DAILY);
+		pTimeTables[i].daily = json_object_get_string(timetables_object, NATTY_USER_PROTOCOL_DAILY);
 		morning_object = json_object_get_object(timetables_object, NATTY_USER_PROTOCOL_MORNING);
 		pTimeTables[i].morning.status = json_object_get_string(morning_object, NATTY_USER_PROTOCOL_STATUS);
 		pTimeTables[i].morning.startTime = json_object_get_string(morning_object, NATTY_USER_PROTOCOL_STARTTIME);
@@ -572,7 +570,7 @@ void ntyJsonTimeTables(JSON_Value *json, TimeTablesReq *pTimeTablesReq) {
 
 void ntyJsonAddContacts(JSON_Value *json, AddContactsReq *pAddContactsReq) {
 	if (json == NULL || pAddContactsReq == NULL) {
-		ntydbg("param is null.\n");
+		ntylog("param is null.\n");
 		return;
 	}
 
@@ -591,7 +589,7 @@ void ntyJsonAddContacts(JSON_Value *json, AddContactsReq *pAddContactsReq) {
 
 void ntyJsonUpdateContacts(JSON_Value *json, UpdateContactsReq *pUpdateContactsReq) {
 	if (json == NULL || pUpdateContactsReq == NULL) {
-		ntydbg("param is null.\n");
+		ntylog("param is null.\n");
 		return;
 	}
 	
@@ -611,7 +609,7 @@ void ntyJsonUpdateContacts(JSON_Value *json, UpdateContactsReq *pUpdateContactsR
 
 void ntyJsonDelContacts(JSON_Value *json, DelContactsReq *pDelContactsReq) {
 	if (json == NULL || pDelContactsReq == NULL) {
-		ntydbg("param is null.\n");
+		ntylog("param is null.\n");
 		return;
 	}
 	
