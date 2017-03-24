@@ -717,9 +717,10 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 		pActionParam->jsonstring= jsonstring;
 		pActionParam->jsonlen = jsonlen;
 		pActionParam->index = 0;
+		
 		ntyCommonReqAction(pActionParam);
+		
 		free(pActionParam);
-
 		ntyFreeJsonValue(json);
 		free(jsonstring);
 		
