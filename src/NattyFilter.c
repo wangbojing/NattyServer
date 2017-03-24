@@ -709,7 +709,7 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
 			return;
 		}
-
+		
 		ActionParam *pActionParam = malloc(sizeof(ActionParam));
 		pActionParam->fromId = fromId;
 		pActionParam->toId = toId;
