@@ -295,26 +295,25 @@ int ntySaveCommonMsgData(ActionParam *pActionParam) {
 	return msg;
 }
 
-int ntySendRecodeJsonAndSaveCommonMsgData(ActionParam *pActionParam) {
+void ntySendRecodeJsonAndSaveCommonMsgData(ActionParam *pActionParam) {
 	C_DEVID sid = pActionParam->fromId;
 	C_DEVID gid = pActionParam->toId;
 	const char *jsonstring = pActionParam->jsonstring;
 
-	int ret = ntySendRecodeJsonPacket(gid, jsonstring, strlen(jsonstring));
-	if (ret <= 0) {
-		ntyJsonCommonResult(sid, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
-		return -1;
-	}
+	//int ret = ntySendRecodeJsonPacket(gid, jsonstring, strlen(jsonstring));
+	//if (ret < 0) {
+	//	ntyJsonCommonResult(sid, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
+	//	return;
+	//}
 
 	int msg = 0;
 	int retmsg = ntyExecuteCommonMsgInsertHandle(sid, gid, jsonstring, &msg);
 	if (retmsg<0) {
 		ntyJsonCommonResult(sid, NATTY_RESULT_CODE_ERR_DB_SAVE_OFFLINE);
-		return -2;
+		return;
 	}
 
 	pActionParam->index = msg;
-	return msg;
 }
 
 void ntyCommonReqAction(ActionParam *pActionParam) {
@@ -325,48 +324,75 @@ void ntyCommonReqAction(ActionParam *pActionParam) {
 	if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_EFENCE) == 0) {
 		const char *action = ntyJsonAction(pActionParam->json);
 		if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_ADD) == 0) {
-			ntyJsonAddEfenceAction(pActionParam);
+			ntySendRecodeJsonAndSaveCommonMsgData(pActionParam);
+			if (pActionParam->index > 0) {
+				ntyJsonAddEfenceAction(pActionParam);
+			}
 		} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_DELETE) == 0) {
 			ntySendRecodeJsonAndSaveCommonMsgData(pActionParam);
-			ntyJsonDelEfenceAction(pActionParam);
+			if (pActionParam->index > 0) {
+				ntyJsonDelEfenceAction(pActionParam);
+			}
 		} else {
 			ntylog("Can't find action with: %s\n", action);
 		}
 	} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_RUNTIME) == 0) {
 		ntySendRecodeJsonAndSaveCommonMsgData(pActionParam);
-		ntyJsonRunTimeAction(pActionParam);
+		if (pActionParam->index > 0) {
+			ntyJsonRunTimeAction(pActionParam);
+		}
 	} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_TURN) == 0) {
 		ntySendRecodeJsonAndSaveCommonMsgData(pActionParam);
-		ntyJsonTurnAction(pActionParam);
+		if (pActionParam->index > 0) {
+			ntyJsonTurnAction(pActionParam);
+		}
 	} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_SCHEDULE) == 0) {
 		const char *action = ntyJsonAction(pActionParam->json);
 		if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_ADD) == 0) {
-			ntyJsonAddScheduleAction(pActionParam);
+			ntySendRecodeJsonAndSaveCommonMsgData(pActionParam);
+			if (pActionParam->index > 0) {
+				ntyJsonAddScheduleAction(pActionParam);
+			}
 		} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_DELETE) == 0) {
 			ntySendRecodeJsonAndSaveCommonMsgData(pActionParam);
-			ntyJsonDelScheduleAction(pActionParam);
+			if (pActionParam->index > 0) {
+				ntyJsonDelScheduleAction(pActionParam);
+			}
 		} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_UPDATE) == 0) {
 			ntySendRecodeJsonAndSaveCommonMsgData(pActionParam);
-			ntyJsonUpdateScheduleAction(pActionParam);
+			if (pActionParam->index > 0) {
+				ntyJsonUpdateScheduleAction(pActionParam);
+			}
 		} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_SCHEDULE) == 0) {
 			ntySendRecodeJsonAndSaveCommonMsgData(pActionParam);
-			ntyJsonSelectScheduleAction(pActionParam);
+			if (pActionParam->index > 0) {
+				ntyJsonSelectScheduleAction(pActionParam);
+			}
 		} else {
 			ntylog("Can't find action with: %s\n", action);
 		}
 	} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_TIMETABLES) == 0) {
 		ntySendRecodeJsonAndSaveCommonMsgData(pActionParam);
-		ntyJsonTimeTablesAction(pActionParam);
+		if (pActionParam->index > 0) {
+			ntyJsonTimeTablesAction(pActionParam);
+		}
 	} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_CONTACTS) == 0) {
 		const char *action = ntyJsonAction(pActionParam->json);
 		if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_ADD) == 0) {
-			ntyJsonAddContactsAction(pActionParam);
+			ntySendRecodeJsonAndSaveCommonMsgData(pActionParam);
+			if (pActionParam->index > 0) {
+				ntyJsonAddContactsAction(pActionParam);
+			}
 		} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_DELETE) == 0) {
 			ntySendRecodeJsonAndSaveCommonMsgData(pActionParam);
-			ntyJsonDelContactsAction(pActionParam);
+			if (pActionParam->index > 0) {
+				ntyJsonDelContactsAction(pActionParam);
+			}
 		} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_UPDATE) == 0) {
 			ntySendRecodeJsonAndSaveCommonMsgData(pActionParam);
-			ntyJsonUpdateContactsAction(pActionParam);
+			if (pActionParam->index > 0) {
+				ntyJsonUpdateContactsAction(pActionParam);
+			}
 		} else {
 			ntylog("Can't find action with: %s\n", action);
 		}
@@ -376,6 +402,7 @@ void ntyCommonReqAction(ActionParam *pActionParam) {
 }
 
 void ntyJsonAddEfenceAction(ActionParam *pActionParam) {
+	/*
 	AddEfenceReq *pAddEfenceReq = (AddEfenceReq*)malloc(sizeof(AddEfenceReq));
 	ntyJsonAddEfence(pActionParam->json, pAddEfenceReq);
 
@@ -424,6 +451,58 @@ void ntyJsonAddEfenceAction(ActionParam *pActionParam) {
 		}
 	} else {
 		ntySaveCommonMsgData(pActionParam);
+	}
+	ntyJsonAddEfencePointRelease(pAddEfenceReq->efence.pPoints);
+	free(pAddEfenceReq);
+	*/
+
+
+	AddEfenceReq *pAddEfenceReq = (AddEfenceReq*)malloc(sizeof(AddEfenceReq));
+	ntyJsonAddEfence(pActionParam->json, pAddEfenceReq);
+
+	C_DEVID fromId = pActionParam->fromId;
+	C_DEVID toId = pActionParam->toId;
+
+	U8 points[200] = {0};
+	size_t i;
+	for (i=0; i<pAddEfenceReq->efence.size; i++) {
+		strcat(points, pAddEfenceReq->efence.pPoints[i].point);
+		strcat(points, ";");
+	}
+	size_t points_len = strlen(points);
+	if (points_len!=0) {
+		points[points_len-1] = '\0';
+	}
+
+	time_t timep;
+	struct tm *p;
+	time(&timep);
+	p = localtime(&timep);
+	U8 runtime[50] = {0};
+	sprintf(runtime, "%04d/%02d/%02d %02d:%02d:%02d", 1900+p->tm_year, 1+p->tm_mon, p->tm_hour, p->tm_hour, p->tm_min, p->tm_sec);
+
+	int index = atoi(pAddEfenceReq->index);
+
+	int id = 0;
+	int ret = ntyExecuteEfenceInsertHandle(fromId, toId, index, pAddEfenceReq->efence.size, points, runtime, &id);
+	if (ret == -1) {
+		ntylog(" ntyJsonEfenceAction --> DB Exception\n");
+		ret = 4;
+	} else if (ret >= 0) {
+		ret = ntySendRecodeJsonPacket(fromId, toId, pActionParam->jsonstring, pActionParam->jsonlen);
+		if (ret >= 0) {
+			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
+			AddEfenceAck *pAddEfenceAck = (AddEfenceAck*)malloc(sizeof(AddEfenceAck));
+			char ids[20] = {0};
+			sprintf(ids, "%d", id);
+			pAddEfenceAck->id = ids;
+			pAddEfenceAck->result = *(AddEfenceResult*)pAddEfenceReq;
+			char *jsonresult = ntyJsonWriteAddEfence(pAddEfenceAck);
+			ntylog(" ntySendCommonBroadCastResult --> %lld, %lld, %s, %d\n", fromId, toId, jsonresult, (int)strlen(jsonresult));
+			ntySendCommonBroadCastResult(fromId, toId, (U8*)jsonresult, strlen(jsonresult));
+			ntyJsonFree(jsonresult);
+			free(pAddEfenceAck);
+		}
 	}
 	ntyJsonAddEfencePointRelease(pAddEfenceReq->efence.pPoints);
 	free(pAddEfenceReq);
@@ -642,6 +721,47 @@ void ntyJsonAddScheduleAction(ActionParam *pActionParam) {
 		ntylog(" ntyJsonAddScheduleAction --> DB Exception\n");
 		ret = 4;
 	} else if (ret >= 0) {
+		char ids[20] = {0};
+		sprintf(ids, "%d", scheduleId);
+		pAddScheduleReq->id = ids;
+
+		DeviceAddScheduleAck *pDeviceAddScheduleAck = (DeviceAddScheduleAck*)malloc(sizeof(DeviceAddScheduleAck));
+		pDeviceAddScheduleAck = (DeviceAddScheduleAck*)pAddScheduleReq;
+		char *jsondeviceresult = ntyJsonWriteDeviceAddSchedule(pDeviceAddScheduleAck);
+		ntyJsonFree(jsondeviceresult);
+		free(pDeviceAddScheduleAck);
+
+		ret = ntySendCommonReq(toId, jsondeviceresult, strlen(jsondeviceresult));
+		if (ret >= 0) {
+			AddScheduleAck *pAddScheduleAck = (AddScheduleAck*)malloc(sizeof(AddScheduleAck));
+			pAddScheduleAck->result = *(AddScheduleResult*)pAddScheduleReq;
+			pAddScheduleAck->result.id = ids;
+			char *jsonresult = ntyJsonWriteAddSchedule(pAddScheduleAck);
+			ntyJsonCommonExtendResult(fromId, NATTY_RESULT_CODE_SUCCESS, scheduleId);
+			ntyJsonBroadCastRecvResult(fromId, toId, jsonresult, pActionParam->index);
+			ntyJsonFree(jsonresult);
+			free(pAddScheduleAck);
+		}
+	}
+	free(pAddScheduleReq);
+	
+	/*
+	AddScheduleReq *pAddScheduleReq = (AddScheduleReq*)malloc(sizeof(AddScheduleReq));
+	ntyJsonAddSchedule(pActionParam->json, pAddScheduleReq);
+
+	C_DEVID fromId = pActionParam->fromId;
+	C_DEVID toId = pActionParam->toId;
+	
+	int scheduleId = 0;
+	int ret = ntyExecuteScheduleInsertHandle(fromId, toId,
+		pAddScheduleReq->schedule.daily,
+		pAddScheduleReq->schedule.time,
+		pAddScheduleReq->schedule.details,
+		&scheduleId);
+	if (ret == -1) {
+		ntylog(" ntyJsonAddScheduleAction --> DB Exception\n");
+		ret = 4;
+	} else if (ret >= 0) {
 		JSON_Value *json = ntyMallocJsonValue(pActionParam->jsonstring);
 		if (json == NULL) {
 			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
@@ -675,6 +795,7 @@ void ntyJsonAddScheduleAction(ActionParam *pActionParam) {
 		}
 	}
 	free(pAddScheduleReq);
+	*/
 	
 	/*
 	AddScheduleReq *pAddScheduleReq = (AddScheduleReq*)malloc(sizeof(AddScheduleReq));
@@ -901,6 +1022,47 @@ int checkStringIsAllNumber(const char *content) {
 void ntyJsonAddContactsAction(ActionParam *pActionParam) {
 	AddContactsReq *pAddContactsReq = (AddContactsReq*)malloc(sizeof(AddContactsReq));
 	ntyJsonAddContacts(pActionParam->json, pAddContactsReq);
+
+	C_DEVID fromId = pActionParam->fromId;
+	C_DEVID toId = pActionParam->toId;
+	
+	int contactsId = 0;
+	int ret = ntyExecuteContactsInsertHandle(fromId, toId, &pAddContactsReq->contacts, &contactsId);
+	char ids[20] = {0};
+	sprintf(ids, "%d", contactsId);
+	pAddContactsReq->contacts.id = ids;
+	if (ret == -1) {
+		ntylog(" ntyJsonAddContactsAction --> DB Exception\n");
+		ret = 4;
+	} else if (ret >= 0) {
+		CommonReq *pCommonReq = malloc(sizeof(CommonReq));
+		ntyJsonCommon(pActionParam->json, pCommonReq);
+		CommonReqExtend *pCommonReqExtend = malloc(sizeof(CommonReqExtend));
+		pCommonReqExtend->IMEI = pCommonReq->IMEI;
+		pCommonReqExtend->category = pCommonReq->category;
+		pCommonReqExtend->action = pCommonReq->action;
+		char ids[20] = {0};
+		sprintf(ids, "%d", contactsId);
+		char *jsonstringTemp = ntyJsonWriteCommonReqExtend(pCommonReqExtend);
+		pCommonReqExtend->id = ids;
+		ret = ntySendRecodeJsonPacket(fromId, toId, jsonstringTemp, strlen(jsonstringTemp));
+		free(pCommonReq);
+		free(pCommonReqExtend);
+		if (ret >= 0) {
+			ntyJsonCommonExtendResult(fromId, NATTY_RESULT_CODE_SUCCESS, contactsId);
+			AddContactsAck *pAddContactsAck = malloc(sizeof(AddContactsAck));
+			pAddContactsAck->results = *(AddContactsResults*)pAddContactsReq;
+			char *jsonresult = ntyJsonWriteAddContacts(pAddContactsAck);
+			ntySendCommonBroadCastResult(fromId, toId, (U8*)jsonresult, strlen(jsonresult));
+			ntyJsonFree(jsonresult);
+			free(pAddContactsAck);
+		}
+	}
+	free(pAddContactsReq);
+
+	/*
+	AddContactsReq *pAddContactsReq = (AddContactsReq*)malloc(sizeof(AddContactsReq));
+	ntyJsonAddContacts(pActionParam->json, pAddContactsReq);
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;
 	if (checkStringIsAllNumber(pAddContactsReq->contacts.telphone) != 1) {
@@ -940,13 +1102,9 @@ void ntyJsonAddContactsAction(ActionParam *pActionParam) {
 			free(pCommonReq);
 			free(pCommonReqExtend);
 		}
-
-
 	}
-
-	
-
 	free(pAddContactsReq);
+	*/
 }
 
 void ntyJsonUpdateContactsAction(ActionParam *pActionParam) {
