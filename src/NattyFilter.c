@@ -499,8 +499,10 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_HEARTBEAT_REQ) {
 		Client *pClient = NULL;
 
-		ntydbg("---ntyHeartBeatPacketHandleRequest-------->\n ");
+		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_HEARTBEAT_REQ_DEVID_IDX);
 		//ntyAddClientHeap(client, (RECORDTYPE *)&pClient);
+
+		ntySendHeartBeatResult(fromId);
 		
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
@@ -743,6 +745,16 @@ static const ProtocolFilter ntyCommonReqFilter = {
 void ntyCommonAckPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const Client *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_COMMON_ACK) {
+
+
+		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_COMMON_ACK_DEVID_IDX);
+		U32 msgId = *(U32*)(buffer+NTY_PROTO_COMMON_ACK_MSGID_IDX);
+		ntylog("ntyCommonAckPacketHandleRequest msgId:%d\n", msgId);
+
+		int ret = ntyExecuteCommonOfflineMsgDeleteHandle(msgId, fromId);
+		if (ret == NTY_RESULT_FAILED) {
+			ntylog("ntyExecuteCommonOfflineMsgDeleteHandle DB Error \n");
+		}
 		
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
@@ -851,6 +863,7 @@ static const ProtocolFilter ntyVoiceDataReqFilter = {
 void ntyVoiceDataAckPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const Client *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_VOICE_ACK) {
+#if 0
 		C_DEVID toId = 0, fromId = 0;
 		ntyU8ArrayToU64(buffer+NTY_PROTO_VOICEACK_SELFID_IDX, &fromId);
 		ntyU8ArrayToU64(buffer+NTY_PROTO_VOICEACK_DESTID_IDX, &toId);
@@ -869,7 +882,9 @@ void ntyVoiceDataAckPacketHandleRequest(const void *_self, unsigned char *buffer
 		} 
 
 		ntySendBuffer(toClient, buffer, length);
-		
+#else
+		ntylog(" ntyVoiceDataAckPacketHandleRequest is dispatch\n");
+#endif
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
@@ -1024,19 +1039,21 @@ static const ProtocolFilter ntyUnBindDeviceFilter = {
 	ntyUnBindDevicePacketHandleRequest,
 };
 
-void ntyBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
+void ntyBindConfirmReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const Client *client = obj;
-	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_BIND_REQ) {
-		C_DEVID AppId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_APPID_IDX);
-		C_DEVID DeviceId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_DEVICEID_IDX);
+	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_BIND_CONFIRM_REQ) {
+
+		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_CONFIRM_REQ_ADMIN_SELFID_IDX);
+		C_DEVID AppId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_CONFIRM_REQ_PROPOSER_IDX);
+		C_DEVID DeviceId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_CONFIRM_REQ_DEVICEID_IDX);
+
+		U32 msgId = *(U32*)(buffer+NTY_PROTO_BIND_CONFIRM_REQ_MSGID_IDX);
 
 #if ENABLE_CONNECTION_POOL
 #if 0
-		U8 DevImei[16] = {0};
-		sprintf(DevImei, "%llx", DeviceId);
-		int ret = ntyQueryDevAppRelationInsertHandle(AppId, DevImei);
-#else
 		int ret = ntyQueryDevAppGroupInsertHandle(AppId, DeviceId);
+#else
+		int ret = ntyExecuteDevAppGroupBindInsertHandle(msgId);
 #endif
 		if (ret == -1) {
 			ntylog(" ntyBindDevicePacketHandleRequest --> DB Exception\n");
@@ -1059,9 +1076,46 @@ void ntyBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer, 
 			}
 
 		}
-		ntyProtoBindAck(AppId, DeviceId, ret);
+		
+		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
+
+#endif
+
+		
+	} else if (ntyPacketGetSuccessor(_self) != NULL) {
+		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
+		(*succ)->handleRequest(succ, buffer, length, obj);
+	} else {
+		ntylog("Can't deal with: %d\n", buffer[NTY_PROTO_MSGTYPE_IDX]);
+	}
+}
+
+static const ProtocolFilter ntyBindConfirmReqPacketFilter = {
+	sizeof(Packet),
+	ntyPacketCtor,
+	ntyPacketDtor,
+	ntyPacketSetSuccessor,
+	ntyPacketGetSuccessor,
+	ntyBindConfirmReqPacketHandleRequest,
+};
+
+
+void ntyBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
+	const Client *client = obj;
+	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_BIND_REQ) {
+	
+		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_APPID_IDX);
+		C_DEVID devId =  *(C_DEVID*)(buffer+NTY_PROTO_BIND_DEVICEID_IDX);
+
+		U8 *json = buffer+NTY_PROTO_BIND_JSON_CONTENT_IDX;
+		U16 u16Length = *(U16*)(buffer+NTY_PROTO_BIND_JSON_LENGTH_IDX);
+
+		
+#if 0	//New Version need implement
+		ntyBindReqAction(fromId, devId, json, u16Length);
+#else
+		ntyProtoBindAck(fromId, devId, 5);
 #endif		
-		//if ()
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
@@ -1131,6 +1185,7 @@ void ntyMulticastAckPacketHandleRequest(const void *_self, unsigned char *buffer
 	}
 }
 
+
 static const ProtocolFilter ntyMutlcastAckFilter = {
 	sizeof(Packet),
 	ntyPacketCtor,
@@ -1196,6 +1251,7 @@ static const ProtocolFilter ntyLocationAsyncReqFilter = {
 	ntyPacketGetSuccessor,
 	ntyLocationAsyncReqPacketHandleRequest,
 };
+
 
 void ntyWeatherAsyncReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const Client *client = obj;
@@ -1363,7 +1419,9 @@ const void *pNtyOfflineMsgAckFilter = &ntyOfflineMsgAckFilter;
 
 const void *pNtyRoutePacketFilter = &ntyRoutePacketFilter;
 const void *pNtyUnBindDeviceFilter = &ntyUnBindDeviceFilter;
+
 const void *pNtyBindDeviceFilter = &ntyBindDeviceFilter;
+const void *pNtyBindConfirmReqPacketFilter = &ntyBindConfirmReqPacketFilter;
 
 const void *pNtyMutlcastReqFilter = &ntyMutlcastReqFilter;
 const void *pNtyMutlcastAckFilter = &ntyMutlcastAckFilter;
@@ -1396,7 +1454,9 @@ void* ntyProtocolFilterInit(void) {
 
 	void *pRoutePacketFilter = New(pNtyRoutePacketFilter);
 	void *pUnBindDeviceFilter = New(pNtyUnBindDeviceFilter);
+	
 	void *pBindDeviceFilter = New(pNtyBindDeviceFilter);
+	void *pBindConfirmReqPacketFilter = New(pNtyBindConfirmReqPacketFilter);
 	
 	void *pMutlcastReqFilter = New(pNtyMutlcastReqFilter);
 	void *pMutlcastAckFilter = New(pNtyMutlcastAckFilter);
@@ -1424,7 +1484,9 @@ void* ntyProtocolFilterInit(void) {
 	
 	ntySetSuccessor(pRoutePacketFilter, pUnBindDeviceFilter);
 	ntySetSuccessor(pUnBindDeviceFilter, pBindDeviceFilter);
-	ntySetSuccessor(pBindDeviceFilter, pMutlcastReqFilter);
+	
+	ntySetSuccessor(pBindDeviceFilter, pBindConfirmReqPacketFilter);
+	ntySetSuccessor(pBindConfirmReqPacketFilter, pMutlcastReqFilter);
 
 	ntySetSuccessor(pMutlcastReqFilter, pMutlcastAckFilter);
 	ntySetSuccessor(pMutlcastAckFilter, pLocationAsyncReqFilter);

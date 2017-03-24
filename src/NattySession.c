@@ -1049,8 +1049,8 @@ int ntySendBigPacket(U8 *buffer, int length, C_DEVID fromId, C_DEVID gId, C_DEVI
 	
 	int ret = -1;
 
-	ntylog(" destId:%d, pktIndex:%d, pktTotal:%d", NTY_PROTO_VOICE_DATA_REQ_GROUP_IDX,
-			NTY_PROTO_VOICE_DATA_REQ_PKTINDEX_IDX, NTY_PROTO_VOICE_DATA_REQ_PKTTOTLE_IDX);
+	ntylog(" destId:%d, index:%d, length:%d", NTY_PROTO_VOICE_DATA_REQ_GROUP_IDX,
+			index, length);
 
 	void *map = ntyMapInstance();
 	ClientSocket *client = ntyMapSearch(map, toId);
@@ -1139,11 +1139,40 @@ int ntySendBinBufferBroadCastResult(U8 *u8Buffer, int length, C_DEVID fromId, C_
 
 int ntySendVoiceBufferResult(U8 *u8Buffer, int length, C_DEVID fromId, C_DEVID gId, C_DEVID toId, U32 index) {
 
-	int ret = ntyBigPacketEncode(u8Buffer, length);
-
+	length = ntyBigPacketEncode(u8Buffer, length);
+	
 	return ntySendBigPacket(u8Buffer, length, fromId, gId, toId, index);
 }
 
 
 #endif
+
+
+
+int ntySendBindConfirmPushResult(C_DEVID proposerId, C_DEVID adminId, U8 *json, int length) {
+
+	U16 bLength = (U16)length;
+	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
+	
+	buffer[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
+	buffer[NTY_PROTO_DEVTYPE_IDX] = NTY_PROTO_CLIENT_DEFAULT;
+	buffer[NTY_PROTO_PROTOTYPE_IDX] = PROTO_PUSH;
+	buffer[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_BIND_CONFIRM_PUSH;
+
+	memcpy(&buffer[NTY_PROTO_BIND_CONFIRM_PUSH_PROPOSER_IDX], &proposerId, sizeof(C_DEVID));
+	memcpy(&buffer[NTY_RPOTO_BIND_CONFIRM_PUSH_JSON_LENGTH_IDX], &bLength, sizeof(U16));
+	memcpy(&buffer[NTY_RPOTO_BIND_CONFIRM_PUSH_JSON_CONTENT_IDX], json, bLength);
+
+
+	bLength = bLength + NTY_RPOTO_BIND_CONFIRM_PUSH_JSON_CONTENT_IDX + sizeof(U32);
+
+	void *map = ntyMapInstance();
+	ClientSocket *client = ntyMapSearch(map, adminId);
+
+	return ntySendBuffer(client, buffer, bLength);
+
+	
+}
+
+
 

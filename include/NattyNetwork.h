@@ -176,6 +176,9 @@ typedef void (*NTY_PARAM_CALLBACK)(U8 *arg, int length);
 typedef void (*NTY_RETURN_CALLBACK)(C_DEVID fromId, U8 *arg, int length);
 typedef void (*NTY_PACKET_CALLBACK)(C_DEVID fromId, C_DEVID gId, int length);
 
+typedef void (*NTY_PUSH_CALLBACK)(C_DEVID fromId, C_DEVID gId, U8 *json, int length);
+
+
 
 typedef struct _NETWORK {
 	const void *_;

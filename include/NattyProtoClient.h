@@ -63,10 +63,13 @@ typedef void (*NTY_STATUS_CALLBACK)(int status);
 typedef void (*NTY_PARAM_CALLBACK)(U8 *arg, int length);
 typedef void (*NTY_RETURN_CALLBACK)(DEVID fromId, U8 *arg, int length);
 typedef void (*NTY_PACKET_CALLBACK)(DEVID fromId, DEVID gId, int length);
+typedef void (*NTY_PUSH_CALLBACK)(DEVID fromId, DEVID gId, U8 *json, int length);
+
 
 #define CLIENT_BUFFER_SIZE		1024
 #define NTY_BIGBUFFER_SIZE		30*1024
 #define NTY_TIMER_SIZE			32
+
 
 #ifndef ntydbg
 #define ntydbg(format, ...) 		fprintf(stdout, format, ##__VA_ARGS__)
@@ -117,7 +120,7 @@ void ntySetHeartBeatAckResult(NTY_STATUS_CALLBACK cb);
 void ntySetLoginAckResult(NTY_PARAM_CALLBACK cb);
 
 
-int ntyBindClient(DEVID did);
+int ntyBindClient(DEVID did, U8 *json, U16 length);
 int ntyUnBindClient(DEVID did);
 
 int ntyVoiceReqClient(U32 msgId, U8 *json, U16 length);
@@ -135,9 +138,6 @@ U8 *ntyGetSendBigBuffer(void);
 int ntyGetRecvBigLength(void);
 
 char* ntyProtoClientGetVersion(void);
-
-//DEVID* ntyGetFriendsList(int *Count);
-//void ntyReleaseFriendsList(DEVID **list);
 
 #endif
 

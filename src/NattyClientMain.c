@@ -168,6 +168,10 @@ void ntyLocationPush(U8 *arg, int length) {
 	ntydbg(" ntyPush --> length: %s\n", arg);
 }
 
+void ntyBindConfirmResult(DEVID fromId, U8 *json, int length) {
+	ntydbg(" ntyBindConfirmResult:%s\n", json);
+}
+
 
 
 DEVID g_devid = 0x352315052834187;

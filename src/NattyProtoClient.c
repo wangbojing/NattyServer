@@ -125,7 +125,7 @@ NTY_PARAM_CALLBACK onDataResult = NULL; //RECV DATA_RESULT
 NTY_RETURN_CALLBACK onVoiceBroadCastResult = NULL; //RECV VOICE_BROADCAST
 NTY_RETURN_CALLBACK onLocationBroadCastResult = NULL; //RECV LOCATION_BROADCAST
 NTY_RETURN_CALLBACK onCommonBroadCastResult = NULL; //RECV COMMON_BROADCAST
-NTY_RETURN_CALLBACK onBindComfirmResult = NULL;
+NTY_RETURN_CALLBACK onBindConfirmResult = NULL;
 
 
 U8 u8ConnectFlag = 0;;
@@ -176,7 +176,7 @@ typedef struct _NATTYPROTOCOL {
 	NTY_RETURN_CALLBACK onVoiceBroadCastResult; //RECV VOICE_BROADCAST
 	NTY_RETURN_CALLBACK onLocationBroadCastResult; //RECV LOCATION_BROADCAST
 	NTY_RETURN_CALLBACK onCommonBroadCastResult; //RECV COMMON_BROADCAST
-	NTY_RETURN_CALLBACK onBindComfirmResult; //RECV COMMON_BROADCAST
+	NTY_RETURN_CALLBACK onBindConfirmResult; //RECV COMMON_BROADCAST
 #endif
 	pthread_t recvThreadId;
 	U8 u8RecvExitFlag;
@@ -204,9 +204,9 @@ typedef struct _NATTYPROTO_OPERA {
 	int (*offlineMsgReq)(void *_self);
 	int (*dataRoute)(void *_self, C_DEVID toId, U8 *json, U16 length);
 #endif
-	int (*bind)(void *_self, C_DEVID did);
+	int (*bind)(void *_self, C_DEVID did, U8 *json, U16 length);
 	int (*unbind)(void *_self, C_DEVID did);
-	int (*comfirmReq)(void *_self, U8 *json, U16 length);
+	int (*comfirmReq)(void *_self, C_DEVID proposerId, C_DEVID devId, U32 msgId, U8 *json, U16 length);
 
 } NattyProtoOpera;
 
@@ -258,7 +258,7 @@ void* ntyProtoClientCtor(void *_self, va_list *params) {
 	proto->onVoiceBroadCastResult = onVoiceBroadCastResult; //RECV VOICE_BROADCAST
 	proto->onLocationBroadCastResult = onLocationBroadCastResult; //RECV LOCATION_BROADCAST
 	proto->onCommonBroadCastResult = onCommonBroadCastResult; //RECV COMMON_BROADCAST
-	proto->onBindComfirmResult = onBindComfirmResult;
+	proto->onBindConfirmResult = onBindConfirmResult;
 	
 	ntyGenCrcTable();
 	//Setup Socket Connection
@@ -392,7 +392,7 @@ int ntyProtoClientLogin(void *_self) {
 	return ntySendFrame(nSocket, buffer, len);
 }
 
-int ntyProtoClientBind(void *_self, C_DEVID did) {
+int ntyProtoClientBind(void *_self, C_DEVID did, U8 *json, U16 length) {
 	NattyProto *proto = _self;
 	int len;	
 
@@ -403,9 +403,18 @@ int ntyProtoClientBind(void *_self, C_DEVID did) {
 	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_BIND_REQ;
 
 	memcpy(buf+NTY_PROTO_BIND_APPID_IDX, &proto->selfId, sizeof(C_DEVID));
+#if 0
 	*(C_DEVID*)(&buf[NTY_PROTO_BIND_DEVICEID_IDX]) = did;
 	len = NTY_PROTO_BIND_CRC_IDX + sizeof(U32);
+#else
+	memcpy(buf+NTY_PROTO_BIND_DEVICEID_IDX, &did, sizeof(C_DEVID));
+	memcpy(buf+NTY_PROTO_BIND_JSON_LENGTH_IDX, &length, sizeof(U16));
+	memcpy(buf+NTY_PROTO_BIND_JSON_CONTENT_IDX, json, length);
 
+	len = length + NTY_PROTO_BIND_JSON_CONTENT_IDX + sizeof(U32);
+#endif
+	
+	
 	ntydbg(" ntyProtoClientBind --> ");
 
 	ClientSocket *nSocket = ntyNetworkInstance();
@@ -657,7 +666,7 @@ int ntyProtoClientDataRoute(void *_self, C_DEVID toId, U8 *json, U16 length) {
 	return ntySendFrame(pNetwork, buf, length);
 }
 
-int ntyProtoClientConfirmReq(void *_self, U8 *json, U16 length) {
+int ntyProtoClientConfirmReq(void *_self, C_DEVID proposerId, C_DEVID devId, U32 msgId, U8 *json, U16 length) {
 	NattyProto *proto = _self;	
 	U8 buf[RECV_BUFFER_SIZE] = {0}; 
 
@@ -665,7 +674,11 @@ int ntyProtoClientConfirmReq(void *_self, U8 *json, U16 length) {
 	buf[NTY_PROTO_PROTOTYPE_IDX] = (U8) PROTO_REQ; 
 	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_BIND_CONFIRM_REQ;
 
-	memcpy(&buf[NTY_PROTO_BIND_CONFIRM_REQ_DEVICEID_IDX], &proto->selfId, sizeof(C_DEVID));
+	memcpy(&buf[NTY_PROTO_BIND_CONFIRM_REQ_ADMIN_SELFID_IDX], &proto->selfId, sizeof(C_DEVID));
+	memcpy(&buf[NTY_PROTO_BIND_CONFIRM_REQ_DEVICEID_IDX], &devId, sizeof(C_DEVID));
+	memcpy(&buf[NTY_PROTO_BIND_CONFIRM_REQ_PROPOSER_IDX], &proposerId, sizeof(C_DEVID));
+
+	memcpy(&buf[NTY_PROTO_BIND_CONFIRM_REQ_MSGID_IDX], &msgId, sizeof(U32));
 	memcpy(&buf[NTY_PROTO_BIND_CONFIRM_REQ_JSON_LENGTH_IDX], &length, sizeof(U16));
 	memcpy(&buf[NTY_PROTO_BIND_CONFIRM_REQ_JSON_CONTENT_IDX], json, length);
 
@@ -862,7 +875,7 @@ void ntySetCommonBroadCastResult(NTY_RETURN_CALLBACK cb) {
 }
 
 void ntySetBindComfirmResult(NTY_RETURN_CALLBACK cb) {
-	onBindComfirmResult = cb;
+	onBindConfirmResult = cb;
 }
 
 int ntyCheckProtoClientStatus(void) {
@@ -912,11 +925,11 @@ void ntyShutdownClient(void) {
 
 #if 1
 
-int ntyBindClient(C_DEVID did) {
+int ntyBindClient(C_DEVID did, U8 *json, U16 length) {
 	NattyProto* proto = ntyProtoGetInstance();
 
 	if (proto) {
-		return ntyProtoClientBind(proto, did);
+		return ntyProtoClientBind(proto, did, json, length);
 	}
 	return -1;
 }
@@ -1002,12 +1015,12 @@ int ntyDataRouteClient(C_DEVID toId, U8 *json, U16 length) {
 	}
 	return -1;
 }
-
-int ntyBindConfirmReqClient(C_DEVID toId, U8 *json, U16 length) {
+//(void *_self, C_DEVID proposerId, C_DEVID devId, U32 msgId, U8 *json, U16 length)
+int ntyBindConfirmReqClient(C_DEVID proposerId, C_DEVID devId, U32 msgId, U8 *json, U16 length) {
 	NattyProto* proto = ntyProtoGetInstance();
 
 	if (proto) {
-		return ntyProtoClientConfirmReq(proto, json, length);
+		return ntyProtoClientConfirmReq(proto, proposerId, devId, msgId, json, length);
 	}
 	return -1;
 }
@@ -1491,20 +1504,26 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 #if (NTY_PROTO_SELFTYPE != NTY_PROTO_CLIENT_WATCH || NTY_PROTO_SELFTYPE != NTY_PROTO_SERVER) 	
 		case NTY_PROTO_BIND_CONFIRM_PUSH: {
 			U8 *json = NULL;
+			U32 msgId = 0;
+			C_DEVID proposerId = 0;
+			C_DEVID devId = 0;
 			U16 u16Length = 0;
-			C_DEVID fromId = 0;
 
-			memcpy(&fromId, buf+NTY_PROTO_BIND_CONFIRM_PUSH_DEVICEID_IDX, sizeof(C_DEVID));
-			memcpy(&u16Length, buf+NTY_PROTO_BIND_CONFIRM_PUSH_JSON_LENGTH_IDX, sizeof(U16));
-			json = buf+NTY_PROTO_BIND_CONFIRM_PUSH_JSON_CONTENT_IDX;
+			//
+			memcpy(&proposerId, buf+NTY_PROTO_BIND_CONFIRM_PUSH_PROPOSER_IDX, sizeof(C_DEVID));
+			memcpy(&devId, buf+NTY_PROTO_BIND_CONFIRM_PUSH_DEVICE_IDX, sizeof(C_DEVID));
 
-			if (proto->onBindComfirmResult) {
-				proto->onBindComfirmResult(fromId, json, u16Length);
+			memcpy(&u16Length, buf+NTY_RPOTO_BIND_CONFIRM_PUSH_JSON_LENGTH_IDX, sizeof(U16));
+			
+			json = buf+NTY_RPOTO_BIND_CONFIRM_PUSH_JSON_CONTENT_IDX;
+
+			if (proto->onBindConfirmResult) {
+				proto->onBindConfirmResult(proposerId, json, u16Length);
 			}
 			
 			break;
 		}
-#endif		
+#endif
 	}
 }
 

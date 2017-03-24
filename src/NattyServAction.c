@@ -1273,3 +1273,57 @@ int ntyCommonReqSaveDBAction(C_DEVID fromId, C_DEVID gId, U8 *json) {
 }
 
 
+int ntyBindReqAction(C_DEVID fromId, C_DEVID devId, U8 *json, U16 length) {
+
+	C_DEVID admin = 0;
+	
+	int ret = ntyQueryDevAppGroupCheckSelectHandle(fromId, devId);
+	if (NTY_RESULT_FAILED == ret) {
+		ret = 4;
+	} 
+	
+	/*
+	 * 
+	 {
+		 "IMEI": "355637052788450",
+		 "Category": "BindReq",
+		 "BindReq": {
+			 "WatchName": "±¦±´",
+			 "WatchImage": "http://picture.quanjiakan.com/",
+			 "UserName": "°Ö°Ö",
+			 "UserImage": "1"
+		 }
+	 }
+	 *
+	 */
+	//Parser JSON and write here
+	
+	if(NTY_RESULT_FAILED == ntyQueryAdminSelectHandle(devId, &admin)) {
+		ret = 4;
+	}
+	ntyProtoBindAck(fromId, devId, ret);
+
+	ntylog(" ntyQueryAdminSelectHandle --> %lld\n", admin);
+
+	//insert to db and write here
+	//ntyQueryBindConfirmInsertHandle()
+
+	//Encode JSON write here
+	/*
+	 *
+	{
+		"Results": {
+			"Proposer":"15889650380",
+			"IMEI":"355637052788450",
+			"UserName": "°Ö°Ö",
+			"MsgId":"13453"
+		}
+	}
+	*
+	*/
+
+	//send json to admin
+	//ntySendBindConfirmPushResult()
+	
+}
+

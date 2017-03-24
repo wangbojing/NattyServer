@@ -184,7 +184,7 @@
 //
 #define NTY_DB_INSERT_COMMON_MSG			"CALL PROC_INSERT_COMMON_MSG(%lld, %lld, '%s')"
 
-#define NTY_DB_DELETE_COMMON_OFFLINE_MSG	"CALL PROC_DELETE_COMMON_OFFLINE_MSG(%lld, %lld)"
+#define NTY_DB_DELETE_COMMON_OFFLINE_MSG	"CALL PROC_DELETE_COMMON_OFFLINE_MSG(%d, %lld)"
 
 #define NTY_DB_INSERT_VOICE_MSG				"CALL PROC_INSERT_VOICE_MSG(%lld, %lld, '%s')"
 
@@ -205,11 +205,9 @@
 
 #define NTY_DB_SELECT_VOICE_MSG				"CALL PROC_SELECT_VOICE_MSG(%d)"
 
+#define NTY_DB_INSERT_BIND_CONFIRM			"CALL PROC_INSERT_BIND_CONFIRM(%lld, %lld, '%s', '%s', %lld, '%s', '%s')"
 
-
-
-
-
+#define NTY_DB_INSERT_BIND_GROUP			"CALL PROC_INSERT_BIND_GROUP(%d)"
 
 
 
@@ -298,6 +296,17 @@ int ntyQueryDeviceOnlineStatusHandle(C_DEVID did, int *online);
 int ntyQueryVoiceMsgInsertHandle(C_DEVID senderId, C_DEVID gId, char *filename, U32 *msgId);
 int ntyExecuteVoiceOfflineMsgDeleteHandle(U32 index, C_DEVID userId);
 int ntyQueryVoiceMsgSelectHandle(U32 index, C_DEVID *senderId, C_DEVID *gId, U8 *filename, long *stamp);
+
+int ntyQueryAdminSelectHandle(C_DEVID did, C_DEVID *appid);
+
+int ntyQueryDevAppGroupCheckSelectHandle(C_DEVID aid, C_DEVID did);
+
+int ntyQueryBindConfirmInsertHandle(C_DEVID proposer, C_DEVID imei, U8 *name, U8 *wimage, C_DEVID userId, U8 *call, U8 *uimage);
+
+int ntyExecuteDevAppGroupBindInsertHandle(int msgId);
+
+int ntyExecuteCommonOfflineMsgDeleteHandle(int msgId, C_DEVID clientId);
+
 
 
 
