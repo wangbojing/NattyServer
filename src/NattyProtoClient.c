@@ -1513,9 +1513,9 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 			memcpy(&proposerId, buf+NTY_PROTO_BIND_CONFIRM_PUSH_PROPOSER_IDX, sizeof(C_DEVID));
 			memcpy(&devId, buf+NTY_PROTO_BIND_CONFIRM_PUSH_DEVICE_IDX, sizeof(C_DEVID));
 
-			memcpy(&u16Length, buf+NTY_RPOTO_BIND_CONFIRM_PUSH_JSON_LENGTH_IDX, sizeof(U16));
+			memcpy(&u16Length, buf+NTY_PROTO_BIND_CONFIRM_PUSH_JSON_LENGTH_IDX, sizeof(U16));
 			
-			json = buf+NTY_RPOTO_BIND_CONFIRM_PUSH_JSON_CONTENT_IDX;
+			json = buf+NTY_PROTO_BIND_CONFIRM_PUSH_JSON_CONTENT_IDX;
 
 			if (proto->onBindConfirmResult) {
 				proto->onBindConfirmResult(proposerId, json, u16Length);
