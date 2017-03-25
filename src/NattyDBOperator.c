@@ -51,6 +51,12 @@
 void* ntyConnectionPoolInitialize(ConnectionPool *pool) {
 	pool->url = URL_new(MYSQL_DB_CONN_STRING);
 	pool->nPool = ConnectionPool_new(pool->url);
+
+	ConnectionPool_setInitialConnections(pool->nPool, 4);
+    ConnectionPool_setMaxConnections(pool->nPool, 200);
+    ConnectionPool_setConnectionTimeout(pool->nPool, 2);
+    ConnectionPool_setReaper(pool->nPool, 2);
+	
 	ConnectionPool_start(pool->nPool);
 
 	return pool;
@@ -58,6 +64,7 @@ void* ntyConnectionPoolInitialize(ConnectionPool *pool) {
 
 void* ntyConnectionPoolDestory(ConnectionPool *pool) {
 	ConnectionPool_free(&pool->nPool);
+	ConnectionPool_stop(pool->nPool);
 	URL_free(&pool->url);
 
 	pool->nPool = NULL;
@@ -94,7 +101,7 @@ void *ntyConnectionPoolInstance(void) {
 			Delete(pCPool);
 		}
 	}
-	ntyConnectionPoolDynamicsSize(pConnectionPool);
+	//ntyConnectionPoolDynamicsSize(pConnectionPool);
 	return pConnectionPool;
 }
 
@@ -536,6 +543,41 @@ static int ntyQueryBindConfirmInsert(void *self, C_DEVID admin, C_DEVID imei, U8
 	return ret;
 }
 
+//NTY_DB_SELECT_PHONE_NUMBER
+static int ntyQueryPhoneBookSelect(void *self, C_DEVID imei, C_DEVID userId, char *phonenum) {
+	ConnectionPool *pool = self;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+	
+
+	TRY 
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_PHONE_NUMBER, imei, userId);
+			while (ResultSet_next(r)) {
+				const char *pnum = ResultSet_getString(r, 1);
+				memcpy(phonenum, pnum, strlen(pnum));
+			}
+		}
+	} 
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
 
 //NTY_DB_SELECT_ADMIN
 static int ntyQueryAdminSelect(void *self, C_DEVID did, C_DEVID *appid) {
@@ -1858,6 +1900,11 @@ int ntyExecuteCommonOfflineMsgDeleteHandle(int msgId, C_DEVID clientId) {
 int ntyQueryBindConfirmInsertHandle(C_DEVID admin, C_DEVID imei, U8 *name, U8 *wimage, C_DEVID proposer, U8 *call, U8 *uimage, int *msgId) {
 	void *pool = ntyConnectionPoolInstance();
 	return ntyQueryBindConfirmInsert(pool, admin, imei, name, wimage, proposer, call, uimage, msgId);
+}
+
+int ntyQueryPhoneBookSelectHandle(C_DEVID imei, C_DEVID userId, char *phonenum) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyQueryPhoneBookSelect(pool, imei, userId, phonenum);
 }
 
 int ntyQueryAdminSelectHandle(C_DEVID did, C_DEVID *appid) {

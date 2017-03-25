@@ -1293,34 +1293,38 @@ int ntyBindReqAction(ActionParam *pActionParam) {
 	//Parser JSON and write here
 	if(NTY_RESULT_FAILED == ntyQueryAdminSelectHandle(devId, &admin)) {
 		ret = 4;
+	} else {
+		ntyProtoBindAck(fromId, devId, ret);
+		ntylog(" ntyQueryAdminSelectHandle --> %lld\n", admin);
+
+		//insert to db and write here
+		C_DEVID proposer = fromId;
+		U8 *name = (U8*)pBindReq->bind.watchName;
+		U8 *wimage = (U8*)pBindReq->bind.watchImage;
+		U8 *call = (U8*)pBindReq->bind.userName;
+		U8 *uimage = (U8*)pBindReq->bind.userImage;
+		int msgId = 0;
+		ntyQueryBindConfirmInsertHandle(admin, devId, name, wimage, proposer, call, uimage, &msgId);
+
+		char phonenum[30] = {0};
+		ntyQueryPhoneBookSelectHandle(devId, proposer, phonenum);
+		
+		//Encode JSON write here
+		BindAck *pBindAck = malloc(sizeof(BindAck));
+		pBindAck->results.IMEI = pBindReq->IMEI;
+		pBindAck->results.proposer = phonenum;
+		pBindAck->results.userName = pBindReq->bind.userName;
+		char ids[30] = {0};
+		sprintf(ids, "%d", msgId);
+		pBindAck->results.msgId = ids;
+		char *jsonstring = ntyJsonWriteBind(pBindAck);
+
+		//send json to admin
+		ntySendBindConfirmPushResult(proposer, admin, (U8*)jsonstring, strlen(jsonstring));
+		free(pBindAck);
 	}
-	ntyProtoBindAck(fromId, devId, ret);
-
-	ntylog(" ntyQueryAdminSelectHandle --> %lld\n", admin);
-
-	//insert to db and write here
-	C_DEVID proposer = fromId;
-	U8 *name = (U8*)pBindReq->bind.watchName;
-	U8 *wimage = (U8*)pBindReq->bind.watchImage;
-	U8 *call = (U8*)pBindReq->bind.userName;
-	U8 *uimage = (U8*)pBindReq->bind.userImage;
-	int msgId = 0;
-	ntyQueryBindConfirmInsertHandle(admin, devId, name, wimage, proposer, call, uimage, &msgId);
-
-	//Encode JSON write here
-	BindAck *pBindAck = malloc(sizeof(BindAck));
-	pBindAck->results.IMEI = pBindReq->IMEI;
-	pBindAck->results.proposer = "15889650380";
-	pBindAck->results.userName = pBindReq->bind.userName;
-	char ids[30] = {0};
-	sprintf(ids, "%d", msgId);
-	pBindAck->results.msgId = ids;
-	char *jsonstring = ntyJsonWriteBind(pBindAck);
-
-	//send json to admin
-	ntySendBindConfirmPushResult(proposer, admin, (U8*)jsonstring, strlen(jsonstring));
-
 	free(pBindReq);
-	free(pBindAck);
+
+	return ret;
 }
 

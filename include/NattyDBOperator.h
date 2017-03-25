@@ -209,6 +209,9 @@
 
 #define NTY_DB_INSERT_BIND_GROUP			"CALL PROC_INSERT_BIND_GROUP(%d)"
 
+#define NTY_DB_SELECT_PHONE_NUMBER			"CALL PROC_SELECT_PHONE_NUMBER(%lld, %lld)"
+
+
 
 
 
@@ -302,6 +305,8 @@ int ntyQueryAdminSelectHandle(C_DEVID did, C_DEVID *appid);
 int ntyQueryDevAppGroupCheckSelectHandle(C_DEVID aid, C_DEVID did);
 
 int ntyQueryBindConfirmInsertHandle(C_DEVID admin, C_DEVID imei, U8 *name, U8 *wimage, C_DEVID proposer, U8 *call, U8 *uimage, int *msgId);
+
+int ntyQueryPhoneBookSelectHandle(C_DEVID imei, C_DEVID userId, char *phonenum);
 
 int ntyExecuteDevAppGroupBindInsertHandle(int msgId);
 
