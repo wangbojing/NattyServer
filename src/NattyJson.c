@@ -497,7 +497,7 @@ void ntyJsonAddSchedule(JSON_Value *json, AddScheduleReq *pAddScheduleReq) {
 	pAddScheduleReq->action = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ACTION);
 	ntydbg("IMEI:%s   Category:%s  Action:%s\n", pAddScheduleReq->IMEI, pAddScheduleReq->category, pAddScheduleReq->action);
 
-	JSON_Object *schedule_object = json_object_get_object(schedule_object, NATTY_USER_PROTOCOL_SCHEDULE);
+	JSON_Object *schedule_object = json_object_get_object(root_object, NATTY_USER_PROTOCOL_SCHEDULE);
 	pAddScheduleReq->schedule.daily = json_object_get_string(schedule_object, NATTY_USER_PROTOCOL_DAILY);
 	pAddScheduleReq->schedule.time = json_object_get_string(schedule_object, NATTY_USER_PROTOCOL_TIME);
 	pAddScheduleReq->schedule.details = json_object_get_string(schedule_object, NATTY_USER_PROTOCOL_DETAILS);

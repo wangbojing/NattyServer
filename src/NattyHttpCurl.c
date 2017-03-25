@@ -729,7 +729,7 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 		return -1;
 	}
 	if (pAMap->result.location == NULL) {
-		ntylog(" ntyHttpQJKWeatherLocationHandleResult location is null\n");
+		ntylog(" location is null\n");
 		return -2;
 	}
 
