@@ -624,6 +624,24 @@ void ntyJsonDelContacts(JSON_Value *json, DelContactsReq *pDelContactsReq) {
 	pDelContactsReq->id = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ID);
 }
 
+char * ntyJsonBind(JSON_Value *json, BindReq *pBindReq) {
+	if (json == NULL || pBindReq == NULL) {
+		ntylog("param is null.\n");
+		return;
+	}
+	
+	JSON_Object *root_object = json_value_get_object(json);
+	pBindReq->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
+	pBindReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
+
+	JSON_Object *bindReq_object = json_object_get_object(root_object, NATTY_USER_PROTOCOL_BINGREQ);
+	pBindReq->bind.watchName = json_object_get_string(bindReq_object, NATTY_USER_PROTOCOL_WATCHNAME);
+	pBindReq->bind.watchImage = json_object_get_string(bindReq_object, NATTY_USER_PROTOCOL_WATCHIMAGE);
+	pBindReq->bind.userImage= json_object_get_string(bindReq_object, NATTY_USER_PROTOCOL_USERIMAGE);
+	pBindReq->bind.userName= json_object_get_string(bindReq_object, NATTY_USER_PROTOCOL_USERNAME);
+}
+
+
 void ntyJsonTimeTablesItemRelease(TimeTablesItem *pTimeTables) {
 	if (pTimeTables != NULL) {
 		free(pTimeTables);
@@ -1248,6 +1266,28 @@ char * ntyJsonWriteContacts(ContactsAck *pContactsAck) {
 	char *jsonstring =  json_serialize_to_string(schema);
 	json_value_free(schema);
 	return jsonstring;
+}
+
+char * ntyJsonWriteBind(BindAck *pBindAck) {
+	if (pBindAck == NULL) {
+		return NULL;
+	}
+
+	JSON_Value *schema = json_value_init_object();
+	JSON_Object *schema_obj = json_value_get_object(schema);
+	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object());
+	JSON_Object *results_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULTS);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_IMEI, pBindAck->results.IMEI);
+	//json_object_set_string(results_obj, NATTY_USER_PROTOCOL_CATEGORY, pBindAck->results.category);
+	//json_object_set_string(results_obj, NATTY_USER_PROTOCOL_ACTION, pBindAck->results.action);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_PROPOSER, pBindAck->results.proposer);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_USERNAME, pBindAck->results.userName);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_MSGID, pBindAck->results.msgId);
+
+	char *jsonstring =  json_serialize_to_string(schema);
+	json_value_free(schema);
+	return jsonstring;
+
 }
 
 

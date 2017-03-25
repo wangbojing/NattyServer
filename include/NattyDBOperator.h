@@ -301,7 +301,7 @@ int ntyQueryAdminSelectHandle(C_DEVID did, C_DEVID *appid);
 
 int ntyQueryDevAppGroupCheckSelectHandle(C_DEVID aid, C_DEVID did);
 
-int ntyQueryBindConfirmInsertHandle(C_DEVID proposer, C_DEVID imei, U8 *name, U8 *wimage, C_DEVID userId, U8 *call, U8 *uimage);
+int ntyQueryBindConfirmInsertHandle(C_DEVID admin, C_DEVID imei, U8 *name, U8 *wimage, C_DEVID proposer, U8 *call, U8 *uimage, int *msgId);
 
 int ntyExecuteDevAppGroupBindInsertHandle(int msgId);
 

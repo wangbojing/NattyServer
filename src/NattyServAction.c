@@ -1277,32 +1277,20 @@ int ntyCommonReqSaveDBAction(C_DEVID fromId, C_DEVID gId, U8 *json) {
 	
 }
 
-
-int ntyBindReqAction(C_DEVID fromId, C_DEVID devId, U8 *json, U16 length) {
-
+int ntyBindReqAction(ActionParam *pActionParam) {
 	C_DEVID admin = 0;
+	C_DEVID fromId = pActionParam->fromId;
+	C_DEVID devId = pActionParam->toId;
 	
 	int ret = ntyQueryDevAppGroupCheckSelectHandle(fromId, devId);
 	if (NTY_RESULT_FAILED == ret) {
 		ret = 4;
 	} 
+
+	BindReq *pBindReq = malloc(sizeof(BindReq));
+	ntyJsonBind(pActionParam->json, pBindReq);
 	
-	/*
-	 * 
-	 {
-		 "IMEI": "355637052788450",
-		 "Category": "BindReq",
-		 "BindReq": {
-			 "WatchName": "±¦±´",
-			 "WatchImage": "http://picture.quanjiakan.com/",
-			 "UserName": "°Ö°Ö",
-			 "UserImage": "1"
-		 }
-	 }
-	 *
-	 */
 	//Parser JSON and write here
-	
 	if(NTY_RESULT_FAILED == ntyQueryAdminSelectHandle(devId, &admin)) {
 		ret = 4;
 	}
@@ -1311,24 +1299,28 @@ int ntyBindReqAction(C_DEVID fromId, C_DEVID devId, U8 *json, U16 length) {
 	ntylog(" ntyQueryAdminSelectHandle --> %lld\n", admin);
 
 	//insert to db and write here
-	//ntyQueryBindConfirmInsertHandle()
+	C_DEVID proposer = fromId;
+	U8 *name = (U8*)pBindReq->bind.watchName;
+	U8 *wimage = (U8*)pBindReq->bind.watchImage;
+	U8 *call = (U8*)pBindReq->bind.userName;
+	U8 *uimage = (U8*)pBindReq->bind.userImage;
+	int msgId = 0;
+	ntyQueryBindConfirmInsertHandle(admin, devId, name, wimage, proposer, call, uimage, &msgId);
 
 	//Encode JSON write here
-	/*
-	 *
-	{
-		"Results": {
-			"Proposer":"15889650380",
-			"IMEI":"355637052788450",
-			"UserName": "°Ö°Ö",
-			"MsgId":"13453"
-		}
-	}
-	*
-	*/
+	BindAck *pBindAck = malloc(sizeof(BindAck));
+	pBindAck->results.IMEI = pBindReq->IMEI;
+	pBindAck->results.proposer = "15889650380";
+	pBindAck->results.userName = pBindReq->bind.userName;
+	char ids[30] = {0};
+	sprintf(ids, "%d", msgId);
+	pBindAck->results.msgId = ids;
+	char *jsonstring = ntyJsonWriteBind(pBindAck);
 
 	//send json to admin
-	//ntySendBindConfirmPushResult()
-	
+	ntySendBindConfirmPushResult(proposer, admin, (U8*)jsonstring, strlen(jsonstring));
+
+	free(pBindReq);
+	free(pBindAck);
 }
 

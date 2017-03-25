@@ -502,7 +502,7 @@ static int ntyExecuteCommonOfflineMsgDelete(void *self, int msgId, C_DEVID clien
 
 
 //NTY_DB_INSERT_BIND_CONFIRM
-static int ntyQueryBindConfirmInsert(void *self, C_DEVID proposer, C_DEVID imei, U8 *name, U8 *wimage, C_DEVID userId, U8 *call, U8 *uimage) {
+static int ntyQueryBindConfirmInsert(void *self, C_DEVID admin, C_DEVID imei, U8 *name, U8 *wimage, C_DEVID proposer, U8 *call, U8 *uimage, int *msgId) {
 	ConnectionPool *pool = self;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
@@ -514,9 +514,9 @@ static int ntyQueryBindConfirmInsert(void *self, C_DEVID proposer, C_DEVID imei,
 			ret = -1;
 		} else {
 
-			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_BIND_CONFIRM, proposer, imei, name, wimage, userId, call, uimage);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_BIND_CONFIRM, admin, imei, name, wimage, proposer, call, uimage);
 			while (ResultSet_next(r)) {
-				ret = ResultSet_getInt(r, 1);
+				*msgId = ResultSet_getInt(r, 1);
 			}
 			
 		}
@@ -1836,36 +1836,29 @@ int ntyQueryDevAppRelationInsertHandle(C_DEVID aid, U8 *imei) {
 
 int ntyQueryDevAppGroupInsertHandle(C_DEVID aid, C_DEVID did) {
 	void *pool = ntyConnectionPoolInstance();
-
 	U8 *Name = "Father";
 	return ntyQueryDevAppGroupInsert(pool, aid, did, Name);
 }
 
 int ntyQueryDevAppGroupCheckSelectHandle(C_DEVID aid, C_DEVID did) {
 	void *pool = ntyConnectionPoolInstance();
-
 	return ntyQueryDevAppGroupCheckSelect(pool, aid, did);
 }
 
 int ntyExecuteDevAppGroupBindInsertHandle(int msgId) {
 	void *pool = ntyConnectionPoolInstance();
-
 	return ntyExecuteDevAppGroupBindInsert(pool, msgId);
 }
 
 int ntyExecuteCommonOfflineMsgDeleteHandle(int msgId, C_DEVID clientId) {
 	void *pool = ntyConnectionPoolInstance();
-
 	return ntyExecuteCommonOfflineMsgDelete(pool, msgId, clientId);
 }
 
-int ntyQueryBindConfirmInsertHandle(C_DEVID proposer, C_DEVID imei, U8 *name, U8 *wimage, C_DEVID userId, U8 *call, U8 *uimage) {
+int ntyQueryBindConfirmInsertHandle(C_DEVID admin, C_DEVID imei, U8 *name, U8 *wimage, C_DEVID proposer, U8 *call, U8 *uimage, int *msgId) {
 	void *pool = ntyConnectionPoolInstance();
-
-	return ntyQueryBindConfirmInsert(pool, proposer, imei, name, wimage, userId, call, uimage);
+	return ntyQueryBindConfirmInsert(pool, admin, imei, name, wimage, proposer, call, uimage, msgId);
 }
-
-
 
 int ntyQueryAdminSelectHandle(C_DEVID did, C_DEVID *appid) {
 	void *pool = ntyConnectionPoolInstance();

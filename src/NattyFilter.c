@@ -1105,16 +1105,39 @@ void ntyBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer, 
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_BIND_REQ) {
 	
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_APPID_IDX);
-		C_DEVID devId =  *(C_DEVID*)(buffer+NTY_PROTO_BIND_DEVICEID_IDX);
-
-		U8 *json = buffer+NTY_PROTO_BIND_JSON_CONTENT_IDX;
-		U16 u16Length = *(U16*)(buffer+NTY_PROTO_BIND_JSON_LENGTH_IDX);
-
+		C_DEVID toId =  *(C_DEVID*)(buffer+NTY_PROTO_BIND_DEVICEID_IDX);
 		
-#if 0	//New Version need implement
-		ntyBindReqAction(fromId, devId, json, u16Length);
+#if 1	//New Version need implement
+		U16 jsonlen = 0;
+		memcpy(&jsonlen, buffer+NTY_PROTO_BIND_JSON_LENGTH_IDX, NTY_JSON_COUNT_LENGTH);
+		char *jsonstring = malloc(jsonlen);
+		memset(jsonstring, 0, jsonlen);
+		memcpy(jsonstring, buffer+NTY_PROTO_BIND_JSON_CONTENT_IDX, jsonlen);
+
+		ntylog("ntyBindDevicePacketHandleRequest --> json : %s  %d\n", jsonstring, jsonlen);
+		
+		JSON_Value *json = ntyMallocJsonValue(jsonstring);
+		if (json == NULL) { //JSON Error and send Code to FromId Device
+			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
+		} else {
+			ActionParam *pActionParam = malloc(sizeof(ActionParam));
+			pActionParam->fromId = fromId;
+			pActionParam->toId = toId;
+			pActionParam->json = json;
+			pActionParam->jsonstring= jsonstring;
+			pActionParam->jsonlen = jsonlen;
+			pActionParam->index = 0;
+			
+			ntyBindReqAction(pActionParam);
+			
+			free(pActionParam);
+		}
+		free(jsonstring);
+		ntyFreeJsonValue(json);
+
+
 #else
-		ntyProtoBindAck(fromId, devId, 5);
+		ntyProtoBindAck(fromId, toId, 5);
 #endif		
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
@@ -1145,8 +1168,8 @@ void ntyMulticastReqPacketHandleRequest(const void *_self, unsigned char *buffer
 		void *pRBTree = ntyRBTreeInstance();
 		Client *toClient = (Client*)ntyRBTreeInterfaceSearch(pRBTree, toId);
 		if (toClient == NULL) { //no Exist
-			return ;
-		} 
+			return;
+		}
 
 		buffer[NTY_PROTO_MULTICAST_TYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
 		//ntySendBuffer(toClient, buffer, length);

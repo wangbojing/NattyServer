@@ -108,6 +108,10 @@ int ntyVoiceDataReqAction(C_DEVID senderId, C_DEVID gId, char *filename);
 int ntyVoiceReqAction(C_DEVID fromId, U32 msgId);
 
 int ntyVoiceAckAction(C_DEVID fromId, U32 msgId);
+
+int ntyBindReqAction(ActionParam *pActionParam);
+
+
 #endif // __NATTY_SERVACTION_H__
 
 

@@ -141,6 +141,15 @@
 #define NATTY_USER_PROTOCOL_STATUS 			"Status"
 #define NATTY_USER_PROTOCOL_PHONENUM 		"PhoneNum"
 
+#define NATTY_USER_PROTOCOL_PROPOSER 		"Proposer"
+#define NATTY_USER_PROTOCOL_USERNAME 		"UserName"
+#define NATTY_USER_PROTOCOL_MSGID 			"MsgId"
+
+#define NATTY_USER_PROTOCOL_BINGREQ 		"BindReq"
+#define NATTY_USER_PROTOCOL_WATCHNAME 		"WatchName"
+#define NATTY_USER_PROTOCOL_WATCHIMAGE 		"WatchImage"
+#define NATTY_USER_PROTOCOL_USERIMAGE 		"UserImage"
+
 
 #define NATTY_AMAP_PROTOCOL_STATUS 			"status"
 #define NATTY_AMAP_PROTOCOL_INFO 			"info"
@@ -606,6 +615,32 @@ typedef struct _UpdateContactsAck {
 typedef struct _DelContactsAck {
 	DelContactsResults results;
 } DelContactsAck;
+
+
+typedef struct _BindItem {
+	const char *watchName;
+	const char *watchImage;
+	const char *userName;
+	const char *userImage;
+} BindItem;
+
+typedef struct _BindReq {
+	const char *IMEI;
+	const char *category;
+	const char *action;
+	BindItem bind;
+} BindReq;
+
+typedef struct _BindResult {
+	const char *IMEI;
+	const char *proposer;
+	const char *userName;
+	const char *msgId;
+} BindResult;
+
+typedef struct _BindAck {
+	BindResult results;
+} BindAck;
 
 
 #endif
