@@ -1107,6 +1107,7 @@ int ntyExecuteRuntimeUpdate(void *self, C_DEVID aid, C_DEVID did, int auto_conn,
 			ret = -1;
 		} else {
 			U8 buffer[512];
+			sprintf(buffer, NTY_DB_UPDATE_RUNTIME, did, auto_conn, loss_report, light_panel, bell, target_step);
 			ntylog(" sql : %s\n", buffer);
 			Connection_execute(con, NTY_DB_UPDATE_RUNTIME, did, auto_conn, loss_report, light_panel, bell, target_step);
 		}
@@ -1140,6 +1141,7 @@ int ntyExecuteRuntimeAutoConnUpdate(void *self, C_DEVID aid, C_DEVID did, int ru
 			ret = -1;
 		} else {
 			U8 buffer[512];
+			sprintf(buffer, NTY_DB_UPDATE_RUNTIME_AUTOCONN, did, runtime_param);
 			ntylog(" sql : %s\n", buffer);
 			Connection_execute(con, NTY_DB_UPDATE_RUNTIME_AUTOCONN, did, runtime_param);
 		}
@@ -1174,6 +1176,7 @@ int ntyExecuteRuntimeLossReportUpdate(void *self, C_DEVID aid, C_DEVID did, U8 r
 			ret = -1;
 		} else {
 			U8 buffer[512];
+			sprintf(buffer, NTY_DB_UPDATE_RUNTIME_LOSSREPORT, did, runtime_param);
 			ntylog(" sql : %s\n", buffer);
 			Connection_execute(con, NTY_DB_UPDATE_RUNTIME_LOSSREPORT, did, runtime_param);
 		}
@@ -1208,6 +1211,7 @@ int ntyExecuteRuntimeLightPanelUpdate(void *self, C_DEVID aid, C_DEVID did, U8 r
 			ret = -1;
 		} else {
 			U8 buffer[512];
+			sprintf(buffer, NTY_DB_UPDATE_RUNTIME_LIGHTPANEL, did, runtime_param);
 			ntylog(" sql : %s\n", buffer);
 			Connection_execute(con, NTY_DB_UPDATE_RUNTIME_LIGHTPANEL, did, runtime_param);
 		}
@@ -1242,6 +1246,7 @@ int ntyExecuteRuntimeBellUpdate(void *self, C_DEVID aid, C_DEVID did, const char
 			ret = -1;
 		} else {
 			U8 buffer[512];
+			sprintf(buffer, NTY_DB_UPDATE_RUNTIME_BELL, did, runtime_param);
 			ntylog(" sql : %s\n", buffer);
 			Connection_execute(con, NTY_DB_UPDATE_RUNTIME_BELL, did, runtime_param);
 		}
@@ -1275,6 +1280,7 @@ int ntyExecuteRuntimeTargetStepUpdate(void *self, C_DEVID aid, C_DEVID did, int 
 			ret = -1;
 		} else {
 			U8 buffer[512];
+			sprintf(buffer, NTY_DB_UPDATE_RUNTIME_TARGETSTEP, did, runtime_param);
 			ntylog(" sql : %s\n", buffer);
 			Connection_execute(con, NTY_DB_UPDATE_RUNTIME_TARGETSTEP, did, runtime_param);
 		}
