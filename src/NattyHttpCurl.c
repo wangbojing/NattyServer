@@ -725,7 +725,12 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	AMap *pAMap = (AMap*)malloc(sizeof(AMap));
 	ntyJsonAMap(json, pAMap);
 	if (strcmp(pAMap->status, "1") != 0) {
+		ntylog(" status is %s\n", pAMap->status);
 		return -1;
+	}
+	if (pAMap->result.location == NULL) {
+		ntylog(" ntyHttpQJKWeatherLocationHandleResult location is null\n");
+		return -2;
 	}
 
 	char colon[2] = {0x3A, 0x00};

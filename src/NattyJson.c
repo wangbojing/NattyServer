@@ -271,7 +271,7 @@ void ntyJsonAMap(JSON_Value *json, AMap *pAMap) {
 	
 	ntydbg("status:%s,  info:%s,  infocode:%s,  location:%s\n", pAMap->status, pAMap->info, pAMap->infocode, pAMap->result.location);
 
-	if (strcmp(pAMap->result.location, "(null)") != 0) {
+	if (strcmp(pAMap->result.location, "(null)") == 0) {
 		pAMap->result.location = NULL;
 	}
 }
