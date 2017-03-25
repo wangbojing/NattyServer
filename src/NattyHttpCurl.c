@@ -713,8 +713,30 @@ int ntyHttpQJKLocation(void *arg) {
 }
 
 
+int ntyStringReplace(char res[], char from[], char to[]) {
+    int i,flag = 0;
+    char *p,*q,*ts;
+    for(i = 0; res[i]; ++i) {
+        if(res[i] == from[0]) {
+            p = res + i;
+            q = from;
+            while(*q && (*p++ == *q++));
+            if(*q == '\0') {
+                ts = (char *)malloc(strlen(res) + 1);
+                strcpy(ts,p);
+                res[i] = '\0';
+                strcat(res,to);
+                strcat(res,ts);
+                free(ts);
+                flag = 1;
+            }
+        }
+    }
+    return flag;
+}
 
 static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
+	int ret = 0;
 	ntylog("==================begin ntyHttpQJKWeatherLocationHandleResult ==========================\n");
 	MessageTag *pMessageTag = (MessageTag *)stream;
 	U8 *jsonstring = buffer;
@@ -726,11 +748,13 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	ntyJsonAMap(json, pAMap);
 	if (strcmp(pAMap->status, "1") != 0) {
 		ntylog(" status is %s\n", pAMap->status);
-		return -1;
+		ret = -1;
+		goto exit;
 	}
 	if (pAMap->result.location == NULL) {
 		ntylog(" location is null\n");
-		return -2;
+		ret = -2;
+		goto exit;
 	}
 
 	char colon[2] = {0x3A, 0x00};
@@ -742,6 +766,10 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 		size_t len = p2-p1;
 		memcpy(lng, p1, len);
 		memcpy(lat, p1+len+1, (size_t)strlen(pAMap->result.location)-len);
+	} else {
+		ntylog(" location data format error\n");
+		ret = -3;
+		goto exit;
 	}
 	char latlng[100] = {0};
 	strncat(latlng, lat, (size_t)strlen(lat));
@@ -772,9 +800,8 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 
 	pMessageSendTag->cb = ntyHttpQJKWeather;
 
-	int ret = ntyDaveMqPushMessage(pMessageSendTag);
-	ntylog("result : %d\n", ret);
-	free(pAMap);
+	ret = ntyDaveMqPushMessage(pMessageSendTag);
+	
 	ntylog("==================end ntyHttpQJKWeatherLocationHandleResult ============================\n");
 
 	
@@ -783,6 +810,8 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	free(pMessageTag);
 #endif
 
+exit:
+	free(pAMap);
 	return ret;
 }
 

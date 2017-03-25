@@ -547,16 +547,16 @@ void ntyJsonICCIDAction(ActionParam *pActionParam) {
 	
 	if (pICCIDReq==NULL) {
 		ntyJsonCommonResult(devId, NATTY_RESULT_CODE_ERR_JSON_CONVERT);
-		return;
+		goto exit;
 	}
 	if (pICCIDReq->ICCID==NULL) {
 		ntyJsonCommonResult(devId, NATTY_RESULT_CODE_ERR_JSON_CONVERT);
-		return;
+		goto exit;
 	}
 	int len = strlen(pICCIDReq->ICCID);
 	if (len!=20) {
 		ntyJsonCommonResult(devId, NATTY_RESULT_CODE_ERR_JSON_CONVERT);
-		return;
+		goto exit;
 	}
 	char iccid[14] = {0};
 	memset(iccid, 0, 14);
@@ -571,7 +571,7 @@ void ntyJsonICCIDAction(ActionParam *pActionParam) {
 	} else if (ret >= 0) {
 		if (strlen(phonenum) == 0) {
 			ntyJsonCommonResult(devId, NATTY_RESULT_CODE_ERR_ICCID_NOTPHONENUM);
-			return;
+			goto exit;
 		}
 		
 		ICCIDAck *pICCIDAck = (ICCIDAck*)malloc(sizeof(ICCIDAck));
@@ -581,6 +581,8 @@ void ntyJsonICCIDAction(ActionParam *pActionParam) {
 		ntySendRecodeJsonPacket(devId, jsonstringICCID, strlen(jsonstringICCID));
 		free(pICCIDAck);
 	}
+
+exit:
 	free(pICCIDReq);
 }
 
