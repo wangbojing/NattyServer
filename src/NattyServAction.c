@@ -1237,6 +1237,11 @@ int ntyVoiceReqAction(C_DEVID fromId, U32 msgId) {
 		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_NOEXIST);
 		return ret;
 	}
+	int filename_len = (int)strlen(filename);
+	if (filename_len==0) {
+		ntydbg("filename length is %d\n", filename_len);
+		return -1;
+	}
 
 	ntylog(" ntyVoiceReqAction --> senderId:%lld, gId:%lld, filename:%s\n", senderId, gId, filename);
 	U8 *pData = (U8 *)malloc(NTY_VOICEREQ_COUNT_LENGTH*NTY_VOICEREQ_PACKET_LENGTH);
