@@ -59,6 +59,7 @@
 #include "time.h"
 #include "NattyServAction.h"
 #include "NattyMessage.h"
+#include "NattyDaveMQ.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -750,12 +751,25 @@ void ntyCommonAckPacketHandleRequest(const void *_self, unsigned char *buffer, i
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_COMMON_ACK_DEVID_IDX);
 		U32 msgId = *(U32*)(buffer+NTY_PROTO_COMMON_ACK_MSGID_IDX);
 		ntylog("ntyCommonAckPacketHandleRequest msgId:%d\n", msgId);
+#if 0
 
 		int ret = ntyExecuteCommonOfflineMsgDeleteHandle(msgId, fromId);
 		if (ret == NTY_RESULT_FAILED) {
 			ntylog("ntyExecuteCommonOfflineMsgDeleteHandle DB Error \n");
 		}
+#else	
+		VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
+		if (tag == NULL) return;
 		
+		memset(tag, 0, sizeof(VALUE_TYPE));
+
+		tag->fromId = fromId;
+		tag->arg = msgId;
+		tag->Type = MSG_TYPE_COMMON_ACK_HANDLE;
+		tag->cb = ntyCommonAckHandle;
+
+		ntyDaveMqPushMessage(tag);
+#endif
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
@@ -838,8 +852,9 @@ void ntyVoiceDataReqPacketHandleRequest(const void *_self, unsigned char *buffer
  * 2. prepare to offline voice data
  * 
  */			
+
  			ntyVoiceDataReqAction(fromId, gId, filename);
-			
+
 
 		}
 

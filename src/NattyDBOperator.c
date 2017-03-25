@@ -101,7 +101,7 @@ void *ntyConnectionPoolInstance(void) {
 			Delete(pCPool);
 		}
 	}
-	//ntyConnectionPoolDynamicsSize(pConnectionPool);
+	ntyConnectionPoolDynamicsSize(pConnectionPool);
 	return pConnectionPool;
 }
 

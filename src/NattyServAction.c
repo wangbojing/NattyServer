@@ -45,6 +45,7 @@
 #include "NattyDaveMQ.h"
 #include "NattyMessage.h"
 #include "NattyHttpCurl.h"
+#include "NattyDaveMQ.h"
 
 #include "NattyResult.h"
 #include "NattyFilter.h"
@@ -1208,7 +1209,7 @@ void ntyJsonOfflineMsgReqAction(ActionParam *pActionParam) {
 }
 
 int ntyVoiceDataReqAction(C_DEVID senderId, C_DEVID gId, char *filename) {
-
+#if 0
 	U32 msgId = 0;
 
 	//insert voice msg to db
@@ -1222,7 +1223,29 @@ int ntyVoiceDataReqAction(C_DEVID senderId, C_DEVID gId, char *filename) {
 	//broadcast to all id
 	//json is null, length is 0
 	ntySendVoiceBroadCastResult(senderId, gId, NULL, 0, msgId);
+#else
 
+	VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
+	if (tag == NULL) return NTY_RESULT_FAILED;
+
+	int sLen = strlen(filename);
+	tag->Tag = malloc(sLen+1);
+	if (tag->Tag == NULL) {
+		free(tag);
+		return ;
+	}
+	memset(tag->Tag, 0, sLen+1);
+
+	memcpy(tag->Tag, filename, sLen);
+	tag->length = sLen;			
+	tag->fromId = senderId;
+	tag->toId = gId;
+	tag->Type = MSG_TYPE_VOICE_DATA_REQ_HANDLE;
+	tag->cb = ntyVoiceDataReqHandle;
+
+	ntyDaveMqPushMessage(tag);
+
+#endif
 }
 
 int ntyVoiceReqAction(C_DEVID fromId, U32 msgId) {
@@ -1258,6 +1281,7 @@ int ntyVoiceReqAction(C_DEVID fromId, U32 msgId) {
 
 int ntyVoiceAckAction(C_DEVID fromId, U32 msgId) {
 
+#if 0
 	int ret = ntyExecuteVoiceOfflineMsgDeleteHandle(msgId, fromId);
 	if (ret == NTY_RESULT_FAILED) {
 		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_NOEXIST);
@@ -1265,7 +1289,19 @@ int ntyVoiceAckAction(C_DEVID fromId, U32 msgId) {
 	}
 
 	ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
+#else
 
+	VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
+	memset(tag, 0, sizeof(VALUE_TYPE));
+
+	tag->fromId = fromId;
+	tag->arg = msgId;
+	tag->Type = MSG_TYPE_VOICE_ACK_HANDLE;
+	tag->cb = ntyVoiceAckHandle;
+
+	ntyDaveMqPushMessage(tag);
+	
+#endif
 	//next voice packet
 	//
 	return NTY_RESULT_SUCCESS;
@@ -1273,8 +1309,6 @@ int ntyVoiceAckAction(C_DEVID fromId, U32 msgId) {
 
 int ntyCommonReqSaveDBAction(C_DEVID fromId, C_DEVID gId, U8 *json) {
 
-	
-	
 }
 
 int ntyBindReqAction(ActionParam *pActionParam) {

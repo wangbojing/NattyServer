@@ -49,6 +49,7 @@
 #include "NattyUdpServer.h"
 #include "NattyProtocol.h"
 #include "NattyAbstractClass.h"
+#include "NattySqlHandle.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
