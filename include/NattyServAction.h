@@ -65,6 +65,8 @@ void ntyJsonBroadCastRecvResult(C_DEVID fromId, C_DEVID toId, char *jsonresult, 
 
 void ntyJsonCommonResult(C_DEVID devId, const char *code);
 
+void ntyJsonCommonContextResult(C_DEVID devId, const char *context);
+
 void ntyJsonCommonExtendResult(C_DEVID devId, const char * code, int id);
 
 void ntyCommonReqAction(ActionParam *pActionParam);

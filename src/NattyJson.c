@@ -503,6 +503,7 @@ void ntyJsonAddSchedule(JSON_Value *json, AddScheduleReq *pAddScheduleReq) {
 	pAddScheduleReq->schedule.daily = json_object_get_string(schedule_object, NATTY_USER_PROTOCOL_DAILY);
 	pAddScheduleReq->schedule.time = json_object_get_string(schedule_object, NATTY_USER_PROTOCOL_TIME);
 	pAddScheduleReq->schedule.details = json_object_get_string(schedule_object, NATTY_USER_PROTOCOL_DETAILS);
+	pAddScheduleReq->schedule.status = json_object_get_string(schedule_object, NATTY_USER_PROTOCOL_STATUS);
 	ntydbg("Daily:%s, Time:%s, Details:%s\n", pAddScheduleReq->schedule.daily, pAddScheduleReq->schedule.time, pAddScheduleReq->schedule.details);
 }
 
@@ -523,6 +524,7 @@ void ntyJsonUpdateSchedule(JSON_Value *json, UpdateScheduleReq *pUpdateScheduleR
 	pUpdateScheduleReq->schedule.daily = json_object_get_string(schedule_object, NATTY_USER_PROTOCOL_DAILY);
 	pUpdateScheduleReq->schedule.time = json_object_get_string(schedule_object, NATTY_USER_PROTOCOL_TIME);
 	pUpdateScheduleReq->schedule.details = json_object_get_string(schedule_object, NATTY_USER_PROTOCOL_DETAILS);
+	pUpdateScheduleReq->schedule.status = json_object_get_string(schedule_object, NATTY_USER_PROTOCOL_STATUS);
 	ntydbg("Daily:%s, Time:%s, Details:%s\n", pUpdateScheduleReq->schedule.daily, pUpdateScheduleReq->schedule.time, pUpdateScheduleReq->schedule.details);
 }
 

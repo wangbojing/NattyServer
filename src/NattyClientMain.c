@@ -340,7 +340,8 @@ int main() {
 		
 		//char *json_common = "{\"IMEI\":\"355637053995130\",\"Action\":\"Delete\",\"Category\":\"Efence\",\"Index\":\"1\"}";
 		//char *json_common = "{\"RunTime\":{\"LossReport\":\"0\"},\"IMEI\":\"355637053995130\",\"Category\":\"RunTime\"}";
-		char *json_common = "{\"RunTime\":{\"TagetStep\":\"14725\"},\"IMEI\":\"355637053995130\",\"Category\":\"RunTime\"}";
+		//char *json_common = "{\"RunTime\":{\"TagetStep\":\"14725\"},\"IMEI\":\"355637053995130\",\"Category\":\"RunTime\"}";
+		char *json_common = "{\"Action\":\"Update\",\"Category\":\"Schedule\",\"IMEI\":\"355637053995130\",\"Id\":\"48\",\"Schedule\":{\"Daily\":\"Monday|Wednesday|Thursday|Friday|Saturday\",\"Details\":\"%E5%85%AC%E5%8F%B8%E8%B5%B7%E6%88%91\",\"Status\":\"0\",\"Time\":\"14:33:00\"}}";
 		ntyCommonReqClient(g_devid,json_common,strlen(json_common));
 		sleep(30);
 		
