@@ -988,6 +988,8 @@ int ntySendICCIDAckResult(C_DEVID fromId, U8 *json, int length, U16 status) {
 
 int ntySendRecodeJsonPacket(C_DEVID fromId, C_DEVID toId, U8 *json, int length) {
 
+	ntylog("\n ntySendRecodeJsonPacket:%s, length:%d\n", json, length);
+	
 	U16 bLength = (U16)length;
 	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
 

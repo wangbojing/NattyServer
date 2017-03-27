@@ -1046,6 +1046,7 @@ char * ntyJsonWriteAddSchedule(AddScheduleAck *pAddScheduleAck) {
 	json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_DAILY, pAddScheduleAck->result.schedule.daily);
 	json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_TIME, pAddScheduleAck->result.schedule.time);
 	json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_DETAILS, pAddScheduleAck->result.schedule.details);
+	json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_STATUS, pAddScheduleAck->result.schedule.status);
 
 	char *jsonstring =  json_serialize_to_string(schema);
 	json_value_free(schema);
@@ -1090,6 +1091,7 @@ char * ntyJsonWriteUpdateSchedule(UpdateScheduleAck *pUpdateScheduleAck) {
 	json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_DAILY, pUpdateScheduleAck->result.schedule.daily);
 	json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_TIME, pUpdateScheduleAck->result.schedule.time);
 	json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_DETAILS, pUpdateScheduleAck->result.schedule.details);
+	json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_STATUS, pUpdateScheduleAck->result.schedule.status);
 
 	char *jsonstring =  json_serialize_to_string(schema);
 	json_value_free(schema);
