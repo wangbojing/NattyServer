@@ -137,6 +137,7 @@ typedef struct _Client {
 	C_DEVID devId; //client id use for rb-tree key
 	U8 deviceType; //device type , android ,ios, web, java, device
 	U16 rLength; //recv length
+	U8 online; //{1,online; 0,offline}
 	U8 *recvBuffer; //recvBuffer
 	U8 *rBuffer; //voice recv buffer
 	U8 *sBuffer; //voice send buffer

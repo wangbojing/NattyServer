@@ -655,6 +655,7 @@ void ntyVoiceReqPacketHandleRequest(const void *_self, unsigned char *buffer, in
 		memset(tag, 0, sizeof(VALUE_TYPE));
 		tag->fromId = fromId;
 		tag->arg = msgId;
+		tag->Type = MSG_TYPE_VOICE_REQ_HANDLE;
 		tag->cb = ntyVoiceReqHandle;
 
 		ntyDaveMqPushMessage(tag);

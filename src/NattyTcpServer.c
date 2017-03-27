@@ -349,10 +349,12 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 			ntyReleaseSocket(loop, watcher);
 		}
 		//
+#if 0
 		ret = ntyDelClientHeap(load->id);
 		if (ret == NTY_RESULT_NOEXIST) {
 			ntylog(" Client BHeap is not Exist\n");
 		}
+#endif
 #else
 		MessagePacket *msg = (MessagePacket*)allocRequestPacket();
 		if (msg == NULL) {
