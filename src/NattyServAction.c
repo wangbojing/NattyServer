@@ -742,10 +742,10 @@ void ntyJsonAddScheduleAction(ActionParam *pActionParam) {
 		pDeviceAddScheduleAck = (DeviceAddScheduleAck*)pAddScheduleReq;
 		pDeviceAddScheduleAck->id = ids;
 		char *jsondeviceresult = ntyJsonWriteDeviceAddSchedule(pDeviceAddScheduleAck);
+		ret = ntySendRecodeJsonPacket(fromId, toId, jsondeviceresult, strlen(jsondeviceresult));
 		ntyJsonFree(jsondeviceresult);
 		free(pDeviceAddScheduleAck);
-
-		ret = ntySendCommonReq(toId, jsondeviceresult, strlen(jsondeviceresult));
+		//ret = ntySendRecodeJsonPacket(fromId, toId, pActionParam->jsonstring, pActionParam->jsonlen);
 		if (ret >= 0) {
 			AddScheduleAck *pAddScheduleAck = (AddScheduleAck*)malloc(sizeof(AddScheduleAck));
 			pAddScheduleAck->result = *(AddScheduleResult*)pAddScheduleReq;
@@ -1049,19 +1049,33 @@ void ntyJsonAddContactsAction(ActionParam *pActionParam) {
 		ntylog(" ntyJsonAddContactsAction --> DB Exception\n");
 		ret = 4;
 	} else if (ret >= 0) {
+	/*
 		CommonReq *pCommonReq = malloc(sizeof(CommonReq));
 		ntyJsonCommon(pActionParam->json, pCommonReq);
 		CommonReqExtend *pCommonReqExtend = malloc(sizeof(CommonReqExtend));
 		pCommonReqExtend->IMEI = pCommonReq->IMEI;
 		pCommonReqExtend->category = pCommonReq->category;
 		pCommonReqExtend->action = pCommonReq->action;
-		char ids[20] = {0};
-		sprintf(ids, "%d", contactsId);
-		pCommonReqExtend->id = ids;
+
+		
 		char *jsonstringTemp = ntyJsonWriteCommonReqExtend(pCommonReqExtend);
-		ret = ntySendRecodeJsonPacket(fromId, toId, jsonstringTemp, strlen(jsonstringTemp));
+		//ret = ntySendRecodeJsonPacket(fromId, toId, jsonstringTemp, strlen(jsonstringTemp));
+
 		free(pCommonReq);
 		free(pCommonReqExtend);
+		*/
+		char ids[20] = {0};
+		sprintf(ids, "%d", contactsId);
+		pAddContactsReq->id = ids;
+	
+		DeviceAddContactsAck *pDeviceAddContactsAck = (DeviceAddContactsAck*)malloc(sizeof(DeviceAddContactsAck));
+		pDeviceAddContactsAck = (DeviceAddScheduleAck*)pAddContactsReq;
+		pDeviceAddContactsAck->id = ids;
+		char *jsondeviceresult = ntyJsonWriteDeviceAddContacts(pDeviceAddContactsAck);
+		ret = ntySendRecodeJsonPacket(fromId, toId, (U8*)jsondeviceresult, strlen(jsondeviceresult));
+		free(jsondeviceresult);
+		free(pDeviceAddContactsAck);
+		
 		if (ret >= 0) {
 			AddContactsAck *pAddContactsAck = malloc(sizeof(AddContactsAck));
 			pAddContactsAck->results = *(AddContactsResults*)pAddContactsReq;
@@ -1344,6 +1358,7 @@ int ntyBindReqAction(ActionParam *pActionParam) {
 		ntyProtoBindAck(fromId, devId, ret);
 		ntylog(" ntyQueryAdminSelectHandle --> %lld\n", admin);
 
+		ntydbg("-----------------------insert to db and write here---------------------------------\n");
 		//insert to db and write here
 		C_DEVID proposer = fromId;
 		U8 *name = (U8*)pBindReq->bind.watchName;
@@ -1353,9 +1368,11 @@ int ntyBindReqAction(ActionParam *pActionParam) {
 		int msgId = 0;
 		ntyQueryBindConfirmInsertHandle(admin, devId, name, wimage, proposer, call, uimage, &msgId);
 
+		ntydbg("-----------------------query phonebook select---------------------------------\n");
 		char phonenum[30] = {0};
 		ntyQueryPhoneBookSelectHandle(devId, proposer, phonenum);
-		
+
+		ntydbg("-----------------------encode JSON write here---------------------------------\n");
 		//Encode JSON write here
 		BindAck *pBindAck = malloc(sizeof(BindAck));
 		pBindAck->results.IMEI = pBindReq->IMEI;
@@ -1366,8 +1383,14 @@ int ntyBindReqAction(ActionParam *pActionParam) {
 		pBindAck->results.msgId = ids;
 		char *jsonstring = ntyJsonWriteBind(pBindAck);
 
+		ntydbg("-----------------------send json to admin---------------------------------\n");
 		//send json to admin
 		ntySendBindConfirmPushResult(proposer, admin, (U8*)jsonstring, strlen(jsonstring));
+
+		//Radio broadcast
+		ntydbg("-----------------------radio broadcast---------------------------------\n");
+		
+		
 		free(pBindAck);
 	}
 	free(pBindReq);

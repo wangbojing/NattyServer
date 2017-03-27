@@ -177,6 +177,8 @@ char * ntyJsonWriteTimeTables(TimeTablesAck *pTimeTablesAck);
 
 char * ntyJsonWriteAddContacts(AddContactsAck *pAddContactsAck);
 
+char * ntyJsonWriteDeviceAddContacts(DeviceAddContactsAck *pDeviceAddContactsAck);
+
 char * ntyJsonWriteUpdateContacts(UpdateContactsAck *pUpdateContactsAck);
 
 char * ntyJsonWriteDelContacts(DelContactsAck *pDelContactsAck);

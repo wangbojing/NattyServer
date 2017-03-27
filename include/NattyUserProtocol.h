@@ -587,8 +587,9 @@ typedef struct _AddContactsReq {
 	const char *IMEI;
 	const char *category;
 	const char *action;
+	const char *id;
 	Contacts contacts;
-} AddContactsReq, AddContactsResults;
+} AddContactsReq, AddContactsResults, DeviceAddContactsAck;
 
 typedef struct _DelContactsReq {
 	const char *IMEI;

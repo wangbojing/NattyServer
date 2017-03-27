@@ -1021,7 +1021,31 @@ char * ntyJsonWriteDeviceAddSchedule(DeviceAddScheduleAck *pDeviceAddScheduleAck
 	json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_DAILY, pDeviceAddScheduleAck->schedule.daily);
 	json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_TIME, pDeviceAddScheduleAck->schedule.time);
 	json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_DETAILS, pDeviceAddScheduleAck->schedule.details);
+	json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_STATUS, pDeviceAddScheduleAck->schedule.status);
+	
+	char *jsonstring =  json_serialize_to_string(schema);
+	json_value_free(schema);
+	return jsonstring;
+}
 
+char * ntyJsonWriteDeviceAddContacts(DeviceAddContactsAck *pDeviceAddContactsAck) {
+	if (pDeviceAddContactsAck == NULL) {
+		return NULL;
+	}
+	
+	JSON_Value *schema = json_value_init_object();
+	JSON_Object *schema_obj = json_value_get_object(schema);
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_IMEI, pDeviceAddContactsAck->IMEI);
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_CATEGORY, pDeviceAddContactsAck->category);
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_ACTION, pDeviceAddContactsAck->action);
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_ID, pDeviceAddContactsAck->id);
+
+	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_CONTACTS, json_value_init_object());
+	JSON_Object *schedule_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_CONTACTS);
+	json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_NAME, pDeviceAddContactsAck->contacts.name);
+	json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_IMAGE, pDeviceAddContactsAck->contacts.image);
+	json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_TELPHONE, pDeviceAddContactsAck->contacts.telphone);
+	
 	char *jsonstring =  json_serialize_to_string(schema);
 	json_value_free(schema);
 	return jsonstring;
