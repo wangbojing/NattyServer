@@ -420,8 +420,9 @@ int ntyWriteDat(const char *filename, const char *data, int len) {
 }
 
 int ntyReadDat(const char *filename, char *data, int len) {
-	FILE *pAMRFile = fopen(filename, "r+b");
 	int size = 0;
+	FILE *pAMRFile = fopen(filename, "r+b");
+	if (pAMRFile == NULL) return -1;
 
 	fseek(pAMRFile, 0, SEEK_SET);
 	size = fread(data, 1, len, pAMRFile);

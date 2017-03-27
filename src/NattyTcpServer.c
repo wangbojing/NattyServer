@@ -234,6 +234,11 @@ int ntyDelRelationMap(C_DEVID id) {
 		} else if (ret == NTY_RESULT_NOEXIST) {
 			ntylog("Map Delete ret : %d", ret);
 		}
+#if 1 
+		//Delete BHeap Table
+		
+		
+#endif
 		return ret;
 		
 	} else {
@@ -344,6 +349,10 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 			ntyReleaseSocket(loop, watcher);
 		}
 		//
+		ret = ntyDelClientHeap(load->id);
+		if (ret == NTY_RESULT_NOEXIST) {
+			ntylog(" Client BHeap is not Exist\n");
+		}
 #else
 		MessagePacket *msg = (MessagePacket*)allocRequestPacket();
 		if (msg == NULL) {

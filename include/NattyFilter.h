@@ -93,6 +93,7 @@ int ntyReleaseClientNodeByNode(struct ev_loop *loop, void *node);
 
 int ntyClientCleanup(ClientSocket *client);
 
+int ntyDelClientHeap(C_DEVID clientId);
 
 
 typedef struct _Node {

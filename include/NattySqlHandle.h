@@ -54,6 +54,7 @@ int ntyCommonAckHandle(void *arg);
 
 int ntyVoiceDataReqHandle(void *arg);
 
+int ntyVoiceReqHandle(void *arg);
 
 
 

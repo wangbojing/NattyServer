@@ -46,7 +46,7 @@
 #include "NattyResult.h"
 #include "NattyDaveMQ.h"
 #include "NattyMessage.h"
-
+#include "NattyServAction.h"
 
 int ntyVoiceAckHandle(void *arg) {
 	if (arg == NULL) return ;
@@ -113,6 +113,18 @@ int ntyVoiceDataReqHandle(void *arg) {
 	ntySendVoiceBroadCastResult(senderId, gId, NULL, 0, msgId);
 }
 
+
+int ntyVoiceReqHandle(void *arg) {
+	if (arg == NULL) return ;
+	VALUE_TYPE *tag = arg;
+
+	C_DEVID fromId = tag->fromId;
+	int msgId = tag->arg;
+
+	ntyVoiceReqAction(fromId, msgId);
+
+	return 0;
+}
 
 
 

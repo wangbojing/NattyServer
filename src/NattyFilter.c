@@ -358,7 +358,7 @@ static int ntyAddClientHeap(const void * obj, RECORDTYPE *value) {
 	return NTY_RESULT_SUCCESS;
 }
 
-static int ntyDelClientHeap(C_DEVID clientId) {
+int ntyDelClientHeap(C_DEVID clientId) {
 	int ret = -1;
 
 	void *heap = ntyBHeapInstance();
@@ -367,11 +367,15 @@ static int ntyDelClientHeap(C_DEVID clientId) {
 		Client *pClient = record->value;
 
 		pClient->rLength = 0;
-		free(pClient->recvBuffer);
+		if (pClient->recvBuffer != NULL) {
+			free(pClient->recvBuffer);
+		}
 
 		NWTimer* nwTimer = ntyTimerInstance();
-		ntyTimerDel(nwTimer, pClient->hbdTimer);
-		pClient->hbdTimer = NULL;
+		if (pClient->hbdTimer != NULL) {
+			ntyTimerDel(nwTimer, pClient->hbdTimer);
+			pClient->hbdTimer = NULL;
+		}
 
 		if (pClient->friends != NULL) {
 			ntyVectorDestory(pClient->friends);
@@ -381,12 +385,14 @@ static int ntyDelClientHeap(C_DEVID clientId) {
 #endif
 
 		ret = ntyBHeapDelete(heap, clientId);
-		if (ret == NTY_RESULT_FAILED || ret == NTY_RESULT_NOEXIST) {
+		if (ret == NTY_RESULT_FAILED) {
 			ASSERT(0);
+		} else if (ret == NTY_RESULT_NOEXIST) {
+			ntylog("ntyDelClientHeap Delete Error\n");
 		}
 		free(pClient);
 	} else {
-		ASSERT(1);
+		return NTY_RESULT_NOEXIST;
 	}
 
 	return NTY_RESULT_SUCCESS;
@@ -640,9 +646,19 @@ void ntyVoiceReqPacketHandleRequest(const void *_self, unsigned char *buffer, in
 		U32 msgId = *(U32*)(buffer+NTY_PROTO_VOICE_REQ_MSGID_IDX);
 
 		ntylog(" ntyVoiceReqPacketHandleRequest --> %lld, msgId:%d\n", fromId, msgId);
-
+#if 0
 		ntyVoiceReqAction(fromId, msgId);
-		
+#else
+		VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
+		if (tag == NULL) return ;
+
+		memset(tag, 0, sizeof(VALUE_TYPE));
+		tag->fromId = fromId;
+		tag->arg = msgId;
+		tag->cb = ntyVoiceReqHandle;
+
+		ntyDaveMqPushMessage(tag);
+#endif
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
