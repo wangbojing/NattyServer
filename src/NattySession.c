@@ -987,8 +987,6 @@ int ntySendICCIDAckResult(C_DEVID fromId, U8 *json, int length, U16 status) {
 
 
 int ntySendRecodeJsonPacket(C_DEVID fromId, C_DEVID toId, U8 *json, int length) {
-
-	ntylog("\n ntySendRecodeJsonPacket:%s, length:%d\n", json, length);
 	
 	U16 bLength = (U16)length;
 	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
@@ -1006,10 +1004,12 @@ int ntySendRecodeJsonPacket(C_DEVID fromId, C_DEVID toId, U8 *json, int length) 
 
 	bLength = bLength + NTY_PROTO_COMMON_REQ_JSON_CONTENT_IDX + sizeof(U32);
 
+	ntylog("\n ntySendRecodeJsonPacket buffer:%s\n", buffer+NTY_PROTO_COMMON_REQ_JSON_CONTENT_IDX);
+
 	void *map = ntyMapInstance();
 	ClientSocket *client = ntyMapSearch(map, toId);
 
-	return ntySendBuffer(client, buffer, length);
+	return ntySendBuffer(client, buffer, bLength);
 
 }
 

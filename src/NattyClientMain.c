@@ -319,10 +319,10 @@ int main() {
 		//sleep(20);
 		//break;
 
-		//char *json_iccid = "{\"EI\":\"355637053995130\",\"ICCID\":\"89860116425100650036\"}";
+		char *json_iccid = "{\"IMEI\":\"352315052834187\",\"ICCID\":\"89860116425100650036\"}";
 		//ntydbg("Request iccid  : %s\n", json_iccid);
-		//ntyICCIDReqClient(g_devid, json_iccid, strlen(json_iccid));
-		//sleep(20);
+		ntyICCIDReqClient(g_devid, json_iccid, strlen(json_iccid));
+		sleep(20);
 		//break;
 		//char *json_common = "{\"Action\":\"Update\",\"Category\":\"Schedule\",\"IMEI\":\"355637053995130\",\"Id\":\"41\",\"Schedule\":{\"Daily\":\"Monday|Wednesday|Thursday|Sunday\",\"Details\":\"¸øÁ¦\",\"Time\":\"17:30:0tion\":\",,255\"}}}";
 
@@ -341,7 +341,8 @@ int main() {
 		//char *json_common = "{\"IMEI\":\"355637053995130\",\"Action\":\"Delete\",\"Category\":\"Efence\",\"Index\":\"1\"}";
 		//char *json_common = "{\"RunTime\":{\"LossReport\":\"0\"},\"IMEI\":\"355637053995130\",\"Category\":\"RunTime\"}";
 		//char *json_common = "{\"RunTime\":{\"TagetStep\":\"14725\"},\"IMEI\":\"355637053995130\",\"Category\":\"RunTime\"}";
-		char *json_common = "{\"Action\":\"Update\",\"Category\":\"Schedule\",\"IMEI\":\"355637053995130\",\"Id\":\"48\",\"Schedule\":{\"Daily\":\"Monday|Wednesday|Thursday|Friday|Saturday\",\"Details\":\"%E5%85%AC%E5%8F%B8%E8%B5%B7%E6%88%91\",\"Status\":\"0\",\"Time\":\"14:33:00\"}}";
+		//char *json_common = "{\"Action\":\"Update\",\"Category\":\"Schedule\",\"IMEI\":\"355637053995130\",\"Id\":\"48\",\"Schedule\":{\"Daily\":\"Monday|Wednesday|Thursday|Friday|Saturday\",\"Details\":\"%E5%85%AC%E5%8F%B8%E8%B5%B7%E6%88%91\",\"Status\":\"0\",\"Time\":\"14:33:00\"}}";
+		char *json_common = "{\"IMEI\":\"352315052834187\",\"Category\":\"Turn\",\"Turn\":{\"Status\":\"1\",\"On\":{\"Time\":\"08:00:00\"},\"Off\":{\"Time\":\"18:00:00\"}}}";
 		ntyCommonReqClient(g_devid,json_common,strlen(json_common));
 		sleep(30);
 		

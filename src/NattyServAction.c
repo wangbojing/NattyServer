@@ -582,12 +582,13 @@ void ntyJsonICCIDAction(ActionParam *pActionParam) {
 			ntyJsonCommonResult(devId, NATTY_RESULT_CODE_ERR_ICCID_NOTPHONENUM);
 			goto exit;
 		}
-		
+
 		ICCIDAck *pICCIDAck = (ICCIDAck*)malloc(sizeof(ICCIDAck));
 		pICCIDAck->IMEI = pICCIDReq->IMEI;
 		pICCIDAck->phone_num = phonenum;
 		char *jsonstringICCID = ntyJsonWriteICCID(pICCIDAck);
-		ntySendRecodeJsonPacket(devId, jsonstringICCID, strlen(jsonstringICCID));
+		ntySendRecodeJsonPacket(devId, devId, (U8*)jsonstringICCID, strlen(jsonstringICCID));
+		ntyJsonFree(jsonstringICCID);
 		free(pICCIDAck);
 	}
 
