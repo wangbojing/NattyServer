@@ -636,7 +636,7 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 	pLocationAck->results.radius = pAMap->result.radius;
 
 	int ret = ntyExecuteLocationNewInsertHandle(pMessageTag->toId, (U8)pMessageTag->Type, pAMap->result.location, pAMap->info, pAMap->result.desc);
-	if (ret>0) {
+	if (ret == 0) {
 		char *jsonresult = ntyJsonWriteLocation(pLocationAck);
 		ntylog("ntyHttpQJKLocationHandleResult jsonresult --> %s\n", jsonresult);
 		ret = ntySendLocationPushResult(pMessageTag->toId, jsonresult, strlen(jsonresult));
