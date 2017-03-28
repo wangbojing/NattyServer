@@ -368,6 +368,10 @@ void ntyCommonReqAction(ActionParam *pActionParam) {
 	}
 	if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_EFENCE) == 0) {
 		const char *action = ntyJsonAction(pActionParam->json);
+		if (action == NULL) {
+			ntylog("Can't find action, because action is null\n");
+			return;
+		}
 		if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_ADD) == 0) {
 			ntySendRecodeJsonAndSaveCommonMsgData(pActionParam);
 			if (pActionParam->index > 0) {
@@ -393,6 +397,10 @@ void ntyCommonReqAction(ActionParam *pActionParam) {
 		}
 	} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_SCHEDULE) == 0) {
 		const char *action = ntyJsonAction(pActionParam->json);
+		if (action == NULL) {
+			ntylog("Can't find action, because action is null\n");
+			return;
+		}
 		if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_ADD) == 0) {
 			ntySendRecodeJsonAndSaveCommonMsgData(pActionParam);
 			if (pActionParam->index > 0) {
@@ -423,6 +431,10 @@ void ntyCommonReqAction(ActionParam *pActionParam) {
 		}
 	} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_CONTACTS) == 0) {
 		const char *action = ntyJsonAction(pActionParam->json);
+		if (action == NULL) {
+			ntylog("Can't find action, because action is null\n");
+			return;
+		}
 		if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_ADD) == 0) {
 			ntySendRecodeJsonAndSaveCommonMsgData(pActionParam);
 			if (pActionParam->index > 0) {
@@ -501,10 +513,8 @@ void ntyJsonAddEfenceAction(ActionParam *pActionParam) {
 	free(pAddEfenceReq);
 	*/
 
-
 	AddEfenceReq *pAddEfenceReq = (AddEfenceReq*)malloc(sizeof(AddEfenceReq));
 	ntyJsonAddEfence(pActionParam->json, pAddEfenceReq);
-
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;
 
@@ -518,22 +528,31 @@ void ntyJsonAddEfenceAction(ActionParam *pActionParam) {
 	if (points_len!=0) {
 		points[points_len-1] = '\0';
 	}
-
 	time_t timep;
 	struct tm *p;
 	time(&timep);
 	p = localtime(&timep);
 	U8 runtime[50] = {0};
-	sprintf(runtime, "%04d/%02d/%02d %02d:%02d:%02d", 1900+p->tm_year, 1+p->tm_mon, p->tm_hour, p->tm_hour, p->tm_min, p->tm_sec);
-
-	int index = atoi(pAddEfenceReq->index);
-
+	sprintf(runtime, "%04d/%02d/%02d %02d:%02d:%02d", 1900+p->tm_year, 1+p->tm_mon, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec);
+	int index = 0;
+	int check_index = checkStringIsAllNumber(pAddEfenceReq->index);
+	if (check_index == 1) {
+		index = atoi(pAddEfenceReq->index);
+	}
+	if (index<=0 || index > 3) {
+		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_DATA);
+		goto exit;
+	}
+	
+	
 	int id = 0;
 	int ret = ntyExecuteEfenceInsertHandle(fromId, toId, index, pAddEfenceReq->efence.size, points, runtime, &id);
 	if (ret == -1) {
 		ntylog(" ntyJsonEfenceAction --> DB Exception\n");
 		ret = 4;
-	} else if (ret >= 0) {
+	} else if (ret == 0) { 
+		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_REPEATE_DATA);
+	} else if (ret > 0) {
 		ret = ntySendRecodeJsonPacket(fromId, toId, pActionParam->jsonstring, pActionParam->jsonlen);
 		if (ret >= 0) {
 			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
@@ -544,7 +563,6 @@ void ntyJsonAddEfenceAction(ActionParam *pActionParam) {
 			pAddEfenceAck->id = ids;
 			pAddEfenceAck->result = *(AddEfenceResult*)pAddEfenceReq;
 			char *jsonresult = ntyJsonWriteAddEfence(pAddEfenceAck);
-
 			ntyJsonCommonContextResult(toId, jsonresult);			
 			ntylog(" ntySendCommonBroadCastResult --> %lld, %lld, %s, %d\n", fromId, toId, jsonresult, (int)strlen(jsonresult));
 			ntySendCommonBroadCastResult(fromId, toId, (U8*)jsonresult, strlen(jsonresult));
@@ -552,6 +570,8 @@ void ntyJsonAddEfenceAction(ActionParam *pActionParam) {
 			free(pAddEfenceAck);
 		}
 	}
+
+exit:
 	ntyJsonAddEfencePointRelease(pAddEfenceReq->efence.pPoints);
 	free(pAddEfenceReq);
 }
@@ -565,9 +585,11 @@ void ntyJsonDelEfenceAction(ActionParam *pActionParam) {
 	
 	C_DEVID devId = toId;
 	int index = 0;
-	if (pDelEfenceReq->index != NULL) {
+	int check_index = checkStringIsAllNumber(pDelEfenceReq->index);
+	if (check_index == 1) {
 		index = atoi(pDelEfenceReq->index);
 	}
+	
 	int ret = ntyExecuteEfenceDeleteHandle(fromId, toId, index);
 	if (ret == -1) {
 		ntylog(" ntyJsonDelEfenceAction --> DB Exception\n");

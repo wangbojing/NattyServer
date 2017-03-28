@@ -55,12 +55,20 @@ const char* ntyCommonResultMessage(const char *code) {
 			message = "JSON format error";	//JSON格式错误
 		} else if (strcmp(code, NATTY_RESULT_CODE_ERR_JSON_CONVERT) == 0) {
 			message = "JSON convert error";	//JSON转换错误
+		} else if (strcmp(code, NATTY_RESULT_CODE_ERR_JSON_DATA) == 0) {
+			message = "JSON data error";	//JSON数据错误
 		} else if (strcmp(code, NATTY_RESULT_CODE_ERR_ICCID_NOTPHONENUM) == 0) {
 			message = "ICCID not band phone number error";	//JSON转换错误
 		} else if (strcmp(code, NATTY_RESULT_CODE_ERR_DB_SAVE_OFFLINE) == 0) {
 			message = "Cannot save offline data";
+		} else if (strcmp(code, NATTY_RESULT_CODE_ERR_DB_REPEATE_DATA) == 0) {
+			message = "Repeate data";
 		}
 	}
+
+	
+
+	
 	return message;
 }
 

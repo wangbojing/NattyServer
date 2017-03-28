@@ -334,7 +334,7 @@ int main() {
 		//char *json_common="{\"Schedule\":{\"Daily\":\"Wednesday|Thursday|Friday|Saturday\",\"Details\":\"%E4%BE%A7%E9%9D%A2\",\"Time\":\"21:14:14\"},\"Category\":\"Schedule\",\"IMEI\":\"352315052834187\",\"Action\":\"Update\",\"Id\":\"94\"}";
 		//char *json_common = "{\"IMEI\":\"352315052834187\",\"Category\":\"Schedule\",\"Action\":\"Add\",\"Schedule\":{\"Daily\":\"Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday\",\"Time\":\"18:00:00\",\"Details\":\"3\"}}";
 
-		char *json_common = "{\"Action\":\"Add\",\"Category\":\"Contacts\",\"Contacts\":{\"Image\":\"8\",\"Name\":\"%E9%BB%84%E6%B5%B7\",\"Tel\":\"13695287465\"},\"IMEI\":\"355637053995130\"}";
+		//char *json_common = "{\"Action\":\"Add\",\"Category\":\"Contacts\",\"Contacts\":{\"Image\":\"8\",\"Name\":\"%E9%BB%84%E6%B5%B7\",\"Tel\":\"13695287465\"},\"IMEI\":\"355637053995130\"}";
 		//char *json_common = "{\"Contact\":{\"Tel\":\"15218293347\",\"Name\":\"%E5%A4%96%E5%85%AC\",\"Image\":\"4\"},\"Category\":\"Contacts\",\"Action\":\"Add\",\"IMEI\":\"352315052834187\"}}";
 
 		
@@ -344,6 +344,8 @@ int main() {
 		//char *json_common = "{\"RunTime\":{\"TagetStep\":\"14725\"},\"IMEI\":\"355637053995130\",\"Category\":\"RunTime\"}";
 		//char *json_common = "{\"Action\":\"Update\",\"Category\":\"Schedule\",\"IMEI\":\"355637053995130\",\"Id\":\"48\",\"Schedule\":{\"Daily\":\"Monday|Wednesday|Thursday|Friday|Saturday\",\"Details\":\"%E5%85%AC%E5%8F%B8%E8%B5%B7%E6%88%91\",\"Status\":\"0\",\"Time\":\"14:33:00\"}}";
 		//char *json_common = "{\"IMEI\":\"352315052834187\",\"Category\":\"Turn\",\"Turn\":{\"Status\":\"1\",\"On\":{\"Time\":\"08:00:00\"},\"Off\":{\"Time\":\"18:00:00\"}}}";
+		
+		char *json_common = "{\"IMEI\":\"355637052788650\",\"Category\":\"Efence\",\"Action\":\"Add\", \"Index\":\"1\",\"Efence\":{\"Num\":\"3\",\"Points\":[\"113.2409402,23.1326885\",\"113.2409412,23.1326895\",\"113.2409408,23.1326890\"]}}";
 		ntyCommonReqClient(g_devid,json_common,strlen(json_common));
 		sleep(30);
 		
