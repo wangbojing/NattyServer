@@ -47,9 +47,10 @@
 #include "NattyDaveMQ.h"
 #include "NattyMessage.h"
 #include "NattyServAction.h"
+#include "NattyUdpServer.h"
 
 int ntyVoiceAckHandle(void *arg) {
-	if (arg == NULL) return ;
+	if (arg == NULL) return NTY_RESULT_ERROR;
 	VALUE_TYPE *tag = arg;
 
 	ntylog(" ntyVoiceAckHandle \n");
@@ -60,17 +61,15 @@ int ntyVoiceAckHandle(void *arg) {
 	int ret = ntyExecuteVoiceOfflineMsgDeleteHandle(msgId, fromId);
 	if (ret == NTY_RESULT_FAILED) {
 		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_NOEXIST);
-	} else {
-		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
-	}
-
+	} 
+	
 	free(tag);
 
 	return ret;
 }
 
 int ntyCommonAckHandle(void *arg) {
-	if (arg == NULL) return ;
+	if (arg == NULL) return NTY_RESULT_ERROR;
 	VALUE_TYPE *tag = arg;
 
 	ntylog(" ntyCommonAckHandle \n");
@@ -89,7 +88,7 @@ int ntyCommonAckHandle(void *arg) {
 
 
 int ntyVoiceDataReqHandle(void *arg) {
-	if (arg == NULL) return ;
+	if (arg == NULL) return NTY_RESULT_ERROR;
 	VALUE_TYPE *tag = arg;
 
 
@@ -115,7 +114,7 @@ int ntyVoiceDataReqHandle(void *arg) {
 
 
 int ntyVoiceReqHandle(void *arg) {
-	if (arg == NULL) return ;
+	if (arg == NULL) return NTY_RESULT_ERROR;
 	VALUE_TYPE *tag = arg;
 
 	C_DEVID fromId = tag->fromId;
@@ -127,7 +126,65 @@ int ntyVoiceReqHandle(void *arg) {
 }
 
 
+int ntyBindConfirmReqHandle(void *arg) {
+	if (arg == NULL) return NTY_RESULT_ERROR;
 
+	VALUE_TYPE *tag = arg;
+	U8 json[PACKET_BUFFER_SIZE] = {0};
+
+	C_DEVID adminId = tag->fromId;
+	C_DEVID proposerId = tag->toId;
+	C_DEVID gId = tag->gId;
+	int flag = tag->arg;
+#if 0
+	U8 *json = tag->Tag;
+	U8 length = tag->length;
+#endif
+
+	char phonenum[30] = {0};
+	ntyQueryPhoneBookSelectHandle(gId, proposerId, phonenum);
+
+	if (flag == 1) { //need to recode
+
+/*
+ *
+  
+ {
+	 "Results": {
+	 "IMEI": "355637052788650",
+	 "Category": "BindConfirmReq",
+ 	 "Proposer":"15889650380",
+ 	 "Answer":"Reject"
+ 	}
+ }
+ *
+ */	
+ 		char tempJson[128] = {0};
+		
+
+		strcat(json, "\"Results\": {");
+		sprintf(tempJson, "\"IMEI\":\"%llx\",", gId);
+		strcat(json, tempJson);
+		memset(tempJson, 0, 128);
+		
+		strcat(json, "\"Category\": \"BindConfirmReq\",");
+		sprintf(tempJson, "\"Proposer\":\"%s\",", phonenum);
+		strcat(json, tempJson);
+
+		strcat(json, "\"Answer\":\"Agree\"}}");
+		
+		ntylog("ntyBindConfirmReqHandle --> %s\n", json);
+
+		int jsonLen = strlen(json);
+		
+		ntySendCommonBroadCastResult(adminId, gId, json, jsonLen, 0);
+	} else {
+		ntyProtoBindAck(proposerId, gId, 6); //reject 
+	}
+
+	free(tag);
+	
+}
 
 
 

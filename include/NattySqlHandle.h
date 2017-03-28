@@ -56,6 +56,7 @@ int ntyVoiceDataReqHandle(void *arg);
 
 int ntyVoiceReqHandle(void *arg);
 
+int ntyBindConfirmReqHandle(void *arg);
 
 
 #endif

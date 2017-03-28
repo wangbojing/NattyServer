@@ -1352,6 +1352,7 @@ int ntyBindReqAction(ActionParam *pActionParam) {
 	} 
 
 	BindReq *pBindReq = malloc(sizeof(BindReq));
+	if (pBindReq == NULL) return NTY_RESULT_ERROR;
 	ntyJsonBind(pActionParam->json, pBindReq);
 	
 	//Parser JSON and write here
@@ -1364,8 +1365,10 @@ int ntyBindReqAction(ActionParam *pActionParam) {
 		U8 *wimage = (U8*)pBindReq->bind.watchImage;
 		U8 *call = (U8*)pBindReq->bind.userName;
 		U8 *uimage = (U8*)pBindReq->bind.userImage;
+
+		ntylog("WatchName:%s, UserName:%s\n", pBindReq->bind.watchName, pBindReq->bind.userName);
 	
-		if (admin == 0) { //first bind device
+		if (admin == 0 || admin == fromId) { //first bind device
 			ret = ntyQueryAdminGroupInsertHandle(devId, name, proposer, call, wimage, uimage);
 			if (ret == 0) {
 				ntyProtoBindAck(fromId, devId, 5);

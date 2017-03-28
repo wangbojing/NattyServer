@@ -1081,6 +1081,9 @@ void ntyBindConfirmReqPacketHandleRequest(const void *_self, unsigned char *buff
 
 		U32 msgId = *(U32*)(buffer+NTY_PROTO_BIND_CONFIRM_REQ_MSGID_IDX);
 
+		U8 *json = buffer+NTY_PROTO_BIND_CONFIRM_REQ_JSON_CONTENT_IDX;
+		U16 jsonLen = *(U16*)(buffer+NTY_PROTO_BIND_CONFIRM_REQ_JSON_LENGTH_IDX);
+
 #if ENABLE_CONNECTION_POOL
 #if 0
 		int ret = ntyQueryDevAppGroupInsertHandle(AppId, DeviceId);
@@ -1115,7 +1118,36 @@ void ntyBindConfirmReqPacketHandleRequest(const void *_self, unsigned char *buff
 		//
 		//else
 		//
+
+#if 1 //Need to Recode
+
+#if 1 //juge agree and reject
+#define NTY_TOKEN_AGREE			"Agree"
+#define NTY_TOKEN_AGREE_LENGTH	5
+
+#define NTY_TOKEN_REJECT		"Reject"
+#define NTY_TOKEN_REJECT_LENGTH	6
+		U32 match[6] = {0};
+
+		VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
+
+		if (ntyKMP(json, jsonLen, NTY_TOKEN_AGREE, NTY_TOKEN_AGREE_LENGTH, match)) {
+			tag->arg = 1;
+		} else if (ntyKMP(json, jsonLen, NTY_TOKEN_REJECT, NTY_TOKEN_REJECT_LENGTH, match)) {
+			tag->arg = 0;
+		} else {
+			tag->arg = 1;
+		}
+#endif 
+		tag->fromId = fromId;
+		tag->toId = AppId;
+		tag->gId = DeviceId;
+		tag->cb = ntyBindConfirmReqHandle;
 		
+		tag->Type = MSG_TYPE_BIND_CONFIRM_REQ_HANDLE;
+		
+		ntyDaveMqPushMessage(tag);
+#endif		
 #endif
 
 		
