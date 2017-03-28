@@ -1340,6 +1340,9 @@ int ntyCommonReqSaveDBAction(C_DEVID fromId, C_DEVID gId, U8 *json) {
 
 int ntyBindReqAction(ActionParam *pActionParam) {
 	C_DEVID admin = 0;
+
+	if (pActionParam == NULL) return NTY_RESULT_ERROR;
+	
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID devId = pActionParam->toId;
 	

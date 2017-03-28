@@ -1111,6 +1111,11 @@ void ntyBindConfirmReqPacketHandleRequest(const void *_self, unsigned char *buff
 		ntylog(" ntyBindConfirmReqPacketHandleRequest --> ntyJsonCommonResult\n");
 		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
 
+		//if agree with binding watch
+		//
+		//else
+		//
+		
 #endif
 
 		

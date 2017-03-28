@@ -776,6 +776,37 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	strncat(latlng, colon, (size_t)strlen(colon));
 	strncat(latlng, lng, (size_t)strlen(lng));
 
+#if 1 //Update By WangBoJing
+	LocationAck *pLocationAck = malloc(sizeof(LocationAck));
+
+	char bufIMEI[50] = {0};
+	sprintf(bufIMEI, "%llx", pMessageTag->fromId);
+	pLocationAck->results.IMEI = bufIMEI;
+
+	if (pMessageTag->Type== MSG_TYPE_LOCATION_WIFI_API) {
+		pLocationAck->results.category = NATTY_USER_PROTOCOL_WIFI;
+		pLocationAck->results.type = NATTY_USER_PROTOCOL_WIFI;
+	} else if (pMessageTag->Type == MSG_TYPE_LOCATION_LAB_API) {
+		pLocationAck->results.category = NATTY_USER_PROTOCOL_LAB;
+		pLocationAck->results.type = NATTY_USER_PROTOCOL_LAB;
+	} else if (pMessageTag->Type == MSG_TYPE_WEATHER_API) {
+		pLocationAck->results.category = NATTY_USER_PROTOCOL_LAB;
+		pLocationAck->results.type = NATTY_USER_PROTOCOL_LAB;
+	}
+	
+	pLocationAck->results.location = pAMap->result.location;
+	pLocationAck->results.radius = pAMap->result.radius;
+
+	ret = ntyExecuteLocationNewInsertHandle(pMessageTag->toId, (U8)pMessageTag->Type, pAMap->result.location, pAMap->info, pAMap->result.desc);
+	if (ret>0) {
+		char *jsonresult = ntyJsonWriteLocation(pLocationAck);
+		ntylog("ntyHttpQJKLocationHandleResult jsonresult --> %s\n", jsonresult);
+		ret = ntySendLocationPushResult(pMessageTag->toId, jsonresult, strlen(jsonresult));
+		if (ret > 0) {
+			ntySendLocationBroadCastResult(pMessageTag->fromId, pMessageTag->toId, jsonresult, strlen(jsonresult));
+		}
+	}
+#endif
 
 	U8 weatherbuf[500] = {0};
 	sprintf(weatherbuf, "%s/v3/weather/daily.json?key=%s&location=%s&language=zh-Hans&unit=c&start=0&days=2", 
