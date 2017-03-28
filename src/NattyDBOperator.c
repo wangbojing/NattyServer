@@ -1105,9 +1105,13 @@ int ntyQueryICCIDSelect(void *self, C_DEVID did, const char *iccid, char *phonen
 			ret = -1;
 		} else {
 			U8 buffer[512];
+#if 0
 			sprintf(buffer, NTY_DB_SELECT_ICCID, iccid);
 			ntylog(" sql : %s\n", buffer);
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_ICCID, iccid);
+#else
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_PHNUM_VALUE_SELECT, did, iccid);
+#endif
 			if (ResultSet_next(r)) {
 				const char *temp = ResultSet_getString(r, 1);
 				memcpy(phonenum, temp, strlen(temp));
