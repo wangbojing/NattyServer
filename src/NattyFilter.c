@@ -507,7 +507,7 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 		Client *pClient = NULL;
 
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_HEARTBEAT_REQ_DEVID_IDX);
-		//ntyAddClientHeap(client, (RECORDTYPE *)&pClient);
+		ntyAddClientHeap(client, (RECORDTYPE *)&pClient);
 
 		ntySendHeartBeatResult(fromId);
 		
