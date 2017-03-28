@@ -1355,16 +1355,27 @@ int ntyBindReqAction(ActionParam *pActionParam) {
 	if(NTY_RESULT_FAILED == ntyQueryAdminSelectHandle(devId, &admin)) {
 		ret = 4;
 	} else {
-		ntyProtoBindAck(fromId, devId, ret);
-		ntylog(" ntyQueryAdminSelectHandle --> %lld\n", admin);
-
-		ntydbg("-----------------------insert to db and write here---------------------------------\n");
 		//insert to db and write here
 		C_DEVID proposer = fromId;
 		U8 *name = (U8*)pBindReq->bind.watchName;
 		U8 *wimage = (U8*)pBindReq->bind.watchImage;
 		U8 *call = (U8*)pBindReq->bind.userName;
 		U8 *uimage = (U8*)pBindReq->bind.userImage;
+	
+		if (admin == 0) { //first bind device
+			ret = ntyQueryAdminGroupInsertHandle(devId, name, proposer, call, wimage, uimage);
+			if (ret == 0) {
+				ntyProtoBindAck(fromId, devId, 5);
+			} else {
+				ntyProtoBindAck(fromId, devId, ret);
+			}
+			return ret;
+		} else {
+			ntyProtoBindAck(fromId, devId, ret);
+		}
+		ntylog(" ntyQueryAdminSelectHandle --> %lld\n", admin);
+
+		
 		int msgId = 0;
 		ntyQueryBindConfirmInsertHandle(admin, devId, name, wimage, proposer, call, uimage, &msgId);
 

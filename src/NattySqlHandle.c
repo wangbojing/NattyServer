@@ -102,7 +102,7 @@ int ntyVoiceDataReqHandle(void *arg) {
 
 	//insert voice msg to db
 	int ret = ntyQueryVoiceMsgInsertHandle(senderId, gId, filename, &msgId);
-	if (ret != NTY_RESULT_FAILED) {
+	if (ret == NTY_RESULT_SUCCESS) {
 		ntyJsonCommonResult(senderId, NATTY_RESULT_CODE_SUCCESS);
 	} else { //
 		ntyJsonCommonResult(senderId, NATTY_RESULT_CODE_ERR_DB_OPERATION);

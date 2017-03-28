@@ -46,6 +46,7 @@
 #define __NATTY_RESULT_H__
 
 typedef enum _NRESULT {
+	NTY_RESULT_BUSY = -3,
 	NTY_RESULT_ERROR = -2, //param error
 	NTY_RESULT_FAILED = -1, //param failed
 	NTY_RESULT_SUCCESS = 0,

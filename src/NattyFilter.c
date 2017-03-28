@@ -602,8 +602,6 @@ void ntyICCIDReqPacketHandleRequest(const void *_self, unsigned char *buffer, in
 		memset(jsonstring, 0, jsonlen);
 		memcpy(jsonstring, buffer+NTY_PROTO_ICCID_REQ_JSON_CONTENT_IDX, jsonlen);
 
-		ntylog("jsonstring: %s\n", jsonstring);
-		
 		JSON_Value *json = ntyMallocJsonValue(jsonstring);
 		if (json == NULL) {
 			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
@@ -1110,7 +1108,7 @@ void ntyBindConfirmReqPacketHandleRequest(const void *_self, unsigned char *buff
 			}
 
 		}
-		
+		ntylog(" ntyBindConfirmReqPacketHandleRequest --> ntyJsonCommonResult\n");
 		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
 
 #endif

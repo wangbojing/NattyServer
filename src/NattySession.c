@@ -777,6 +777,8 @@ int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int lengt
 #if 0
 	ntyVectorIterator(pClient->friends, ntySendVoiceBroadCastIter, msg);
 #else
+	
+	if (group == NULL) return NTY_RESULT_ERROR;
 	ntylog(" ntySendVoiceBroadCastResult --> ntyVectorIter\n");
 
 	ntyVectorIter(group, ntySendVoiceBroadCastIter, msg);

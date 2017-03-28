@@ -44,6 +44,7 @@
 
 #include "NattyDBOperator.h"
 #include "NattyRBTree.h"
+#include "NattyResult.h"
 
 #include <string.h>
 #include <wchar.h>
@@ -101,7 +102,11 @@ void *ntyConnectionPoolInstance(void) {
 			Delete(pCPool);
 		}
 	}
-	ntyConnectionPoolDynamicsSize(pConnectionPool);
+#if 1 //ConnectionPool is Full
+	if(ntyConnectionPoolDynamicsSize(pConnectionPool)) {
+		return NULL;
+	}
+#endif
 	return pConnectionPool;
 }
 
@@ -121,7 +126,12 @@ int ntyConnectionPoolDynamicsSize(void *self) {
 			ntylog(" Connection Need to Raise Connection Size\n");
 		}
 	}
+	if (size >= max*CONNECTION_SIZE_THRESHOLD_RATIO || active >=CONNECTION_SIZE_REAP_RATIO) {
+		return 1;
+	}
+	
 	ntylog(" size:%d, active:%d, max:%d\n", size, active, max);
+	return 0;
 }
 
 void ntyConnectionPoolRelease(void *self) {	
@@ -187,6 +197,7 @@ int ntyConnectionPoolQuery(void *_self, U8 *sql, void ***result, int *length) {
 
 Connection_T ntyCheckConnection(void *self, Connection_T con) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return con;
 	if (con == NULL) {
 		int n = ConnectionPool_reapConnections(pool->nPool);
 		Connection_T con = ConnectionPool_getConnection(pool->nPool);
@@ -204,6 +215,7 @@ void ntyConnectionClose(Connection_T con) {
 
 static int ntyExecuteWatchInsert(void *self, U8 *imei) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	
@@ -235,6 +247,7 @@ static int ntyExecuteWatchInsert(void *self, U8 *imei) {
 //NTY_DB_APPIDLIST_SELECT_FORMAT
 static int ntyQueryAppIDListSelect(void *self, C_DEVID did, void *container) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 
@@ -275,6 +288,7 @@ static int ntyQueryAppIDListSelect(void *self, C_DEVID did, void *container) {
 //NTY_DB_WATCHIDLIST_SELECT_FORMAT
 static int ntyQueryWatchIDListSelect(void *self, C_DEVID aid, void *container) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 
@@ -314,6 +328,7 @@ static int ntyQueryWatchIDListSelect(void *self, C_DEVID aid, void *container) {
 //NTY_DB_DEV_APP_INSERT_FORMAT
 static int ntyQueryDevAppRelationInsert(void *self, C_DEVID aid, U8 *imei) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 
@@ -347,6 +362,7 @@ static int ntyQueryDevAppRelationInsert(void *self, C_DEVID aid, U8 *imei) {
 //NTY_DB_DEV_APP_DELETE_FORMAT
 static int ntyExecuteDevAppRelationDelete(void *self, C_DEVID aid, C_DEVID did) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 
@@ -378,6 +394,7 @@ static int ntyExecuteDevAppRelationDelete(void *self, C_DEVID aid, C_DEVID did) 
 //NTY_DB_INSERT_GROUP
 static int ntyQueryDevAppGroupInsert(void *self, C_DEVID aid, C_DEVID imei, U8 *name) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 
@@ -413,6 +430,7 @@ static int ntyQueryDevAppGroupInsert(void *self, C_DEVID aid, C_DEVID imei, U8 *
 //NTY_DB_CHECK_GROUP
 static int ntyQueryDevAppGroupCheckSelect(void *self, C_DEVID aid, C_DEVID imei) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 
@@ -449,6 +467,7 @@ static int ntyQueryDevAppGroupCheckSelect(void *self, C_DEVID aid, C_DEVID imei)
 //NTY_DB_INSERT_BIND_GROUP
 static int ntyExecuteDevAppGroupBindInsert(void *self, int msgId) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 
@@ -479,6 +498,7 @@ static int ntyExecuteDevAppGroupBindInsert(void *self, int msgId) {
 //NTY_DB_DELETE_COMMON_OFFLINE_MSG
 static int ntyExecuteCommonOfflineMsgDelete(void *self, int msgId, C_DEVID clientId) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 
@@ -511,6 +531,7 @@ static int ntyExecuteCommonOfflineMsgDelete(void *self, int msgId, C_DEVID clien
 //NTY_DB_INSERT_BIND_CONFIRM
 static int ntyQueryBindConfirmInsert(void *self, C_DEVID admin, C_DEVID imei, U8 *name, U8 *wimage, C_DEVID proposer, U8 *call, U8 *uimage, int *msgId) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 
@@ -546,6 +567,7 @@ static int ntyQueryBindConfirmInsert(void *self, C_DEVID admin, C_DEVID imei, U8
 //NTY_DB_SELECT_PHONE_NUMBER
 static int ntyQueryPhoneBookSelect(void *self, C_DEVID imei, C_DEVID userId, char *phonenum) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	
@@ -582,6 +604,7 @@ static int ntyQueryPhoneBookSelect(void *self, C_DEVID imei, C_DEVID userId, cha
 //NTY_DB_SELECT_ADMIN
 static int ntyQueryAdminSelect(void *self, C_DEVID did, C_DEVID *appid) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 
@@ -625,6 +648,7 @@ static int ntyQueryAdminSelect(void *self, C_DEVID did, C_DEVID *appid) {
 //NTY_DB_DEV_APP_DELETE_FORMAT
 static int ntyExecuteDevAppGroupDelete(void *self, C_DEVID aid, C_DEVID did) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 
@@ -656,6 +680,7 @@ static int ntyExecuteDevAppGroupDelete(void *self, C_DEVID aid, C_DEVID did) {
 //NTY_DB_LOCATION_INSERT_FORMAT
 static int ntyExecuteLocationInsert(void *self, C_DEVID did, U8 *lng, U8 *lat, U8 type, U8 *info) {	
 	ConnectionPool *pool = self;	
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);	
 	int ret = 0;	
 	TRY
@@ -689,6 +714,7 @@ static int ntyExecuteLocationInsert(void *self, C_DEVID did, U8 *lng, U8 *lat, U
 //NTY_DB_INSERT_LOCATION
 static int ntyExecuteLocationNewInsert(void *self, C_DEVID did, U8 type, const char *lnglat, const char *info, const char *desc) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 
@@ -724,6 +750,7 @@ static int ntyExecuteLocationNewInsert(void *self, C_DEVID did, U8 type, const c
 //NTY_DB_LOCATION_INSERT_FORMAT
 static int ntyExecuteStepInsert(void *self, C_DEVID did, int value) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 
@@ -756,6 +783,7 @@ static int ntyExecuteStepInsert(void *self, C_DEVID did, int value) {
 //NTY_DB_LOCATION_INSERT_FORMAT
 int ntyExecuteHeartRateInsert(void *self, C_DEVID did, int value) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 
@@ -787,6 +815,7 @@ int ntyExecuteHeartRateInsert(void *self, C_DEVID did, int value) {
 //NTY_DB_DEVICELOGIN_UPDATE_FORMAT
 int ntyExecuteDeviceLoginUpdate(void *self, C_DEVID did) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 
@@ -817,6 +846,7 @@ int ntyExecuteDeviceLoginUpdate(void *self, C_DEVID did) {
 //NTY_DB_DEVICELOGOUT_UPDATE_FORMAT
 int ntyExecuteDeviceLogoutUpdate(void *self, C_DEVID did) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 
@@ -847,6 +877,7 @@ int ntyExecuteDeviceLogoutUpdate(void *self, C_DEVID did) {
 //NTY_DB_PHNUM_VALUE_SELECT_FORMAT
 int ntyQueryPhNumSelect(void *self, C_DEVID did, U8 *iccid, U8 *phnum) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -886,6 +917,7 @@ int ntyQueryPhNumSelect(void *self, C_DEVID did, U8 *iccid, U8 *phnum) {
 //NTY_DB_DEVICE_STATUS_RESET_FORMAT
 int ntyExecuteDeviceStatusReset(void *self) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -918,6 +950,7 @@ int ntyExecuteDeviceStatusReset(void *self) {
 //NTY_DB_APPLOGIN_UPDATE_FORMAT
 int ntyExecuteAppLoginUpdate(void *self, C_DEVID aid) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -949,6 +982,7 @@ int ntyExecuteAppLoginUpdate(void *self, C_DEVID aid) {
 //NTY_DB_APPLOGOUT_UPDATE_FORMAT
 int ntyExecuteAppLogoutUpdate(void *self, C_DEVID aid) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -982,6 +1016,7 @@ int ntyExecuteAppLogoutUpdate(void *self, C_DEVID aid) {
 //NTY_DB_INSERT_EFENCE
 int ntyExecuteEfenceInsert(void *self, C_DEVID aid, C_DEVID did, int index, int num, U8 *points, U8 *runtime, int *id) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -1021,6 +1056,7 @@ int ntyExecuteEfenceInsert(void *self, C_DEVID aid, C_DEVID did, int index, int 
 //NTY_DB_DELETE_EFENCE
 int ntyExecuteEfenceDelete(void *self, C_DEVID aid, C_DEVID did, int index) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -1057,6 +1093,7 @@ int ntyExecuteEfenceDelete(void *self, C_DEVID aid, C_DEVID did, int index) {
 //NTY_DB_SELECT_ICCID
 int ntyQueryICCIDSelect(void *self, C_DEVID did, const char *iccid, char *phonenum) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -1096,6 +1133,7 @@ int ntyQueryICCIDSelect(void *self, C_DEVID did, const char *iccid, char *phonen
 //NTY_DB_UPDATE_RUNTIME
 int ntyExecuteRuntimeUpdate(void *self, C_DEVID aid, C_DEVID did, int auto_conn, U8 loss_report, U8 light_panel, const char *bell, int target_step) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -1130,6 +1168,7 @@ int ntyExecuteRuntimeUpdate(void *self, C_DEVID aid, C_DEVID did, int auto_conn,
 //NTY_DB_UPDATE_RUNTIME_AUTOCONN
 int ntyExecuteRuntimeAutoConnUpdate(void *self, C_DEVID aid, C_DEVID did, int runtime_param) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -1165,6 +1204,7 @@ int ntyExecuteRuntimeAutoConnUpdate(void *self, C_DEVID aid, C_DEVID did, int ru
 //NTY_DB_UPDATE_RUNTIME_LOSSREPORT
 int ntyExecuteRuntimeLossReportUpdate(void *self, C_DEVID aid, C_DEVID did, U8 runtime_param) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -1200,6 +1240,7 @@ int ntyExecuteRuntimeLossReportUpdate(void *self, C_DEVID aid, C_DEVID did, U8 r
 //NTY_DB_UPDATE_RUNTIME_LIGHTPANEL
 int ntyExecuteRuntimeLightPanelUpdate(void *self, C_DEVID aid, C_DEVID did, U8 runtime_param) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -1235,6 +1276,7 @@ int ntyExecuteRuntimeLightPanelUpdate(void *self, C_DEVID aid, C_DEVID did, U8 r
 //NTY_DB_UPDATE_RUNTIME_BELL
 int ntyExecuteRuntimeBellUpdate(void *self, C_DEVID aid, C_DEVID did, const char *runtime_param) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -1269,6 +1311,7 @@ int ntyExecuteRuntimeBellUpdate(void *self, C_DEVID aid, C_DEVID did, const char
 //NTY_DB_UPDATE_RUNTIME_TARGETSTEP
 int ntyExecuteRuntimeTargetStepUpdate(void *self, C_DEVID aid, C_DEVID did, int runtime_param) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -1304,6 +1347,7 @@ int ntyExecuteRuntimeTargetStepUpdate(void *self, C_DEVID aid, C_DEVID did, int 
 //NTY_DB_UPDATE_TURN
 int ntyExecuteTurnUpdate(void *self, C_DEVID aid, C_DEVID did, U8 status, const char *ontime, const char *offtime) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -1338,6 +1382,7 @@ int ntyExecuteTurnUpdate(void *self, C_DEVID aid, C_DEVID did, U8 status, const 
 //NTY_DB_INSERT_PHONEBOOK
 int ntyExecuteContactsInsert(void *self, C_DEVID aid, C_DEVID did, Contacts *contacts, int *contactsId) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -1380,6 +1425,7 @@ int ntyExecuteContactsInsert(void *self, C_DEVID aid, C_DEVID did, Contacts *con
 //NTY_DB_UPDATE_PHONEBOOK
 int ntyExecuteContactsUpdate(void *self, C_DEVID aid, C_DEVID did, Contacts *contacts, int contactsId) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -1417,6 +1463,7 @@ int ntyExecuteContactsUpdate(void *self, C_DEVID aid, C_DEVID did, Contacts *con
 //NTY_DB_DELETE_PHONEBOOK
 int ntyExecuteContactsDelete(void *self, C_DEVID aid, C_DEVID did, int contactsId) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -1452,6 +1499,7 @@ int ntyExecuteContactsDelete(void *self, C_DEVID aid, C_DEVID did, int contactsI
 //NTY_DB_INSERT_SCHEDULE
 int ntyExecuteScheduleInsert(void *self, C_DEVID aid, C_DEVID did, const char *daily, const char *time, const char *details, int *scheduleId) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -1490,6 +1538,7 @@ int ntyExecuteScheduleInsert(void *self, C_DEVID aid, C_DEVID did, const char *d
 //NTY_DB_DELETE_SCHEDULE
 int ntyExecuteScheduleDelete(void *self, C_DEVID aid, C_DEVID did, int scheduleId) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -1523,6 +1572,7 @@ int ntyExecuteScheduleDelete(void *self, C_DEVID aid, C_DEVID did, int scheduleI
 //NTY_DB_UPDATE_SCHEDULE
 int ntyExecuteScheduleUpdate(void *self, C_DEVID aid, C_DEVID did, int scheduleId, const char *daily, const char *time, const char *details) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -1557,6 +1607,7 @@ int ntyExecuteScheduleUpdate(void *self, C_DEVID aid, C_DEVID did, int scheduleI
 //NTY_DB_SELECT_SCHEDULE
 int ntyExecuteScheduleSelect(void *self, C_DEVID aid, C_DEVID did, ScheduleAck *pScheduleAck, size_t size) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -1605,6 +1656,7 @@ int ntyExecuteScheduleSelect(void *self, C_DEVID aid, C_DEVID did, ScheduleAck *
 //NTY_DB_UPDATE_TIMETABLE
 int ntyExecuteTimeTablesUpdate(void *self, C_DEVID aid, C_DEVID did, const char *morning, U8 morning_turn, const char *afternoon,  U8 afternoon_turn, const char *daily, int *id) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -1641,6 +1693,7 @@ int ntyExecuteTimeTablesUpdate(void *self, C_DEVID aid, C_DEVID did, const char 
 //NTY_DB_INSERT_COMMON_MSG
 int ntyExecuteCommonMsgInsert(void *self, C_DEVID sid, C_DEVID gid, const char *detatils, int *msg) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -1681,6 +1734,7 @@ int ntyExecuteCommonMsgInsert(void *self, C_DEVID sid, C_DEVID gid, const char *
 //NTY_DB_DEVICE_STATUS_RESET_FORMAT
 int ntyQueryDeviceOnlineStatus(void *self, C_DEVID did, int *online) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -1715,6 +1769,7 @@ int ntyQueryDeviceOnlineStatus(void *self, C_DEVID did, int *online) {
 //NTY_DB_DEVICE_STATUS_RESET_FORMAT
 int ntyQueryAppOnlineStatus(void *self, C_DEVID aid, int *online) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -1749,6 +1804,7 @@ int ntyQueryAppOnlineStatus(void *self, C_DEVID aid, int *online) {
 //NTY_DB_INSERT_VOICE_MSG
 int ntyQueryVoiceMsgInsert(void *self, C_DEVID senderId, C_DEVID gId, char *filename, int *msgId) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -1763,6 +1819,7 @@ int ntyQueryVoiceMsgInsert(void *self, C_DEVID senderId, C_DEVID gId, char *file
 			while (ResultSet_next(r)) {
 				*msgId = ResultSet_getInt(r, 1);				
 			}
+			ret = 0;
 		}
 	} 
 	CATCH(SQLException) 
@@ -1783,6 +1840,7 @@ int ntyQueryVoiceMsgInsert(void *self, C_DEVID senderId, C_DEVID gId, char *file
 //NTY_DB_DELETE_VOICE_OFFLINE_MSG
 int ntyExecuteVoiceOfflineMsgDelete(void *self, int index, C_DEVID userId) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 
@@ -1812,6 +1870,7 @@ int ntyExecuteVoiceOfflineMsgDelete(void *self, int index, C_DEVID userId) {
 //NTY_DB_SELECT_VOICE_MSG
 int ntyQueryVoiceMsgSelect(void *self, int index,C_DEVID *senderId, C_DEVID *gId, U8 *filename, long *stamp) {
 	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
@@ -1857,6 +1916,39 @@ int ntyQueryVoiceMsgSelect(void *self, int index,C_DEVID *senderId, C_DEVID *gId
 	return ret;
 }
 
+//PROC_INSERT_ADMIN_GROUP
+int ntyQueryAdminGroupInsert(void *self, C_DEVID devId, U8 *bname, C_DEVID fromId, U8 *userCall, U8 *wimage, U8 *uimage) {
+	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+	TRY
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			
+			ResultSet_T r =Connection_executeQuery(con, NTY_DB_INSERT_ADMIN_GROUP, devId, bname, fromId, userCall, wimage, uimage);
+			while (ResultSet_next(r)) {
+				ret = ResultSet_getInt(r, 1);	
+			}
+		}
+	} 
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
 
 
 
@@ -2094,6 +2186,12 @@ int ntyQueryAppOnlineStatusHandle(C_DEVID aid, int *online) {
 	void *pool = ntyConnectionPoolInstance();
 	return ntyQueryAppOnlineStatus(pool, aid, online);
 }
+
+int ntyQueryAdminGroupInsertHandle(C_DEVID devId, U8 *bname, C_DEVID fromId, U8 *userCall, U8 *wimage, U8 *uimage) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyQueryAdminGroupInsert(pool, devId, bname, fromId, userCall, wimage, uimage);
+}
+
 
 
 int ntyConnectionPoolInit(void) {
