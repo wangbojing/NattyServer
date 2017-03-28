@@ -60,7 +60,7 @@
 #define NATTY_RESULT_CODE_ERR_DB_NOEXIST			"10007"
 #define NATTY_RESULT_CODE_ERR_DB_SAVE_OFFLINE		"10008"		//保存离线数据错误
 
-#define NATTY_RESULT_CODE_ERR_DB_REPEATE_DATA		"10009"		//
+#define NATTY_RESULT_CODE_ERR_DB_SAVE_REPEATE_DATA	"10009"		//保存重复数据
 
 
 const char* ntyCommonResultMessage(const char *code);

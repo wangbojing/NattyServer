@@ -551,7 +551,7 @@ void ntyJsonAddEfenceAction(ActionParam *pActionParam) {
 		ntylog(" ntyJsonEfenceAction --> DB Exception\n");
 		ret = 4;
 	} else if (ret == 0) { 
-		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_REPEATE_DATA);
+		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_SAVE_REPEATE_DATA);
 	} else if (ret > 0) {
 		ret = ntySendRecodeJsonPacket(fromId, toId, pActionParam->jsonstring, pActionParam->jsonlen);
 		if (ret >= 0) {
@@ -1111,22 +1111,9 @@ void ntyJsonAddContactsAction(ActionParam *pActionParam) {
 	if (ret == -1) {
 		ntylog(" ntyJsonAddContactsAction --> DB Exception\n");
 		ret = 4;
-	} else if (ret >= 0) {
-	/*
-		CommonReq *pCommonReq = malloc(sizeof(CommonReq));
-		ntyJsonCommon(pActionParam->json, pCommonReq);
-		CommonReqExtend *pCommonReqExtend = malloc(sizeof(CommonReqExtend));
-		pCommonReqExtend->IMEI = pCommonReq->IMEI;
-		pCommonReqExtend->category = pCommonReq->category;
-		pCommonReqExtend->action = pCommonReq->action;
-
-		
-		char *jsonstringTemp = ntyJsonWriteCommonReqExtend(pCommonReqExtend);
-		//ret = ntySendRecodeJsonPacket(fromId, toId, jsonstringTemp, strlen(jsonstringTemp));
-
-		free(pCommonReq);
-		free(pCommonReqExtend);
-		*/
+	} else if (ret == 0) {
+		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_SAVE_REPEATE_DATA);
+	} else if (ret > 0) {
 		char ids[20] = {0};
 		sprintf(ids, "%d", contactsId);
 		pAddContactsReq->id = ids;
@@ -1150,52 +1137,6 @@ void ntyJsonAddContactsAction(ActionParam *pActionParam) {
 		}
 	}
 	free(pAddContactsReq);
-
-	/*
-	AddContactsReq *pAddContactsReq = (AddContactsReq*)malloc(sizeof(AddContactsReq));
-	ntyJsonAddContacts(pActionParam->json, pAddContactsReq);
-	C_DEVID fromId = pActionParam->fromId;
-	C_DEVID toId = pActionParam->toId;
-	if (checkStringIsAllNumber(pAddContactsReq->contacts.telphone) != 1) {
-		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_CONVERT);
-	} else {
-		int contactsId = 0;
-		int ret = ntyExecuteContactsInsertHandle(fromId, toId, &pAddContactsReq->contacts, &contactsId);
-		char ids[20] = {0};
-		sprintf(ids, "%d", contactsId);
-		pAddContactsReq->contacts.id = ids;
-		if (ret == -1) {
-			ntylog(" ntyJsonAddContactsAction --> DB Exception\n");
-			ret = 4;
-		} else if (ret >= 0) {
-			CommonReq *pCommonReq = malloc(sizeof(CommonReq));
-			ntyJsonCommon(pActionParam->json, pCommonReq);
-			CommonReqExtend *pCommonReqExtend = malloc(sizeof(CommonReqExtend));
-			pCommonReqExtend->IMEI = pCommonReq->IMEI;
-			pCommonReqExtend->category = pCommonReq->category;
-			pCommonReqExtend->action = pCommonReq->action;
-			char ids[20] = {0};
-			sprintf(ids, "%d", contactsId);
-			pCommonReqExtend->id = ids;
-			char *jsonstringTemp = ntyJsonWriteCommonReqExtend(pCommonReqExtend);
-			ret = ntySendRecodeJsonPacket(fromId, toId, jsonstringTemp, strlen(jsonstringTemp));
-			if (ret >= 0) {
-				ntyJsonCommonExtendResult(fromId, NATTY_RESULT_CODE_SUCCESS, contactsId);
-				AddContactsAck *pAddContactsAck = malloc(sizeof(AddContactsAck));
-				pAddContactsAck->results = *(AddContactsResults*)pAddContactsReq;
-				char *jsonresult = ntyJsonWriteAddContacts(pAddContactsAck);
-				ntyJsonBroadCastRecvResult(fromId, toId, (U8*)jsonresult, pActionParam->index);
-				ntyJsonFree(jsonresult);
-				free(pAddContactsAck);
-			} else {
-				ntySaveCommonMsgData(pActionParam);
-			}
-			free(pCommonReq);
-			free(pCommonReqExtend);
-		}
-	}
-	free(pAddContactsReq);
-	*/
 }
 
 void ntyJsonUpdateContactsAction(ActionParam *pActionParam) {

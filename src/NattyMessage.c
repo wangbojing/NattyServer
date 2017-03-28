@@ -61,8 +61,8 @@ const char* ntyCommonResultMessage(const char *code) {
 			message = "ICCID not band phone number error";	//JSON×ª»»´íÎó
 		} else if (strcmp(code, NATTY_RESULT_CODE_ERR_DB_SAVE_OFFLINE) == 0) {
 			message = "Cannot save offline data";
-		} else if (strcmp(code, NATTY_RESULT_CODE_ERR_DB_REPEATE_DATA) == 0) {
-			message = "Repeate data";
+		} else if (strcmp(code, NATTY_RESULT_CODE_ERR_DB_SAVE_REPEATE_DATA) == 0) {
+			message = "Save Repeate data";
 		}
 	}
 
