@@ -798,7 +798,7 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	pLocationAck->results.radius = pAMap->result.radius;
 
 	ret = ntyExecuteLocationNewInsertHandle(pMessageTag->toId, (U8)pMessageTag->Type, pAMap->result.location, pAMap->info, pAMap->result.desc);
-	if (ret>0) {
+	if (ret == 0) {
 		char *jsonresult = ntyJsonWriteLocation(pLocationAck);
 		ntylog("ntyHttpQJKLocationHandleResult jsonresult --> %s\n", jsonresult);
 		ret = ntySendLocationPushResult(pMessageTag->toId, jsonresult, strlen(jsonresult));
