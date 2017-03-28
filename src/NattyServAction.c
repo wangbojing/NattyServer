@@ -53,6 +53,40 @@
 #include <string.h>
 #include <time.h>
 
+int checkStringIsAllNumber(const char *content) {
+	if (content == NULL) {
+		return 0;
+	}
+
+	size_t len = strlen(content);
+	size_t i;
+	for (i=0; i<len; i++) {
+		char c = content[i];
+		if (c<0x30 || c>0x39) {
+			return -1;
+		}
+	}
+
+	return 1;
+}
+
+int checkStringIsAllTimeChar(const char *content) {
+	if (content == NULL) {
+		return 0;
+	}
+
+	size_t len = strlen(content);
+	size_t i;
+	for (i=0; i<len; i++) {
+		char c = content[i];
+		if (!((c>=0x30 && c<=0x39) || c==0x3A)) {
+			return -1;
+		}
+	}
+
+	return 1;
+}
+
 
 void ntyJsonBroadCastRecvResult(C_DEVID fromId, C_DEVID toId, char *jsonresult, U32 index) {
 	if (jsonresult == NULL) {
@@ -328,6 +362,10 @@ void ntyCommonReqAction(ActionParam *pActionParam) {
 	ntydbg("ntyCommonReqPacketHandleRequest --> json : %s\n", pActionParam->jsonstring);
 
 	const char *category = ntyJsonAppCategory(pActionParam->json);
+	if (category == NULL) {
+		ntylog("Can't find category, because category is null\n");
+		return;
+	}
 	if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_EFENCE) == 0) {
 		const char *action = ntyJsonAction(pActionParam->json);
 		if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_ADD) == 0) {
@@ -695,10 +733,28 @@ void ntyJsonTurnAction(ActionParam *pActionParam) {
 	C_DEVID toId = pActionParam->toId;
 	
 	U8 status = 0;
-	if (pTurnReq->turn.status != NULL) {
+	int check_status = checkStringIsAllNumber(pTurnReq->turn.status);
+	if (check_status == 1) {
 		status = atoi(pTurnReq->turn.status);
 	}
-	int ret = ntyExecuteTurnUpdateHandle(fromId, toId, status, pTurnReq->turn.on.time, pTurnReq->turn.off.time);
+
+	char *turn_on = malloc(50);
+	memset(turn_on, 0, 50);
+	int check_on = checkStringIsAllTimeChar(pTurnReq->turn.on.time);
+	if (check_on != 1) {
+		strcat(turn_on, "09:00:00");
+	} else {
+		memcpy(turn_on, pTurnReq->turn.on.time, sizeof(pTurnReq->turn.on.time));
+	}
+	char *turn_off = malloc(50);
+	memset(turn_off, 0, 50);
+	int check_off = checkStringIsAllTimeChar(pTurnReq->turn.off.time);
+	if (check_off != 1) {
+		strcat(turn_off, "18:00:00");
+	} else {
+		memcpy(turn_off, pTurnReq->turn.off.time, sizeof(pTurnReq->turn.off.time));
+	}
+	int ret = ntyExecuteTurnUpdateHandle(fromId, toId, status, turn_on, turn_off);
 	if (ret == -1) {
 		ntylog(" ntyJsonTurnAction --> DB Exception\n");
 		ret = 4;
@@ -714,6 +770,8 @@ void ntyJsonTurnAction(ActionParam *pActionParam) {
 			free(pTurnAck);
 		}
 	}
+	free(turn_on);
+	free(turn_off);
 	free(pTurnReq);
 }
 
@@ -865,11 +923,11 @@ void ntyJsonDelScheduleAction(ActionParam *pActionParam) {
 	C_DEVID toId = pActionParam->toId;
 	
 	int scheduleId = 0;
-	if (pDelScheduleReq->id != NULL) {
-		if (strlen(pDelScheduleReq->id) != 0) {
-			scheduleId = atoi(pDelScheduleReq->id);
-		}
+	int check_schedule = checkStringIsAllNumber(pDelScheduleReq->id);
+	if (check_schedule == 1) {
+		scheduleId = atoi(pDelScheduleReq->id);
 	}
+	
 	int ret = ntyExecuteScheduleDeleteHandle(fromId, toId, scheduleId);
 	if (ret == -1) {
 		ntylog(" ntyJsonDelScheduleAction --> DB Exception\n");
@@ -898,11 +956,11 @@ void ntyJsonUpdateScheduleAction(ActionParam *pActionParam) {
 	C_DEVID toId = pActionParam->toId;
 
 	int scheduleId = 0;
-	if (pUpdateScheduleReq->id != NULL) {
-		if (strlen(pUpdateScheduleReq->id) != 0) {
-			scheduleId = atoi(pUpdateScheduleReq->id);
-		}
+	int check_schedule = checkStringIsAllNumber(pUpdateScheduleReq->id);
+	if (check_schedule == 1) {
+		scheduleId = atoi(pUpdateScheduleReq->id);
 	}
+	
 	int ret = ntyExecuteScheduleUpdateHandle(fromId, toId, 
 		scheduleId,
 		pUpdateScheduleReq->schedule.daily,
@@ -1016,23 +1074,6 @@ void ntyJsonTimeTablesAction(ActionParam *pActionParam) {
 	free(pTimeTablesReq);
 }
 
-int checkStringIsAllNumber(const char *content) {
-	if (content == NULL) {
-		return 0;
-	}
-
-	size_t len = strlen(content);
-	size_t i;
-	for (i=0; i<len; i++) {
-		char c = content[i];
-		if (c<0x30 || c>0x39) {
-			return -1;
-		}
-	}
-
-	return 1;
-}
-
 void ntyJsonAddContactsAction(ActionParam *pActionParam) {
 	AddContactsReq *pAddContactsReq = (AddContactsReq*)malloc(sizeof(AddContactsReq));
 	ntyJsonAddContacts(pActionParam->json, pAddContactsReq);
@@ -1069,7 +1110,7 @@ void ntyJsonAddContactsAction(ActionParam *pActionParam) {
 		pAddContactsReq->id = ids;
 	
 		DeviceAddContactsAck *pDeviceAddContactsAck = (DeviceAddContactsAck*)malloc(sizeof(DeviceAddContactsAck));
-		pDeviceAddContactsAck = (DeviceAddScheduleAck*)pAddContactsReq;
+		pDeviceAddContactsAck = (DeviceAddContactsAck*)pAddContactsReq;
 		pDeviceAddContactsAck->id = ids;
 		char *jsondeviceresult = ntyJsonWriteDeviceAddContacts(pDeviceAddContactsAck);
 		ret = ntySendRecodeJsonPacket(fromId, toId, (U8*)jsondeviceresult, strlen(jsondeviceresult));
@@ -1143,11 +1184,11 @@ void ntyJsonUpdateContactsAction(ActionParam *pActionParam) {
 	C_DEVID toId = pActionParam->toId;
 	
 	int contactsId = 0;
-	if (pUpdateContactsReq->contacts.id != NULL) {
-		if (strlen(pUpdateContactsReq->contacts.id) != 0) {
-			contactsId = atoi(pUpdateContactsReq->contacts.id);
-		}
+	int check_contacts = checkStringIsAllNumber(pUpdateContactsReq->contacts.id);
+	if (check_contacts == 1) {
+		contactsId = atoi(pUpdateContactsReq->contacts.id);
 	}
+	
 	int ret = ntyExecuteContactsUpdateHandle(fromId, toId, &pUpdateContactsReq->contacts, contactsId);
 	if (ret == -1) {
 		ntylog(" ntyJsonUpdateContactsAction --> DB Exception\n");
@@ -1176,11 +1217,11 @@ void ntyJsonDelContactsAction(ActionParam *pActionParam) {
 	C_DEVID toId = pActionParam->toId;
 
 	int contactsId = 0;
-	if (pDelContactsReq->id != NULL) {
-		if (strlen(pDelContactsReq->id) != 0) {
-			contactsId = atoi(pDelContactsReq->id);
-		}
+	int check_contacts = checkStringIsAllNumber(pDelContactsReq->id);
+	if (check_contacts == 1) {
+		contactsId = atoi(pDelContactsReq->id);
 	}
+	
 	int ret = ntyExecuteContactsDeleteHandle(fromId, toId, contactsId);
 	if (ret == -1) {
 		ntylog(" ntyJsonDelContactsAction --> DB Exception\n");
