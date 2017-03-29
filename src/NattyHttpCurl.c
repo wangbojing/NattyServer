@@ -622,6 +622,7 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 
 	char bufIMEI[50] = {0};
 	sprintf(bufIMEI, "%llx", pMessageTag->fromId);
+	ntydbg("bufIMEI %s %lld %lld\n", bufIMEI, pMessageTag->fromId, pMessageTag->toId);
 	pLocationAck->results.IMEI = bufIMEI;
 
 	if (pMessageTag->Type== MSG_TYPE_LOCATION_WIFI_API) {

@@ -1300,8 +1300,6 @@ void ntyLocationAsyncReqPacketHandleRequest(const void *_self, unsigned char *bu
 
 		C_DEVID deviceId = *(C_DEVID*)(buffer+NTY_PROTO_LOCATION_ASYNC_REQ_DEVID_IDX);
 
-		ntylog("ntyLocationAsyncReqPacketHandleRequest --> json : %s  %d\n", jsonstring, jsonlen);
-
 		JSON_Value *json = ntyMallocJsonValue(jsonstring);
 		if (json == NULL) {
 			ntyJsonCommonResult(deviceId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);

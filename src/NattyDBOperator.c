@@ -727,7 +727,7 @@ static int ntyExecuteLocationNewInsert(void *self, C_DEVID did, U8 type, const c
 			U8 sql[256];
 			sprintf(sql, NTY_DB_INSERT_LOCATION, did, type, lnglat, info, desc);
 			ntylog(" sql :%s", sql);
-			Connection_execute(con, NTY_DB_INSERT_LOCATION, did, type, info, lnglat, desc);
+			Connection_execute(con, NTY_DB_INSERT_LOCATION, did, type, lnglat, info, desc);
 		}
 	} 
 	CATCH(SQLException) 
