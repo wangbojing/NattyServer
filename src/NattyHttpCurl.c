@@ -905,6 +905,7 @@ int ntyHttpQJKWeatherLocation(void *arg) {
 
 
 static size_t ntyHttpQJKWeatherHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
+	int flag = 0;
 	ntylog("==================begin ntyHttpQJKWeatherHandleResult ==========================\n");
 	MessageTag *pMessageTag = (MessageTag *)stream;
 	U8 *jsonstring = buffer;
@@ -915,7 +916,8 @@ static size_t ntyHttpQJKWeatherHandleResult(void* buffer, size_t size, size_t nm
 	WeatherReq *pWeatherReq = malloc(sizeof(WeatherReq));
 	ntyJsonWeather(json, pWeatherReq);
 	if (pWeatherReq == NULL) {
-		return -1;
+		flag = -1;
+		goto exit;
 	}
 
 	WeatherAck *pWeatherAck = (WeatherAck*)pWeatherReq;
@@ -941,14 +943,16 @@ static size_t ntyHttpQJKWeatherHandleResult(void* buffer, size_t size, size_t nm
 	*/
 	char *jsonresult = ntyJsonWriteWeather(pWeatherAck);
 	if (jsonresult == NULL) {
-		return -1;
+		flag = -1;
+		goto exit;
 	}
 	ntylog("ntyHttpQJKWeatherHandleResult jsonresult --> %s\n", jsonresult);
 	int ret = ntySendWeatherPushResult(pMessageTag->fromId, jsonresult, strlen(jsonresult));
 	if (ret >= 0) {
 		ntydbg("ntySendWeatherBroadCastResult ok\n");
 	}
-	
+
+exit:
 	ntyJsonWeatherRelease(pWeatherReq);
 	free(pWeatherReq);
 	
@@ -957,7 +961,7 @@ static size_t ntyHttpQJKWeatherHandleResult(void* buffer, size_t size, size_t nm
 	free(pMessageTag);
 #endif
 	
-	return 0;
+	return flag;
 }
 
 /*

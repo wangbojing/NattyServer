@@ -748,11 +748,18 @@ void ntyJsonAddScheduleAction(ActionParam *pActionParam) {
 
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;
+
+	int status = 0;
+	int check_status = checkStringIsAllNumber(pAddScheduleReq->schedule.status);
+	if (check_status == 1) {
+		status = atoi(pAddScheduleReq->schedule.status);
+	}
 	
 	int scheduleId = 0;
 	int ret = ntyExecuteScheduleInsertHandle(fromId, toId,
 		pAddScheduleReq->schedule.daily,
 		pAddScheduleReq->schedule.time,
+		status,
 		pAddScheduleReq->schedule.details,
 		&scheduleId);
 	if (ret == -1) {
@@ -825,6 +832,12 @@ void ntyJsonUpdateScheduleAction(ActionParam *pActionParam) {
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;
 
+	int status = 0;
+	int check_status = checkStringIsAllNumber(pUpdateScheduleReq->schedule.status);
+	if (check_status == 1) {
+		status = atoi(pUpdateScheduleReq->schedule.status);
+	}
+	
 	int scheduleId = 0;
 	int check_schedule = checkStringIsAllNumber(pUpdateScheduleReq->id);
 	if (check_schedule == 1) {
@@ -835,6 +848,7 @@ void ntyJsonUpdateScheduleAction(ActionParam *pActionParam) {
 		scheduleId,
 		pUpdateScheduleReq->schedule.daily,
 		pUpdateScheduleReq->schedule.time,
+		status,
 		pUpdateScheduleReq->schedule.details);
 	if (ret == -1) {
 		ntylog(" ntyJsonUpdateScheduleAction --> DB Exception\n");

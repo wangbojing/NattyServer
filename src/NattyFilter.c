@@ -536,10 +536,12 @@ static const ProtocolFilter ntyHeartBeatFilter = {
 void ntyLogoutPacketHandleRequest(const void *_self, U8 *buffer, int length, const void* obj) {
 	const UdpClient *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_LOGOUT_REQ) {
+		ntylog("====================begin ntyLogoutPacketHandleRequest action ==========================\n");
 		//delete key
 
 		ntyDelClientHeap(client->devId);
 
+		ntylog("====================end ntyLogoutPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
@@ -560,6 +562,7 @@ static const ProtocolFilter ntyLogoutFilter = {
 
 void ntyTimeCheckHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_TIME_CHECK_REQ) {
+		ntylog("====================begin ntyTimeCheckHandleRequest action ==========================\n");
 #if 0
 		C_DEVID key = *(C_DEVID*)(buffer+NTY_PROTO_LOGIN_REQ_DEVID_IDX);
 		U32 ackNum = *(U32*)(buffer+NTY_PROTO_LOGIN_REQ_ACKNUM_IDX)+1;
@@ -568,7 +571,7 @@ void ntyTimeCheckHandleRequest(const void *_self, unsigned char *buffer, int len
 		const Client *client = obj;
 		ntySendDeviceTimeCheckAck(client->devId, 1);
 #endif
-		
+		ntylog("====================end ntyTimeCheckHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
@@ -641,6 +644,7 @@ static const ProtocolFilter ntyICCIDReqFilter = {
 void ntyVoiceReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const Client *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_VOICE_REQ) {
+		ntylog("====================end ntyVoiceReqPacketHandleRequest action ==========================\n");
 		
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_VOICE_REQ_DEVID_IDX);
 		U32 msgId = *(U32*)(buffer+NTY_PROTO_VOICE_REQ_MSGID_IDX);
@@ -660,6 +664,7 @@ void ntyVoiceReqPacketHandleRequest(const void *_self, unsigned char *buffer, in
 
 		ntyDaveMqPushMessage(tag);
 #endif
+		ntylog("====================end ntyVoiceReqPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
@@ -681,14 +686,14 @@ static const ProtocolFilter ntyVoiceReqFilter = {
 void ntyVoiceAckPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const Client *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_VOICE_ACK) {
-
+		ntylog("====================begin ntyVoiceAckPacketHandleRequest action ==========================\n");
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_VOICE_ACK_DEVID_IDX);
 		U32 msgId = *(U32*)(buffer+NTY_PROTO_VOICE_ACK_MSGID_IDX);
 
 		ntylog(" ntyVoiceAckPacketHandleRequest --> %lld, msgId:%d\n", fromId, msgId);
 
 		ntyVoiceAckAction(fromId, msgId);
-		
+		ntylog("====================end ntyVoiceAckPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
@@ -763,7 +768,7 @@ static const ProtocolFilter ntyCommonReqFilter = {
 void ntyCommonAckPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const Client *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_COMMON_ACK) {
-
+		ntylog("====================begin ntyCommonAckPacketHandleRequest action ==========================\n");
 
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_COMMON_ACK_DEVID_IDX);
 		U32 msgId = *(U32*)(buffer+NTY_PROTO_COMMON_ACK_MSGID_IDX);
@@ -787,6 +792,7 @@ void ntyCommonAckPacketHandleRequest(const void *_self, unsigned char *buffer, i
 
 		ntyDaveMqPushMessage(tag);
 #endif
+		ntylog("====================end ntyCommonAckPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
@@ -812,7 +818,7 @@ U8 u8VoicePacket[NTY_VOICEREQ_COUNT_LENGTH*NTY_VOICEREQ_PACKET_LENGTH] = {0};
 void ntyVoiceDataReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const Client *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_VOICE_DATA_REQ) {
-
+		ntylog("====================begin ntyVoiceDataReqPacketHandleRequest action ==========================\n");
 		int i = 0;
 		
 		U16 index = *(U16*)(buffer+NTY_PROTO_VOICE_DATA_REQ_PKTINDEX_IDX);
@@ -875,6 +881,7 @@ void ntyVoiceDataReqPacketHandleRequest(const void *_self, unsigned char *buffer
 
 		}
 
+		ntylog("====================end ntyVoiceDataReqPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
@@ -895,6 +902,7 @@ static const ProtocolFilter ntyVoiceDataReqFilter = {
 void ntyVoiceDataAckPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const Client *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_VOICE_ACK) {
+		ntylog("====================begin ntyVoiceDataAckPacketHandleRequest action ==========================\n");
 #if 0
 		C_DEVID toId = 0, fromId = 0;
 		ntyU8ArrayToU64(buffer+NTY_PROTO_VOICEACK_SELFID_IDX, &fromId);
@@ -917,6 +925,7 @@ void ntyVoiceDataAckPacketHandleRequest(const void *_self, unsigned char *buffer
 #else
 		ntylog(" ntyVoiceDataAckPacketHandleRequest is dispatch\n");
 #endif
+		ntylog("====================end ntyVoiceDataAckPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
@@ -978,9 +987,9 @@ static const ProtocolFilter ntyOfflineMsgReqFilter = {
 void ntyOfflineMsgAckPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const Client *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_OFFLINE_MSG_ACK) {
+		ntylog("====================begin ntyOfflineMsgAckPacketHandleRequest action ==========================\n");
 		
-		
-		
+		ntylog("====================end ntyOfflineMsgAckPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
@@ -1002,6 +1011,8 @@ static const ProtocolFilter ntyOfflineMsgAckFilter = {
 void ntyUnBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const UdpClient *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_UNBIND_REQ) {
+		ntylog("====================begin ntyUnBindDevicePacketHandleRequest action ==========================\n");
+		
 		C_DEVID AppId = *(C_DEVID*)(buffer+NTY_PROTO_UNBIND_APPID_IDX);
 		C_DEVID DeviceId = *(C_DEVID*)(buffer+NTY_PROTO_UNBIND_DEVICEID_IDX);
 
@@ -1051,7 +1062,7 @@ void ntyUnBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer
 		ntyProtoUnBindAck(AppId, DeviceId, ret);
 #endif		
 		
-		
+		ntylog("====================end ntyUnBindDevicePacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
@@ -1074,7 +1085,8 @@ static const ProtocolFilter ntyUnBindDeviceFilter = {
 void ntyBindConfirmReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const Client *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_BIND_CONFIRM_REQ) {
-
+		ntylog("====================begin ntyBindConfirmReqPacketHandleRequest action ==========================\n");
+		
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_CONFIRM_REQ_ADMIN_SELFID_IDX);
 		C_DEVID AppId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_CONFIRM_REQ_PROPOSER_IDX);
 		C_DEVID DeviceId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_CONFIRM_REQ_DEVICEID_IDX);
@@ -1150,7 +1162,7 @@ void ntyBindConfirmReqPacketHandleRequest(const void *_self, unsigned char *buff
 #endif		
 #endif
 
-		
+		ntylog("====================end ntyBindConfirmReqPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
@@ -1172,7 +1184,8 @@ static const ProtocolFilter ntyBindConfirmReqPacketFilter = {
 void ntyBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const Client *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_BIND_REQ) {
-	
+		ntylog("====================begin ntyBindDevicePacketHandleRequest action ==========================\n");
+		
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_APPID_IDX);
 		C_DEVID toId =  *(C_DEVID*)(buffer+NTY_PROTO_BIND_DEVICEID_IDX);
 		
@@ -1208,6 +1221,7 @@ void ntyBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer, 
 #else
 		ntyProtoBindAck(fromId, toId, 5);
 #endif		
+		ntylog("====================end ntyBindDevicePacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
@@ -1231,6 +1245,8 @@ static const ProtocolFilter ntyBindDeviceFilter = {
 void ntyMulticastReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const Client *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_MULTICAST_REQ) {
+		ntylog("====================begin ntyMulticastReqPacketHandleRequest action ==========================\n");
+		
 		C_DEVID toId = 0;
 		ntyU8ArrayToU64(buffer+NTY_PROTO_DEST_DEVID_IDX, &toId);
 
@@ -1243,6 +1259,8 @@ void ntyMulticastReqPacketHandleRequest(const void *_self, unsigned char *buffer
 		buffer[NTY_PROTO_MULTICAST_TYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
 		//ntySendBuffer(toClient, buffer, length);
 		//ntyMulticastSend();
+
+		ntylog("====================end ntyMulticastReqPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
@@ -1265,10 +1283,13 @@ static const ProtocolFilter ntyMutlcastReqFilter = {
 void ntyMulticastAckPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const Client *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_MULTICAST_ACK) {
+		ntylog("====================begin ntyMulticastAckPacketHandleRequest action ==========================\n");
+		
 		C_DEVID fromId = 0;
 			
 		ntyU8ArrayToU64(buffer+NTY_PROTO_DEST_DEVID_IDX, &fromId);
 
+		ntylog("====================end ntyMulticastAckPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);

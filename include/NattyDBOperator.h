@@ -145,11 +145,11 @@
 
 
 //作息时间 ，闹钟 
-#define NTY_DB_INSERT_SCHEDULE				"CALL PROC_INSERT_SCHEDULE(%lld, '%s', '%s', '%s')"
+#define NTY_DB_INSERT_SCHEDULE				"CALL PROC_INSERT_SCHEDULE(%lld, '%s', '%s', %d, '%s')"
 
 #define NTY_DB_DELETE_SCHEDULE				"CALL PROC_DELETE_SCHEDULE(%lld, %d)"
 
-#define NTY_DB_UPDATE_SCHEDULE				"CALL PROC_UPDATE_SCHEDULE(%lld, %d, '%s', '%s', '%s')"
+#define NTY_DB_UPDATE_SCHEDULE				"CALL PROC_UPDATE_SCHEDULE(%lld, %d, '%s', '%s', %d, '%s')"
 
 #define NTY_DB_SELECT_SCHEDULE				"CALL PROC_SELECT_SCHEDULE(%lld)"
 
@@ -277,11 +277,11 @@ int ntyExecuteContactsUpdateHandle(C_DEVID aid, C_DEVID did, Contacts *contacts,
 
 int ntyExecuteContactsDeleteHandle(C_DEVID aid, C_DEVID did, int contactsId);
 
-int ntyExecuteScheduleInsertHandle(C_DEVID aid, C_DEVID did, const char *daily, const char *time, const char *details, int *scheduleId);
+int ntyExecuteScheduleInsertHandle(C_DEVID aid, C_DEVID did, const char *daily, const char *time, int status, const char *details, int *scheduleId);
 
 int ntyExecuteScheduleDeleteHandle(C_DEVID aid, C_DEVID did, int scheduleId);
 
-int ntyExecuteScheduleUpdateHandle(C_DEVID aid, C_DEVID did, int scheduleId, const char *daily, const char *time, const char *details);
+int ntyExecuteScheduleUpdateHandle(C_DEVID aid, C_DEVID did, int scheduleId, const char *daily, const char *time, int status, const char *details);
 
 int ntyExecuteScheduleSelectHandle(C_DEVID aid, C_DEVID did, ScheduleAck *pScheduleAck, size_t size);
 

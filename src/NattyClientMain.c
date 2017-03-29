@@ -346,16 +346,18 @@ int main() {
 		//char *json_common = "{\"RunTime\":{\"TagetStep\":\"14725\"},\"IMEI\":\"355637053995130\",\"Category\":\"RunTime\"}";
 		//char *json_common = "{\"Action\":\"Update\",\"Category\":\"Schedule\",\"IMEI\":\"355637053995130\",\"Id\":\"48\",\"Schedule\":{\"Daily\":\"Monday|Wednesday|Thursday|Friday|Saturday\",\"Details\":\"%E5%85%AC%E5%8F%B8%E8%B5%B7%E6%88%91\",\"Status\":\"0\",\"Time\":\"14:33:00\"}}";
 		//char *json_common = "{\"IMEI\":\"352315052834187\",\"Category\":\"Turn\",\"Turn\":{\"Status\":\"1\",\"On\":{\"Time\":\"08:00:00\"},\"Off\":{\"Time\":\"18:00:00\"}}}";
-		
-		//char *json_common = "{\"IMEI\":\"355637052788650\",\"Category\":\"Efence\",\"Action\":\"Add\", \"Index\":\"1\",\"Efence\":{\"Num\":\"3\",\"Points\":[\"113.2409402,23.1326885\",\"113.2409412,23.1326895\",\"113.2409408,23.1326890\"]}}";
-		//ntyCommonReqClient(g_devid,json_common,strlen(json_common));
-		//sleep(30);
 
-		char *json_location = "{\"IMEI\":\"355637052788650\",\"Category\":\"LAB\",\"LAB\":{\"Bts\":\"460,01,40977,2205409,-65\",\"Nearbts\":[{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"},{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"},{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"}]}}";
+
+		char *json_common = "{\"Category\":\"Contacts\",\"Action\":\"Update\",\"IMEI\":\"355637053995130\",\"Contacts\":{\"Userid\":\"11299\",\"Id\":\"229\",\"Tel\":\"15889650380\",\"Admin\":0,\"Name\":\"%E5%B9%B2%E7%88%B9\",\"Image\":\"http:\/\/picture.quanjiakan.com:9080\/quanjiakan\/resources\/missing\/20170329115531_83i472.png\",\"App\":1}}";
+		//char *json_common = "{\"IMEI\":\"355637052788650\",\"Category\":\"Efence\",\"Action\":\"Add\", \"Index\":\"1\",\"Efence\":{\"Num\":\"3\",\"Points\":[\"113.2409402,23.1326885\",\"113.2409412,23.1326895\",\"113.2409408,23.1326890\"]}}";
+		ntyCommonReqClient(g_devid,json_common,strlen(json_common));
+		sleep(30);
+
+		//char *json_location = "{\"IMEI\":\"355637052788650\",\"Category\":\"LAB\",\"LAB\":{\"Bts\":\"460,01,40977,2205409,-65\",\"Nearbts\":[{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"},{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"},{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"}]}}";
 		//char *json_location = "{\"IMEI\":\"135790246811220\",\"Category\":\"WIFI\",\"WIFI\":[{\"SSID\":\"TP-LINK_42ED\",\"MAC\":\"F4:83:CD:3A:42:ED\",\"V\":\"-37\"},{\"SSID\":\"EXT\",\"MAC\":\"04:95:E6:22:DA:48\",\"V\":\"-52\"}]}";
-		ntydbg("%s\n", json_location);
-		ntyLocationReqClient(g_devid, json_location, strlen(json_location));
-		sleep(20);
+		//ntydbg("%s\n", json_location);
+		//ntyLocationReqClient(g_devid, json_location, strlen(json_location));
+		//sleep(20);
 
 		//char *json_weather = "{\"IMEI\":\"355637052788650\",\"Category\":\"Weather\",\"Bts\":\"460,01,40977,2205409,-65\"}";
 		//ntydbg("Request Weather : %s\n", json_weather);
