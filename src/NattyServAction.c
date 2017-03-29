@@ -550,9 +550,9 @@ void ntyJsonAddEfenceAction(ActionParam *pActionParam) {
 	if (ret == -1) {
 		ntylog(" ntyJsonEfenceAction --> DB Exception\n");
 		ret = 4;
-	} else if (ret == 0) { 
+	} else if (ret == 0 && id == -2) { 
 		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_SAVE_REPEATE_DATA);
-	} else if (ret > 0) {
+	} else if (ret >= 0) {
 		ret = ntySendRecodeJsonPacket(fromId, toId, pActionParam->jsonstring, pActionParam->jsonlen);
 		if (ret >= 0) {
 			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
@@ -647,7 +647,7 @@ void ntyJsonICCIDAction(ActionParam *pActionParam) {
 		pICCIDAck->IMEI = pICCIDReq->IMEI;
 		pICCIDAck->phone_num = phonenum;
 		char *jsonstringICCID = ntyJsonWriteICCID(pICCIDAck);
-		ntySendRecodeJsonPacket(devId, devId, (U8*)jsonstringICCID, strlen(jsonstringICCID));
+		ntySendICCIDAckResult(devId, (U8*)jsonstringICCID, strlen(jsonstringICCID), 200);
 		ntyJsonFree(jsonstringICCID);
 		free(pICCIDAck);
 	}
@@ -1111,9 +1111,9 @@ void ntyJsonAddContactsAction(ActionParam *pActionParam) {
 	if (ret == -1) {
 		ntylog(" ntyJsonAddContactsAction --> DB Exception\n");
 		ret = 4;
-	} else if (ret == 0) {
+	} else if (ret == 0 && contactsId==-2) {
 		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_SAVE_REPEATE_DATA);
-	} else if (ret > 0) {
+	} else if (ret >= 0) {
 		char ids[20] = {0};
 		sprintf(ids, "%d", contactsId);
 		pAddContactsReq->id = ids;

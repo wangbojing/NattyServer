@@ -77,6 +77,9 @@
 	fprintf(stdout, format, ##__VA_ARGS__);	\
 	} while (0)
 #define ntydbg(format, ...) 		fprintf(stdout, format, ##__VA_ARGS__)
+#elif (NTY_DEBUG == 4) //time
+#define ntylog(format, ...)			ntyLogShow(format, ##__VA_ARGS__)
+#define ntydbg(format, ...) 		fprintf(stdout, format, ##__VA_ARGS__)
 #else
 #define ntylog(format, ...)
 #define ntydbg(format, ...) 
