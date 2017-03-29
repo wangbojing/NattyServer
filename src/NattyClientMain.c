@@ -174,7 +174,7 @@ void ntyBindConfirmResult(DEVID fromId, U8 *json, int length) {
 
 
 
-DEVID g_devid = 0x352315052834187;
+DEVID g_devid = 0x355637050315845;
 
 int main() {
 	DEVID AppId = 10794;
@@ -319,22 +319,22 @@ int main() {
 		//sleep(20);
 		//break;
 
-		char *json_iccid = "{\"IMEI\":\"352315052834187\",\"ICCID\":\"89860116425100650036\"}";
+		//char *json_iccid = "{\"IMEI\":\"352315052834187\",\"ICCID\":\"89860116425100650036\"}";
 		//ntydbg("Request iccid  : %s\n", json_iccid);
-		ntyICCIDReqClient(g_devid, json_iccid, strlen(json_iccid));
-		sleep(20);
+		//ntyICCIDReqClient(g_devid, json_iccid, strlen(json_iccid));
+		//sleep(20);
 		//break;
 		//char *json_common = "{\"Action\":\"Update\",\"Category\":\"Schedule\",\"IMEI\":\"355637053995130\",\"Id\":\"41\",\"Schedule\":{\"Daily\":\"Monday|Wednesday|Thursday|Sunday\",\"Details\":\"给力\",\"Time\":\"17:30:0tion\":\",,255\"}}}";
 
 		//char *json_common = "{\"Action\":\"Update\",\"Category\":\"Schedule\",\"IMEI\":\"355637053995130\",\"Id\":\"40\",\"Schedule\":{\"Daily\":\"Tuesday|Wednesday|Thursday|Saturday\",\"Details\":\"给力\",\"Time\":\"17:28:00\"}}";
 		//char *json_common = "{\"Category\":\"RunTime\",\"IMEI\":\"355637053995130\",\"RunTime\":{\"AutoConnection\":\"0\"}}";
-		//char *json_common = "{\"IMEI\":\"355637052788650\",\"Category\":\"TimeTables\",\"TimeTables\":[{\"Daily\":\"\",\"Morning\":{\"Status\":\"1\",\"StartTime\":\"08:00:00\",\"EndTime\":\"12:00:00\"},\"Afternoon\":{\"Status\":\"1\",\"StartTime\":\"13:00:00\",\"EndTime\":\"18:00:00\"}}]}";
+		char *json_common = "{\"IMEI\":\"355637050315845\",\"Category\":\"TimeTables\",\"TimeTables\":[{\"Daily\":\"Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday\",\"Morning\":{\"Status\":\"1\",\"StartTime\":\"08:00:00\",\"EndTime\":\"16:00:00\"},\"Afternoon\":{\"Status\":\"1\",\"StartTime\":\"14:00:00\",\"EndTime\":\"18:00:00\"}}]}";
 		//char *json_common = "{\"IMEI\":\"355637052788650\",\"Category\":\"TimeTables\",\"TimeTables\":[{\"Daily\":\"Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday\",\"Morning\":{\"Status\":\"1\",\"StartTime\":\"08:00:00\",\"EndTime\":\"12:00:00\"},\"Afternoon\":{\"Status\":\"1\",\"StartTime\":\"13:00:00\",\"EndTime\":\"18:00:00\"}}]}";
 		//char *json_common = "{\"IMEI\":\"352315052834187\",\"Category\":\"Turn\",\"Turn\":{\"Status\":\"0\",\"On\":{\"Time\":\"08:00:00\"},\"Off\":{\"Time\":\"18:00:00\"}}}";
 		//char *json_common="{\"Schedule\":{\"Daily\":\"Wednesday|Thursday|Friday|Saturday\",\"Details\":\"%E4%BE%A7%E9%9D%A2\",\"Time\":\"21:14:14\"},\"Category\":\"Schedule\",\"IMEI\":\"352315052834187\",\"Action\":\"Update\",\"Id\":\"94\"}";
 		//char *json_common = "{\"IMEI\":\"352315052834187\",\"Category\":\"Schedule\",\"Action\":\"Add\",\"Schedule\":{\"Daily\":\"Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday\",\"Time\":\"18:00:00\",\"Details\":\"3\"}}";
 
-		char *json_common = "{\"Action\":\"Add\",\"Category\":\"Contacts\",\"Contacts\":{\"Image\":\"8\",\"Name\":\"%E9%BB%84%E6%B5%B7\",\"Tel\":\"13695287465\"},\"IMEI\":\"355637053995130\"}";
+		//char *json_common = "{\"Action\":\"Add\",\"Category\":\"Contacts\",\"Contacts\":{\"Image\":\"8\",\"Name\":\"%E9%BB%84%E6%B5%B7\",\"Tel\":\"13695287465\"},\"IMEI\":\"355637053995130\"}";
 		//char *json_common = "{\"Contact\":{\"Tel\":\"15218293347\",\"Name\":\"%E5%A4%96%E5%85%AC\",\"Image\":\"4\"},\"Category\":\"Contacts\",\"Action\":\"Add\",\"IMEI\":\"352315052834187\"}}";
 
 		
