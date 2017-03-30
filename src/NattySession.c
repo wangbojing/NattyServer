@@ -776,6 +776,12 @@ int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int lengt
 
 	//if fromId is AppId, need to send gId self
 	//else don't do that
+	record = ntyBHeapSelect(heap, fromId);
+	if (record == NULL) return NTY_RESULT_NOEXIST;
+
+	pClient = (Client*)record->value;
+	if (pClient == NULL) return NTY_RESULT_NOEXIST;
+	
 	if (pClient->deviceType == NTY_PROTO_CLIENT_ANDROID 
 		|| pClient->deviceType == NTY_PROTO_CLIENT_IOS) {
 		ntySendVoiceBroadCast(fromId, gId, json, length, index);
