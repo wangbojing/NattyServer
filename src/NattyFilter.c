@@ -365,6 +365,10 @@ int ntyDelClientHeap(C_DEVID clientId) {
 	NRecord *record = ntyBHeapSelect(heap, clientId);
 	if (record != NULL) {
 		Client *pClient = record->value;
+		if (pClient == NULL) {
+			ntylog("ntyDelClientHeap pClient == NULL : %d\n", clientId);
+			return NTY_RESULT_NOEXIST;
+		}
 
 		pClient->rLength = 0;
 		if (pClient->recvBuffer != NULL) {
@@ -424,8 +428,10 @@ int ntyClientCleanup(ClientSocket *client) { //
 		ntylog(" ntyMapDelete --> ret : %d\n", ret);
 		
 		//release HashMap
+#if 0 //no delete from BHeap
 		ret = ntyDelClientHeap(Id);
 		ntylog(" ntyMapDelete --> ret : %d\n", ret);
+#endif
 	} else {
 		ntylog(" ntyHashDelete ret : %d\n", ret);
 	}
