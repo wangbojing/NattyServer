@@ -494,7 +494,11 @@ int ntyHashInsert(void *_self, U32 key, Payload* load) {
 
 	HashNode *node = ntyHashSearchNode(table, key);
 	if (node != NULL) {
-		ntylog(" Ip Addr conflict , node id --> %lld, please check app ip addr\n", node->info->id);
+		ntylog(" Error ntyHashInsert ,socket:%d, node id --> %lld, \n", node->sockfd, node->info->id);
+		
+		node->sockfd = key;
+		node->info->id = load->id;
+		
 		return NTY_RESULT_EXIST;
 	}
 

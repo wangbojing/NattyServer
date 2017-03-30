@@ -490,6 +490,7 @@ int ntyOnlineClientHeap(C_DEVID clientId) {
 	return NTY_RESULT_SUCCESS;
 }
 
+//int ntyUpdateClientInfo()
 
 /*
  * Login Packet
@@ -565,8 +566,12 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 		//Client *pClient = NULL;
 
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_HEARTBEAT_REQ_DEVID_IDX);
-#if 0
-		ntyAddClientHeap(client, (RECORDTYPE *)&pClient);
+		int ret = NTY_RESULT_SUCCESS;
+#if 1
+		Client *pClient = ntyAddClientHeap(client, &ret);
+		if (pClient == NULL) {
+			ntylog(" ntyHeartBeatPacketHandleRequest --> Error\n");
+		}
 #else
 		ntyOnlineClientHeap(client->devId);
 #endif
