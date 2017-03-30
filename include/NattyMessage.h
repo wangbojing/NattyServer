@@ -51,6 +51,7 @@
 //#include "NattyUserProtocol.h"
 
 #define NATTY_RESULT_CODE_SUCCESS 					"200"		//
+#define NATTY_RESULT_CODE_BUSY						"500"		
 #define NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE 		"10001"		//设备不在线
 #define NATTY_RESULT_CODE_ERR_JSON_FORMAT 			"10002"		//JSOn格式错误
 #define NATTY_RESULT_CODE_ERR_JSON_CONVERT			"10003"		//JSON转换错误

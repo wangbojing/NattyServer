@@ -94,7 +94,7 @@ int ntyReleaseClientNodeByNode(struct ev_loop *loop, void *node);
 
 int ntyClientCleanup(ClientSocket *client);
 
-int ntyAddClientHeap(const void * obj, RECORDTYPE *value);
+Client* ntyAddClientHeap(const void * obj, int *result);
 
 int ntyDelClientHeap(C_DEVID clientId);
 

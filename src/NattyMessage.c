@@ -63,12 +63,11 @@ const char* ntyCommonResultMessage(const char *code) {
 			message = "Cannot save offline data";
 		} else if (strcmp(code, NATTY_RESULT_CODE_ERR_DB_SAVE_REPEATE_DATA) == 0) {
 			message = "Save Repeate data";
+		} else if (strcmp(code, NATTY_RESULT_CODE_BUSY) == 0) {
+			message = "Server be Busy";
 		}
 	}
 
-	
-
-	
 	return message;
 }
 

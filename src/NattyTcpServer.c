@@ -50,6 +50,7 @@
 #include "NattyUtils.h"
 #include "NattySession.h"
 #include "NattyResult.h"
+#include "NattyMessage.h"
 
 #include <fcntl.h>
 #include <string.h>
@@ -166,6 +167,7 @@ int ntyAddRelationMap(MessagePacket *msg) {
 		} else if (ret == NTY_RESULT_PROCESS) { 
 		// RBTree have process ,
 		// should ret server is busy, and close socket
+			ntyJsonCommonResult(msg->client->devId, NATTY_RESULT_CODE_BUSY);
 			free(nValue);
 		} else if (ret == NTY_RESULT_SUCCESS) {		
 			//insert HashTable

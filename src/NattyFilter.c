@@ -260,7 +260,7 @@ static int ntyUpdateClientListIpAddr(UdpClient *client, C_DEVID key, U32 ackNum)
  * add rbtree <key, value> -- <UserId, sockfd>
  * add B+tree <key, value> -- <UserId, UserInfo>
  */
-int ntyAddClientHeap(const void * obj, RECORDTYPE *value) {
+Client* ntyAddClientHeap(const void * obj, int *result) {
 	const Client *client = obj;
 	int ret = -1;
 
@@ -280,12 +280,15 @@ int ntyAddClientHeap(const void * obj, RECORDTYPE *value) {
 		if (ret == NTY_RESULT_EXIST || ret == NTY_RESULT_FAILED) {
 			ntylog("ret : %d\n", ret);
 			free(pClient);
-//			ASSERT(0);
-			return ret;
+			
+			*result = ret;
+			return NULL;
 		} else if (ret == NTY_RESULT_BUSY) {
 			ntylog("ret : %d\n", ret);
 			free(pClient);
-			return ret;
+
+			*result = ret;
+			return NULL;
 		}
 		
 		pthread_mutex_t blank_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -334,10 +337,8 @@ int ntyAddClientHeap(const void * obj, RECORDTYPE *value) {
 		void* timer = ntyTimerAdd(nwTimer, 60, ntyCheckOnlineAlarmNotify, (void*)&addr, sizeof(unsigned long));
 		pClient->hbdTimer = timer;
 
-		
-		*value = pClient;
-		
-		return NTY_RESULT_NEEDINSERT;
+		*result = NTY_RESULT_SUCCESS;
+		return pClient;
 	} else {
 	
 		ntylog("ntyAddClientHeap exist %lld\n", client->devId);
@@ -345,17 +346,19 @@ int ntyAddClientHeap(const void * obj, RECORDTYPE *value) {
 		Client *pClient = record->value;
 		if (pClient == NULL) {
 			ntylog(" ntyAddClientHeap pClient is not Exist : %lld\n", client->devId);
-			return NTY_RESULT_NOEXIST;
+
+			*result = NTY_RESULT_NOEXIST;
+			return NULL;
 		}
 #if ENABLE_NATTY_TIME_STAMP //TIME Stamp 	
 		pClient->stamp = ntyTimeStampGenrator();
 #endif
 		pClient->online = 1;
-		*value = record->value;
 
+		return pClient;
 	}
 
-	return NTY_RESULT_SUCCESS;
+	return NULL;
 }
 
 int ntyDelClientHeap(C_DEVID clientId) {
@@ -366,7 +369,7 @@ int ntyDelClientHeap(C_DEVID clientId) {
 	if (record != NULL) {
 		Client *pClient = record->value;
 		if (pClient == NULL) {
-			ntylog("ntyDelClientHeap pClient == NULL : %d\n", clientId);
+			ntylog("ntyDelClientHeap pClient == NULL : %lld\n", clientId);
 			return NTY_RESULT_NOEXIST;
 		}
 
@@ -445,13 +448,15 @@ int ntyOfflineClientHeap(C_DEVID clientId) {
 	NRecord *record = ntyBHeapSelect(heap, clientId);
 
 	if (record == NULL) {
-		ntylog(" OfflineClientHeap is not Exist %lld\n", clientId);
+		ntylog("Error OfflineClientHeap is not Exist %lld\n", clientId);
+		ntyPrintTree(heap->root);
 		return NTY_RESULT_NOEXIST;
 	}
 
 	Client* pClient = (Client*)record->value;
 	if (pClient == NULL) {
-		ntylog(" OfflineClientHeap record->value == NULL %lld\n", clientId);
+		ntylog("Error OfflineClientHeap record->value == NULL %lld\n", clientId);
+		ntyPrintTree(heap->root);
 		return NTY_RESULT_NOEXIST;
 	}
 
@@ -466,12 +471,14 @@ int ntyOnlineClientHeap(C_DEVID clientId) {
 
 	if (record == NULL) {
 		ntylog(" Error OfflineClientHeap is not Exist : %lld\n", clientId);
+		ntyPrintTree(heap->root);
 		return NTY_RESULT_NOEXIST;
 	}
 
 	Client* pClient = (Client*)record->value;
 	if (pClient == NULL) {
 		ntylog(" Error OfflineClientHeap record->value == NULL %lld\n", clientId);
+		ntyPrintTree(heap->root);
 		return NTY_RESULT_NOEXIST;
 	}
 	
@@ -505,8 +512,8 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 				ntySendDeviceTimeCheckAck(pClient->devId, client->ackNum+1);
 		}
 #else
-		Client *pClient = NULL;
-		ntyAddClientHeap(client, (RECORDTYPE *)&pClient);
+		int ret = NTY_RESULT_SUCCESS;
+		Client *pClient = ntyAddClientHeap(client, &ret);
 		if (pClient != NULL) {
 			//ntySendFriendsTreeIpAddr(pClient, 1);
 
@@ -523,6 +530,9 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 		} else {	
 //			ASSERT(0);
 			ntylog(" BHeap in the Processs\n");
+			if (ret == NTY_RESULT_BUSY) {
+				ntyJsonCommonResult(client->devId, NATTY_RESULT_CODE_BUSY);
+			}
 		}
 #endif
 		//ntylog("Login deal with: %d\n", buffer[NTY_PROTO_MSGTYPE_IDX]);		
