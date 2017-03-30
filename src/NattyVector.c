@@ -55,6 +55,7 @@ void* ntyVectorCtor(void *self, va_list *params) {
 	
 	vector->num = 0;
 	vector->max_num = NTY_VECTOR_MAX_COUNT;
+	vector->vector_lock = 0;
 
 	return vector;
 }
@@ -90,17 +91,31 @@ void* ntyVectorAdd(void *self, void *data, int len) {
 
 	knot = malloc(sizeof(NKnot));
 	if (knot == NULL) return NULL;
+	memset(knot, 0, sizeof(NKnot));
 
 	if (data != NULL) {
 		knot->len = 0;
 		knot->data = malloc(len);
+		if (knot->data == NULL) {
+			free(knot);
+			return NULL;
+		}
 		memcpy(knot->data, data, len);
 	} else {
 		knot->data = NULL;
 		knot->len = 0;
 	}
 
-	LIST_INSERT_HEAD(&vector->header, knot, entries);
+	if(0 == cmpxchg(&vector->vector_lock, 0, 1, WORD_WIDTH)) {
+		LIST_INSERT_HEAD(&vector->header, knot, entries);
+		vector->vector_lock = 0;
+	} else {
+		if (knot->data != NULL) {
+			free(knot->data);
+		}
+		free(knot);
+		return NULL;
+	}
 
 	return knot;
 }
@@ -112,14 +127,21 @@ int ntyVectorDel(void *self, void *data) {
 	
 	for (knot = vector->header.lh_first ;knot != NULL;knot = knot->entries.le_next) {
 		if (0 == memcmp(knot->data, data, knot->len)) {
-			LIST_REMOVE(knot, entries);
-			vector->num --;
 
-			if (knot->data != NULL) {
-				free(knot->data);
+			if(0 == cmpxchg(&vector->vector_lock, 0, 1, WORD_WIDTH)) {
+				LIST_REMOVE(knot, entries);
+				vector->num --;
+
+				if (knot->data != NULL) {
+					free(knot->data);
+				}
+				knot->len = 0;
+				free(knot);
+
+				vector->vector_lock = 0;
+			} else {
+				return NTY_RESULT_BUSY;
 			}
-			knot->len = 0;
-			free(knot);
 
 			return NTY_RESULT_SUCCESS;
 		}

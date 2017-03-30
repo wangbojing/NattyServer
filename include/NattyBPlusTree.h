@@ -87,6 +87,7 @@ typedef struct _BPTreeHeap {
 	const void *_;
 	NBPNode *root;
 	int count;
+	long bptree_lock;
 } BPTreeHeap;
 
 typedef struct _BPTreeHeapHandle {

@@ -779,6 +779,7 @@ void* ntyBHeapCtor(void *self, va_list *params) {
 	NBHeap *pHeap = self;
 	pHeap->root = NULL;
 	pHeap->count = 0;
+	pHeap->bptree_lock = 0;
 
 	return pHeap;
 }
@@ -788,17 +789,35 @@ void* ntyBHeapDtor(void *self) {
 	
 	pHeap->root = ntyDestroyTree(pHeap->root);
 	pHeap->count = 0;
+	pHeap->bptree_lock = 0;
+	
 	return pHeap;
 }
 
 int ntyBHeapInsertHandle(void *self, NTY_ID key, RECORDTYPE value) {
 	NBHeap *pHeap = self;
-	return ntyInsert(&pHeap->root, key, value);
+	int ret = NTY_RESULT_SUCCESS;
+
+	if(0 == cmpxchg(&pHeap->bptree_lock, 0, 1, WORD_WIDTH)) {
+		ret = ntyInsert(&pHeap->root, key, value);
+		pHeap->bptree_lock = 0;
+	} else {
+		ret = NTY_RESULT_BUSY;
+	}
+	return ret;
 }
 
 int ntyBHeapDeleteHandle(void *self, NTY_ID key) {
 	NBHeap *pHeap = self;
-	return ntyDelete(&pHeap->root, key);
+	int ret = NTY_RESULT_SUCCESS;
+	
+	if(0 == cmpxchg(&pHeap->bptree_lock, 0, 1, WORD_WIDTH)) {
+		ret = ntyDelete(&pHeap->root, key);
+		pHeap->bptree_lock = 0;
+	} else {
+		ret = NTY_RESULT_BUSY;
+	}
+	return ret;
 }
 
 int ntyBHeapUpdateHandle(void *self, NTY_ID key, RECORDTYPE value, size_t size) {

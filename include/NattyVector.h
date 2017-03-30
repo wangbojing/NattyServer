@@ -67,6 +67,7 @@ typedef struct nVector {
 	LIST_HEAD(vectorheader, nKnot) header;
 	int num;
 	int max_num;	
+	long vector_lock;
 } NVector;
 
 

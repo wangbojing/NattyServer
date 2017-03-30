@@ -289,6 +289,20 @@ static int ntyAddClientHeap(const void * obj, RECORDTYPE *value) {
 		ASSERT(pClient != NULL);
 
 		memcpy(pClient, client, sizeof(Client));
+		ntylog("ntyAddClientHeap is not exist %lld\n", client->devId);
+
+		//insert bheap
+		ret = ntyBHeapInsert(heap, client->devId, pClient);
+		if (ret == NTY_RESULT_EXIST || ret == NTY_RESULT_FAILED) {
+			ntylog("ret : %d\n", ret);
+			free(pClient);
+//			ASSERT(0);
+			return ret;
+		} else if (ret == NTY_RESULT_BUSY) {
+			ntylog("ret : %d\n", ret);
+			free(pClient);
+			return ret;
+		}
 		
 		pthread_mutex_t blank_mutex = PTHREAD_MUTEX_INITIALIZER;
 		memcpy(&pClient->bMutex, &blank_mutex, sizeof(pClient->bMutex));
@@ -336,18 +350,13 @@ static int ntyAddClientHeap(const void * obj, RECORDTYPE *value) {
 		void* timer = ntyTimerAdd(nwTimer, 60, ntyCheckOnlineAlarmNotify, (void*)&addr, sizeof(unsigned long));
 		pClient->hbdTimer = timer;
 
-		//insert bheap
-		ret = ntyBHeapInsert(heap, client->devId, pClient);
-		if (ret == NTY_RESULT_EXIST || ret == NTY_RESULT_FAILED) {
-			ntylog("ret : %d\n", ret);
-			free(pClient);
-//			ASSERT(0);
-			return ret;
-		}
+		
 		*value = pClient;
 		
 		return NTY_RESULT_NEEDINSERT;
 	} else {
+		ntylog("ntyAddClientHeap exist %lld\n", client->devId);
+	
 		Client *pClient = record->value;
 #if ENABLE_NATTY_TIME_STAMP //TIME Stamp 	
 		pClient->stamp = ntyTimeStampGenrator();
@@ -1046,14 +1055,14 @@ void ntyUnBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer
 			void *heap = ntyBHeapInstance();
 			NRecord *record = ntyBHeapSelect(heap, AppId);
 			if (record != NULL) {
-				Client *aclient = record->value;
+				Client *aclient = (Client *)record->value;
 				ASSERT(aclient != NULL);
 				ntyVectorDelete(aclient->friends, &DeviceId);
 			}
 
 			record = ntyBHeapSelect(heap, DeviceId);
 			if (record != NULL) {
-				Client *dclient = record->value;
+				Client *dclient = (Client *)record->value;
 				ASSERT(dclient != NULL);
 				ntyVectorDelete(dclient->friends, &DeviceId);
 			}
