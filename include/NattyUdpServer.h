@@ -195,6 +195,9 @@ int ntySendBuffer(ClientSocket *client, unsigned char *buffer, int length);
 void* allocRequestPacket(void);
 void freeRequestPacket(void *pReq);
 
+int ntyAddRelationMap(MessagePacket *msg);
+int ntyDelRelationMap(C_DEVID id);
+
 
 
 #endif

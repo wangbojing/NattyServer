@@ -59,6 +59,7 @@
 #include "NattyServAction.h"
 #include "NattyMessage.h"
 #include "NattyDaveMQ.h"
+#include "NattyUdpServer.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -497,7 +498,7 @@ int ntyOnlineClientHeap(C_DEVID clientId) {
  * Login Packet, HeartBeatPacket, LogoutPacket etc. should use templete designer pattern
  */
 void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
-	const UdpClient *client = obj;
+	
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_LOGIN_REQ) {
 #if 0
 		int i = 0;
@@ -513,6 +514,17 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 				ntySendDeviceTimeCheckAck(pClient->devId, client->ackNum+1);
 		}
 #else
+
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if (msg == NULL) return ;
+		const Client *client = msg->client;
+
+		MessagePacket *pMsg = (MessagePacket *)malloc(sizeof(MessagePacket));
+		memcpy(pMsg, msg, sizeof(MessagePacket));
+		
+		ntyAddRelationMap(pMsg);
+		free(pMsg);
+
 		int ret = NTY_RESULT_SUCCESS;
 		Client *pClient = ntyAddClientHeap(client, &ret);
 		if (pClient != NULL) {
@@ -561,9 +573,11 @@ static const ProtocolFilter ntyLoginFilter = {
  * HeartBeatPacket
  */
 void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
-	const UdpClient *client = obj;
+	
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_HEARTBEAT_REQ) {
-		//Client *pClient = NULL;
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if (msg == NULL) return ;
+		const Client *client = msg->client;
 
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_HEARTBEAT_REQ_DEVID_IDX);
 		int ret = NTY_RESULT_SUCCESS;
@@ -600,10 +614,12 @@ static const ProtocolFilter ntyHeartBeatFilter = {
  * Logout Packet
  */
 void ntyLogoutPacketHandleRequest(const void *_self, U8 *buffer, int length, const void* obj) {
-	const UdpClient *client = obj;
+	
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_LOGOUT_REQ) {
 		ntylog("====================begin ntyLogoutPacketHandleRequest action ==========================\n");
-		//delete key
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if (msg == NULL) return ;
+		const Client *client = msg->client;
 
 		ntyDelClientHeap(client->devId);
 
@@ -629,12 +645,15 @@ static const ProtocolFilter ntyLogoutFilter = {
 void ntyTimeCheckHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_TIME_CHECK_REQ) {
 		ntylog("====================begin ntyTimeCheckHandleRequest action ==========================\n");
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if (msg == NULL) return ;
+		const Client *client = msg->client;
 #if 0
 		C_DEVID key = *(C_DEVID*)(buffer+NTY_PROTO_LOGIN_REQ_DEVID_IDX);
 		U32 ackNum = *(U32*)(buffer+NTY_PROTO_LOGIN_REQ_ACKNUM_IDX)+1;
 		ntySendDeviceTimeCheckAck(client, ackNum);
 #else
-		const Client *client = obj;
+
 		ntySendDeviceTimeCheckAck(client->devId, 1);
 #endif
 		ntylog("====================end ntyTimeCheckHandleRequest action ==========================\n");
@@ -659,9 +678,13 @@ static const ProtocolFilter ntyTimeCheckFilter = {
 
 
 void ntyICCIDReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
-	const Client *client = obj;
+	
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_ICCID_REQ) {
 		ntylog("====================begin ntyICCIDReqPacketHandleRequest action ==========================\n");
+
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if (msg == NULL) return ;
+		const Client *client = msg->client;
 
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_ICCID_REQ_DEVID_IDX);
 
@@ -708,9 +731,13 @@ static const ProtocolFilter ntyICCIDReqFilter = {
 };
 
 void ntyVoiceReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
-	const Client *client = obj;
+	
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_VOICE_REQ) {
 		ntylog("====================end ntyVoiceReqPacketHandleRequest action ==========================\n");
+
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if (msg == NULL) return ;
+		const Client *client = msg->client;
 		
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_VOICE_REQ_DEVID_IDX);
 		U32 msgId = *(U32*)(buffer+NTY_PROTO_VOICE_REQ_MSGID_IDX);
@@ -750,9 +777,14 @@ static const ProtocolFilter ntyVoiceReqFilter = {
 
 
 void ntyVoiceAckPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
-	const Client *client = obj;
+	
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_VOICE_ACK) {
 		ntylog("====================begin ntyVoiceAckPacketHandleRequest action ==========================\n");
+
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if (msg == NULL) return ;
+		const Client *client = msg->client;
+
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_VOICE_ACK_DEVID_IDX);
 		U32 msgId = *(U32*)(buffer+NTY_PROTO_VOICE_ACK_MSGID_IDX);
 
@@ -779,9 +811,13 @@ static const ProtocolFilter ntyVoiceAckFilter = {
 
 
 void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
-	const Client *client = obj;
+	
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_COMMON_REQ) {
 		ntylog("====================begin ntyCommonReqPacketHandleRequest action ==========================\n");
+
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if (msg == NULL) return ;
+		const Client *client = msg->client;
 
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_COMMON_REQ_DEVID_IDX);
 		C_DEVID toId = *(C_DEVID*)(buffer+NTY_PROTO_COMMON_REQ_RECVID_IDX);
@@ -832,9 +868,13 @@ static const ProtocolFilter ntyCommonReqFilter = {
 };
 
 void ntyCommonAckPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
-	const Client *client = obj;
+	
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_COMMON_ACK) {
 		ntylog("====================begin ntyCommonAckPacketHandleRequest action ==========================\n");
+
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if (msg == NULL) return ;
+		const Client *client = msg->client;
 
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_COMMON_ACK_DEVID_IDX);
 		U32 msgId = *(U32*)(buffer+NTY_PROTO_COMMON_ACK_MSGID_IDX);
@@ -882,9 +922,14 @@ U8 u8VoicePacket[NTY_VOICEREQ_COUNT_LENGTH*NTY_VOICEREQ_PACKET_LENGTH] = {0};
 #endif
 
 void ntyVoiceDataReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
-	const Client *client = obj;
+	
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_VOICE_DATA_REQ) {
 		ntylog("====================begin ntyVoiceDataReqPacketHandleRequest action ==========================\n");
+
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if (msg == NULL) return ;
+		const Client *client = msg->client;
+
 		int i = 0;
 		
 		U16 index = *(U16*)(buffer+NTY_PROTO_VOICE_DATA_REQ_PKTINDEX_IDX);
@@ -966,9 +1011,14 @@ static const ProtocolFilter ntyVoiceDataReqFilter = {
 };
 
 void ntyVoiceDataAckPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
-	const Client *client = obj;
+	
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_VOICE_ACK) {
 		ntylog("====================begin ntyVoiceDataAckPacketHandleRequest action ==========================\n");
+
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if (msg == NULL) return ;
+		const Client *client = msg->client;
+
 #if 0
 		C_DEVID toId = 0, fromId = 0;
 		ntyU8ArrayToU64(buffer+NTY_PROTO_VOICEACK_SELFID_IDX, &fromId);
@@ -1010,9 +1060,14 @@ static const ProtocolFilter ntyVoiceDataAckFilter = {
 };
 
 void ntyOfflineMsgReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
-	const Client *client = obj;
+	
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_OFFLINE_MSG_REQ) {
 		ntylog("====================begin ntyOfflineMsgReqPacketHandleRequest action ==========================\n");
+
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if (msg == NULL) return ;
+		const Client *client = msg->client;
+
 		/*
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_OFFLINE_MSG_REQ_DEVICEID_IDX);
 		U16 jsonlen = 0;
@@ -1051,9 +1106,13 @@ static const ProtocolFilter ntyOfflineMsgReqFilter = {
 };
 
 void ntyOfflineMsgAckPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
-	const Client *client = obj;
+	
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_OFFLINE_MSG_ACK) {
 		ntylog("====================begin ntyOfflineMsgAckPacketHandleRequest action ==========================\n");
+
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if (msg == NULL) return ;
+		const Client *client = msg->client;
 		
 		ntylog("====================end ntyOfflineMsgAckPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
@@ -1075,9 +1134,13 @@ static const ProtocolFilter ntyOfflineMsgAckFilter = {
 
 
 void ntyUnBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
-	const UdpClient *client = obj;
+	
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_UNBIND_REQ) {
 		ntylog("====================begin ntyUnBindDevicePacketHandleRequest action ==========================\n");
+
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if (msg == NULL) return ;
+		const Client *client = msg->client;
 		
 		C_DEVID AppId = *(C_DEVID*)(buffer+NTY_PROTO_UNBIND_APPID_IDX);
 		C_DEVID DeviceId = *(C_DEVID*)(buffer+NTY_PROTO_UNBIND_DEVICEID_IDX);
@@ -1153,9 +1216,13 @@ static const ProtocolFilter ntyUnBindDeviceFilter = {
 };
 
 void ntyBindConfirmReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
-	const Client *client = obj;
+	
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_BIND_CONFIRM_REQ) {
 		ntylog("====================begin ntyBindConfirmReqPacketHandleRequest action ==========================\n");
+
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if (msg == NULL) return ;
+		const Client *client = msg->client;
 		
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_CONFIRM_REQ_ADMIN_SELFID_IDX);
 		C_DEVID AppId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_CONFIRM_REQ_PROPOSER_IDX);
@@ -1252,9 +1319,13 @@ static const ProtocolFilter ntyBindConfirmReqPacketFilter = {
 
 
 void ntyBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
-	const Client *client = obj;
+	
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_BIND_REQ) {
 		ntylog("====================begin ntyBindDevicePacketHandleRequest action ==========================\n");
+
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if (msg == NULL) return ;
+		const Client *client = msg->client;
 		
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_APPID_IDX);
 		C_DEVID toId =  *(C_DEVID*)(buffer+NTY_PROTO_BIND_DEVICEID_IDX);
@@ -1313,9 +1384,13 @@ static const ProtocolFilter ntyBindDeviceFilter = {
 
 
 void ntyMulticastReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
-	const Client *client = obj;
+	
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_MULTICAST_REQ) {
 		ntylog("====================begin ntyMulticastReqPacketHandleRequest action ==========================\n");
+
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if (msg == NULL) return ;
+		const Client *client = msg->client;
 		
 		C_DEVID toId = 0;
 		ntyU8ArrayToU64(buffer+NTY_PROTO_DEST_DEVID_IDX, &toId);
@@ -1351,9 +1426,13 @@ static const ProtocolFilter ntyMutlcastReqFilter = {
 
 
 void ntyMulticastAckPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
-	const Client *client = obj;
+	
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_MULTICAST_ACK) {
 		ntylog("====================begin ntyMulticastAckPacketHandleRequest action ==========================\n");
+
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if (msg == NULL) return ;
+		const Client *client = msg->client;
 		
 		C_DEVID fromId = 0;
 			
@@ -1379,9 +1458,13 @@ static const ProtocolFilter ntyMutlcastAckFilter = {
 };
 
 void ntyLocationAsyncReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
-	const Client *client = obj;
+	
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_LOCATION_ASYNCREQ) {
 		ntylog("====================begin ntyLocationAsyncReqPacketHandleRequest action ==========================\n");
+
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if (msg == NULL) return ;
+		const Client *client = msg->client;
 
 		U16 jsonlen = 0;
 		memcpy(&jsonlen, buffer+NTY_PROTO_LOCATION_ASYNC_REQ_JSON_LENGTH_IDX, NTY_JSON_COUNT_LENGTH);
@@ -1435,9 +1518,13 @@ static const ProtocolFilter ntyLocationAsyncReqFilter = {
 
 
 void ntyWeatherAsyncReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
-	const Client *client = obj;
+	
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_WEATHER_ASYNCREQ) {
 		ntylog("====================begin ntyWeatherAsyncReqPacketHandleRequest action ==========================\n");
+
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if (msg == NULL) return ;
+		const Client *client = msg->client;
 
 		U16 jsonlen = 0;
 		memcpy(&jsonlen, buffer+NTY_PROTO_WEATHER_ASYNC_REQ_JSON_LENGTH_IDX, NTY_JSON_COUNT_LENGTH);
@@ -1499,9 +1586,14 @@ static const ProtocolFilter ntyWeatherAsyncReqFilter = {
  * 
  */
 void ntyRoutePacketHandleRequest(const void *_self, unsigned char *buffer, int length,const void* obj) {
-	const Client *client = obj;
+	
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_DATA_ROUTE) {
 		ntylog("====================begin ntyRoutePacketHandleRequest action ==========================\n");
+
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if (msg == NULL) return ;
+		const Client *client = msg->client;
+
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_DATA_ROUTE_DEVID_IDX);
 		C_DEVID toId = *(C_DEVID*)(buffer+NTY_PROTO_DATA_ROUTE_RECVID_IDX);
 		
@@ -1713,7 +1805,10 @@ void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length, 
 	//data crc is right, and encryto
 	U32 u32Crc = ntyGenCrcValue(buffer, length-4);
 	U32 u32ClientCrc = *((U32*)(buffer+length-4));
-	const Client *client = obj;
+
+	const MessagePacket *msg = (const MessagePacket*)obj;
+	if (msg == NULL) return ;
+	const Client *client = msg->client;
 #if 0	
 	struct sockaddr_in addr;
 	memcpy(&addr, &client->addr, sizeof(struct sockaddr_in));

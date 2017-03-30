@@ -256,9 +256,11 @@ int ntyDelRelationMap(C_DEVID id) {
 static void ntyTcpServerJob(Job *job) {
 	MessagePacket *msg = (RequestPacket*)job->user_data;
 	void* pFilter = ntyProtocolFilterInstance();
-	
+#if 0	
 	ntyProtocolFilterProcess(pFilter, msg->buffer, msg->length, msg->client);
-	
+#else
+	ntyProtocolFilterProcess(pFilter, msg->buffer, msg->length, msg);
+#endif
 	freeRequestPacket(msg);
 	free(job);
 }
@@ -376,9 +378,8 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 
 		void *hash = ntyHashTableInstance();
 		Payload *load = ntyHashTableSearch(hash, watcher->fd);
+#if 1
 		if (load == NULL) {
-			ntyU8ArrayToU64(&buffer[NTY_PROTO_DEVID_IDX], &msg->client->devId);
-		} else if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_LOGIN_REQ) {
 			ntyU8ArrayToU64(&buffer[NTY_PROTO_DEVID_IDX], &msg->client->devId);
 		} else {
 			if (load->id == NATTY_NULL_DEVID) {
@@ -387,7 +388,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 				msg->client->devId = load->id;
 			}
 		}
-
+#endif
 		//req->client->ackNum = ntyU8ArrayToU32(&buffer[NTY_PROTO_ACKNUM_IDX])+1;
 
 		msg->watcher = watcher;
@@ -405,9 +406,9 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 
 		memset(msg->buffer, 0, rLen);
 		memcpy(msg->buffer, buffer, rLen); //xiao lv
-		
+#if 0		
 		ntyAddRelationMap(msg);
-
+#endif
 		Job *job = (Job*)malloc(sizeof(*job));
 		if (job == NULL) {
 			ntylog("malloc Job failed\n");
