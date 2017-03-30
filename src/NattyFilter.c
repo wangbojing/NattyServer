@@ -579,6 +579,13 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 		if (msg == NULL) return ;
 		const Client *client = msg->client;
 
+		MessagePacket *pMsg = (MessagePacket *)malloc(sizeof(MessagePacket));
+		memcpy(pMsg, msg, sizeof(MessagePacket));
+		
+		ntyAddRelationMap(pMsg);
+		free(pMsg);
+		
+
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_HEARTBEAT_REQ_DEVID_IDX);
 		int ret = NTY_RESULT_SUCCESS;
 #if 1
