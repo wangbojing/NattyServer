@@ -283,7 +283,7 @@ NBPNode *ntyInsertIntoLeaf(NBPNode *leaf, NTY_ID key, NRecord *pointer) {
 
 NBPNode *ntyInsertIntoLeafAfterSplitting(NBPNode *root, NBPNode *leaf, NTY_ID key, NRecord *pointer) {
 	NBPNode *new_leaf;
-	int *temp_keys;
+	NTY_ID *temp_keys;
 	void **temp_pointers;
 	int insertion_index, split, new_key, i, j;
 
