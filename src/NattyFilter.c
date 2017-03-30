@@ -43,7 +43,6 @@
 
 
 #include "NattyRBTree.h"
-#include "NattyBPlusTree.h"
 #include "NattyFilter.h"
 #include "NattySession.h"
 #include "NattyDaveMQ.h"
@@ -222,21 +221,6 @@ void* ntyPacketGetSuccessor(const void *_self) {
 	const Packet *self = _self;
 	return self->succ;
 }
-#if 0
-void ntyP2PNotifyClient(UdpClient *client, U8 *notify) {
-	int length = 0;
-	
-	notify[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_P2P_NOTIFY_REQ;
-	
-	length = NTY_PROTO_P2P_NOTIFY_CRC_IDX;
-	*(U32*)(&notify[length]) = ntyGenCrcValue(notify, length);
-	length += sizeof(U32);
-
-	ntySendBuffer(client, notify, length);
-
-	return ;
-}
-#endif
 
 static int ntyUpdateClientListIpAddr(UdpClient *client, C_DEVID key, U32 ackNum) {
 	int i = 0;
@@ -276,7 +260,7 @@ static int ntyUpdateClientListIpAddr(UdpClient *client, C_DEVID key, U32 ackNum)
  * add rbtree <key, value> -- <UserId, sockfd>
  * add B+tree <key, value> -- <UserId, UserInfo>
  */
-static int ntyAddClientHeap(const void * obj, RECORDTYPE *value) {
+int ntyAddClientHeap(const void * obj, RECORDTYPE *value) {
 	const Client *client = obj;
 	int ret = -1;
 
@@ -355,13 +339,20 @@ static int ntyAddClientHeap(const void * obj, RECORDTYPE *value) {
 		
 		return NTY_RESULT_NEEDINSERT;
 	} else {
+	
 		ntylog("ntyAddClientHeap exist %lld\n", client->devId);
 	
 		Client *pClient = record->value;
+		if (pClient == NULL) {
+			ntylog(" ntyAddClientHeap pClient is not Exist : %lld\n", client->devId);
+			return NTY_RESULT_NOEXIST;
+		}
 #if ENABLE_NATTY_TIME_STAMP //TIME Stamp 	
 		pClient->stamp = ntyTimeStampGenrator();
 #endif
+		pClient->online = 1;
 		*value = record->value;
+
 	}
 
 	return NTY_RESULT_SUCCESS;
@@ -442,7 +433,49 @@ int ntyClientCleanup(ClientSocket *client) { //
 }
 
 
+int ntyOfflineClientHeap(C_DEVID clientId) {
+	BPTreeHeap *heap = ntyBHeapInstance();
+	//ASSERT(heap != NULL);
+	NRecord *record = ntyBHeapSelect(heap, clientId);
 
+	if (record == NULL) {
+		ntylog(" OfflineClientHeap is not Exist %lld\n", clientId);
+		return NTY_RESULT_NOEXIST;
+	}
+
+	Client* pClient = (Client*)record->value;
+	if (pClient == NULL) {
+		ntylog(" OfflineClientHeap record->value == NULL %lld\n", clientId);
+		return NTY_RESULT_NOEXIST;
+	}
+
+	pClient->online = 0;
+	return NTY_RESULT_SUCCESS;
+}
+
+int ntyOnlineClientHeap(C_DEVID clientId) {
+	BPTreeHeap *heap = ntyBHeapInstance();
+	//ASSERT(heap != NULL);
+	NRecord *record = ntyBHeapSelect(heap, clientId);
+
+	if (record == NULL) {
+		ntylog(" Error OfflineClientHeap is not Exist : %lld\n", clientId);
+		return NTY_RESULT_NOEXIST;
+	}
+
+	Client* pClient = (Client*)record->value;
+	if (pClient == NULL) {
+		ntylog(" Error OfflineClientHeap record->value == NULL %lld\n", clientId);
+		return NTY_RESULT_NOEXIST;
+	}
+	
+#if ENABLE_NATTY_TIME_STAMP //TIME Stamp 	
+	pClient->stamp = ntyTimeStampGenrator();
+#endif
+	pClient->online = 1;
+
+	return NTY_RESULT_SUCCESS;
+}
 
 
 /*
@@ -513,11 +546,14 @@ static const ProtocolFilter ntyLoginFilter = {
 void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	const UdpClient *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_HEARTBEAT_REQ) {
-		Client *pClient = NULL;
+		//Client *pClient = NULL;
 
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_HEARTBEAT_REQ_DEVID_IDX);
+#if 0
 		ntyAddClientHeap(client, (RECORDTYPE *)&pClient);
-
+#else
+		ntyOnlineClientHeap(client->devId);
+#endif
 		ntySendHeartBeatResult(fromId);
 		
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
@@ -1057,14 +1093,18 @@ void ntyUnBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer
 			if (record != NULL) {
 				Client *aclient = (Client *)record->value;
 				ASSERT(aclient != NULL);
-				ntyVectorDelete(aclient->friends, &DeviceId);
+				ret = ntyVectorDelete(aclient->friends, &DeviceId);
+
+				ntylog("ntyVectorDelete AppId:%lld ret : %d\n", AppId, ret);
 			}
 
 			record = ntyBHeapSelect(heap, DeviceId);
 			if (record != NULL) {
 				Client *dclient = (Client *)record->value;
 				ASSERT(dclient != NULL);
-				ntyVectorDelete(dclient->friends, &DeviceId);
+				ret = ntyVectorDelete(dclient->friends, &DeviceId);
+
+				ntylog("ntyVectorDelete DeviceId:%lld ret : %d\n", DeviceId, ret);
 			}
 #endif
 		}

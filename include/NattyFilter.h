@@ -50,6 +50,7 @@
 #include "NattyProtocol.h"
 #include "NattyAbstractClass.h"
 #include "NattySqlHandle.h"
+#include "NattyBPlusTree.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -93,7 +94,17 @@ int ntyReleaseClientNodeByNode(struct ev_loop *loop, void *node);
 
 int ntyClientCleanup(ClientSocket *client);
 
+int ntyAddClientHeap(const void * obj, RECORDTYPE *value);
+
 int ntyDelClientHeap(C_DEVID clientId);
+
+int ntyOfflineClientHeap(C_DEVID clientId);
+
+int ntyOnlineClientHeap(C_DEVID clientId);
+
+
+
+
 
 
 typedef struct _Node {

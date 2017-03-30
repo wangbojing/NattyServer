@@ -249,6 +249,8 @@ int ntyDelRelationMap(C_DEVID id) {
 	return ret;
 }
 
+
+
 static void ntyTcpServerJob(Job *job) {
 	MessagePacket *msg = (RequestPacket*)job->user_data;
 	void* pFilter = ntyProtocolFilterInstance();
@@ -342,60 +344,16 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		Payload *load = ntyHashTableSearch(hash, watcher->fd);
 		ASSERT(load != NULL);
 
-#if 1	
 		//ntyHashTableDelete(hash, watcher->fd);
 		int ret = ntyDelRelationMap(load->id);
 		if (ret == NTY_RESULT_NOEXIST) {
 			ntyReleaseSocket(loop, watcher);
 		}
 		//
-#if 0
-		ret = ntyDelClientHeap(load->id);
-		if (ret == NTY_RESULT_NOEXIST) {
-			ntylog(" Client BHeap is not Exist\n");
+		ret = ntyOfflineClientHeap(load->id);
+		if (ret = NTY_RESULT_SUCCESS) {
+			ntylog(" Release Client Success\n");
 		}
-#endif
-#else
-		MessagePacket *msg = (MessagePacket*)allocRequestPacket();
-		if (msg == NULL) {
-			freeRequestPacket(msg);
-			return ;
-		}
-		memcpy(&msg->client->devId, &load->id, sizeof(C_DEVID));
-		msg->watcher = watcher;
-		msg->connectType = PROTO_TYPE_TCP;
-#if 1 //Virtual construction MesagePacket for logout
-		msg->length = (U16)NTY_PROTO_MIN_LENGTH;
-		msg->buffer = (U8*)malloc(NTY_PROTO_MIN_LENGTH);
-#endif
-		if (msg->buffer == NULL) {
-			ntylog("malloc Recv Buffer failed\n");
-
-			free(msg->client);
-			free(msg);
-			return;
-		}	
-
-		ntylog("  ntySelfLogoutPacket ---- :%d\n", watcher->fd);
-
-		ntySelfLogoutPacket(msg->client->devId, msg->buffer);
-#if 1 //release ntyHashTableDelete
-		ntyDelRelationMap(msg->client->devId);
-#endif
-
-		Job *job = (Job*)malloc(sizeof(*job));
-		if (job == NULL) {
-			ntylog("malloc Job failed\n");
-			freeRequestPacket(msg);
-			return ;
-		}
-		job->job_function  = ntyTcpServerJob;
-		job->user_data = msg;
-		ntyThreadPoolPush(pThreadPool, job);
-	
-		ntyHashTableDelete(hash, watcher->fd);
-		ntyReleaseSocket(loop, watcher);
-#endif	
 
 	} else {
 		int i = 0;
