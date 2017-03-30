@@ -61,6 +61,8 @@
 
  
 
+#define BHEAP_VECTOR_ENABLE 	1
+
 /*
  * send friends list to client
  */
@@ -616,7 +618,8 @@ int ntySendCommonBroadCastIter(void *self, void *arg) {
 //gId stand for devid
 //selfId AppId
 int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int length, int index) {
-#if 0
+
+#if BHEAP_VECTOR_ENABLE
 	void *heap = ntyBHeapInstance();
 	NRecord *record = ntyBHeapSelect(heap, gId);
 	if (record == NULL) return NTY_RESULT_NOEXIST;
@@ -653,15 +656,16 @@ int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int leng
 	
 #endif
 	ntylog(" -->> ntySendCommonBroadCastResult --> %s \n", json);
-#if 0
+#if BHEAP_VECTOR_ENABLE
 	ntyVectorIterator(pClient->friends, ntySendCommonBroadCastIter, msg);
 #else
 	ntyVectorIter(group, ntySendCommonBroadCastIter, msg);
 #endif
 
 	free(msg);
+#if (BHEAP_VECTOR_ENABLE==0)
 	ntyVectorDestory(group);
-	
+#endif	
 }
 
 
@@ -744,6 +748,40 @@ int ntySendVoiceBroadCastIter(void *self, void *arg) {
 
 
 int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int length, int index) {
+
+#if BHEAP_VECTOR_ENABLE
+
+	void *heap = ntyBHeapInstance();
+	NRecord *record = ntyBHeapSelect(heap, gId);
+	if (record == NULL) return NTY_RESULT_NOEXIST;
+	
+	Client *pClient = (Client*)record->value;
+	if (pClient == NULL) return NTY_RESULT_NOEXIST;
+	InterMsg *msg = (InterMsg*)malloc(sizeof(InterMsg));
+	msg->buffer = json;
+	msg->length = length;
+	msg->group = pClient;
+	msg->self = &fromId;
+	msg->arg = index;
+
+	if (pClient->friends == NULL) {
+		free(msg);
+		return NTY_RESULT_ERROR;
+	}
+
+	ntylog(" ntySendVoiceBroadCastResult --> ntyVectorIter\n");
+	ntyVectorIter(pClient->friends, ntySendVoiceBroadCastIter, msg);
+
+	free(msg);
+
+	//if fromId is AppId, need to send gId self
+	//else don't do that
+	if (pClient->deviceType == NTY_PROTO_CLIENT_ANDROID 
+		|| pClient->deviceType == NTY_PROTO_CLIENT_IOS) {
+		ntySendVoiceBroadCast(fromId, gId, json, length, index);
+	}
+
+#else
 	//get fromId group all
 	//fromId type
 	void *heap = ntyBHeapInstance();
@@ -774,11 +812,12 @@ int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int lengt
 	msg->group = pClient;
 	msg->self = &fromId;
 	msg->arg = index;
-#if 0
-	ntyVectorIterator(pClient->friends, ntySendVoiceBroadCastIter, msg);
-#else
+
 	
-	if (group == NULL) return NTY_RESULT_ERROR;
+	if (group == NULL){ 
+		free(msg);
+		return NTY_RESULT_ERROR;
+	}
 	ntylog(" ntySendVoiceBroadCastResult --> ntyVectorIter\n");
 
 	ntyVectorIter(group, ntySendVoiceBroadCastIter, msg);
@@ -795,7 +834,6 @@ int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int lengt
 	}
 
 #endif
-
 	return NTY_RESULT_SUCCESS;
 	
 }
