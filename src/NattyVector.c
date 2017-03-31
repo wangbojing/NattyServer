@@ -124,10 +124,11 @@ void* ntyVectorAdd(void *self, void *data, int len) {
 int ntyVectorDel(void *self, void *data) {
 	NVector *vector = self;
 	NKnot *knot = NULL;
+
+	if (vector == NULL) return NTY_RESULT_FAILED;
 	
 	for (knot = vector->header.lh_first ;knot != NULL;knot = knot->entries.le_next) {
 		if (0 == memcmp(knot->data, data, knot->len)) {
-
 			if(0 == cmpxchg(&vector->vector_lock, 0, 1, WORD_WIDTH)) {
 				LIST_REMOVE(knot, entries);
 				vector->num --;

@@ -1184,8 +1184,11 @@ void ntyUnBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer
 			if (record != NULL) {
 				Client *aclient = (Client *)record->value;
 				ASSERT(aclient != NULL);
+#if 0
 				ret = ntyVectorDelete(aclient->friends, &DeviceId);
-
+#else
+				ret = ntyVectorDel(aclient->friends, &DeviceId);
+#endif
 				ntylog("ntyVectorDelete AppId:%lld ret : %d\n", AppId, ret);
 			}
 
@@ -1193,11 +1196,15 @@ void ntyUnBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer
 			if (record != NULL) {
 				Client *dclient = (Client *)record->value;
 				ASSERT(dclient != NULL);
+#if 0
 				ret = ntyVectorDelete(dclient->friends, &DeviceId);
-
+#else
+				ret = ntyVectorDel(dclient->friends, &DeviceId)
+#endif
 				ntylog("ntyVectorDelete DeviceId:%lld ret : %d\n", DeviceId, ret);
 			}
-#endif
+#endif		
+			ret = NTY_RESULT_SUCCESS;
 		}
 		ntyProtoUnBindAck(AppId, DeviceId, ret);
 #endif		
