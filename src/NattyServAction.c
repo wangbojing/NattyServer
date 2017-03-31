@@ -803,6 +803,7 @@ void ntyJsonAddScheduleAction(ActionParam *pActionParam) {
 			
 			ret = ntySendRecodeJsonPacket(fromId, toId, jsondeviceresult, strlen(jsondeviceresult));
 			if (ret<0) {
+				ntyExecuteScheduleDeleteHandle(fromId,toId,scheduleId);
 				ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
 				goto exit;
 			}
@@ -1084,6 +1085,7 @@ void ntyJsonAddContactsAction(ActionParam *pActionParam) {
 			char *jsondeviceresult = ntyJsonWriteDeviceAddContacts(pDeviceAddContactsAck);
 			ret = ntySendRecodeJsonPacket(fromId, toId, (U8*)jsondeviceresult, strlen(jsondeviceresult));
 			if (ret >= 0) {
+				ntyExecuteContactsDeleteHandle(fromId, toId, contactsId);
 				ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
 				goto exit;
 			}
@@ -1406,8 +1408,7 @@ int ntyBindReqAction(ActionParam *pActionParam) {
 
 		//Radio broadcast
 		ntydbg("-----------------------radio broadcast---------------------------------\n");
-		
-		
+
 		free(pBindAck);
 	}
 	free(pBindReq);

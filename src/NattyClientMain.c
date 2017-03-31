@@ -174,10 +174,10 @@ void ntyBindConfirmResult(DEVID fromId, U8 *json, int length) {
 
 
 
-DEVID g_devid = 0x355637050315845;
+DEVID g_devid = 0x355637052238805;
 
 int main() {
-	DEVID AppId = 10794;
+	DEVID AppId = 13579;
 	DEVID aid = 0;
 	
 	int n = 0, length, i, result = 0;
@@ -347,7 +347,9 @@ int main() {
 		//char *json_common = "{\"Action\":\"Update\",\"Category\":\"Schedule\",\"IMEI\":\"355637053995130\",\"Id\":\"48\",\"Schedule\":{\"Daily\":\"Monday|Wednesday|Thursday|Friday|Saturday\",\"Details\":\"%E5%85%AC%E5%8F%B8%E8%B5%B7%E6%88%91\",\"Status\":\"0\",\"Time\":\"14:33:00\"}}";
 		//char *json_common = "{\"IMEI\":\"352315052834187\",\"Category\":\"Turn\",\"Turn\":{\"Status\":\"1\",\"On\":{\"Time\":\"08:00:00\"},\"Off\":{\"Time\":\"18:00:00\"}}}";
 
-		char *json_common = "{\"Category\":\"TimeTables\",\"IMEI\":\"355637053995130\",\"TimeTables\":[{\"Afternoon\":{\"EndTime\":\"19:51\",\"StartTime\":\"16:50\",\"Status\":\"1\"},\"Daily\":\"Monday|Wednesday\",\"Morning\":{\"EndTime\":\"09:00\",\"StartTime\":\"08:00\",\"Status\":\"0\"}}]}";
+		char *json_common = "{\"Action\":\"Add\",\"Category\":\"Contacts\",\"Contacts\":{\"Image\":\"0\",\"Name\":\"%E7%88%B8%E7%88%B8\",\"Tel\":\"15842754258\"},\"IMEI\":\"355637052238805\"}";
+
+		//char *json_common = "{\"Category\":\"TimeTables\",\"IMEI\":\"355637053995130\",\"TimeTables\":[{\"Afternoon\":{\"EndTime\":\"19:51\",\"StartTime\":\"16:50\",\"Status\":\"1\"},\"Daily\":\"Monday|Wednesday\",\"Morning\":{\"EndTime\":\"09:00\",\"StartTime\":\"08:00\",\"Status\":\"0\"}}]}";
 		//char *json_common = "{\"Action\":\"Add\",\"Category\":\"Contacts\",\"Contacts\":{\"Image\":\"7\",\"Name\":\"%E5%A7%90%E5%A7%90\",\"Tel\":\"13652847152\"},\"IMEI\":\"355637053995130\"}";
 		//char *json_common = "{\"Category\":\"TimeTables\",\"IMEI\":\"355637053995130\",\"TimeTables\":[{\"Afternoon\":{\"EndTime\":\"19:51\",\"StartTime\":\"16:50\",\"Status\":\"1\"},\"Daily\":\"Monday|Wednesday\",\"Morning\":{\"EndTime\":\"09:00\",\"StartTime\":\"08:00\",\"Status\":\"1\"}}]}";
 		//char *json_common = "{\"Category\":\"Contacts\",\"Action\":\"Update\",\"IMEI\":\"355637053995130\",\"Contacts\":{\"Userid\":\"11299\",\"Id\":\"229\",\"Tel\":\"15889650380\",\"Admin\":0,\"Name\":\"%E5%B9%B2%E7%88%B9\",\"Image\":\"http:\/\/picture.quanjiakan.com:9080\/quanjiakan\/resources\/missing\/20170329115531_83i472.png\",\"App\":1}}";
