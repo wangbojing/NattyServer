@@ -622,16 +622,46 @@ int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int leng
 #if BHEAP_VECTOR_ENABLE
 	void *heap = ntyBHeapInstance();
 	NRecord *record = ntyBHeapSelect(heap, gId);
-	if (record == NULL) return NTY_RESULT_NOEXIST;
+	if (record == NULL) {
+
+		void *group = ntyVectorCreator();
+		if (group == NULL) return NTY_RESULT_FAILED;
+
+		if(-1 == ntyQueryAppIDListSelectHandle(gId, group)) {
+			ntylog(" ntyQueryWatchIDListSelectHandle Failed \n");
+		}
+
+		InterMsg *msg = (InterMsg*)malloc(sizeof(InterMsg));
+		if (msg == NULL) return NTY_RESULT_FAILED;
+		msg->buffer = json;
+		msg->length = length;
+		msg->group = NULL;
+		msg->self = &selfId;
+		msg->arg = index;
+
+		ntyVectorIter(group, ntySendCommonBroadCastIter, msg);
+
+		free(msg);
+		ntyVectorDestory(group);
+		
+	} else {
 	
-	Client *pClient = (Client*)record->value;
-	if (pClient == NULL) return NTY_RESULT_NOEXIST;
-	InterMsg *msg = (InterMsg*)malloc(sizeof(InterMsg));
-	msg->buffer = json;
-	msg->length = length;
-	msg->group = pClient;
-	msg->self = &selfId;
-	msg->arg = index;
+		Client *pClient = (Client*)record->value;
+		if (pClient == NULL) return NTY_RESULT_NOEXIST;
+		
+		InterMsg *msg = (InterMsg*)malloc(sizeof(InterMsg));
+		msg->buffer = json;
+		msg->length = length;
+		msg->group = pClient;
+		msg->self = &selfId;
+		msg->arg = index;
+		
+		ntyVectorIterator(pClient->friends, ntySendCommonBroadCastIter, msg);
+
+		free(msg);
+	}
+
+	return NTY_RESULT_SUCCESS;
 #else
 
 	//void *heap = ntyBHeapInstance();
@@ -654,16 +684,12 @@ int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int leng
 	msg->self = &selfId;
 	msg->arg = index;
 	
-#endif
 	ntylog(" -->> ntySendCommonBroadCastResult --> %s \n", json);
-#if BHEAP_VECTOR_ENABLE
-	ntyVectorIterator(pClient->friends, ntySendCommonBroadCastIter, msg);
-#else
+
 	ntyVectorIter(group, ntySendCommonBroadCastIter, msg);
-#endif
 
 	free(msg);
-#if (BHEAP_VECTOR_ENABLE==0)
+
 	ntyVectorDestory(group);
 #endif	
 }

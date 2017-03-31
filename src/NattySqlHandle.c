@@ -162,7 +162,7 @@ int ntyBindConfirmReqHandle(void *arg) {
  		char tempJson[128] = {0};
 		
 
-		strcat(json, "\"Results\": {");
+		strcat(json, "{\"Results\": {");
 		sprintf(tempJson, "\"IMEI\":\"%llx\",", gId);
 		strcat(json, tempJson);
 		memset(tempJson, 0, 128);
