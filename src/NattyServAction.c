@@ -1086,11 +1086,10 @@ void ntyJsonAddContactsAction(ActionParam *pActionParam) {
 			if (ret >= 0) {
 				ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
 				goto exit;
-
 			}
 			free(jsondeviceresult);
 			free(pDeviceAddContactsAck);
-		
+
 			AddContactsAck *pAddContactsAck = malloc(sizeof(AddContactsAck));
 			pAddContactsAck->results = *(AddContactsResults*)pAddContactsReq;
 			char *jsonresult = ntyJsonWriteAddContacts(pAddContactsAck);

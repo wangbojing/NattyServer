@@ -539,6 +539,8 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 				ntySendLoginAckResult(pClient->devId, "", 0, 200);
 				ntySendDeviceTimeCheckAck(pClient->devId, 1);
 #endif
+			} else {
+				ntyReadOfflineMsgAction(pClient->devId);
 			}
 		} else {	
 //			ASSERT(0);
