@@ -817,6 +817,9 @@ void ntyJsonAddScheduleAction(ActionParam *pActionParam) {
 			ntyJsonBroadCastRecvResult(fromId, toId, jsonresult, pActionParam->index);
 			ntyJsonFree(jsonresult);
 			free(pAddScheduleAck);
+		} else {
+			
+			
 		}
 	} else {
 		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_SAVE_OFFLINE);
@@ -1070,7 +1073,11 @@ void ntyJsonAddContactsAction(ActionParam *pActionParam) {
 			char ids[20] = {0};
 			sprintf(ids, "%d", contactsId);
 			pAddContactsReq->id = ids;
-		
+
+			char msgs[20] = {0};
+			sprintf(msgs, "%d", pActionParam->index);
+			pAddContactsReq->msg = msgs;
+			
 			DeviceAddContactsAck *pDeviceAddContactsAck = (DeviceAddContactsAck*)malloc(sizeof(DeviceAddContactsAck));
 			pDeviceAddContactsAck = (DeviceAddContactsAck*)pAddContactsReq;
 			pDeviceAddContactsAck->id = ids;

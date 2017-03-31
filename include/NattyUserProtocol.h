@@ -595,6 +595,7 @@ typedef struct _ContactsAck {
 } ContactsAck;
 
 typedef struct _AddContactsReq {
+	const char *msg;
 	const char *IMEI;
 	const char *category;
 	const char *action;
