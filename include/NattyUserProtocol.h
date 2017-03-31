@@ -117,6 +117,7 @@
 #define NATTY_USER_PROTOCOL_TIME 			"Time"
 
 #define NATTY_USER_PROTOCOL_ID 				"Id"
+#define NATTY_USER_PROTOCOL_MSG 			"MSG"
 #define NATTY_USER_PROTOCOL_ACTION 			"Action"
 #define NATTY_USER_PROTOCOL_SCHEDULE 		"Schedule"
 #define NATTY_USER_PROTOCOL_DAILY 			"Daily"
@@ -310,6 +311,7 @@ typedef struct _ICCIDReq {
 } ICCIDReq;
 
 typedef struct _ICCIDAck {
+	const char *msg;
 	const char *IMEI;
 	const char *phone_num;
 } ICCIDAck;
@@ -400,6 +402,7 @@ typedef struct _EfenceItem {
 	EfencePoints *pPoints;
 } EfenceItem;
 typedef struct _AddEfenceReq {
+	const char *msg;
 	const char *IMEI;
 	const char *category;
 	const char *action;
@@ -408,6 +411,7 @@ typedef struct _AddEfenceReq {
 } AddEfenceReq, AddEfenceResult;
 
 typedef struct _DelEfenceReq {
+	const char *msg;
 	const char *IMEI;
 	const char *category;
 	const char *action;
@@ -432,6 +436,7 @@ typedef struct _RunTimeItem {
 	const char *taget_step;
 } RunTimeItem;
 typedef struct _RunTimeReq {
+	const char *msg;
 	const char *IMEI;
 	const char *category;
 	RunTimeItem runtime;
@@ -454,6 +459,7 @@ typedef struct _TurnItem {
 	TurnOff off;
 } TurnItem;
 typedef struct _TurnReq {
+	const char *msg;
 	const char *IMEI;
 	const char *category;
 	TurnItem turn;
@@ -473,6 +479,7 @@ typedef struct _ScheduleItem {
 } ScheduleItem;
 
 typedef struct _AddScheduleReq {
+	const char *msg;
 	const char *IMEI;
 	const char *category;
 	const char *action;
@@ -486,6 +493,7 @@ typedef struct _AddScheduleAck {
 
 
 typedef struct _DelScheduleReq {
+	const char *msg;
 	const char *IMEI;
 	const char *category;
 	const char *action;
@@ -498,6 +506,7 @@ typedef struct _DelScheduleAck {
 
 
 typedef struct _UpdateScheduleReq {
+	const char *msg;
 	const char *IMEI;
 	const char *category;
 	const char *action;
@@ -512,6 +521,7 @@ typedef struct _UpdateScheduleAck {
 
 
 typedef struct _ScheduleResults {
+	const char *msg;
 	const char *IMEI;
 	const char *category;
 	const char *num;
@@ -550,6 +560,7 @@ typedef struct _TimeTablesItem {
 } TimeTablesItem;
 
 typedef struct _TimeTablesReq {
+	const char *msg;
 	const char *IMEI;
 	const char *category;
 	size_t size;
@@ -592,6 +603,7 @@ typedef struct _AddContactsReq {
 } AddContactsReq, AddContactsResults, DeviceAddContactsAck;
 
 typedef struct _DelContactsReq {
+	const char *msg;
 	const char *IMEI;
 	const char *category;
 	const char *action;
@@ -599,6 +611,7 @@ typedef struct _DelContactsReq {
 } DelContactsReq, DelContactsResults;
 
 typedef struct _UpdateContactsReq {
+	const char *msg;
 	const char *IMEI;
 	const char *category;
 	const char *action;
@@ -642,6 +655,23 @@ typedef struct _BindResult {
 typedef struct _BindAck {
 	BindResult results;
 } BindAck;
+
+typedef struct _OfflineMsgResult {
+	const char *category;
+} OfflineMsgResult;
+
+
+typedef struct _OfflineMsgReq {
+	OfflineMsgResult results;
+} OfflineMsgReq;
+
+
+typedef struct _CommonOfflineMsg {
+	int msgId;
+	long long senderId;
+	long long groupId;
+	char *details;
+} CommonOfflineMsg;
 
 
 #endif

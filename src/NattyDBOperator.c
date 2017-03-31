@@ -527,6 +527,110 @@ static int ntyExecuteCommonOfflineMsgDelete(void *self, int msgId, C_DEVID clien
 }
 
 
+//NTY_DB_SELECT_COMMON_OFFLINE_MSG
+static int ntyQueryCommonOfflineMsgSelect(void *self, C_DEVID deviceId, void *container) {
+	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+
+	TRY
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			U8 buffer[512];
+			sprintf(buffer, NTY_DB_SELECT_COMMON_OFFLINE_MSG, deviceId);
+
+			/*
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_COMMON_OFFLINE_MSG, deviceId);
+			while (ResultSet_next(r)) {
+				int id = ResultSet_getInt(r, 1);
+				//ntylog(" ntyQueryCommonOfflineMsgSelect : %lld\n", id);
+				ntyVectorAdd(container, &id, sizeof(int));
+			}
+			*/
+
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_COMMON_OFFLINE_MSG, deviceId);
+			while (ResultSet_next(r)) {
+				int msgId = ResultSet_getInt(r, 1);
+				C_DEVID r_senderId = ResultSet_getLLong(r, 2);
+				C_DEVID r_groupId = ResultSet_getLLong(r, 3);
+				const char *r_details = ResultSet_getString(r, 4);
+
+				CommonOfflineMsg *pCommonOfflineMsg = malloc(sizeof(CommonOfflineMsg));
+				pCommonOfflineMsg->msgId = msgId;
+				pCommonOfflineMsg->senderId = r_senderId;
+				pCommonOfflineMsg->groupId = r_groupId;
+
+				pCommonOfflineMsg->details = malloc(1024);
+				memset(pCommonOfflineMsg->details, 0, 1024);
+				memcpy(pCommonOfflineMsg->details, r_details, strlen(r_details));
+				ntyVectorAdd(container, pCommonOfflineMsg, sizeof(CommonOfflineMsg));
+			}
+		}
+	}
+	CATCH(SQLException)
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+
+//NTY_DB_SELECT_COMMON_MSG
+static int ntyQueryCommonMsgSelect(void *self, C_DEVID msgId, C_DEVID *senderId, C_DEVID *groupId, char *json) {
+	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+
+	TRY 
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+		/*
+			U8 buffer[512];
+			sprintf(buffer, NTY_DB_SELECT_COMMON_MSG, msgId);
+			//ntylog(buffer);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_COMMON_MSG, msgId);
+			while (ResultSet_next(r)) {
+				C_DEVID r_senderId = ResultSet_getLLong(r, 1);
+				C_DEVID r_groupId = ResultSet_getLLong(r, 2);
+				const char *r_details = ResultSet_getString(r, 3);
+				memcpy(json, r_details, strlen(r_details));
+				*senderId = r_senderId;
+				*groupId = r_groupId;
+			}
+			*/
+		}
+	} 
+	CATCH(SQLException)
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;	
+
+	return ret;
+}
+
 
 //NTY_DB_INSERT_BIND_CONFIRM
 static int ntyQueryBindConfirmInsert(void *self, C_DEVID admin, C_DEVID imei, U8 *name, U8 *wimage, C_DEVID proposer, U8 *call, U8 *uimage, int *msgId) {
@@ -1999,6 +2103,16 @@ int ntyExecuteDevAppGroupBindInsertHandle(int msgId) {
 int ntyExecuteCommonOfflineMsgDeleteHandle(int msgId, C_DEVID clientId) {
 	void *pool = ntyConnectionPoolInstance();
 	return ntyExecuteCommonOfflineMsgDelete(pool, msgId, clientId);
+}
+
+int ntyQueryCommonOfflineMsgSelectHandle(C_DEVID deviceId, void *container) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyQueryCommonOfflineMsgSelect(pool, deviceId, container);
+}
+
+int ntyQueryCommonMsgSelectHandle(C_DEVID msgId, C_DEVID *senderId, C_DEVID *groupId, char *json) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyQueryCommonMsgSelect(pool, msgId, senderId, groupId, json);
 }
 
 int ntyQueryBindConfirmInsertHandle(C_DEVID admin, C_DEVID imei, U8 *name, U8 *wimage, C_DEVID proposer, U8 *call, U8 *uimage, int *msgId) {

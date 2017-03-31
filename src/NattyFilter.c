@@ -1199,7 +1199,7 @@ void ntyUnBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer
 #if 0
 				ret = ntyVectorDelete(dclient->friends, &DeviceId);
 #else
-				ret = ntyVectorDel(dclient->friends, &DeviceId)
+				ret = ntyVectorDel(dclient->friends, &DeviceId);
 #endif
 				ntylog("ntyVectorDelete DeviceId:%lld ret : %d\n", DeviceId, ret);
 			}

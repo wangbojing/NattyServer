@@ -375,7 +375,16 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		ntylog(" TcpRecv : %d.%d.%d.%d:%d, length:%d --> %x, id:%lld\n", *(unsigned char*)(&client_addr.sin_addr.s_addr), *((unsigned char*)(&client_addr.sin_addr.s_addr)+1),													
 				*((unsigned char*)(&client_addr.sin_addr.s_addr)+2), *((unsigned char*)(&client_addr.sin_addr.s_addr)+3),													
 				client_addr.sin_port, rLen, buffer[NTY_PROTO_MSGTYPE_IDX], *(C_DEVID*)(&buffer[NTY_PROTO_DEVID_IDX]));	
-
+#if 0
+				int k=0;
+				ntydbg("==========*******##########----------TCP-ntyOnReadEvent-begin==========*******##########----------\n");
+				ntydbg("{");
+				for (;k<rLen;k++) {
+					ntydbg("0x%02x, ", buffer[k]);
+				}
+				ntydbg("0x00}\n");
+				ntydbg("==========*******##########----------TCP-ntyOnReadEvent-end==========*******##########----------\n");
+#endif
 		void *hash = ntyHashTableInstance();
 		Payload *load = ntyHashTableSearch(hash, watcher->fd);
 #if 1

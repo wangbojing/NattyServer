@@ -186,6 +186,10 @@
 
 #define NTY_DB_DELETE_COMMON_OFFLINE_MSG	"CALL PROC_DELETE_COMMON_OFFLINE_MSG(%d, %lld)"
 
+#define NTY_DB_SELECT_COMMON_OFFLINE_MSG	"CALL PROC_SELECT_COMMON_OFFLINE_MSG(%lld)"
+
+//#define NTY_DB_SELECT_COMMON_MSG			"CALL PROC_SELECT_COMMON_MSG(%lld)"
+
 #define NTY_DB_INSERT_VOICE_MSG				"CALL PROC_INSERT_VOICE_MSG(%lld, %lld, '%s')"
 
 #define NTY_DB_DELETE_VOICE_OFFLINE_MSG		"CALL PROC_DELETE_VOICE_OFFLINE_MSG(%d, %lld)"
@@ -289,8 +293,11 @@ int ntyExecuteTimeTablesUpdateHandle(C_DEVID aid, C_DEVID did, const char *morni
 
 int ntyExecuteCommonMsgInsertHandle(C_DEVID sid, C_DEVID gid, const char *detatils, int *msg);
 
+int ntyQueryCommonMsgSelectHandle(C_DEVID msgId, C_DEVID *senderId, C_DEVID *groupId, char *json);
+
 int ntyQueryPhNumSelect(void *self, C_DEVID did, U8 *imei, U8 *phnum);
 
+int ntyQueryCommonOfflineMsgSelectHandle(C_DEVID deviceId, void *container);
 
 int ntyQueryAppOnlineStatusHandle(C_DEVID did, int *online);
 int ntyQueryDeviceOnlineStatusHandle(C_DEVID did, int *online);

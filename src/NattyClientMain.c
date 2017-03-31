@@ -348,9 +348,10 @@ int main() {
 		//char *json_common = "{\"IMEI\":\"352315052834187\",\"Category\":\"Turn\",\"Turn\":{\"Status\":\"1\",\"On\":{\"Time\":\"08:00:00\"},\"Off\":{\"Time\":\"18:00:00\"}}}";
 
 
+		 char *json_common = "{\"Category\":\"TimeTables\",\"IMEI\":\"355637053995130\",\"TimeTables\":[{\"Afternoon\":{\"EndTime\":\"19:51\",\"StartTime\":\"16:50\",\"Status\":\"1\"},\"Daily\":\"Monday|Wednesday\",\"Morning\":{\"EndTime\":\"09:00\",\"StartTime\":\"08:00\",\"Status\":\"1\"}}]}";
 		//char *json_common = "{\"Category\":\"Contacts\",\"Action\":\"Update\",\"IMEI\":\"355637053995130\",\"Contacts\":{\"Userid\":\"11299\",\"Id\":\"229\",\"Tel\":\"15889650380\",\"Admin\":0,\"Name\":\"%E5%B9%B2%E7%88%B9\",\"Image\":\"http:\/\/picture.quanjiakan.com:9080\/quanjiakan\/resources\/missing\/20170329115531_83i472.png\",\"App\":1}}";
 		//char *json_common = "{\"IMEI\":\"355637052788650\",\"Category\":\"Efence\",\"Action\":\"Add\", \"Index\":\"1\",\"Efence\":{\"Num\":\"3\",\"Points\":[\"113.2409402,23.1326885\",\"113.2409412,23.1326895\",\"113.2409408,23.1326890\"]}}";
-		//ntyCommonReqClient(g_devid,json_common,strlen(json_common));
+		ntyCommonReqClient(g_devid,json_common,strlen(json_common));
 		sleep(30);
 
 		//char *json_location = "{\"IMEI\":\"355637052788650\",\"Category\":\"LAB\",\"LAB\":{\"Bts\":\"460,01,40977,2205409,-65\",\"Nearbts\":[{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"},{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"},{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"}]}}";

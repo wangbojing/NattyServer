@@ -113,6 +113,10 @@ int ntyVoiceAckAction(C_DEVID fromId, U32 msgId);
 
 int ntyBindReqAction(ActionParam *pActionParam);
 
+int ntyOfflineAction(C_DEVID fromId, U32 msgId);
+
+int ntyReadOfflineMsgAction(C_DEVID devId);
+
 
 #endif // __NATTY_SERVACTION_H__
 

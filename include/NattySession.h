@@ -84,6 +84,7 @@ int ntyIterFriendsMessage(void *self, void *arg);
 
 /* ** **** ******** **************** Natty V3.6 **************** ******** **** ** */
 
+int ntySendOfflineMsgReqResult(C_DEVID fromId, U8 *json, int length);
 int ntySendOfflineMsgAckResult(C_DEVID toId, U8 *json, int length, U16 status);
 int ntySendLoginAckResult(C_DEVID fromId, U8 *json, int length, U16 status);
 int ntySendLocationBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int length);
