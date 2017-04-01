@@ -645,6 +645,18 @@ char * ntyJsonBind(JSON_Value *json, BindReq *pBindReq) {
 	pBindReq->bind.userName= json_object_get_string(bindReq_object, NATTY_USER_PROTOCOL_USERNAME);
 }
 
+void ntyJsonBindConfirmReq(JSON_Value *json, BindConfirmReq *pBindConfirmReq) {
+	if (json == NULL || pBindConfirmReq == NULL) {
+		ntylog("param is null.\n");
+		return;
+	}
+
+	JSON_Object *root_object = json_value_get_object(json);
+	pBindConfirmReq->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
+	pBindConfirmReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
+	pBindConfirmReq->answer = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ANSWER);
+	pBindConfirmReq->msgId = json_object_get_string(root_object, NATTY_USER_PROTOCOL_MSGID);
+}
 
 void ntyJsonTimeTablesItemRelease(TimeTablesItem *pTimeTables) {
 	if (pTimeTables != NULL) {
@@ -1302,8 +1314,8 @@ char * ntyJsonWriteContacts(ContactsAck *pContactsAck) {
 	return jsonstring;
 }
 
-char * ntyJsonWriteBind(BindAck *pBindAck) {
-	if (pBindAck == NULL) {
+char * ntyJsonWriteBindConfirmPush(BindConfirmPush *pBindConfirmPush) {
+	if (pBindConfirmPush == NULL) {
 		return NULL;
 	}
 
@@ -1311,19 +1323,52 @@ char * ntyJsonWriteBind(BindAck *pBindAck) {
 	JSON_Object *schema_obj = json_value_get_object(schema);
 	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object());
 	JSON_Object *results_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULTS);
-	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_IMEI, pBindAck->results.IMEI);
-	//json_object_set_string(results_obj, NATTY_USER_PROTOCOL_CATEGORY, pBindAck->results.category);
-	//json_object_set_string(results_obj, NATTY_USER_PROTOCOL_ACTION, pBindAck->results.action);
-	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_PROPOSER, pBindAck->results.proposer);
-	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_USERNAME, pBindAck->results.userName);
-	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_MSGID, pBindAck->results.msgId);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_IMEI, pBindConfirmPush->result.IMEI);
+	//json_object_set_string(results_obj, NATTY_USER_PROTOCOL_CATEGORY, pBindConfirmPush->result.category);
+	//json_object_set_string(results_obj, NATTY_USER_PROTOCOL_ACTION, pBindConfirmPush->result.action);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_PROPOSER, pBindConfirmPush->result.proposer);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_USERNAME, pBindConfirmPush->result.userName);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_MSGID, pBindConfirmPush->result.msgId);
 
 	char *jsonstring =  json_serialize_to_string(schema);
 	json_value_free(schema);
 	return jsonstring;
-
 }
 
+char * ntyJsonWriteBindBroadCast(BindBroadCast *pBindBroadCast) {
+	if (pBindBroadCast == NULL) {
+		return NULL;
+	}
 
+	JSON_Value *schema = json_value_init_object();
+	JSON_Object *schema_obj = json_value_get_object(schema);
+	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object());
+	JSON_Object *results_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULTS);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_IMEI, pBindBroadCast->result.IMEI);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_CATEGORY, pBindBroadCast->result.category);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_PROPOSER, pBindBroadCast->result.proposer);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_ANSWER, pBindBroadCast->result.answer);
+
+	char *jsonstring =  json_serialize_to_string(schema);
+	json_value_free(schema);
+	return jsonstring;
+}
+
+char * ntyJsonWriteBindConfirmAck(BindConfirmAck *pBindConfirmAck) {
+	if (pBindConfirmAck == NULL) {
+		return NULL;
+	}
+	
+	JSON_Value *schema = json_value_init_object();
+	JSON_Object *schema_obj = json_value_get_object(schema);
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_IMEI, pBindConfirmAck->IMEI);
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_CATEGORY, pBindConfirmAck->category);
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_MSGID, pBindConfirmAck->msgId);
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_ANSWER, pBindConfirmAck->answer);
+
+	char *jsonstring =	json_serialize_to_string(schema);
+	json_value_free(schema);
+	return jsonstring;
+}
 
 

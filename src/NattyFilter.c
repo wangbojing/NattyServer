@@ -1258,48 +1258,42 @@ void ntyBindConfirmReqPacketHandleRequest(const void *_self, unsigned char *buff
 
 		U32 msgId = *(U32*)(buffer+NTY_PROTO_BIND_CONFIRM_REQ_MSGID_IDX);
 
-		U8 *json = buffer+NTY_PROTO_BIND_CONFIRM_REQ_JSON_CONTENT_IDX;
+		U8 *jsonstring = buffer+NTY_PROTO_BIND_CONFIRM_REQ_JSON_CONTENT_IDX;
 		U16 jsonLen = *(U16*)(buffer+NTY_PROTO_BIND_CONFIRM_REQ_JSON_LENGTH_IDX);
 
-#if ENABLE_CONNECTION_POOL
-#if 0
-		int ret = ntyQueryDevAppGroupInsertHandle(AppId, DeviceId);
-#else
-		//添加绑定关系
-		int ret = ntyExecuteDevAppGroupBindInsertHandle(msgId);
-#endif
-		if (ret == -1) {
-			ntylog(" ntyBindDevicePacketHandleRequest --> DB Exception\n");
-			ret = 4;
-		} else if (ret == 0) { //Bind Success Update RBTree
 
-			void *heap = ntyBHeapInstance();
-			NRecord *record = ntyBHeapSelect(heap, AppId);
-			if (record != NULL) {
-				Client *aclient = record->value;
-				ASSERT(aclient != NULL);
-				ntyVectorAdd(aclient->friends, &DeviceId, sizeof(C_DEVID));
+		JSON_Value *json = ntyMallocJsonValue(jsonstring);
+		if (json == NULL) { //JSON Error and send Code to FromId Device
+			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
+		} else {
+			BindConfirmReq *pBindConfirmReq = (BindConfirmReq*)malloc(sizeof(BindConfirmReq));
+			ntyJsonBindConfirmReq(json, pBindConfirmReq);
+
+			VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
+			tag->fromId = fromId;
+			tag->toId = AppId;
+			tag->gId = DeviceId;
+			tag->cb = ntyBindConfirmReqHandle;
+			tag->arg = msgId;
+			tag->Type = MSG_TYPE_BIND_CONFIRM_REQ_HANDLE;
+			
+			if (strcmp(pBindConfirmReq->answer, NATTY_USER_PROTOCOL_AGREE) == 0) {
+				tag->u8LocationType = 1;
+			} else if (strcmp(pBindConfirmReq->answer, NATTY_USER_PROTOCOL_REJECT) == 0) {
+				tag->u8LocationType = 0;
+			} else {
+				ntylog("Can't find answer with: %s\n", pBindConfirmReq->answer);
 			}
 
-			record = ntyBHeapSelect(heap, DeviceId);
-			if (record != NULL) {
-				Client *dclient = record->value;
-				ASSERT(dclient != NULL);
-				ntyVectorAdd(dclient->friends, &DeviceId, sizeof(C_DEVID));
-			}
-
+			ntyDaveMqPushMessage(tag);
+			free(pBindConfirmReq);
 		}
-		ntylog(" ntyBindConfirmReqPacketHandleRequest --> ntyJsonCommonResult\n");
-		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
 
-		//if agree with binding watch
-		//
-		//else
-		//
+#if ENABLE_CONNECTION_POOL
 
 #if 1 //Need to Recode
 
-#if 1 //juge agree and reject
+#if 0 //juge agree and reject
 #define NTY_TOKEN_AGREE			"Agree"
 #define NTY_TOKEN_AGREE_LENGTH	5
 
@@ -1309,22 +1303,15 @@ void ntyBindConfirmReqPacketHandleRequest(const void *_self, unsigned char *buff
 
 		VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
 
-		if (ntyKMP(json, jsonLen, NTY_TOKEN_AGREE, NTY_TOKEN_AGREE_LENGTH, match)) {
+		if (ntyKMP(jsonstring, jsonLen, NTY_TOKEN_AGREE, NTY_TOKEN_AGREE_LENGTH, match)) {
 			tag->arg = 1;
-		} else if (ntyKMP(json, jsonLen, NTY_TOKEN_REJECT, NTY_TOKEN_REJECT_LENGTH, match)) {
+		} else if (ntyKMP(jsonstring, jsonLen, NTY_TOKEN_REJECT, NTY_TOKEN_REJECT_LENGTH, match)) {
 			tag->arg = 0;
 		} else {
 			tag->arg = 1;
 		}
 #endif
-		tag->fromId = fromId;
-		tag->toId = AppId;
-		tag->gId = DeviceId;
-		tag->cb = ntyBindConfirmReqHandle;
 		
-		tag->Type = MSG_TYPE_BIND_CONFIRM_REQ_HANDLE;
-
-		ntyDaveMqPushMessage(tag);
 #endif
 #endif
 

@@ -133,6 +133,8 @@ void ntyJsonDelContacts(JSON_Value *json, DelContactsReq *pDelContactsReq);
 
 char * ntyJsonBind(JSON_Value *json, BindReq *pBindReq);
 
+char * ntyJsonWriteBindConfirmReq(BindConfirmReq *pBindConfirmReq);
+
 char * ntyJsonWriteICCID(ICCIDAck *pICCIDAck);
 
 char * ntyJsonWriteCommon(CommonAck *pCommonAck);
@@ -185,7 +187,11 @@ char * ntyJsonWriteDelContacts(DelContactsAck *pDelContactsAck);
 
 char * ntyJsonWriteContacts(ContactsAck *pContactsAck);
 
-char * ntyJsonWriteBind(BindAck *pBindAck);
+char * ntyJsonWriteBindConfirmPush(BindConfirmPush *pBindConfirmPush);
+
+char * ntyJsonWriteBindBroadCast(BindBroadCast *pBindBroadCast);
+
+char * ntyJsonWriteBindConfirmAck(BindConfirmAck *pBindConfirmAck);
 
 
 #endif

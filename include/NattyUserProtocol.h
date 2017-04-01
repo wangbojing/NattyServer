@@ -78,6 +78,11 @@
 #define NATTY_USER_PROTOCOL_CATEGORY_CONTACTS		"Contacts"
 
 
+#define NATTY_USER_PROTOCOL_AGREE			"Agree"
+#define NATTY_USER_PROTOCOL_REJECT			"Reject"
+#define NATTY_USER_PROTOCOL_BINDCONFIRM		"BindConfirm"
+
+
 #define NATTY_USER_PROTOCOL_WIFI			"WIFI"
 #define NATTY_USER_PROTOCOL_SSID			"SSID"
 #define NATTY_USER_PROTOCOL_MAC				"MAC"
@@ -145,6 +150,8 @@
 #define NATTY_USER_PROTOCOL_PROPOSER 		"Proposer"
 #define NATTY_USER_PROTOCOL_USERNAME 		"UserName"
 #define NATTY_USER_PROTOCOL_MSGID 			"MsgId"
+#define NATTY_USER_PROTOCOL_ANSWER 			"Answer"
+
 
 #define NATTY_USER_PROTOCOL_BINGREQ 		"BindReq"
 #define NATTY_USER_PROTOCOL_WATCHNAME 		"WatchName"
@@ -646,6 +653,7 @@ typedef struct _BindReq {
 	BindItem bind;
 } BindReq;
 
+/*
 typedef struct _BindResult {
 	const char *IMEI;
 	const char *proposer;
@@ -656,6 +664,43 @@ typedef struct _BindResult {
 typedef struct _BindAck {
 	BindResult results;
 } BindAck;
+*/
+
+typedef struct _BindConfirmResult {
+	const char *IMEI;
+	const char *proposer;
+	const char *userName;
+	const char *msgId;
+} BindConfirmResult;
+
+typedef struct _BindConfirmPush {
+	BindConfirmResult result;
+} BindConfirmPush;
+
+typedef struct _BindConfirmReq {
+	const char *IMEI;
+	const char *category;
+	const char *answer;
+	const char *msgId;
+} BindConfirmReq;
+
+typedef struct _BindBroadCastResult {
+	const char *IMEI;
+	const char *category;
+	const char *proposer;
+	const char *answer;
+} BindBroadCastResult;
+
+typedef struct BindBroadCast{
+	BindBroadCastResult result;
+} BindBroadCast;
+
+typedef struct _BindConfirmAck {
+	const char *IMEI;
+	const char *category;
+	const char *answer;
+	const char *msgId;
+} BindConfirmAck;
 
 typedef struct _OfflineMsgResult {
 	const char *category;

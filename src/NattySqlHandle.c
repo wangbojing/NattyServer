@@ -41,6 +41,8 @@
  *
  */
 
+#include "../include/NattyBPlusTree.h"
+
 #include "NattySqlHandle.h" 
 #include "NattyAbstractClass.h"
 #include "NattyResult.h"
@@ -156,6 +158,38 @@ int ntyVoiceReqHandle(void *arg) {
 }
 
 
+int ntyBindConfirm(C_DEVID adminId, C_DEVID AppId, C_DEVID DeviceId, U32 msgId) {
+#if 0
+	int ret = ntyQueryDevAppGroupInsertHandle(AppId, DeviceId);
+#else
+	int ret = ntyExecuteDevAppGroupBindInsertHandle(msgId);
+#endif
+	if (ret == -1) {
+		ntylog(" ntyBindDevicePacketHandleRequest --> DB Exception\n");
+		ret = 4;
+	} else if (ret == 0) { //Bind Success Update RBTree
+
+		void *heap = ntyBHeapInstance();
+		NRecord *record = ntyBHeapSelect(heap, AppId);
+		if (record != NULL) {
+			Client *aclient = record->value;
+			ASSERT(aclient != NULL);
+			ntyVectorAdd(aclient->friends, &DeviceId, sizeof(C_DEVID));
+		}
+
+		record = ntyBHeapSelect(heap, DeviceId);
+		if (record != NULL) {
+			Client *dclient = record->value;
+			ASSERT(dclient != NULL);
+			ntyVectorAdd(dclient->friends, &DeviceId, sizeof(C_DEVID));
+		}
+
+	}
+	ntylog(" ntyBindConfirmReqPacketHandleRequest --> ntyJsonCommonResult\n");
+	ntyJsonCommonResult(adminId, NATTY_RESULT_CODE_SUCCESS);
+}
+
+
 int ntyBindConfirmReqHandle(void *arg) {
 	if (arg == NULL) return NTY_RESULT_ERROR;
 
@@ -165,20 +199,43 @@ int ntyBindConfirmReqHandle(void *arg) {
 	C_DEVID adminId = tag->fromId;
 	C_DEVID proposerId = tag->toId;
 	C_DEVID gId = tag->gId;
-	int flag = tag->arg;
-#if 0
-	U8 *json = tag->Tag;
-	U8 length = tag->length;
-#endif
 
-	char phonenum[30] = {0};
+	ntyBindConfirm(adminId, proposerId, gId, tag->arg);
+	
+	U32 msgId = tag->arg;
+	char phonenum[64] = {0};
 	ntyQueryPhoneBookSelectHandle(gId, proposerId, phonenum);
 
+	U8 flag = tag->u8LocationType;
+	char answer[64] = {0};
 	if (flag == 1) { //need to recode
+		BindBroadCast *pBindBroadCast = malloc(sizeof(BindBroadCast));
+		memcpy(answer, NATTY_USER_PROTOCOL_AGREE, strlen(NATTY_USER_PROTOCOL_AGREE));
+		char imei[64] = {0};
+		sprintf(imei, "%llx", gId);
+		pBindBroadCast->result.IMEI = imei;
+		char bindConfirm[64] = {0};
+		memcpy(bindConfirm, NATTY_USER_PROTOCOL_BINDCONFIRM, strlen(NATTY_USER_PROTOCOL_BINDCONFIRM));
+		pBindBroadCast->result.category = bindConfirm;
+		pBindBroadCast->result.proposer = phonenum;
+		pBindBroadCast->result.answer = answer;
+		char *jsonresult = ntyJsonWriteBindBroadCast(pBindBroadCast);
+		ntyJsonBroadCastRecvResult(adminId, gId, (U8*)jsonresult, msgId);
+		ntyJsonFree(jsonresult);
+		free(pBindBroadCast);
 
+		/*
+		BindConfirmAck *pBindConfirmAck = malloc(sizeof(BindConfirmAck));
+		pBindConfirmAck->IMEI = 
+		
+		char *jsonresult_admin = ntyJsonWriteBindConfirmAck(pBindConfirmAck);
+		ntySendDataResult(adminId, jsonresult_admin, strlen(jsonresult_admin), 200);
+		ntyJsonFree(jsonresult_admin);
+		free(pBindConfirmAck);
+		*/
+		
 /*
  *
-  
  {
 	 "Results": {
 	 "IMEI": "355637052788650",
@@ -188,28 +245,33 @@ int ntyBindConfirmReqHandle(void *arg) {
  	}
  }
  *
- */	
+ */
+ /*
  		char tempJson[128] = {0};
-		
-
 		strcat(json, "{\"Results\": {");
 		sprintf(tempJson, "\"IMEI\":\"%llx\",", gId);
 		strcat(json, tempJson);
 		memset(tempJson, 0, 128);
-		
 		strcat(json, "\"Category\": \"BindConfirmReq\",");
 		sprintf(tempJson, "\"Proposer\":\"%s\",", phonenum);
 		strcat(json, tempJson);
-
 		strcat(json, "\"Answer\":\"Agree\"}}");
-		
 		ntylog("ntyBindConfirmReqHandle --> %s\n", json);
-
-		int jsonLen = strlen(json);
-		
+		int jsonLen = strlen(json);	
 		ntySendCommonBroadCastResult(adminId, gId, json, jsonLen, 0);
-	} else {
-		ntyProtoBindAck(proposerId, gId, 6); //reject 
+*/
+	} else if (tag->u8LocationType == 0) {
+
+		//memcpy(answer, NATTY_USER_PROTOCOL_REJECT, strlen(NATTY_USER_PROTOCOL_REJECT));
+		ntyProtoBindAck(proposerId, gId, 6); //reject
+
+		/*
+		BindConfirmAck *pBindConfirmAck = malloc(sizeof(BindConfirmAck));
+		char *jsonresult_admin = ntyJsonWriteBindConfirmAck(pBindConfirmAck);
+		ntySendDataResult(adminId, jsonresult_admin, strlen(jsonresult_admin), 200);
+		ntyJsonFree(jsonresult_admin);
+		free(pBindConfirmAck);
+		*/
 	}
 
 	free(tag);
