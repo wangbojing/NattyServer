@@ -81,6 +81,9 @@ int ntyCommonAckHandle(void *arg) {
 	if (ret == NTY_RESULT_FAILED) {
 		ntylog("ntyCommonAckHandle DB Error \n");
 	}
+#if 1 //Update By WangBoJing 
+	ntyReadOfflineMsgAction(fromId);
+#endif	
 	free(tag);
 
 	return ret;
@@ -195,6 +198,8 @@ int ntyLoginReqHandle(void *arg) {
 	C_DEVID fromId = tag->fromId;
 
 	ntyReadOfflineMsgAction(fromId);
+
+	free(tag);
 	
 }
 
