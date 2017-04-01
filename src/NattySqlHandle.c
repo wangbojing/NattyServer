@@ -286,7 +286,15 @@ int ntyLoginReqHandle(void *arg) {
 
 	C_DEVID fromId = tag->fromId;
 
-	ntyReadOfflineCommonMsgAction(fromId);
+	int ret = ntyReadOfflineCommonMsgAction(fromId);
+	if (ret == NTY_RESULT_NOEXIST) {
+		ret = ntyReadOfflineVoiceMsgAction(fromId);
+		if (ret == NTY_RESULT_NOEXIST) {
+			//read
+			//
+		}
+	}
+	
 
 	free(tag);
 	
