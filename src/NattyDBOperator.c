@@ -570,6 +570,7 @@ static int ntyQueryCommonOfflineMsgSelect(void *self, C_DEVID deviceId, void *co
 				memcpy(pCommonOfflineMsg->details, r_details, details_len);
 				ntyVectorAdd(container, pCommonOfflineMsg, sizeof(CommonOfflineMsg));
 			}
+			ret = 0;
 		}
 	}
 	CATCH(SQLException)
@@ -586,6 +587,62 @@ static int ntyQueryCommonOfflineMsgSelect(void *self, C_DEVID deviceId, void *co
 
 	return ret;
 }
+
+//PROC_SELECT_VOICE_OFFLINE_MSG
+static int ntyQueryVoiceOfflineMsgSelect(void *self, C_DEVID fromId, void *container) {
+	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+
+	TRY
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			
+
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_VOICE_OFFLINE_MSG, fromId);
+			while (ResultSet_next(r)) {
+				int msgId = ResultSet_getInt(r, 1);
+				C_DEVID r_senderId = ResultSet_getLLong(r, 2);
+				C_DEVID r_groupId = ResultSet_getLLong(r, 3);
+				const char *r_details = ResultSet_getString(r, 4);
+				long timeStamp = ResultSet_getTimestamp(r, 5);
+				size_t details_len = strlen(r_details);
+				
+				nOfflineMsg *pOfflineMsg = malloc(sizeof(nOfflineMsg));
+				pOfflineMsg->msgId = msgId;
+				pOfflineMsg->senderId = r_senderId;
+				pOfflineMsg->groupId = r_groupId;
+				pOfflineMsg->timeStamp = timeStamp;
+
+				pOfflineMsg->details = malloc(details_len);
+				memset(pOfflineMsg->details, 0, details_len);
+				memcpy(pOfflineMsg->details, r_details, details_len);
+				ntyVectorAdd(container, pOfflineMsg, sizeof(CommonOfflineMsg));
+
+				
+			}
+			ret = 0;
+		}
+	}
+	CATCH(SQLException)
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
 
 
 //NTY_DB_SELECT_COMMON_MSG
@@ -2109,6 +2166,11 @@ int ntyExecuteCommonOfflineMsgDeleteHandle(int msgId, C_DEVID clientId) {
 int ntyQueryCommonOfflineMsgSelectHandle(C_DEVID deviceId, void *container) {
 	void *pool = ntyConnectionPoolInstance();
 	return ntyQueryCommonOfflineMsgSelect(pool, deviceId, container);
+}
+
+int ntyQueryVoiceOfflineMsgSelectHandle(C_DEVID fromId, void *container) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyQueryVoiceOfflineMsgSelect(pool, fromId, container);
 }
 
 int ntyQueryCommonMsgSelectHandle(C_DEVID msgId, C_DEVID *senderId, C_DEVID *groupId, char *json) {

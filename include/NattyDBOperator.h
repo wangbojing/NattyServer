@@ -217,6 +217,7 @@
 
 #define NTY_DB_INSERT_ADMIN_GROUP			"CALL PROC_INSERT_ADMIN_GROUP(%lld, '%s', %lld, '%s', '%s', '%s')"
 
+#define NTY_DB_SELECT_VOICE_OFFLINE_MSG		"CALL PROC_SELECT_VOICE_OFFLINE_MSG(%lld)"
 
 
 typedef struct _CONN_POOL {
@@ -321,6 +322,7 @@ int ntyExecuteCommonOfflineMsgDeleteHandle(int msgId, C_DEVID clientId);
 
 int ntyQueryAdminGroupInsertHandle(C_DEVID devId, U8 *bname, C_DEVID fromId, U8 *userCall, U8 *wimage, U8 *uimage);
 
+int ntyQueryVoiceOfflineMsgSelectHandle(C_DEVID fromId, void *container);
 
 
 int ntyConnectionPoolInit(void);

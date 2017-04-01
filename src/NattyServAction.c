@@ -1301,7 +1301,10 @@ int ntyVoiceReqAction(C_DEVID fromId, U32 msgId) {
 	int size = ntyReadDat(filename, pData, NTY_VOICEREQ_COUNT_LENGTH*NTY_VOICEREQ_PACKET_LENGTH);
 	
 	ntylog(" ntyVoiceReqAction --> size:%d\n", size);
-
+	if (size == -1) {
+		free(pData);
+		return NTY_RESULT_FAILED;
+	}
 	ret = ntySendVoiceBufferResult(pData, size, senderId, gId, fromId, msgId);
 
 	free(pData);
@@ -1425,7 +1428,7 @@ int ntyOfflineAction(C_DEVID fromId, U32 msgId) {
 	return 0;
 }
 
-int ntyReadOfflineMsgIter(void *self, void *arg) {
+int ntyReadOfflineCommonMsgIter(void *self, void *arg) {
 	CommonOfflineMsg *pCommonOfflineMsg = (CommonOfflineMsg*)self;
 	C_DEVID fromId = *(C_DEVID*)arg;
 	char *json = pCommonOfflineMsg->details;
@@ -1445,18 +1448,59 @@ int ntyReadOfflineMsgIter(void *self, void *arg) {
 	return 0;
 }
 
-int ntyReadOfflineMsgAction(C_DEVID devId) {
-	void *container = ntyVectorCreator();
+
+int ntyReadOfflineCommonMsgAction(C_DEVID devId) {
+	NVector *container = ntyVectorCreator();
 	if (NULL == container) return NTY_RESULT_FAILED;
 
 	int ret = ntyQueryCommonOfflineMsgSelectHandle(devId, container);
 	if (ret == NTY_RESULT_SUCCESS) {
-		ntyVectorIter(container, ntyReadOfflineMsgIter, &devId);
+		ntyVectorIter(container, ntyReadOfflineCommonMsgIter, &devId);
+	} 
+	if (container->num == 0) { //count == 0
+		ret = NTY_RESULT_NOEXIST;
+	} else {
+		ret = 0;
 	}
-
+	
 	ntyVectorDestory(container);
 
-	return 0;
+	return ret;
+}
+
+
+
+
+
+int ntyReadOfflineVoiceMsgIter(void *self, void *arg) {
+
+	nOfflineMsg *pOfflineMsg = (nOfflineMsg*)self;
+	C_DEVID senderId = pOfflineMsg->senderId;
+	C_DEVID gId = pOfflineMsg->groupId;
+	U32 msgId = pOfflineMsg->msgId;
+	C_DEVID toId = *(C_DEVID*)arg;
+
+	ntySendVoiceBroadCastItem(senderId, toId, NULL, 0, msgId);
+}
+
+
+int ntyReadOfflineVoiceMsgAction(C_DEVID devId) {
+	NVector *container = ntyVectorCreator();
+	if (NULL == container) return NTY_RESULT_FAILED;
+
+	int ret = ntyQueryVoiceOfflineMsgSelectHandle(devId, container);
+	if (ret == NTY_RESULT_SUCCESS) {
+		ntyVectorIter(container, ntyReadOfflineVoiceMsgIter, &devId);
+	} 
+	if (container->num == 0) { //count == 0
+		ret = NTY_RESULT_NOEXIST;
+	} else {
+		ret = 0;
+	}
+	
+	ntyVectorDestory(container);
+
+	return ret;
 }
 
 

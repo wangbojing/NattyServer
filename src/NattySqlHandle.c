@@ -62,6 +62,12 @@ int ntyVoiceAckHandle(void *arg) {
 	if (ret == NTY_RESULT_FAILED) {
 		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_NOEXIST);
 	} 
+
+	ret = ntyReadOfflineVoiceMsgAction(fromId);
+	if (ret == NTY_RESULT_NOEXIST) {
+		//BindConfirmReq
+		//
+	}
 	
 	free(tag);
 
@@ -82,7 +88,15 @@ int ntyCommonAckHandle(void *arg) {
 		ntylog("ntyCommonAckHandle DB Error \n");
 	}
 #if 1 //Update By WangBoJing 
-	ntyReadOfflineMsgAction(fromId);
+	ret = ntyReadOfflineCommonMsgAction(fromId);
+	if (ret == NTY_RESULT_NOEXIST) {
+		ret = ntyReadOfflineVoiceMsgAction(fromId);
+		if (ret == NTY_RESULT_NOEXIST) {
+			//read
+			//
+		}
+	}
+
 #endif	
 	free(tag);
 
@@ -123,7 +137,20 @@ int ntyVoiceReqHandle(void *arg) {
 	C_DEVID fromId = tag->fromId;
 	int msgId = tag->arg;
 
-	ntyVoiceReqAction(fromId, msgId);
+	int ret = ntyVoiceReqAction(fromId, msgId);
+	if (NTY_RESULT_FAILED == ret) {
+		//delete fromId And MsgId
+		ret = ntyExecuteVoiceOfflineMsgDeleteHandle(msgId, fromId);
+		if (ret == NTY_RESULT_FAILED) {
+			ntylog("ntyVoiceReqHandle --> ntyExecuteVoiceOfflineMsgDeleteHandle failed\n");
+		} 
+		//send next voice msg
+		ret = ntyReadOfflineVoiceMsgAction(fromId);
+		if (ret == NTY_RESULT_NOEXIST) {
+			//read
+			ntylog("ntyVoiceReqHandle --> ntyReadOfflineVoiceMsgAction failed\n");
+		}
+	}
 
 	return 0;
 }
@@ -197,7 +224,7 @@ int ntyLoginReqHandle(void *arg) {
 
 	C_DEVID fromId = tag->fromId;
 
-	ntyReadOfflineMsgAction(fromId);
+	ntyReadOfflineCommonMsgAction(fromId);
 
 	free(tag);
 	

@@ -739,7 +739,7 @@ int ntySendDataRoute(C_DEVID toId, U8 *buffer, int length) {
 	return ntySendBuffer(client, buffer, length);
 }
 
-int ntySendVoiceBroadCast(C_DEVID fromId, C_DEVID toId, U8 *json, int length, int index) {
+int ntySendVoiceBroadCastItem(C_DEVID fromId, C_DEVID toId, U8 *json, int length, int index) {
 	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
 
 	buffer[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
@@ -793,7 +793,7 @@ int ntySendVoiceBroadCastIter(void *self, void *arg) {
 	return ntySendBuffer(client, buffer, length);
 #else
 
-	return ntySendVoiceBroadCast(selfId, toId, json, length, index);
+	return ntySendVoiceBroadCastItem(selfId, toId, json, length, index);
 
 #endif
 }
@@ -836,7 +836,7 @@ int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int lengt
 	
 	if (pClient->deviceType == NTY_PROTO_CLIENT_ANDROID 
 		|| pClient->deviceType == NTY_PROTO_CLIENT_IOS) {
-		ntySendVoiceBroadCast(fromId, gId, json, length, index);
+		ntySendVoiceBroadCastItem(fromId, gId, json, length, index);
 	}
 
 #else
@@ -888,7 +888,7 @@ int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int lengt
 	//else don't do that
 	if (pClient->deviceType == NTY_PROTO_CLIENT_ANDROID 
 		|| pClient->deviceType == NTY_PROTO_CLIENT_IOS) {
-		ntySendVoiceBroadCast(fromId, gId, json, length, index);
+		ntySendVoiceBroadCastItem(fromId, gId, json, length, index);
 	}
 
 #endif

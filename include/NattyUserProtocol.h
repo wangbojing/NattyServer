@@ -672,8 +672,10 @@ typedef struct _CommonOfflineMsg {
 	long long senderId;
 	long long groupId;
 	char *details;
+	long timeStamp;
 } CommonOfflineMsg;
 
+typedef CommonOfflineMsg nOfflineMsg;
 
 #endif
 
