@@ -558,15 +558,16 @@ static int ntyQueryCommonOfflineMsgSelect(void *self, C_DEVID deviceId, void *co
 				C_DEVID r_senderId = ResultSet_getLLong(r, 2);
 				C_DEVID r_groupId = ResultSet_getLLong(r, 3);
 				const char *r_details = ResultSet_getString(r, 4);
-
+				size_t details_len = strlen(r_details);
+				
 				CommonOfflineMsg *pCommonOfflineMsg = malloc(sizeof(CommonOfflineMsg));
 				pCommonOfflineMsg->msgId = msgId;
 				pCommonOfflineMsg->senderId = r_senderId;
 				pCommonOfflineMsg->groupId = r_groupId;
 
-				pCommonOfflineMsg->details = malloc(1024);
-				memset(pCommonOfflineMsg->details, 0, 1024);
-				memcpy(pCommonOfflineMsg->details, r_details, strlen(r_details));
+				pCommonOfflineMsg->details = malloc(details_len);
+				memset(pCommonOfflineMsg->details, 0, details_len);
+				memcpy(pCommonOfflineMsg->details, r_details, details_len);
 				ntyVectorAdd(container, pCommonOfflineMsg, sizeof(CommonOfflineMsg));
 			}
 		}

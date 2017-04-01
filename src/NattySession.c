@@ -580,9 +580,31 @@ int ntySendDataResult(C_DEVID fromId, U8 *json, int length, U16 status) {
 	
 }
 
+
+int ntySendCommonBroadCastItem(C_DEVID selfId, C_DEVID toId, U8 *json, int length, U32 msgId) {
+	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
+	void *map = ntyMapInstance();
+	ClientSocket *pClient = ntyMapSearch(map, toId);
+
+	buffer[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
+	buffer[NTY_PROTO_DEVTYPE_IDX] = NTY_PROTO_CLIENT_DEFAULT;
+	buffer[NTY_PROTO_PROTOTYPE_IDX] = PROTO_BROADCAST;
+	buffer[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_COMMON_BROADCAST;
+
+	memcpy(&buffer[NTY_PROTO_COMMON_BROADCAST_DEVID_IDX], &selfId, sizeof(C_DEVID));
+	memcpy(&buffer[NTY_PROTO_COMMON_BROADCAST_MSGID_IDX], &msgId, sizeof(U32));
+	memcpy(&buffer[NTY_PROTO_COMMON_BROADCAST_JSON_LENGTH_IDX], &length, sizeof(U16));
+	memcpy(buffer+NTY_PROTO_COMMON_BROADCAST_JSON_CONTENT_IDX, json, length);
+
+	length = length + NTY_PROTO_COMMON_BROADCAST_JSON_CONTENT_IDX + sizeof(U32);
+
+	return ntySendBuffer(pClient, buffer, length);
+}
+
+
 int ntySendCommonBroadCastIter(void *self, void *arg) {
 	
-	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
+	
 	C_DEVID toId = 0, selfId = 0;
 	memcpy(&toId, self, sizeof(C_DEVID));
 
@@ -595,7 +617,7 @@ int ntySendCommonBroadCastIter(void *self, void *arg) {
 
 	ntylog(" toId:%lld, selfId:%lld\n", toId, selfId);
 	if (toId == selfId) return 0;
-	
+#if 0
 	void *map = ntyMapInstance();
 	ClientSocket *pClient = ntyMapSearch(map, toId);
 
@@ -612,7 +634,11 @@ int ntySendCommonBroadCastIter(void *self, void *arg) {
 	length = length + NTY_PROTO_COMMON_BROADCAST_JSON_CONTENT_IDX + sizeof(U32);
 
 	return ntySendBuffer(pClient, buffer, length);
-	
+#else
+
+	return ntySendCommonBroadCastItem(selfId, toId, json, length, index);
+
+#endif
 }
 
 //gId stand for devid

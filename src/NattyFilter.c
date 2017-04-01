@@ -540,7 +540,19 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 				ntySendDeviceTimeCheckAck(pClient->devId, 1);
 #endif
 			} else {
+#if 0			
 				ntyReadOfflineMsgAction(pClient->devId);
+#else
+				VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
+				if (tag == NULL) return ;
+
+				tag->fromId = pClient->devId;
+				tag->Type = MSG_TYPE_LOGIN_REQ_HANDLE;
+				tag->cb = ntyLoginReqHandle;
+
+				ntyDaveMqPushMessage(tag);
+				
+#endif
 			}
 		} else {	
 //			ASSERT(0);

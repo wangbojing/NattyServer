@@ -187,6 +187,18 @@ int ntyBindConfirmReqHandle(void *arg) {
 }
 
 
+int ntyLoginReqHandle(void *arg) {
+
+
+	VALUE_TYPE *tag = (VALUE_TYPE*)arg;
+
+	C_DEVID fromId = tag->fromId;
+
+	ntyReadOfflineMsgAction(fromId);
+	
+}
+
+
 
 
 

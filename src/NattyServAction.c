@@ -47,6 +47,8 @@
 #include "NattyHttpCurl.h"
 #include "NattyDaveMQ.h"
 
+#include "NattyVector.h"
+
 #include "NattyResult.h"
 #include "NattyFilter.h"
 
@@ -820,7 +822,6 @@ void ntyJsonAddScheduleAction(ActionParam *pActionParam) {
 			free(pAddScheduleAck);
 		} else {
 			
-			
 		}
 	} else {
 		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_SAVE_OFFLINE);
@@ -1383,7 +1384,6 @@ int ntyBindReqAction(ActionParam *pActionParam) {
 		}
 		ntylog(" ntyQueryAdminSelectHandle --> %lld\n", admin);
 
-		
 		int msgId = 0;
 		ntyQueryBindConfirmInsertHandle(admin, devId, name, wimage, proposer, call, uimage, &msgId);
 
@@ -1427,11 +1427,12 @@ int ntyOfflineAction(C_DEVID fromId, U32 msgId) {
 
 int ntyReadOfflineMsgIter(void *self, void *arg) {
 	CommonOfflineMsg *pCommonOfflineMsg = (CommonOfflineMsg*)self;
+	C_DEVID fromId = *(C_DEVID*)arg;
 	char *json = pCommonOfflineMsg->details;
-
-	int ret = ntySendCommonBroadCastResult(
+	
+	int ret = ntySendCommonBroadCastItem(
 		pCommonOfflineMsg->senderId, 
-		pCommonOfflineMsg->groupId, 
+		fromId, 
 		json, 
 		strlen(json), 
 		pCommonOfflineMsg->msgId);
@@ -1440,17 +1441,20 @@ int ntyReadOfflineMsgIter(void *self, void *arg) {
 	}
 
 	free(json);
-	free(pCommonOfflineMsg);
 	
 	return 0;
 }
 
 int ntyReadOfflineMsgAction(C_DEVID devId) {
 	void *container = ntyVectorCreator();
+	if (NULL == container) return NTY_RESULT_FAILED;
+
 	int ret = ntyQueryCommonOfflineMsgSelectHandle(devId, container);
-	//if (ret>=0) {
-		ntyVectorIter(container, ntyReadOfflineMsgIter, NULL);
-	//}
+	if (ret == NTY_RESULT_SUCCESS) {
+		ntyVectorIter(container, ntyReadOfflineMsgIter, &devId);
+	}
+
+	ntyVectorDestory(container);
 
 	return 0;
 }
