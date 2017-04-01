@@ -449,7 +449,7 @@ void ntyJsonAddEfenceAction(ActionParam *pActionParam) {
 	}
 
 	int ret = ntySendRecodeJsonPacket(fromId, toId, pActionParam->jsonstring, pActionParam->jsonlen);
-	if (ret >=0) {
+	if (ret < 0) {
 		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
 		goto exit;
 

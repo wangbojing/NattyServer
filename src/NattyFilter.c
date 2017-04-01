@@ -845,8 +845,8 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 
 		U16 jsonlen = 0;
 		memcpy(&jsonlen, buffer+NTY_PROTO_COMMON_REQ_JSON_LENGTH_IDX, NTY_JSON_COUNT_LENGTH);
-		char *jsonstring = malloc(jsonlen);
-		memset(jsonstring, 0, jsonlen);
+		char *jsonstring = malloc(jsonlen+1);
+		memset(jsonstring, 0, jsonlen+1);
 		memcpy(jsonstring, buffer+NTY_PROTO_COMMON_REQ_JSON_CONTENT_IDX, jsonlen);
 
 		ntylog("ntyCommonReqPacketHandleRequest --> json : %s  %d\n", jsonstring, jsonlen);
@@ -859,7 +859,7 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 			pActionParam->fromId = fromId;
 			pActionParam->toId = toId;
 			pActionParam->json = json;
-			pActionParam->jsonstring= jsonstring;
+			pActionParam->jsonstring = jsonstring;
 			pActionParam->jsonlen = jsonlen;
 			pActionParam->index = 0;
 			
@@ -1265,6 +1265,7 @@ void ntyBindConfirmReqPacketHandleRequest(const void *_self, unsigned char *buff
 #if 0
 		int ret = ntyQueryDevAppGroupInsertHandle(AppId, DeviceId);
 #else
+		//添加绑定关系
 		int ret = ntyExecuteDevAppGroupBindInsertHandle(msgId);
 #endif
 		if (ret == -1) {
@@ -1315,16 +1316,16 @@ void ntyBindConfirmReqPacketHandleRequest(const void *_self, unsigned char *buff
 		} else {
 			tag->arg = 1;
 		}
-#endif 
+#endif
 		tag->fromId = fromId;
 		tag->toId = AppId;
 		tag->gId = DeviceId;
 		tag->cb = ntyBindConfirmReqHandle;
 		
 		tag->Type = MSG_TYPE_BIND_CONFIRM_REQ_HANDLE;
-		
+
 		ntyDaveMqPushMessage(tag);
-#endif		
+#endif
 #endif
 
 		ntylog("====================end ntyBindConfirmReqPacketHandleRequest action ==========================\n");

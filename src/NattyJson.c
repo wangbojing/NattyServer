@@ -987,6 +987,7 @@ char * ntyJsonWriteTurn(TurnAck *pTurnAck) {
 	JSON_Object *schema_obj = json_value_get_object(schema);
 	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object());
 	JSON_Object *results_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULTS);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_MSG, pTurnAck->result.msg);
 	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_IMEI, pTurnAck->result.IMEI);
 	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_CATEGORY, pTurnAck->result.category);
 	json_object_set_value(results_obj, NATTY_USER_PROTOCOL_TURN, json_value_init_object());

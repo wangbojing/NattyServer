@@ -370,8 +370,9 @@ int main() {
 
 
 		//char *json_bindreq = "{\"IMEI\":\"355637052788650\",\"Category\":\"Weather\",\"Bts\":\"460,01,40977,2205409,-65\"}";
-		//{"BindReq":{"WatchName":"%E6%B5%8B%E8%AF%95","UserName":"%E5%93%A5%E5%93%A5","WatchImage":"http:\/\/picture.quanjiakan.com:9080\/quanjiakan\/resources\/device\/20170327175708_fcko80.png","UserImage":"7"},"IMEI":"352315052834187","Category":"BindReq"}";
-		
+		char *json_bindreq = "{\"BindReq\":{\"WatchName\":\"%E6%B5%8B%E8%AF%95\",\"UserName\":\"%E5%93%A5%E5%93%A5\",\"WatchImage\":\"http:\/\/picture.quanjiakan.com:9080\/quanjiakan\/resources\/device\/20170327175708_fcko80.png\",\"UserImage\":\"7\"},\"IMEI\":\"352315052834187\",\"Category\":\"BindReq\"}";
+		ntyCommonReqClient(g_devid,json_bindreq,strlen(json_bindreq));
+		sleep(30);
 		
 		
 		break;
