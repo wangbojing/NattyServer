@@ -542,8 +542,14 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 			} else {
 
 				if (pClient->deviceType == NTY_PROTO_CLIENT_IOS) {
-					U8 *json = buffer+NTY_PROTO_LOGIN_REQ_JSON_CONTENT_IDX;
-					ntylog(" LOGIN --> %s\n", json);
+					U16 tokenLen = *(U16*)(buffer+NTY_PROTO_LOGIN_REQ_JSON_LENGTH_IDX);
+					U8 *token = buffer+NTY_PROTO_LOGIN_REQ_JSON_CONTENT_IDX;
+
+					pClient->token = malloc(tokenLen + 1);
+					memset(pClient->token, 0, tokenLen + 1);
+
+					memcpy(pClient->token, token, tokenLen);
+					ntylog(" LOGIN --> %s\n", pClient->token);
 				}
 
 				VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));

@@ -73,11 +73,11 @@
 #define APPLE_HOST_NAME					"gateway.sandbox.push.apple.com"
 #define APPLE_HOST_PORT					2195
 
-#define APPLE_CLIENT_PEM_NAME			"ck.pem"
+#define APPLE_CLIENT_PEM_NAME			"./crt/ck.pem"
 #define APPLE_CLIENT_PEM_KEY			"123456"
 #define APPLE_CLIENT_PEM_PWD			"123456"
 
-#define APPLE_SERVER_PEM_NAME			"entrust_2048_ca.pem"
+#define APPLE_SERVER_PEM_NAME			"./crt/entrust_2048_ca.pem"
 
 
 #define MAX_MESSAGE_PACKET		1024
