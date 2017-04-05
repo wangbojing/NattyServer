@@ -1839,7 +1839,8 @@ int ntyExecuteTimeTablesUpdate(void *self, C_DEVID aid, C_DEVID did, const char 
 			ntylog(" sql : %s\n", buffer);
 			ResultSet_T r =Connection_executeQuery(con, NTY_DB_UPDATE_TIMETABLE, did, morning, morning_turn, afternoon, afternoon_turn, daily);
 			while (ResultSet_next(r)) {
-				*result = ResultSet_getInt(r, 1);				
+				int temp = ResultSet_getInt(r, 1);
+				*result = temp;
 			}
 		}
 	} 

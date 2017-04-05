@@ -1083,7 +1083,7 @@ void ntyJsonAddContactsAction(ActionParam *pActionParam) {
 			pDeviceAddContactsAck->id = ids;
 			char *jsondeviceresult = ntyJsonWriteDeviceAddContacts(pDeviceAddContactsAck);
 			ret = ntySendRecodeJsonPacket(fromId, toId, (U8*)jsondeviceresult, strlen(jsondeviceresult));
-			if (ret >= 0) {
+			if (ret < 0) {
 				ntyExecuteContactsDeleteHandle(fromId, toId, contactsId);
 				ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
 			} else {
