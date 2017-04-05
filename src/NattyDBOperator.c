@@ -1382,10 +1382,12 @@ int ntyExecuteRuntimeLossReportUpdate(void *self, C_DEVID aid, C_DEVID did, U8 r
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			U8 buffer[512];
-			sprintf(buffer, NTY_DB_UPDATE_RUNTIME_LOSSREPORT, did, runtime_param);
-			ntylog(" sql : %s\n", buffer);
+			//U8 buffer[512];
+			//sprintf(buffer, NTY_DB_UPDATE_RUNTIME_LOSSREPORT, did, runtime_param);
+			//ntylog(" sql : %s\n", buffer);
+			ntylog(" Connection_execute before ntyExecuteRuntimeLossReportUpdate \n");
 			Connection_execute(con, NTY_DB_UPDATE_RUNTIME_LOSSREPORT, did, runtime_param);
+			ntylog(" Connection_execute after ntyExecuteRuntimeLossReportUpdate \n");
 		}
 	} 
 	CATCH(SQLException) 
@@ -1489,10 +1491,12 @@ int ntyExecuteRuntimeTargetStepUpdate(void *self, C_DEVID aid, C_DEVID did, int 
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			U8 buffer[512];
-			sprintf(buffer, NTY_DB_UPDATE_RUNTIME_TARGETSTEP, did, runtime_param);
-			ntylog(" sql : %s\n", buffer);
+			//U8 buffer[512];
+			//sprintf(buffer, NTY_DB_UPDATE_RUNTIME_TARGETSTEP, did, runtime_param);
+			//ntylog(" sql : %s\n", buffer);
+			ntylog(" ntyExecuteRuntimeTargetStepUpdate -->  before Connection_execute\n");
 			Connection_execute(con, NTY_DB_UPDATE_RUNTIME_TARGETSTEP, did, runtime_param);
+			ntylog(" ntyExecuteRuntimeTargetStepUpdate -->  after Connection_execute\n");
 		}
 	} 
 	CATCH(SQLException) 
@@ -1525,9 +1529,11 @@ int ntyExecuteTurnUpdate(void *self, C_DEVID aid, C_DEVID did, U8 status, const 
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			U8 buffer[512];
-			ntylog(" sql : %s\n", buffer);
+			//U8 buffer[512];
+			//ntylog(" sql : %s\n", buffer);
+			ntylog(" ntyExecuteTurnUpdate --> before Connection_execute\n ");
 			Connection_execute(con, NTY_DB_UPDATE_TURN, did, status, ontime, offtime);
+			ntylog(" ntyExecuteTurnUpdate --> after Connection_execute\n ");
 		}
 	} 
 	CATCH(SQLException) 
@@ -1835,13 +1841,13 @@ int ntyExecuteTimeTablesUpdate(void *self, C_DEVID aid, C_DEVID did, const char 
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			U8 buffer[512];
-			sprintf(buffer, NTY_DB_UPDATE_TIMETABLE, did, morning, morning_turn, afternoon, afternoon_turn, daily);
-			ntylog(" sql : %s\n", buffer);
-			ResultSet_T r =Connection_executeQuery(con, NTY_DB_UPDATE_TIMETABLE, did, morning, morning_turn, afternoon, afternoon_turn, daily);
+			
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_UPDATE_TIMETABLE, did, morning, morning_turn, afternoon, afternoon_turn, daily);
+			ntylog(" ntyExecuteTimeTablesUpdate ntyExecuteTimeTablesUpdate --> r ::: \n");
 			while (ResultSet_next(r)) {
 				int temp = ResultSet_getInt(r, 1);
 				*result = temp;
+				ntylog(" ntyExecuteTimeTablesUpdate temp --> r ::: %d\n", temp);
 			}
 		}
 	} 

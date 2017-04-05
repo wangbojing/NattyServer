@@ -1150,20 +1150,22 @@ void ntyJsonAddContactsAction(ActionParam *pActionParam) {
 			ntyExecuteContactsDeleteHandle(fromId, toId, contactsId);
 			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
 		} else {
+			ntyJsonCommonExtendResult(fromId, NATTY_RESULT_CODE_SUCCESS, contactsId);
+			
 			AddContactsAck *pAddContactsAck = malloc(sizeof(AddContactsAck));
 			pAddContactsAck->results = *(AddContactsResults*)pAddContactsReq;
 			char *jsonresult = ntyJsonWriteAddContacts(pAddContactsAck);
 			ret = ntySaveCommonMsgData(
 				pActionParam->fromId,
-				pActionParam->toId,
+				pActionParam->toId, 
 				jsonresult,
 				&pActionParam->index);
+			ntylog(" ntyJsonAddContactsAction--->ret %d %s %d\n", ret, jsonresult,strlen(jsonresult));
 			if (ret >= 0) {
-				ntyJsonCommonExtendResult(fromId, NATTY_RESULT_CODE_SUCCESS, contactsId);
 				ntySendCommonBroadCastResult(fromId, toId, (U8*)jsonresult, strlen(jsonresult));
-			} else {
-				ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_SAVE_OFFLINE);
-			}
+			}// else {
+				//ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_SAVE_OFFLINE);
+			//}
 			ntyJsonFree(jsonresult);
 			free(pAddContactsAck);
 		}

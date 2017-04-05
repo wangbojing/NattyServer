@@ -176,6 +176,8 @@ int ntyUdpServerProcess(const void *_self) {
 				addr.sin_port, n, buf[NTY_PROTO_MSGTYPE_IDX], *(C_DEVID*)(&buf[NTY_PROTO_DEVID_IDX]));	
 			// proccess
 			// i think process protocol and search client id from rb-tree
+			//cancel UDP data parser
+			continue;
 #if 0
 			req->client->devId = *(C_DEVID*)(&buffer[NTY_PROTO_DEVID_IDX]);
 			req->client->ackNum = *(U32*)(buffer+NTY_PROTO_ACKNUM_IDX)+1;
@@ -307,7 +309,11 @@ int ntySendBuffer(ClientSocket *client, unsigned char *buffer, int length) {
 #endif
 
 	if (client->connectType == PROTO_TYPE_UDP) {
+#if 0 //dispatch
 		return sendto(sockfd, buffer, length, 0, (struct sockaddr *)&client->addr, sizeof(struct sockaddr_in));
+#else
+		return NTY_RESULT_FAILED;
+#endif
 	} else if (client->connectType == PROTO_TYPE_TCP) {
 		int ret = send(sockfd, buffer, length, 0);
 		if (ret == -1) {

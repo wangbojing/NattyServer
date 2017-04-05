@@ -222,6 +222,8 @@ int ntyBindConfirmReqHandle(void *arg) {
 		pBindBroadCast->result.answer = answer;
 		char *jsonresult = ntyJsonWriteBindBroadCast(pBindBroadCast);
 		ntydbg("ntyJsonBroadCastRecvResult->%s\n",  jsonresult);
+		
+		//??Json¨¬¨ª?¨®¦Ì?¨ºy?Y?a
 		ntyJsonBroadCastRecvResult(adminId, gId, (U8*)jsonresult, msgId);
 		ntyJsonFree(jsonresult);
 		free(pBindBroadCast);
@@ -291,7 +293,7 @@ int ntyLoginReqHandle(void *arg) {
 	if (ret == NTY_RESULT_NOEXIST) {
 		ret = ntyReadOfflineVoiceMsgAction(fromId);
 		if (ret == NTY_RESULT_NOEXIST) {
-			//read
+			//read 
 			//
 		}
 	}
