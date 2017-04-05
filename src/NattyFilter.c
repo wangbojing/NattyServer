@@ -1260,6 +1260,8 @@ void ntyBindConfirmReqPacketHandleRequest(const void *_self, unsigned char *buff
 		U8 *jsonstring = buffer+NTY_PROTO_BIND_CONFIRM_REQ_JSON_CONTENT_IDX;
 		U16 jsonLen = *(U16*)(buffer+NTY_PROTO_BIND_CONFIRM_REQ_JSON_LENGTH_IDX);
 
+		ntylog("ntyBindConfirmReqPacketHandleRequest --> json : %s  %d\n", jsonstring, jsonLen);
+
 		JSON_Value *json = ntyMallocJsonValue(jsonstring);
 		if (json == NULL) { //JSON Error and send Code to FromId Device
 			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);

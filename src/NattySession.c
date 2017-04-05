@@ -657,6 +657,8 @@ int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int leng
 			ntylog(" ntyQueryWatchIDListSelectHandle Failed \n");
 		}
 
+		ntylog(" record == NULL \n");
+		
 		InterMsg *msg = (InterMsg*)malloc(sizeof(InterMsg));
 		if (msg == NULL) return NTY_RESULT_FAILED;
 		msg->buffer = json;
@@ -671,7 +673,8 @@ int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int leng
 		ntyVectorDestory(group);
 		
 	} else {
-	
+		ntylog(" record != NULL \n");
+			
 		Client *pClient = (Client*)record->value;
 		if (pClient == NULL) return NTY_RESULT_NOEXIST;
 		
