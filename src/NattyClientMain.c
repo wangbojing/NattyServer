@@ -347,15 +347,15 @@ int main() {
 		//char *json_common = "{\"Action\":\"Update\",\"Category\":\"Schedule\",\"IMEI\":\"355637053995130\",\"Id\":\"48\",\"Schedule\":{\"Daily\":\"Monday|Wednesday|Thursday|Friday|Saturday\",\"Details\":\"%E5%85%AC%E5%8F%B8%E8%B5%B7%E6%88%91\",\"Status\":\"0\",\"Time\":\"14:33:00\"}}";
 		//char *json_common = "{\"IMEI\":\"352315052834187\",\"Category\":\"Turn\",\"Turn\":{\"Status\":\"1\",\"On\":{\"Time\":\"08:00:00\"},\"Off\":{\"Time\":\"18:00:00\"}}}";
 
-		char *json_common = "{\"Action\":\"Add\",\"Category\":\"Contacts\",\"Contacts\":{\"Image\":\"0\",\"Name\":\"%E7%88%B8%E7%88%B8\",\"Tel\":\"15842754258\"},\"IMEI\":\"355637052238805\"}";
+		//char *json_common = "{\"Action\":\"Add\",\"Category\":\"Contacts\",\"Contacts\":{\"Image\":\"0\",\"Name\":\"%E7%88%B8%E7%88%B8\",\"Tel\":\"15842754258\"},\"IMEI\":\"355637052238805\"}";
 
 		//char *json_common = "{\"Category\":\"TimeTables\",\"IMEI\":\"355637053995130\",\"TimeTables\":[{\"Afternoon\":{\"EndTime\":\"19:51\",\"StartTime\":\"16:50\",\"Status\":\"1\"},\"Daily\":\"Monday|Wednesday\",\"Morning\":{\"EndTime\":\"09:00\",\"StartTime\":\"08:00\",\"Status\":\"0\"}}]}";
 		//char *json_common = "{\"Action\":\"Add\",\"Category\":\"Contacts\",\"Contacts\":{\"Image\":\"7\",\"Name\":\"%E5%A7%90%E5%A7%90\",\"Tel\":\"13652847152\"},\"IMEI\":\"355637053995130\"}";
 		//char *json_common = "{\"Category\":\"TimeTables\",\"IMEI\":\"355637053995130\",\"TimeTables\":[{\"Afternoon\":{\"EndTime\":\"19:51\",\"StartTime\":\"16:50\",\"Status\":\"1\"},\"Daily\":\"Monday|Wednesday\",\"Morning\":{\"EndTime\":\"09:00\",\"StartTime\":\"08:00\",\"Status\":\"1\"}}]}";
 		//char *json_common = "{\"Category\":\"Contacts\",\"Action\":\"Update\",\"IMEI\":\"355637053995130\",\"Contacts\":{\"Userid\":\"11299\",\"Id\":\"229\",\"Tel\":\"15889650380\",\"Admin\":0,\"Name\":\"%E5%B9%B2%E7%88%B9\",\"Image\":\"http:\/\/picture.quanjiakan.com:9080\/quanjiakan\/resources\/missing\/20170329115531_83i472.png\",\"App\":1}}";
 		//char *json_common = "{\"IMEI\":\"355637052788650\",\"Category\":\"Efence\",\"Action\":\"Add\", \"Index\":\"1\",\"Efence\":{\"Num\":\"3\",\"Points\":[\"113.2409402,23.1326885\",\"113.2409412,23.1326895\",\"113.2409408,23.1326890\"]}}";
-		ntyCommonReqClient(g_devid,json_common,strlen(json_common));
-		sleep(30);
+		//ntyCommonReqClient(g_devid,json_common,strlen(json_common));
+		//sleep(30);
 
 		//char *json_location = "{\"IMEI\":\"355637052788650\",\"Category\":\"LAB\",\"LAB\":{\"Bts\":\"460,01,40977,2205409,-65\",\"Nearbts\":[{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"},{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"},{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"}]}}";
 		//char *json_location = "{\"IMEI\":\"135790246811220\",\"Category\":\"WIFI\",\"WIFI\":[{\"SSID\":\"TP-LINK_42ED\",\"MAC\":\"F4:83:CD:3A:42:ED\",\"V\":\"-37\"},{\"SSID\":\"EXT\",\"MAC\":\"04:95:E6:22:DA:48\",\"V\":\"-52\"}]}";
@@ -373,8 +373,20 @@ int main() {
 		//char *json_bindreq = "{\"BindReq\":{\"WatchName\":\"%E6%B5%8B%E8%AF%95\",\"UserName\":\"%E5%93%A5%E5%93%A5\",\"WatchImage\":\"http:\/\/picture.quanjiakan.com:9080\/quanjiakan\/resources\/device\/20170327175708_fcko80.png\",\"UserImage\":\"7\"},\"IMEI\":\"352315052834187\",\"Category\":\"BindReq\"}";
 		//ntyCommonReqClient(g_devid,json_bindreq,strlen(json_bindreq));
 		//sleep(30);
+
+
+		//char *json_bindreq = "{\"IMEI\":\"355637052788450\",\"Category\":\"BindConfirmReq\",\"Answer\":\"Agree\",\"MsgId\":\"13453\"}";
+		//C_DEVID proposerId = 0;
+		//C_DEVID devId = 0; 
+		//U32 msgId = 0;
+		//ntyBindConfirmReqClient(proposerId, devId, msgId, json_bindreq, strlen(json_bindreq));
+
 		
+		sleep(30);
+
+
 		
+
 		break;
 		//sleep(3000);
 #endif

@@ -200,7 +200,7 @@ int ntyAddRelationMap(MessagePacket *msg) {
 				client_addr.sin_port);
 #if ENABLE_EV_WATCHER_MODE
 			//release before socket
-			ntyReleaseSocket(tcp_mainloop, value->watcher);
+			//ntyReleaseSocket(tcp_mainloop, value->watcher);
 			//save new socket io
 			value->watcher = msg->watcher;
 #else

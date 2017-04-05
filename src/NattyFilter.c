@@ -1257,10 +1257,8 @@ void ntyBindConfirmReqPacketHandleRequest(const void *_self, unsigned char *buff
 		C_DEVID DeviceId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_CONFIRM_REQ_DEVICEID_IDX);
 
 		U32 msgId = *(U32*)(buffer+NTY_PROTO_BIND_CONFIRM_REQ_MSGID_IDX);
-
 		U8 *jsonstring = buffer+NTY_PROTO_BIND_CONFIRM_REQ_JSON_CONTENT_IDX;
 		U16 jsonLen = *(U16*)(buffer+NTY_PROTO_BIND_CONFIRM_REQ_JSON_LENGTH_IDX);
-
 
 		JSON_Value *json = ntyMallocJsonValue(jsonstring);
 		if (json == NULL) { //JSON Error and send Code to FromId Device
@@ -1269,26 +1267,33 @@ void ntyBindConfirmReqPacketHandleRequest(const void *_self, unsigned char *buff
 			BindConfirmReq *pBindConfirmReq = (BindConfirmReq*)malloc(sizeof(BindConfirmReq));
 			ntyJsonBindConfirmReq(json, pBindConfirmReq);
 
-			VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
-			tag->fromId = fromId;
-			tag->toId = AppId;
-			tag->gId = DeviceId;
-			tag->cb = ntyBindConfirmReqHandle;
-			tag->arg = msgId;
-			tag->Type = MSG_TYPE_BIND_CONFIRM_REQ_HANDLE;
+			if (strcmp(pBindConfirmReq->category, NATTY_USER_PROTOCOL_BINDCONFIRMREQ) == 0) {
+				VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
+				tag->fromId = fromId;
+				tag->toId = AppId;
+				tag->gId = DeviceId;
+				tag->cb = ntyBindConfirmReqHandle;
+				tag->arg = msgId;
+				tag->Type = MSG_TYPE_BIND_CONFIRM_REQ_HANDLE;
+				
+				if (strcmp(pBindConfirmReq->answer, NATTY_USER_PROTOCOL_AGREE) == 0) {
+					tag->u8LocationType = 1;
+				} else if (strcmp(pBindConfirmReq->answer, NATTY_USER_PROTOCOL_REJECT) == 0) {
+					tag->u8LocationType = 0;
+				} else {
+					ntylog("Can't find answer with: %s\n", pBindConfirmReq->answer);
+				}
+				
+				ntydbg("tag->answer:%s  \n", pBindConfirmReq->answer);
+				ntydbg("tag->u8LocationType:%d  \n", tag->u8LocationType);
+				ntyDaveMqPushMessage(tag);
+				free(pBindConfirmReq);
 			
-			if (strcmp(pBindConfirmReq->answer, NATTY_USER_PROTOCOL_AGREE) == 0) {
-				tag->u8LocationType = 1;
-			} else if (strcmp(pBindConfirmReq->answer, NATTY_USER_PROTOCOL_REJECT) == 0) {
-				tag->u8LocationType = 0;
-			} else {
-				ntylog("Can't find answer with: %s\n", pBindConfirmReq->answer);
 			}
-
-			ntyDaveMqPushMessage(tag);
-			free(pBindConfirmReq);
 		}
 
+		ntyFreeJsonValue(json);
+		
 #if ENABLE_CONNECTION_POOL
 
 #if 1 //Need to Recode

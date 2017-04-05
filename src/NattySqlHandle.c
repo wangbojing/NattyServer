@@ -207,6 +207,7 @@ int ntyBindConfirmReqHandle(void *arg) {
 	ntyQueryPhoneBookSelectHandle(gId, proposerId, phonenum);
 
 	U8 flag = tag->u8LocationType;
+	ntydbg("ntyBindConfirmReqHandle->flag:%d", flag);
 	char answer[64] = {0};
 	if (flag == 1) { //need to recode
 		BindBroadCast *pBindBroadCast = malloc(sizeof(BindBroadCast));
@@ -220,10 +221,13 @@ int ntyBindConfirmReqHandle(void *arg) {
 		pBindBroadCast->result.proposer = phonenum;
 		pBindBroadCast->result.answer = answer;
 		char *jsonresult = ntyJsonWriteBindBroadCast(pBindBroadCast);
+		ntydbg("ntyJsonBroadCastRecvResult->%s\n",  jsonresult);
 		ntyJsonBroadCastRecvResult(adminId, gId, (U8*)jsonresult, msgId);
 		ntyJsonFree(jsonresult);
 		free(pBindBroadCast);
 
+		
+		
 		/*
 		BindConfirmAck *pBindConfirmAck = malloc(sizeof(BindConfirmAck));
 		pBindConfirmAck->IMEI = 
@@ -260,8 +264,8 @@ int ntyBindConfirmReqHandle(void *arg) {
 		int jsonLen = strlen(json);	
 		ntySendCommonBroadCastResult(adminId, gId, json, jsonLen, 0);
 */
-	} else if (tag->u8LocationType == 0) {
-
+	} else if (flag == 0) {
+		ntydbg("ntyJsonBroadCastRecvResult->%lld\n", proposerId);
 		//memcpy(answer, NATTY_USER_PROTOCOL_REJECT, strlen(NATTY_USER_PROTOCOL_REJECT));
 		ntyProtoBindAck(proposerId, gId, 6); //reject
 
@@ -280,10 +284,7 @@ int ntyBindConfirmReqHandle(void *arg) {
 
 
 int ntyLoginReqHandle(void *arg) {
-
-
 	VALUE_TYPE *tag = (VALUE_TYPE*)arg;
-
 	C_DEVID fromId = tag->fromId;
 
 	int ret = ntyReadOfflineCommonMsgAction(fromId);
@@ -295,9 +296,7 @@ int ntyLoginReqHandle(void *arg) {
 		}
 	}
 	
-
 	free(tag);
-	
 }
 
 
