@@ -551,7 +551,8 @@ static int ntyQueryCommonOfflineMsgSelect(void *self, C_DEVID deviceId, void *co
 				ntyVectorAdd(container, &id, sizeof(int));
 			}
 			*/
-
+			ret = -1;
+			
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_COMMON_OFFLINE_MSG, deviceId);
 			while (ResultSet_next(r)) {
 				int msgId = ResultSet_getInt(r, 1);
@@ -569,8 +570,8 @@ static int ntyQueryCommonOfflineMsgSelect(void *self, C_DEVID deviceId, void *co
 				memset(pCommonOfflineMsg->details, 0, details_len);
 				memcpy(pCommonOfflineMsg->details, r_details, details_len);
 				ntyVectorAdd(container, pCommonOfflineMsg, sizeof(CommonOfflineMsg));
+				ret = 0;
 			}
-			ret = 0;
 		}
 	}
 	CATCH(SQLException)
@@ -602,7 +603,8 @@ static int ntyQueryVoiceOfflineMsgSelect(void *self, C_DEVID fromId, void *conta
 			ret = -1;
 		} else {
 			
-
+			ret = -1;
+			
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_VOICE_OFFLINE_MSG, fromId);
 			while (ResultSet_next(r)) {
 				int msgId = ResultSet_getInt(r, 1);
@@ -622,10 +624,9 @@ static int ntyQueryVoiceOfflineMsgSelect(void *self, C_DEVID fromId, void *conta
 				memset(pOfflineMsg->details, 0, details_len);
 				memcpy(pOfflineMsg->details, r_details, details_len);
 				ntyVectorAdd(container, pOfflineMsg, sizeof(CommonOfflineMsg));
-
-				
+				ret = 0;
 			}
-			ret = 0;
+			
 		}
 	}
 	CATCH(SQLException)

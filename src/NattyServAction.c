@@ -1518,6 +1518,9 @@ int ntyReadOfflineCommonMsgIter(void *self, void *arg) {
 	CommonOfflineMsg *pCommonOfflineMsg = (CommonOfflineMsg*)self;
 	C_DEVID fromId = *(C_DEVID*)arg;
 	char *json = pCommonOfflineMsg->details;
+	if (json == NULL) {
+		return -1;
+	}
 	
 	int ret = ntySendCommonBroadCastItem(
 		pCommonOfflineMsg->senderId, 
