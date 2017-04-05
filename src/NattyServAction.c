@@ -1427,9 +1427,18 @@ int ntyBindReqAction(ActionParam *pActionParam) {
 	C_DEVID devId = pActionParam->toId;
 	
 	int ret = ntyQueryDevAppGroupCheckSelectHandle(fromId, devId);
-	if (NTY_RESULT_FAILED == ret) {
-		ret = 4;
-	} 
+	if (NTY_RESULT_SUCCESS != ret) {
+		if (NTY_RESULT_EXIST == ret) {		//代表 UserId不存在
+			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_USER_NOTONLINE);
+		} else if (NTY_RESULT_PROCESS == ret) {		//代表DeviceId不存在
+			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
+		} else if (NTY_RESULT_NOEXIST == ret) {		//代表UserId与DeviceId已经绑定过了
+			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_BIND_REPEATE_DATA);
+		} else if (NTY_RESULT_NEEDINSERT == ret) {	//代表设备没有激活
+			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_NOACTIVATE);
+		}
+		return;
+	}
 
 	BindReq *pBindReq = malloc(sizeof(BindReq));
 	if (pBindReq == NULL) return NTY_RESULT_ERROR;

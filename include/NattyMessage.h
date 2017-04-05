@@ -50,8 +50,8 @@
 
 //#include "NattyUserProtocol.h"
 
-#define NATTY_RESULT_CODE_SUCCESS 					"200"		//
-#define NATTY_RESULT_CODE_BUSY						"500"		
+#define NATTY_RESULT_CODE_SUCCESS 					"200"		//Success
+#define NATTY_RESULT_CODE_BUSY						"500"		//服务器繁忙
 #define NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE 		"10001"		//设备不在线
 #define NATTY_RESULT_CODE_ERR_JSON_FORMAT 			"10002"		//JSOn格式错误
 #define NATTY_RESULT_CODE_ERR_JSON_CONVERT			"10003"		//JSON转换错误
@@ -63,6 +63,10 @@
 
 #define NATTY_RESULT_CODE_ERR_DB_SAVE_REPEATE_DATA	"10009"		//保存重复数据
 #define NATTY_RESULT_CODE_ERR_DB_SEND_OFFLINE		"10010"		//获取离线数据错误
+
+#define NATTY_RESULT_CODE_ERR_USER_NOTONLINE		"10011"		//UserId不存在
+#define NATTY_RESULT_CODE_ERR_BIND_REPEATE_DATA		"10012"		//UserId与DeviceId已经绑定过
+#define NATTY_RESULT_CODE_ERR_NOACTIVATE			"10013"		//设备没有激活
 
 
 const char* ntyCommonResultMessage(const char *code);
