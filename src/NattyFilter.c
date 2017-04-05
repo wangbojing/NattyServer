@@ -540,9 +540,12 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 				ntySendDeviceTimeCheckAck(pClient->devId, 1);
 #endif
 			} else {
-#if 0			
-				ntyReadOfflineMsgAction(pClient->devId);
-#else
+
+				if (pClient->deviceType == NTY_PROTO_CLIENT_IOS) {
+					U8 *json = buffer+NTY_PROTO_LOGIN_REQ_JSON_CONTENT_IDX;
+					ntylog(" LOGIN --> %s\n", json);
+				}
+
 				VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
 				if (tag == NULL) return ;
 
@@ -552,7 +555,6 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 
 				ntyDaveMqPushMessage(tag);
 				
-#endif
 			}
 		} else {	
 //			ASSERT(0);

@@ -104,6 +104,10 @@ typedef struct _Push_Handle {
 	int (*push)(void *_self, U8 *msg, const U8 *token);
 } nPushHandle;
 
+void *ntyPushHandleInstance(void);
+int ntyPushNotifyHandle(void *self, U8 *msg, const U8 *token);
+
+
 
 #endif
 

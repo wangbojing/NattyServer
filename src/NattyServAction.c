@@ -1160,7 +1160,7 @@ void ntyJsonAddContactsAction(ActionParam *pActionParam) {
 				pActionParam->toId, 
 				jsonresult,
 				&pActionParam->index);
-			ntylog(" ntyJsonAddContactsAction--->ret %d %s %d\n", ret, jsonresult,strlen(jsonresult));
+			ntylog(" ntyJsonAddContactsAction--->ret %d %s\n", ret, jsonresult);
 			if (ret >= 0) {
 				ntySendCommonBroadCastResult(fromId, toId, (U8*)jsonresult, strlen(jsonresult));
 			}// else {

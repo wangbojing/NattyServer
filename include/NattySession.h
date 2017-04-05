@@ -105,6 +105,8 @@ int ntySendBinBufferBroadCastResult(U8 *u8Buffer, int length, C_DEVID fromId, C_
 
 int ntySendBindConfirmPushResult(C_DEVID proposerId, C_DEVID adminId, U8 *json, int length);
 
+int ntySendPushNotify(C_DEVID selfId, U8 *msg);
+
 
 #endif
 

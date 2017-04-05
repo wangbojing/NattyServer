@@ -48,6 +48,7 @@
 #include "NattyBPlusTree.h"
 #include "NattyUtils.h"
 #include "NattyMulticast.h"
+#include "NattyPush.h"
 
 #include "NattyVector.h"
 #include "NattyResult.h"
@@ -580,11 +581,30 @@ int ntySendDataResult(C_DEVID fromId, U8 *json, int length, U16 status) {
 	
 }
 
+int ntySendPushNotify(C_DEVID selfId, U8 *msg) {
+	void *heap = ntyBHeapInstance();
+	NRecord *record = ntyBHeapSelect(heap, selfId);
+	if (record == NULL) return NTY_RESULT_NOEXIST;
+	Client *pClient = (Client *)record->value;
+
+	if (pClient->deviceType == NTY_PROTO_CLIENT_IOS) {
+		if (pClient->token != NULL) {
+			void *pushHandle = ntyPushHandleInstance();
+			ntyPushNotifyHandle(pushHandle, msg, pClient->token);
+		}
+		return NTY_RESULT_FAILED;
+	}
+	return NTY_RESULT_SUCCESS;
+}
 
 int ntySendCommonBroadCastItem(C_DEVID selfId, C_DEVID toId, U8 *json, int length, U32 msgId) {
 	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
 	void *map = ntyMapInstance();
 	ClientSocket *pClient = ntyMapSearch(map, toId);
+
+#if 1
+	ntySendPushNotify(toId, NULL);
+#endif
 
 	buffer[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
 	buffer[NTY_PROTO_DEVTYPE_IDX] = NTY_PROTO_CLIENT_DEFAULT;
@@ -757,6 +777,10 @@ int ntySendVoiceBroadCastItem(C_DEVID fromId, C_DEVID toId, U8 *json, int length
 	memcpy(buffer+NTY_PROTO_VOICE_BROADCAST_JSON_CONTENT_IDX, json, length);
 	
 	length = length + NTY_PROTO_VOICE_BROADCAST_JSON_CONTENT_IDX + sizeof(U32);
+
+#if 1
+	ntySendPushNotify(toId, NULL);
+#endif
 
 	void *map = ntyMapInstance();
 	ClientSocket *client = ntyMapSearch(map, toId);
