@@ -478,7 +478,6 @@ static int ntyExecuteDevAppGroupBindInsert(void *self, int msgId, C_DEVID *propo
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			ret = 0;
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_BIND_GROUP, msgId);
 			while (ResultSet_next(r)) {
 				ret = ResultSet_getInt(r, 1);
