@@ -200,21 +200,25 @@ int ntyBindConfirmReqHandle(void *arg) {
 	C_DEVID proposerId = tag->toId;
 	C_DEVID gId = tag->gId;
 
-	ntyBindConfirm(adminId, proposerId, gId, tag->arg);
 	
-	U32 msgId = tag->arg;
-	char phonenum[64] = {0};
-	ntyQueryPhoneBookSelectHandle(gId, proposerId, phonenum);
-
 	U8 flag = tag->u8LocationType;
-	ntydbg("ntyBindConfirmReqHandle->flag:%d", flag);
 	char answer[64] = {0};
-	if (flag == 1) { //need to recode
+	if (flag == 1) { 
+		
+		U32 msgId = tag->arg;
+		char phonenum[64] = {0};
+		
+		ntyBindConfirm(adminId, proposerId, gId, msgId); 
+
+		ntyQueryPhoneBookSelectHandle(gId, proposerId, phonenum);
+		ntydbg("ntyBindConfirmReqHandle->flag:%d, phnum:%s\n", flag, phonenum);
+		
 		BindBroadCast *pBindBroadCast = malloc(sizeof(BindBroadCast));
 		memcpy(answer, NATTY_USER_PROTOCOL_AGREE, strlen(NATTY_USER_PROTOCOL_AGREE));
 		char imei[64] = {0};
 		sprintf(imei, "%llx", gId);
 		pBindBroadCast->result.IMEI = imei;
+		
 		char bindConfirm[64] = {0};
 		memcpy(bindConfirm, NATTY_USER_PROTOCOL_BINDCONFIRM, strlen(NATTY_USER_PROTOCOL_BINDCONFIRM));
 		pBindBroadCast->result.category = bindConfirm;
@@ -223,61 +227,17 @@ int ntyBindConfirmReqHandle(void *arg) {
 		char *jsonresult = ntyJsonWriteBindBroadCast(pBindBroadCast);
 		ntydbg("ntyJsonBroadCastRecvResult->%s\n",  jsonresult);
 		
-		//??Json¨¬¨ª?¨®¦Ì?¨ºy?Y?a
 		ntyJsonBroadCastRecvResult(adminId, gId, (U8*)jsonresult, msgId);
 		ntyJsonFree(jsonresult);
 		free(pBindBroadCast);
 
 		
-		
-		/*
-		BindConfirmAck *pBindConfirmAck = malloc(sizeof(BindConfirmAck));
-		pBindConfirmAck->IMEI = 
-		
-		char *jsonresult_admin = ntyJsonWriteBindConfirmAck(pBindConfirmAck);
-		ntySendDataResult(adminId, jsonresult_admin, strlen(jsonresult_admin), 200);
-		ntyJsonFree(jsonresult_admin);
-		free(pBindConfirmAck);
-		*/
-		
-/*
- *
- {
-	 "Results": {
-	 "IMEI": "355637052788650",
-	 "Category": "BindConfirmReq",
- 	 "Proposer":"15889650380",
- 	 "Answer":"Reject"
- 	}
- }
- *
- */
- /*
- 		char tempJson[128] = {0};
-		strcat(json, "{\"Results\": {");
-		sprintf(tempJson, "\"IMEI\":\"%llx\",", gId);
-		strcat(json, tempJson);
-		memset(tempJson, 0, 128);
-		strcat(json, "\"Category\": \"BindConfirmReq\",");
-		sprintf(tempJson, "\"Proposer\":\"%s\",", phonenum);
-		strcat(json, tempJson);
-		strcat(json, "\"Answer\":\"Agree\"}}");
-		ntylog("ntyBindConfirmReqHandle --> %s\n", json);
-		int jsonLen = strlen(json);	
-		ntySendCommonBroadCastResult(adminId, gId, json, jsonLen, 0);
-*/
 	} else if (flag == 0) {
+	
 		ntydbg("ntyJsonBroadCastRecvResult->%lld\n", proposerId);
-		//memcpy(answer, NATTY_USER_PROTOCOL_REJECT, strlen(NATTY_USER_PROTOCOL_REJECT));
 		ntyProtoBindAck(proposerId, gId, 6); //reject
 
-		/*
-		BindConfirmAck *pBindConfirmAck = malloc(sizeof(BindConfirmAck));
-		char *jsonresult_admin = ntyJsonWriteBindConfirmAck(pBindConfirmAck);
-		ntySendDataResult(adminId, jsonresult_admin, strlen(jsonresult_admin), 200);
-		ntyJsonFree(jsonresult_admin);
-		free(pBindConfirmAck);
-		*/
+		
 	}
 
 	free(tag);

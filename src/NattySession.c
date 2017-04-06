@@ -679,10 +679,11 @@ int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int leng
 			ntylog(" ntyQueryWatchIDListSelectHandle Failed \n");
 		}
 
-		ntylog(" record == NULL \n");
+		ntylog(" ntySendCommonBroadCastResult record == NULL \n");
 		
 		InterMsg *msg = (InterMsg*)malloc(sizeof(InterMsg));
 		if (msg == NULL) return NTY_RESULT_FAILED;
+		
 		msg->buffer = json;
 		msg->length = length;
 		msg->group = NULL;
@@ -699,14 +700,18 @@ int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int leng
 			
 		Client *pClient = (Client*)record->value;
 		if (pClient == NULL) return NTY_RESULT_NOEXIST;
-		
+
+		ntylog(" ntySendCommonBroadCastResult pClient != NULL \n");
 		InterMsg *msg = (InterMsg*)malloc(sizeof(InterMsg));
+		if (msg == NULL) return NTY_RESULT_FAILED;
+		
 		msg->buffer = json;
 		msg->length = length;
 		msg->group = pClient;
 		msg->self = &selfId;
 		msg->arg = index;
-		
+
+		ntylog(" ntySendCommonBroadCastResult ntyVectorIterator \n");
 		ntyVectorIterator(pClient->friends, ntySendCommonBroadCastIter, msg);
 
 		free(msg);
