@@ -223,7 +223,7 @@ int ntyBindConfirmReqHandle(void *arg) {
 		//select phone 
 		ntyQueryPhoneBookSelectHandle(gId, proposerId, phonenum);
 #endif
-		ntydbg("ntyBindConfirmReqHandle->flag:%d, phnum:%s, msgId:%d\n", flag, phonenum, msgId);
+		ntydbg("ntyBindConfirmReqHandle->proposerId:%lld phnum:%s, msgId:%d\n", proposerId, phonenum, msgId);
 
 		BindBroadCast *pBindBroadCast = malloc(sizeof(BindBroadCast));
 		memcpy(answer, NATTY_USER_PROTOCOL_AGREE, strlen(NATTY_USER_PROTOCOL_AGREE));
