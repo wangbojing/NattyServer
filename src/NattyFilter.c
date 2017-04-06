@@ -1302,6 +1302,8 @@ void ntyBindConfirmReqPacketHandleRequest(const void *_self, unsigned char *buff
 				free(pBindConfirmReq);
 			
 			}
+
+			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
 		}
 
 		ntyFreeJsonValue(json);
