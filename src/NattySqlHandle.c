@@ -186,7 +186,9 @@ int ntyBindConfirm(C_DEVID adminId, C_DEVID AppId, C_DEVID DeviceId, U32 msgId) 
 
 	}
 	ntylog(" ntyBindConfirmReqPacketHandleRequest --> ntyJsonCommonResult\n");
-	ntyJsonCommonResult(adminId, NATTY_RESULT_CODE_SUCCESS);
+	//ntyJsonCommonResult(adminId, NATTY_RESULT_CODE_SUCCESS);
+
+	return ret;
 }
 
 
@@ -199,16 +201,16 @@ int ntyBindConfirmReqHandle(void *arg) {
 	C_DEVID adminId = tag->fromId;
 	C_DEVID proposerId = tag->toId;
 	C_DEVID gId = tag->gId;
+	U32 msgId = tag->arg;
 
 	
 	U8 flag = tag->u8LocationType;
-	char answer[64] = {0};
+	ntylog(" ntyBindConfirmReqHandle flag:%d\n", flag);
 	if (flag == 1) { 
-		
-		U32 msgId = tag->arg;
+		char answer[64] = {0};
 		char phonenum[64] = {0};
 		
-		ntyBindConfirm(adminId, proposerId, gId, msgId); 
+		int ret = ntyBindConfirm(adminId, proposerId, gId, msgId); 
 
 		ntyQueryPhoneBookSelectHandle(gId, proposerId, phonenum);
 		ntydbg("ntyBindConfirmReqHandle->flag:%d, phnum:%s\n", flag, phonenum);
@@ -234,6 +236,8 @@ int ntyBindConfirmReqHandle(void *arg) {
 
 		
 	} else if (flag == 0) {
+
+		int ret = ntyExecuteBindConfirmDeleteHandle(msgId);
 	
 		ntydbg("ntyJsonBroadCastRecvResult->%lld\n", proposerId);
 		ntyProtoBindAck(proposerId, gId, 6); //reject

@@ -495,6 +495,38 @@ static int ntyExecuteDevAppGroupBindInsert(void *self, int msgId) {
 	return ret;
 }
 
+//NTY_DB_DELETE_BIND_GROUP
+static int ntyExecuteBindConfirmDelete(void *self, int msgId) {
+	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+
+	TRY 
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			Connection_execute(con, NTY_DB_DELETE_BIND_GROUP, msgId);
+		}
+	} 
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+
 //NTY_DB_DELETE_COMMON_OFFLINE_MSG
 static int ntyExecuteCommonOfflineMsgDelete(void *self, int msgId, C_DEVID clientId) {
 	ConnectionPool *pool = self;
@@ -741,6 +773,10 @@ static int ntyQueryPhoneBookSelect(void *self, C_DEVID imei, C_DEVID userId, cha
 		if (con == NULL) {
 			ret = -1;
 		} else {
+			U8 buffer[512] = {0};
+
+			sprintf(buffer, NTY_DB_SELECT_PHONE_NUMBER, imei, userId);
+			ntylog("ntyQueryPhoneBookSelect --> sql : %s\n", buffer);
 
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_PHONE_NUMBER, imei, userId);
 			while (ResultSet_next(r)) {
@@ -2166,6 +2202,12 @@ int ntyExecuteDevAppGroupBindInsertHandle(int msgId) {
 	void *pool = ntyConnectionPoolInstance();
 	return ntyExecuteDevAppGroupBindInsert(pool, msgId);
 }
+
+int ntyExecuteBindConfirmDeleteHandle(int msgId) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteBindConfirmDelete(pool, msgId);
+}
+
 
 int ntyExecuteCommonOfflineMsgDeleteHandle(int msgId, C_DEVID clientId) {
 	void *pool = ntyConnectionPoolInstance();

@@ -213,6 +213,8 @@
 
 #define NTY_DB_INSERT_BIND_GROUP			"CALL PROC_INSERT_BIND_GROUP(%d)"
 
+#define NTY_DB_DELETE_BIND_GROUP			"CALL PROC_DELETE_BIND_GROUP(%d)"
+
 #define NTY_DB_SELECT_PHONE_NUMBER			"CALL PROC_SELECT_PHONE_NUMBER(%lld, %lld)"
 
 #define NTY_DB_INSERT_ADMIN_GROUP			"CALL PROC_INSERT_ADMIN_GROUP(%lld, '%s', %lld, '%s', '%s', '%s')"
@@ -323,6 +325,8 @@ int ntyExecuteCommonOfflineMsgDeleteHandle(int msgId, C_DEVID clientId);
 int ntyQueryAdminGroupInsertHandle(C_DEVID devId, U8 *bname, C_DEVID fromId, U8 *userCall, U8 *wimage, U8 *uimage);
 
 int ntyQueryVoiceOfflineMsgSelectHandle(C_DEVID fromId, void *container);
+
+int ntyExecuteBindConfirmDeleteHandle(int msgId);
 
 
 int ntyConnectionPoolInit(void);
