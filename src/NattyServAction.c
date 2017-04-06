@@ -575,13 +575,16 @@ void ntyJsonICCIDAction(ActionParam *pActionParam) {
 		ntyJsonCommonResult(devId, NATTY_RESULT_CODE_ERR_JSON_CONVERT);
 		goto exit;
 	}
-	char iccid[14] = {0};
-	memset(iccid, 0, 14);
+	
+	char iccid[16] = {0};
+	memset(iccid, 0, 16);
 	memcpy(iccid, pICCIDReq->ICCID+6, 13);
+	ntylog(" ntyJsonICCIDAction --> iccid : %s\n", iccid);
+	
 	char phonenum[20] = {0};
-	memset(phonenum, 0, 20);
 	int ret = ntyExecuteICCIDSelectHandle(devId, iccid, phonenum);
-	ntydbg(" phonenum:%s\n", phonenum);
+	ntydbg(" ntyJsonICCIDAction --> phonenum:%s\n", phonenum);
+	
 	if (ret == -1) {
 		ntylog(" ntyJsonICCIDAction --> DB Exception\n");
 		ret = 4;
@@ -602,16 +605,19 @@ void ntyJsonICCIDAction(ActionParam *pActionParam) {
 		pICCIDAck->msg = msgs;
 		char *jsonstringICCID = ntyJsonWriteICCID(pICCIDAck);
 
+		ntylog("ntyJsonICCIDAction --> %s\n", jsonstringICCID);
+		ntySendICCIDAckResult(devId, (U8*)jsonstringICCID, strlen(jsonstringICCID), 200);
+#if 0
 		ret = ntySaveCommonMsgData(
 			pActionParam->fromId,
 			pActionParam->toId,
 			jsonstringICCID,
 			&pActionParam->index);
 		if (ret >= 0) {
-			ntySendICCIDAckResult(devId, (U8*)jsonstringICCID, strlen(jsonstringICCID), 200);
 		} else {
 			ntyJsonCommonResult(devId, NATTY_RESULT_CODE_ERR_DB_SAVE_OFFLINE);
 		}
+#endif
 		ntyJsonFree(jsonstringICCID);
 		free(pICCIDAck);
 	}

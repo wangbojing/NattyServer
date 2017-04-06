@@ -737,6 +737,7 @@ void ntyICCIDReqPacketHandleRequest(const void *_self, unsigned char *buffer, in
 			pActionParam->jsonlen = jsonlen;
 			pActionParam->index = 0;
 			ntyJsonICCIDAction(pActionParam);
+			
 			free(pActionParam);
 		}
 		ntyFreeJsonValue(json);
