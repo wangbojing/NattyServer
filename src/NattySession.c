@@ -589,6 +589,7 @@ int ntySendPushNotify(C_DEVID selfId, U8 *msg) {
 
 	if (pClient->deviceType == NTY_PROTO_CLIENT_IOS) {
 		if (pClient->token != NULL) {
+			ntylog("ntySendPushNotify --> selfId:%d  token:%s\n", selfId, pClient->token);
 			void *pushHandle = ntyPushHandleInstance();
 			ntyPushNotifyHandle(pushHandle, msg, pClient->token);
 		}

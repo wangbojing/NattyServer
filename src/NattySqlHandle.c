@@ -222,8 +222,9 @@ int ntyBindConfirmReqHandle(void *arg) {
 #if 0
 		//select phone 
 		ntyQueryPhoneBookSelectHandle(gId, proposerId, phonenum);
-		ntydbg("ntyBindConfirmReqHandle->flag:%d, phnum:%s\n", flag, phonenum);
 #endif
+		ntydbg("ntyBindConfirmReqHandle->flag:%d, phnum:%s, msgId:%d\n", flag, phonenum, msgId);
+
 		BindBroadCast *pBindBroadCast = malloc(sizeof(BindBroadCast));
 		memcpy(answer, NATTY_USER_PROTOCOL_AGREE, strlen(NATTY_USER_PROTOCOL_AGREE));
 		char imei[64] = {0};
@@ -246,9 +247,11 @@ int ntyBindConfirmReqHandle(void *arg) {
 		
 	} else if (flag == 0) {
 
+		
+		
 		int ret = ntyExecuteBindConfirmDeleteHandle(msgId, &proposerId);
 	
-		ntydbg("ntyJsonBroadCastRecvResult->%lld\n", proposerId);
+		ntydbg("ntyJsonBroadCastRecvResult->%lld, msgId:%d, ret:%d\n", proposerId, msgId, ret);
 		ntyProtoBindAck(proposerId, gId, 6); //reject
 
 		
