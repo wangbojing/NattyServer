@@ -224,6 +224,7 @@ int ntyBindConfirmReqHandle(void *arg) {
 		pBindBroadCast->result.category = bindConfirm;
 		pBindBroadCast->result.proposer = phonenum;
 		pBindBroadCast->result.answer = answer;
+		
 		char *jsonresult = ntyJsonWriteBindBroadCast(pBindBroadCast);
 		ntydbg("ntyJsonBroadCastRecvResult->%s\n",  jsonresult);
 		

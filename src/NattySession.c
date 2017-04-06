@@ -712,7 +712,7 @@ int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int leng
 		msg->arg = index;
 
 		ntylog(" ntySendCommonBroadCastResult ntyVectorIterator \n");
-		ntyVectorIterator(pClient->friends, ntySendCommonBroadCastIter, msg);
+		ntyVectorIter(pClient->friends, ntySendCommonBroadCastIter, msg);
 
 		free(msg);
 	}

@@ -745,6 +745,7 @@ static int ntyQueryPhoneBookSelect(void *self, C_DEVID imei, C_DEVID userId, cha
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_PHONE_NUMBER, imei, userId);
 			while (ResultSet_next(r)) {
 				const char *pnum = ResultSet_getString(r, 1);
+				ntylog(" ntyQueryPhoneBookSelect --> PhoneNum:%s\n", pnum);
 				memcpy(phonenum, pnum, strlen(pnum));
 			}
 		}
