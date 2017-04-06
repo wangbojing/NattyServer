@@ -603,7 +603,9 @@ int ntySendCommonBroadCastItem(C_DEVID selfId, C_DEVID toId, U8 *json, int lengt
 	ClientSocket *pClient = ntyMapSearch(map, toId);
 
 #if 1
-	ntySendPushNotify(toId, NULL);
+	if (pClient == NULL) {
+		ntySendPushNotify(toId, NULL);
+	}
 #endif
 
 	buffer[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
@@ -778,12 +780,14 @@ int ntySendVoiceBroadCastItem(C_DEVID fromId, C_DEVID toId, U8 *json, int length
 	
 	length = length + NTY_PROTO_VOICE_BROADCAST_JSON_CONTENT_IDX + sizeof(U32);
 
-#if 1
-	ntySendPushNotify(toId, NULL);
-#endif
 
 	void *map = ntyMapInstance();
 	ClientSocket *client = ntyMapSearch(map, toId);
+#if 1
+	if (client == NULL) {
+		ntySendPushNotify(toId, NULL);
+	}
+#endif
 
 	return ntySendBuffer(client, buffer, length);
 }
