@@ -92,6 +92,10 @@ int ntyCommonAckHandle(void *arg) {
 #if 1 //Update By WangBoJing 
 	ret = ntyReadOfflineCommonMsgAction(fromId);
 	if (ret == NTY_RESULT_NOEXIST) {
+#if 1 //Push Message Queue
+		
+
+#endif
 		ret = ntyReadOfflineVoiceMsgAction(fromId);
 		if (ret == NTY_RESULT_NOEXIST) {
 			//read
@@ -158,12 +162,16 @@ int ntyVoiceReqHandle(void *arg) {
 }
 
 
-int ntyBindConfirm(C_DEVID adminId, C_DEVID AppId, C_DEVID DeviceId, U32 msgId) {
+int ntyBindConfirm(C_DEVID adminId, C_DEVID *ProposerId, C_DEVID DeviceId, U32 msgId, U8 *phonenum) {
+
+	C_DEVID AppId = 0x0;
+
 #if 0
 	int ret = ntyQueryDevAppGroupInsertHandle(AppId, DeviceId);
 #else
-	int ret = ntyExecuteDevAppGroupBindInsertHandle(msgId);
+	int ret = ntyExecuteDevAppGroupBindInsertHandle(msgId, ProposerId, phonenum);
 #endif
+	memcpy(&AppId, ProposerId, sizeof(C_DEVID));
 	if (ret == -1) {
 		ntylog(" ntyBindDevicePacketHandleRequest --> DB Exception\n");
 		ret = 4;
@@ -199,22 +207,23 @@ int ntyBindConfirmReqHandle(void *arg) {
 	U8 json[PACKET_BUFFER_SIZE] = {0};
 
 	C_DEVID adminId = tag->fromId;
-	C_DEVID proposerId = tag->toId;
+	C_DEVID proposerId = tag->toId; //read from TB_BIND_CONFIRM proposerId by msgid
 	C_DEVID gId = tag->gId;
 	U32 msgId = tag->arg;
 
 	
 	U8 flag = tag->u8LocationType;
-	ntylog(" ntyBindConfirmReqHandle flag:%d\n", flag);
+	ntylog(" ntyBindConfirmReqHandle flag:%d, %lld\n", flag, proposerId);
 	if (flag == 1) { 
 		char answer[64] = {0};
 		char phonenum[64] = {0};
 		
-		int ret = ntyBindConfirm(adminId, proposerId, gId, msgId); 
-
+		int ret = ntyBindConfirm(adminId, &proposerId, gId, msgId, phonenum); 
+#if 0
+		//select phone 
 		ntyQueryPhoneBookSelectHandle(gId, proposerId, phonenum);
 		ntydbg("ntyBindConfirmReqHandle->flag:%d, phnum:%s\n", flag, phonenum);
-		
+#endif
 		BindBroadCast *pBindBroadCast = malloc(sizeof(BindBroadCast));
 		memcpy(answer, NATTY_USER_PROTOCOL_AGREE, strlen(NATTY_USER_PROTOCOL_AGREE));
 		char imei[64] = {0};
@@ -237,7 +246,7 @@ int ntyBindConfirmReqHandle(void *arg) {
 		
 	} else if (flag == 0) {
 
-		int ret = ntyExecuteBindConfirmDeleteHandle(msgId);
+		int ret = ntyExecuteBindConfirmDeleteHandle(msgId, &proposerId);
 	
 		ntydbg("ntyJsonBroadCastRecvResult->%lld\n", proposerId);
 		ntyProtoBindAck(proposerId, gId, 6); //reject

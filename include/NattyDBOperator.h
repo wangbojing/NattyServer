@@ -318,7 +318,7 @@ int ntyQueryBindConfirmInsertHandle(C_DEVID admin, C_DEVID imei, U8 *name, U8 *w
 
 int ntyQueryPhoneBookSelectHandle(C_DEVID imei, C_DEVID userId, char *phonenum);
 
-int ntyExecuteDevAppGroupBindInsertHandle(int msgId);
+int ntyExecuteDevAppGroupBindInsertHandle(int msgId, C_DEVID *proposerId, U8 *phonenum);
 
 int ntyExecuteCommonOfflineMsgDeleteHandle(int msgId, C_DEVID clientId);
 
@@ -326,7 +326,8 @@ int ntyQueryAdminGroupInsertHandle(C_DEVID devId, U8 *bname, C_DEVID fromId, U8 
 
 int ntyQueryVoiceOfflineMsgSelectHandle(C_DEVID fromId, void *container);
 
-int ntyExecuteBindConfirmDeleteHandle(int msgId);
+int ntyExecuteBindConfirmDeleteHandle(int msgId, C_DEVID *id);
+
 
 
 int ntyConnectionPoolInit(void);

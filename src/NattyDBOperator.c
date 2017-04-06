@@ -432,7 +432,7 @@ static int ntyQueryDevAppGroupCheckSelect(void *self, C_DEVID aid, C_DEVID imei)
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = 0;
+	int ret = -1;
 
 	TRY 
 	{
@@ -444,6 +444,7 @@ static int ntyQueryDevAppGroupCheckSelect(void *self, C_DEVID aid, C_DEVID imei)
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_CHECK_GROUP, imei, aid);
 			while (ResultSet_next(r)) {
 				ret = ResultSet_getInt(r, 1);
+				ret = 0;
 			}
 			
 		}
@@ -465,11 +466,11 @@ static int ntyQueryDevAppGroupCheckSelect(void *self, C_DEVID aid, C_DEVID imei)
 
 
 //NTY_DB_INSERT_BIND_GROUP
-static int ntyExecuteDevAppGroupBindInsert(void *self, int msgId) {
+static int ntyExecuteDevAppGroupBindInsert(void *self, int msgId, C_DEVID *proposerId, U8 *phonenum) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = 0;
+	int ret = -1;
 
 	TRY 
 	{
@@ -477,7 +478,18 @@ static int ntyExecuteDevAppGroupBindInsert(void *self, int msgId) {
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			Connection_execute(con, NTY_DB_INSERT_BIND_GROUP, msgId);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_BIND_GROUP, msgId);
+			while (ResultSet_next(r)) {
+				ret = ResultSet_getInt(r, 1);
+				
+				*proposerId = ResultSet_getLLong(r, 2);
+				const char *num = ResultSet_getString(r, 3);
+				ntylog("ntyExecuteDevAppGroupBindInsert --> num:%s, proposerId:%lld\n", num, *proposerId);
+				if (num != NULL) {
+					memcpy(phonenum, num, strlen(num));
+				}
+				ret = 0;
+			}
 		}
 	} 
 	CATCH(SQLException) 
@@ -496,11 +508,11 @@ static int ntyExecuteDevAppGroupBindInsert(void *self, int msgId) {
 }
 
 //NTY_DB_DELETE_BIND_GROUP
-static int ntyExecuteBindConfirmDelete(void *self, int msgId) {
+static int ntyExecuteBindConfirmDelete(void *self, int msgId, C_DEVID *id) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = 0;
+	int ret = -1;
 
 	TRY 
 	{
@@ -508,7 +520,12 @@ static int ntyExecuteBindConfirmDelete(void *self, int msgId) {
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			Connection_execute(con, NTY_DB_DELETE_BIND_GROUP, msgId);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_DELETE_BIND_GROUP, msgId);
+			while (ResultSet_next(r)) {
+				*id = ResultSet_getLLong(r, 1);
+				ntylog("ntyExecuteBindConfirmDelete -->  id:%lld\n", *id);
+				ret = 0;
+			}
 		}
 	} 
 	CATCH(SQLException) 
@@ -2198,14 +2215,14 @@ int ntyQueryDevAppGroupCheckSelectHandle(C_DEVID aid, C_DEVID did) {
 	return ntyQueryDevAppGroupCheckSelect(pool, aid, did);
 }
 
-int ntyExecuteDevAppGroupBindInsertHandle(int msgId) {
+int ntyExecuteDevAppGroupBindInsertHandle(int msgId, C_DEVID *proposerId, U8 *phonenum) {
 	void *pool = ntyConnectionPoolInstance();
-	return ntyExecuteDevAppGroupBindInsert(pool, msgId);
+	return ntyExecuteDevAppGroupBindInsert(pool, msgId, proposerId, phonenum);
 }
 
-int ntyExecuteBindConfirmDeleteHandle(int msgId) {
+int ntyExecuteBindConfirmDeleteHandle(int msgId, C_DEVID *id) {
 	void *pool = ntyConnectionPoolInstance();
-	return ntyExecuteBindConfirmDelete(pool, msgId);
+	return ntyExecuteBindConfirmDelete(pool, msgId, id);
 }
 
 
