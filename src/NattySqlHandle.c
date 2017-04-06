@@ -189,7 +189,7 @@ int ntyBindConfirm(C_DEVID adminId, C_DEVID *ProposerId, C_DEVID DeviceId, U32 m
 		if (record != NULL) {
 			Client *dclient = record->value;
 			ASSERT(dclient != NULL);
-			ntyVectorAdd(dclient->friends, &DeviceId, sizeof(C_DEVID));
+			ntyVectorAdd(dclient->friends, &AppId, sizeof(C_DEVID));
 		}
 
 	}
