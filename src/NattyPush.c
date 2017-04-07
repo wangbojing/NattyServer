@@ -701,7 +701,10 @@ int main(void) {
 
 	char *msg = "abcd";
 	const char *token = "015bafdb5a846a08cbae1d78959a461d6b9c4e46f6a18dc36b4e9a191487bc0d";
-	
+
+	//ec49a6b5bcad57279a0fe08f8aeab941
+	//015bafdb5a846a08cbae1d78959a461d 6b9c4e46f6a18dc36b4e9a191487bc0d
+	//015bafdb5a846a08cbae1d78959a461d
 
 	int ret = ntyPushNotifyHandle(pushHandle, msg, token);
 

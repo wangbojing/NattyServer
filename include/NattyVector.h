@@ -57,14 +57,22 @@
 typedef int NVECTOR_CB(void *self, void *arg);
 
 typedef struct nKnot {
+#if 0
 	LIST_ENTRY(nKnot) entries;
+#else
+	struct nKnot *next;
+#endif
 	void *data;
 	int len;
 } NKnot;
 
 typedef struct nVector {
 	const void *_;
+#if 0
 	LIST_HEAD(vectorheader, nKnot) header;
+#else
+	NKnot *header;
+#endif
 	int num;
 	int max_num;	
 	long vector_lock;

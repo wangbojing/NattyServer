@@ -262,7 +262,7 @@ static int ntyQueryAppIDListSelect(void *self, C_DEVID did, void *container) {
 				C_DEVID id = ResultSet_getLLong(r, 1);
 				ntylog("app: %lld\n", id);
 #if 1
-				ntyVectorAdd(container, &id, sizeof(C_DEVID));
+				ntyVectorInsert(container, &id, sizeof(C_DEVID));
 #else
 				ntyFriendsTreeInsert(tree, id);
 #endif
@@ -303,7 +303,7 @@ static int ntyQueryWatchIDListSelect(void *self, C_DEVID aid, void *container) {
 				C_DEVID id = ResultSet_getLLong(r, 1);
 #if 1
 				ntylog(" ntyQueryWatchIDListSelect : %lld\n", id);
-				ntyVectorAdd(container, &id, sizeof(C_DEVID));
+				ntyVectorInsert(container, &id, sizeof(C_DEVID));
 #else
 				ntyFriendsTreeInsert(tree, id);
 #endif
@@ -478,6 +478,7 @@ static int ntyExecuteDevAppGroupBindInsert(void *self, int msgId, C_DEVID *propo
 		if (con == NULL) {
 			ret = -1;
 		} else {
+		
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_BIND_GROUP, msgId);
 			while (ResultSet_next(r)) {
 				ret = ResultSet_getInt(r, 1);
@@ -597,7 +598,7 @@ static int ntyQueryCommonOfflineMsgSelect(void *self, C_DEVID deviceId, void *co
 			while (ResultSet_next(r)) {
 				int id = ResultSet_getInt(r, 1);
 				//ntylog(" ntyQueryCommonOfflineMsgSelect : %lld\n", id);
-				ntyVectorAdd(container, &id, sizeof(int));
+				ntyVectorInsert(container, &id, sizeof(int));
 			}
 			*/
 			ret = -1;
@@ -618,7 +619,7 @@ static int ntyQueryCommonOfflineMsgSelect(void *self, C_DEVID deviceId, void *co
 				pCommonOfflineMsg->details = malloc(details_len);
 				memset(pCommonOfflineMsg->details, 0, details_len);
 				memcpy(pCommonOfflineMsg->details, r_details, details_len);
-				ntyVectorAdd(container, pCommonOfflineMsg, sizeof(CommonOfflineMsg));
+				ntyVectorInsert(container, pCommonOfflineMsg, sizeof(CommonOfflineMsg));
 				ret = 0;
 			}
 		}
@@ -672,7 +673,7 @@ static int ntyQueryVoiceOfflineMsgSelect(void *self, C_DEVID fromId, void *conta
 				pOfflineMsg->details = malloc(details_len);
 				memset(pOfflineMsg->details, 0, details_len);
 				memcpy(pOfflineMsg->details, r_details, details_len);
-				ntyVectorAdd(container, pOfflineMsg, sizeof(CommonOfflineMsg));
+				ntyVectorInsert(container, pOfflineMsg, sizeof(CommonOfflineMsg));
 				ret = 0;
 			}
 			

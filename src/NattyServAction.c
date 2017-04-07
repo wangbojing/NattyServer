@@ -1552,7 +1552,7 @@ int ntyReadOfflineCommonMsgAction(C_DEVID devId) {
 
 	int ret = ntyQueryCommonOfflineMsgSelectHandle(devId, container);
 	if (ret == NTY_RESULT_SUCCESS) {
-		ntyVectorIter(container, ntyReadOfflineCommonMsgIter, &devId);
+		ntyVectorIterator(container, ntyReadOfflineCommonMsgIter, &devId);
 	} 
 	if (container->num == 0) { //count == 0
 		ret = NTY_RESULT_NOEXIST;
@@ -1587,7 +1587,7 @@ int ntyReadOfflineVoiceMsgAction(C_DEVID devId) {
 
 	int ret = ntyQueryVoiceOfflineMsgSelectHandle(devId, container);
 	if (ret == NTY_RESULT_SUCCESS) {
-		ntyVectorIter(container, ntyReadOfflineVoiceMsgIter, &devId);
+		ntyVectorIterator(container, ntyReadOfflineVoiceMsgIter, &devId);
 	} 
 	if (container->num == 0) { //count == 0
 		ret = NTY_RESULT_NOEXIST;

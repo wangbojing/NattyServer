@@ -691,7 +691,7 @@ int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int leng
 		msg->self = &selfId;
 		msg->arg = index;
 
-		ntyVectorIter(group, ntySendCommonBroadCastIter, msg);
+		ntyVectorIterator(group, ntySendCommonBroadCastIter, msg);
 
 		free(msg);
 		ntyVectorDestory(group);
@@ -713,7 +713,7 @@ int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int leng
 		msg->arg = index;
 
 		ntylog(" ntySendCommonBroadCastResult ntyVectorIterator \n");
-		ntyVectorIter(pClient->friends, ntySendCommonBroadCastIter, msg);
+		ntyVectorIterator(pClient->friends, ntySendCommonBroadCastIter, msg);
 
 		free(msg);
 	}
@@ -743,7 +743,7 @@ int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int leng
 	
 	ntylog(" -->> ntySendCommonBroadCastResult --> %s \n", json);
 
-	ntyVectorIter(group, ntySendCommonBroadCastIter, msg);
+	ntyVectorIterator(group, ntySendCommonBroadCastIter, msg);
 
 	free(msg);
 
@@ -858,8 +858,8 @@ int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int lengt
 		return NTY_RESULT_ERROR;
 	}
 
-	ntylog(" ntySendVoiceBroadCastResult --> ntyVectorIter\n");
-	ntyVectorIter(pClient->friends, ntySendVoiceBroadCastIter, msg);
+	ntylog(" ntySendVoiceBroadCastResult --> ntyVectorIterator\n");
+	ntyVectorIterator(pClient->friends, ntySendVoiceBroadCastIter, msg);
 
 	free(msg);
 
@@ -913,9 +913,9 @@ int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int lengt
 		free(msg);
 		return NTY_RESULT_ERROR;
 	}
-	ntylog(" ntySendVoiceBroadCastResult --> ntyVectorIter\n");
+	ntylog(" ntySendVoiceBroadCastResult --> ntyVectorIterator\n");
 
-	ntyVectorIter(group, ntySendVoiceBroadCastIter, msg);
+	ntyVectorIterator(group, ntySendVoiceBroadCastIter, msg);
 	
 	free(msg);
 	ntyVectorDestory(group);
@@ -979,7 +979,7 @@ int ntySendLocationBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int le
 	msg->length = length;
 	msg->group = pClient;
 	msg->self = &fromId;
-#if 0
+#if 1
 	ntyVectorIterator(pClient->friends, ntySendLocationBroadCastIter, msg);
 #else
 	ntyVectorIter(pClient->friends, ntySendLocationBroadCastIter, msg);
@@ -1292,7 +1292,7 @@ int ntySendBinBufferBroadCastResult(U8 *u8Buffer, int length, C_DEVID fromId, C_
 	msg->arg = index;
 #endif
 
-	ntyVectorIter(pClient->friends, ntySendCommonBroadCastIter, msg);
+	ntyVectorIterator(pClient->friends, ntySendCommonBroadCastIter, msg);
 
 	free(msg);
 
