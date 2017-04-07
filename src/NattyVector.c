@@ -93,7 +93,9 @@ void* ntyVectorDtor(void *self) {
 	while (iter != NULL) {		
 		NKnot *knot = iter->next;
 
-		free(iter->data);
+		if (iter->data != NULL) {
+			free(iter->data);
+		}
 		free(iter);
 
 		iter = knot;
@@ -124,13 +126,17 @@ void* ntyVectorAdd(void *self, void *data, int len) {
 	memset(knot, 0, sizeof(NKnot));
 
 	if (data != NULL) {
+		
 		knot->len = len;
 		knot->next = NULL;
 		knot->data = malloc(len);
+		
 		if (knot->data == NULL) {
+			free(knot);
 			return NULL;
 		}
 		memcpy(knot->data, data, len);
+		
 	} else {
 		return NULL;
 	}
