@@ -651,9 +651,11 @@ void ntyLogoutPacketHandleRequest(const void *_self, U8 *buffer, int length, con
 		const MessagePacket *msg = (const MessagePacket*)obj;
 		if (msg == NULL) return ;
 		const Client *client = msg->client;
-
+#if 0 //offline
 		ntyDelClientHeap(client->devId);
-
+#else
+		ntyOfflineClientHeap(client->devId);
+#endif
 		ntylog("====================end ntyLogoutPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
