@@ -382,7 +382,12 @@ int main() {
 		//ntyBindConfirmReqClient(proposerId, devId, msgId, json_bindreq, strlen(json_bindreq));
 
 		
-		sleep(30);
+		char *json_bindreq = " {\"IMEI\":\"355637050957620\",\"Category\":\"BindReq\",\"BindReq\":{\"WatchName\":\"nihs\",\"WatchImage\":\"http:\\/\\/picture.quanjiakan.com:9080\\/quanjiakan\\/resources\\/device\\/20170408162703_4ezfc34wzqi5d3kcxqju.png\",\"UserName\":\"%E7%88%B7%E7%88%B7\",\"UserImage\":\"3\"}}";
+		int length = strlen(json_bindreq);
+
+		ntydbg(" length : %d\n", length);
+		ntyBindClient(g_devid, json_bindreq, strlen(json_bindreq));
+		//sleep(30);
 
 
 		

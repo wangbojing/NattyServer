@@ -396,7 +396,7 @@ int ntyProtoClientBind(void *_self, C_DEVID did, U8 *json, U16 length) {
 	NattyProto *proto = _self;
 	int len;	
 
-	U8 buf[NORMAL_BUFFER_SIZE] = {0};	
+	U8 buf[RECV_BUFFER_SIZE] = {0};	
 
 	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;	
 	buf[NTY_PROTO_PROTOTYPE_IDX] = (U8) PROTO_REQ;	
@@ -1539,6 +1539,8 @@ int ntyPacketValidator(void *self, U8 *buffer, int length) {
 	uCrc = ntyGenCrcValue(buffer, length-4);
 	uClientCrc = ntyU8ArrayToU32(buffer+length-4);
 	LOG(" rLength :%d, length:%d, crc:%x, u8Crc:%x\n", rLength, length, uCrc, uClientCrc);
+
+	if (length < NTY_PROTO_MIN_LENGTH) return NTY_RESULT_ERROR;
 
 	if (uCrc != uClientCrc) {
 		do {

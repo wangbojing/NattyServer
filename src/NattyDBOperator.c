@@ -441,10 +441,12 @@ static int ntyQueryDevAppGroupCheckSelect(void *self, C_DEVID aid, C_DEVID imei)
 			ret = -1;
 		} else {
 
+			ntylog(" ntyQueryDevAppGroupCheckSelect ...\n");
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_CHECK_GROUP, imei, aid);
 			while (ResultSet_next(r)) {
 				ret = ResultSet_getInt(r, 1);
 				ret = 0;
+				ntylog(" ntyQueryDevAppGroupCheckSelect ...\n");
 			}
 			
 		}
@@ -824,7 +826,7 @@ static int ntyQueryAdminSelect(void *self, C_DEVID did, C_DEVID *appid) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = 0;
+	int ret = -1;
 
 	TRY 
 	{
@@ -840,6 +842,7 @@ static int ntyQueryAdminSelect(void *self, C_DEVID did, C_DEVID *appid) {
 #else
 				*appid = ResultSet_getLLong(r, 1);
 #endif
+				ret = 0;
 			}
 			
 		}

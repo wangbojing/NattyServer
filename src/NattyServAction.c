@@ -1451,13 +1451,15 @@ int ntyBindReqAction(ActionParam *pActionParam) {
 		} else if (NTY_RESULT_NEEDINSERT == ret) {	//代表设备没有激活
 			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_NOACTIVATE);
 		}
-		return;
+		return ret;
 	}
 
+	ntylog(" ntyBindReqAction after ntyQueryDevAppGroupCheckSelectHandle\n");
 	BindReq *pBindReq = malloc(sizeof(BindReq));
 	if (pBindReq == NULL) return NTY_RESULT_ERROR;
 	ntyJsonBind(pActionParam->json, pBindReq);
-	
+
+	ntylog(" ntyBindReqAction before ntyQueryAdminSelectHandle\n");
 	//Parser JSON and write here
 	//查询管理员
 	if(NTY_RESULT_FAILED == ntyQueryAdminSelectHandle(devId, &admin)) {

@@ -100,6 +100,8 @@ int ntyCommonAckHandle(void *arg) {
 		if (ret == NTY_RESULT_NOEXIST) {
 			//read
 			//
+
+			ret = ntyReadOfflineBindMsgToAdminAction(fromId);
 		}
 	}
 
@@ -242,7 +244,7 @@ int ntyBindConfirmReqHandle(void *arg) {
 
 		//保存离线数据到数据库
 		int tempMsgId = 0;
-		ret = ntyExecuteCommonMsgInsertHandle(proposerId, gId, jsonresult, &tempMsgId);
+		ret = ntyExecuteCommonMsgInsertHandle(adminId, gId, jsonresult, &tempMsgId);
 		
 		ntyJsonBroadCastRecvResult(adminId, gId, (U8*)jsonresult, msgId);
 		ntyJsonFree(jsonresult);
