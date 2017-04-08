@@ -584,9 +584,17 @@ void ntyJsonICCIDAction(ActionParam *pActionParam) {
 	char phonenum[20] = {0};
 	int ret = ntyExecuteICCIDSelectHandle(devId, iccid, phonenum);
 	ntydbg(" ntyJsonICCIDAction --> phonenum:%s\n", phonenum);
-	
+
+	ICCIDAck *pICCIDAck = (ICCIDAck*)malloc(sizeof(ICCIDAck));
+	pICCIDAck->IMEI = pICCIDReq->IMEI;
 	if (ret == -1) {
 		ntylog(" ntyJsonICCIDAction --> DB Exception\n");
+		memset(phonenum, 0, sizeof(phonenum));
+		strcat(phonenum, "0");
+		pICCIDAck->phone_num = phonenum;
+		char *jsonstringICCID = ntyJsonWriteICCID(pICCIDAck);
+		ntySendICCIDAckResult(devId, (U8*)jsonstringICCID, strlen(jsonstringICCID), 500);
+		ntyJsonFree(jsonstringICCID);
 		ret = 4;
 	} else if (ret >= 0) {
 		if (strlen(phonenum) == 0) {
@@ -596,10 +604,7 @@ void ntyJsonICCIDAction(ActionParam *pActionParam) {
 
 		//ret = ntySaveCommonMsgData(pActionParam);
 		
-		ICCIDAck *pICCIDAck = (ICCIDAck*)malloc(sizeof(ICCIDAck));
-		pICCIDAck->IMEI = pICCIDReq->IMEI;
 		pICCIDAck->phone_num = phonenum;
-
 		char msgs[20] = {0};
 		sprintf(msgs, "%d", pActionParam->index);
 		pICCIDAck->msg = msgs;
@@ -619,10 +624,11 @@ void ntyJsonICCIDAction(ActionParam *pActionParam) {
 		}
 #endif
 		ntyJsonFree(jsonstringICCID);
-		free(pICCIDAck);
+		
 	}
 
 exit:
+	free(pICCIDAck);
 	free(pICCIDReq);
 }
 
