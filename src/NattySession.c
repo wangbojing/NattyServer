@@ -605,7 +605,7 @@ int ntySendCommonBroadCastItem(C_DEVID selfId, C_DEVID toId, U8 *json, int lengt
 
 #if 1
 	if (pClient == NULL) {
-		ntySendPushNotify(toId, NULL);
+		return ntySendPushNotify(toId, NULL);
 	}
 #endif
 
@@ -791,7 +791,7 @@ int ntySendVoiceBroadCastItem(C_DEVID fromId, C_DEVID toId, U8 *json, int length
 	ClientSocket *client = ntyMapSearch(map, toId);
 #if 1
 	if (client == NULL) {
-		ntySendPushNotify(toId, NULL);
+		return ntySendPushNotify(toId, NULL);
 	}
 #endif
 
@@ -1330,6 +1330,13 @@ int ntySendBindConfirmPushResult(C_DEVID proposerId, C_DEVID adminId, U8 *json, 
 
 	void *map = ntyMapInstance();
 	ClientSocket *client = ntyMapSearch(map, adminId);
+	
+#if 1 //
+	if (client == NULL) {
+		return ntySendPushNotify(adminId, NULL);
+	}
+#endif
+	
 
 	return ntySendBuffer(client, buffer, bLength);
 
