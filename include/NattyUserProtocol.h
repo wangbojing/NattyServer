@@ -723,6 +723,26 @@ typedef struct _CommonOfflineMsg {
 
 typedef CommonOfflineMsg nOfflineMsg;
 
+
+typedef struct _BindOfflineMsgToAdmin {
+	long msgId;
+	long long admin;
+	long long proposer;
+	long long IMEI;
+	const char *watchName;
+	const char *watchImage;
+	const char *userName;
+	const char *userImage;
+} BindOfflineMsgToAdmin;
+
+typedef struct _BindOfflineMsgToProposer {
+	long long IMEI;
+	long long admin;
+	long long proposer;
+	const char *details;
+} BindOfflineMsgToProposer;
+
+
 #endif
 
 

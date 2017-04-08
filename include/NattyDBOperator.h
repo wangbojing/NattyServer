@@ -184,6 +184,9 @@
 //
 #define NTY_DB_INSERT_COMMON_MSG			"CALL PROC_INSERT_COMMON_MSG(%lld, %lld, '%s')"
 
+#define NTY_DB_INSERT_COMMON_MSG_REJECT		"CALL PROC_INSERT_COMMON_MSG_REJECT(%lld, %lld, '%s')"
+
+
 #define NTY_DB_DELETE_COMMON_OFFLINE_MSG	"CALL PROC_DELETE_COMMON_OFFLINE_MSG(%d, %lld)"
 
 #define NTY_DB_SELECT_COMMON_OFFLINE_MSG	"CALL PROC_SELECT_COMMON_OFFLINE_MSG(%lld)"
@@ -220,6 +223,11 @@
 #define NTY_DB_INSERT_ADMIN_GROUP			"CALL PROC_INSERT_ADMIN_GROUP(%lld, '%s', %lld, '%s', '%s', '%s')"
 
 #define NTY_DB_SELECT_VOICE_OFFLINE_MSG		"CALL PROC_SELECT_VOICE_OFFLINE_MSG(%lld)"
+
+#define NTY_DB_SELECT_BIND_OFFLINE_MSG_TO_ADMIN		"CALL PROC_SELECT_BIND_OFFLINE_MSG_TO_ADMIN(%lld)"
+
+#define NTY_DB_SELECT_BIND_OFFLINE_MSG_TO_PROPOSER	"CALL PROC_SELECT_BIND_OFFLINE_MSG_TO_PROPOSER(%lld)"
+
 
 
 typedef struct _CONN_POOL {
@@ -328,6 +336,11 @@ int ntyQueryVoiceOfflineMsgSelectHandle(C_DEVID fromId, void *container);
 
 int ntyExecuteBindConfirmDeleteHandle(int msgId, C_DEVID *id);
 
+int ntyQueryBindOfflineMsgToAdminSelectHandle(C_DEVID fromId, void *container);
+
+int ntyQueryBindOfflineMsgToProposerSelectHandle(C_DEVID fromId, void *container);
+
+int ntyExecuteCommonMsgToProposerInsertHandle(C_DEVID sid, C_DEVID gid, const char *detatils, int *msg);
 
 
 int ntyConnectionPoolInit(void);

@@ -119,6 +119,10 @@ int ntyReadOfflineCommonMsgAction(C_DEVID devId);
 
 int ntyReadOfflineVoiceMsgAction(C_DEVID devId);
 
+int ntyReadOfflineBindMsgToAdminAction(C_DEVID devId);
+
+int ntyReadOfflineBindMsgToProposerAction(C_DEVID devId);
+
 
 #endif // __NATTY_SERVACTION_H__
 

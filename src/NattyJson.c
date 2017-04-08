@@ -1371,4 +1371,41 @@ char * ntyJsonWriteBindConfirmAck(BindConfirmAck *pBindConfirmAck) {
 	return jsonstring;
 }
 
+char * ntyJsonWriteBindOfflineMsgToAdmin(BindOfflineMsgToAdmin *pMsgToAdmin, char *phonenum) {
+	if (pMsgToAdmin == NULL) {
+		return NULL;
+	}
+	
+	JSON_Value *schema = json_value_init_object();
+	JSON_Object *schema_obj = json_value_get_object(schema);
+	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object());
+	JSON_Object *results_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULTS);
+
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_PROPOSER, phonenum);
+	
+	char imei[64] = {0};
+	sprintf(imei, "%llx", pMsgToAdmin->IMEI);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_IMEI, imei);
+	char msgIds[64] = {0};
+	sprintf(msgIds, "%ld", pMsgToAdmin->msgId);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_MSGID, msgIds);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_USERNAME, pMsgToAdmin->userName);
+	char *jsonstring = json_serialize_to_string(schema);
+	json_value_free(schema);
+	
+	return jsonstring;
+}
+
+char * ntyJsonWriteBindOfflineMsgToProposer(BindOfflineMsgToProposer *pMsgToProposer) {
+	if (pMsgToProposer == NULL) {
+		return NULL;
+	}
+	
+	JSON_Value *schema = json_value_init_object();
+	JSON_Object *schema_obj = json_value_get_object(schema);
+
+	
+	return NULL;
+}
+
 

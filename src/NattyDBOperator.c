@@ -861,6 +861,112 @@ static int ntyQueryAdminSelect(void *self, C_DEVID did, C_DEVID *appid) {
 
 
 
+//NTY_DB_SELECT_BIND_OFFLINE_MSG_TO_ADMIN
+static int ntyQueryBindOfflineMsgToAdminSelect(void *self, C_DEVID fromId, void *container) {
+	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+
+	TRY
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			ret = -1;
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_BIND_OFFLINE_MSG_TO_ADMIN, fromId);
+			while (ResultSet_next(r)) {
+				int bId = ResultSet_getInt(r, 1);
+				
+				C_DEVID r_admin = ResultSet_getLLong(r, 2);
+				C_DEVID r_imei = ResultSet_getLLong(r, 3);
+				const char *r_watchname = ResultSet_getString(r, 4);
+				const char *r_watchimage = ResultSet_getString(r, 5);
+				C_DEVID r_proposer = ResultSet_getLLong(r, 6);
+				const char *r_usercall = ResultSet_getString(r, 7);
+				const char *r_userimage = ResultSet_getString(r, 8);
+				
+				BindOfflineMsgToAdmin *pMsgToAdmin = malloc(sizeof(BindOfflineMsgToAdmin));
+				pMsgToAdmin->msgId = bId;
+				pMsgToAdmin->IMEI = r_imei;
+				pMsgToAdmin->admin = r_admin;
+				pMsgToAdmin->proposer = r_proposer;
+				pMsgToAdmin->watchName = r_watchname;
+				pMsgToAdmin->watchImage = r_watchimage;
+				pMsgToAdmin->userName = r_usercall;
+				pMsgToAdmin->userImage = r_userimage;
+				ntyVectorAdd(container, pMsgToAdmin, sizeof(BindOfflineMsgToAdmin));	
+				ret = 0;
+			}
+			
+		}
+	}
+	CATCH(SQLException)
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+
+//NTY_DB_SELECT_BIND_OFFLINE_MSG_TO_PROPOSER
+static int ntyQueryBindOfflineMsgToProposerSelect(void *self, C_DEVID fromId, void *container) {
+	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+
+	TRY
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			ret = -1;
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_BIND_OFFLINE_MSG_TO_PROPOSER, fromId);
+			while (ResultSet_next(r)) {
+				int bId = ResultSet_getInt(r, 1);
+
+				C_DEVID r_admin = ResultSet_getLLong(r, 2);
+				C_DEVID r_imei = ResultSet_getLLong(r, 3);
+				const char *r_watchname = ResultSet_getString(r, 4);
+				const char *r_watchimage = ResultSet_getString(r, 5);
+
+				BindOfflineMsgToProposer *pMsgToProposer = malloc(sizeof(BindOfflineMsgToProposer));
+				//pMsgToProposer->msgId = bId;
+				//pMsgToProposer->IMEI = r_imei;
+				//pMsgToProposer->admin = r_admin;
+				//pMsgToProposer->proposer = r_proposer;
+				ntyVectorAdd(container, pMsgToProposer, sizeof(BindOfflineMsgToProposer));
+				ret = 0;
+			}
+			
+		}
+	}
+	CATCH(SQLException)
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
 
 
 //NTY_DB_DEV_APP_DELETE_FORMAT
@@ -1960,6 +2066,43 @@ int ntyExecuteCommonMsgInsert(void *self, C_DEVID sid, C_DEVID gid, const char *
 }
 
 
+//NTY_DB_INSERT_COMMON_MSG_REJECT
+int ntyExecuteCommonMsgToProposerInsert(void *self, C_DEVID sid, C_DEVID gid, const char *detatils, int *msg) {
+	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+	U8 u8PhNum[20] = {0};
+
+	TRY
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			U8 buffer[512];
+			sprintf(buffer, NTY_DB_INSERT_COMMON_MSG_REJECT, sid, gid, detatils);
+			ntylog(" sql : %s\n", buffer);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_COMMON_MSG_REJECT, sid, gid, detatils);
+			while (ResultSet_next(r)) {
+				*msg = ResultSet_getInt(r, 1);				
+			}
+		}
+	} 
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
 
 
 //NTY_DB_DEVICE_STATUS_RESET_FORMAT
@@ -2444,6 +2587,20 @@ int ntyQueryAdminGroupInsertHandle(C_DEVID devId, U8 *bname, C_DEVID fromId, U8 
 	return ntyQueryAdminGroupInsert(pool, devId, bname, fromId, userCall, wimage, uimage);
 }
 
+int ntyQueryBindOfflineMsgToAdminSelectHandle(C_DEVID fromId, void *container) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyQueryBindOfflineMsgToAdminSelect(pool, fromId, container);
+}
+
+int ntyQueryBindOfflineMsgToProposerSelectHandle(C_DEVID fromId, void *container) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyQueryBindOfflineMsgToProposerSelect(pool, fromId, container);
+}
+
+int ntyExecuteCommonMsgToProposerInsertHandle(C_DEVID sid, C_DEVID gid, const char *detatils, int *msg) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteCommonMsgToProposerInsert(pool, sid, gid, detatils, msg);
+}
 
 
 int ntyConnectionPoolInit(void) {

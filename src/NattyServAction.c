@@ -1607,4 +1607,75 @@ int ntyReadOfflineVoiceMsgAction(C_DEVID devId) {
 }
 
 
+/**
+ *	当申请者发送请求是,而管理员不在线的情况下,管理员接收离线申请数据.
+ *	When the request is sent and the administrator is not online, the administrator receives the offline application data.
+ */
+int ntyReadOfflineBindMsgToAdminIter(void *self, void *arg) {
+	BindOfflineMsgToAdmin *pMsgToAdmin = (BindOfflineMsgToAdmin*)self;
+
+	char phonenum[30] = {0};
+	ntyQueryPhoneBookSelectHandle(pMsgToAdmin->IMEI, pMsgToAdmin->proposer, phonenum);
+	
+	char *adminMsg = ntyJsonWriteBindOfflineMsgToAdmin(pMsgToAdmin, phonenum);
+	if (adminMsg==NULL) {
+		return -1;
+	}
+
+	return ntySendBindConfirmPushResult(pMsgToAdmin->proposer, pMsgToAdmin->admin, adminMsg, strlen(adminMsg));
+}
+
+int ntyReadOfflineBindMsgToAdminAction(C_DEVID devId) {
+	NVector *container = ntyVectorCreator();
+	if (NULL == container) return NTY_RESULT_FAILED;
+	
+	int ret = ntyQueryBindOfflineMsgToAdminSelectHandle(devId);
+	if (ret == NTY_RESULT_SUCCESS) {
+		ntyVectorIter(container, ntyReadOfflineBindMsgToAdminIter, &devId);
+	} 
+	if (container->num == 0) { //count == 0
+		ret = NTY_RESULT_NOEXIST;
+	} else {
+		ret = 0;
+	}
+	
+	ntyVectorDestory(container);
+	return ret;
+}
+
+
+/**
+ *	发送管理员确认或拒绝离线消息.
+ *	Send administrator to confirm or reject offline messages.
+ */
+int ntyReadOfflineBindMsgToProposerIter(void *self, void *arg) {
+	BindOfflineMsgToProposer *pMsgToProposer = (BindOfflineMsgToProposer*)self;
+	char *proposerMsg = ntyJsonWriteBindOfflineMsgToProposer(pMsgToProposer);
+	if (proposerMsg==NULL) {
+		return -1;
+	}
+
+	return -1;
+}
+
+
+int ntyReadOfflineBindMsgToProposerAction(C_DEVID devId) {
+	NVector *container = ntyVectorCreator();
+	if (NULL == container) return NTY_RESULT_FAILED;
+	
+	int ret = ntyQueryBindOfflineMsgToProposerSelectHandle(devId);
+	if (ret == NTY_RESULT_SUCCESS) {
+		ntyVectorIter(container, ntyReadOfflineBindMsgToProposerIter, &devId);
+	} 
+	if (container->num == 0) { //count == 0
+		ret = NTY_RESULT_NOEXIST;
+	} else {
+		ret = 0;
+	}
+	
+	ntyVectorDestory(container);
+	return ret;
+}
+
+
 

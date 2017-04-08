@@ -211,54 +211,73 @@ int ntyBindConfirmReqHandle(void *arg) {
 	C_DEVID gId = tag->gId;
 	U32 msgId = tag->arg;
 
+	char msgIds[64] = {0};
+	char answer[64] = {0};
+	char imei[64] = {0};
+	char bindConfirmReq[64] = {0};
+	memcpy(bindConfirmReq, NATTY_USER_PROTOCOL_BINDCONFIRMREQ, strlen(NATTY_USER_PROTOCOL_BINDCONFIRMREQ));
+	sprintf(imei, "%llx", gId);
+	sprintf(msgIds, "%d", msgId);
 	
 	U8 flag = tag->u8LocationType;
 	ntylog(" ntyBindConfirmReqHandle flag:%d, %lld\n", flag, proposerId);
 	if (flag == 1) { 
-		char answer[64] = {0};
 		char phonenum[64] = {0};
-		
 		int ret = ntyBindConfirm(adminId, &proposerId, gId, msgId, phonenum); 
 #if 0
 		//select phone 
 		ntyQueryPhoneBookSelectHandle(gId, proposerId, phonenum);
+		ntydbg("ntyBindConfirmReqHandle->flag:%d, phnum:%s\n", flag, phonenum);
 #endif
-		ntydbg("ntyBindConfirmReqHandle->proposerId:%lld phnum:%s, msgId:%d\n", proposerId, phonenum, msgId);
-
 		BindBroadCast *pBindBroadCast = malloc(sizeof(BindBroadCast));
 		memcpy(answer, NATTY_USER_PROTOCOL_AGREE, strlen(NATTY_USER_PROTOCOL_AGREE));
-		char imei[64] = {0};
-		sprintf(imei, "%llx", gId);
-		pBindBroadCast->result.IMEI = imei;
 		
-		char bindConfirm[64] = {0};
-		memcpy(bindConfirm, NATTY_USER_PROTOCOL_BINDCONFIRM, strlen(NATTY_USER_PROTOCOL_BINDCONFIRM));
-		pBindBroadCast->result.category = bindConfirm;
+		pBindBroadCast->result.IMEI = imei;
+		pBindBroadCast->result.category = bindConfirmReq;
 		pBindBroadCast->result.proposer = phonenum;
 		pBindBroadCast->result.answer = answer;
 		
 		char *jsonresult = ntyJsonWriteBindBroadCast(pBindBroadCast);
 		ntydbg("ntyJsonBroadCastRecvResult->%s\n",  jsonresult);
+
+		//保存离线数据到数据库
+		int tempMsgId = 0;
+		ret = ntyExecuteCommonMsgInsertHandle(proposerId, gId, jsonresult, &tempMsgId);
 		
 		ntyJsonBroadCastRecvResult(adminId, gId, (U8*)jsonresult, msgId);
 		ntyJsonFree(jsonresult);
 		free(pBindBroadCast);
-
 		
 	} else if (flag == 0) {
+		char phonenum[64] = {0};
+		int ret = ntyBindConfirm(adminId, &proposerId, gId, msgId, phonenum); 
+		BindBroadCast *pBindBroadCast = malloc(sizeof(BindBroadCast));
+		memcpy(answer, NATTY_USER_PROTOCOL_REJECT, strlen(NATTY_USER_PROTOCOL_REJECT));
+		
+		pBindBroadCast->result.IMEI = imei;
+		pBindBroadCast->result.category = bindConfirmReq;
+		pBindBroadCast->result.proposer = phonenum;
+		pBindBroadCast->result.answer = answer;
+		
+		char *jsonresult = ntyJsonWriteBindBroadCast(pBindBroadCast);
+		ntydbg("ntyJsonBroadCastRecvResult->%s\n",  jsonresult);
 
+		//保存离线数据到数据库
+		int tempMsgId = 0;
+		ret = ntyExecuteCommonMsgToProposerInsertHandle(proposerId, gId, jsonresult, &tempMsgId);
 		
-		
-		int ret = ntyExecuteBindConfirmDeleteHandle(msgId, &proposerId);
-	
-		ntydbg("ntyJsonBroadCastRecvResult->%lld, msgId:%d, ret:%d\n", proposerId, msgId, ret);
+		ret = ntyExecuteBindConfirmDeleteHandle(msgId, &proposerId);
+		ntydbg("ntyJsonBroadCastRecvResult->%lld\n", proposerId);
+
 		ntyProtoBindAck(proposerId, gId, 6); //reject
 
-		
+		ntyJsonFree(jsonresult);
+		free(pBindBroadCast);
 	}
-
+	
 	free(tag);
 	
+	return 0;
 }
 
 
@@ -270,12 +289,12 @@ int ntyLoginReqHandle(void *arg) {
 	if (ret == NTY_RESULT_NOEXIST) {
 		ret = ntyReadOfflineVoiceMsgAction(fromId);
 		if (ret == NTY_RESULT_NOEXIST) {
-			//read 
-			//
+			ret = ntyReadOfflineBindMsgToAdminAction(fromId);
 		}
 	}
-	
 	free(tag);
+
+	return ret;
 }
 
 

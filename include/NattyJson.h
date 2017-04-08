@@ -193,6 +193,10 @@ char * ntyJsonWriteBindBroadCast(BindBroadCast *pBindBroadCast);
 
 char * ntyJsonWriteBindConfirmAck(BindConfirmAck *pBindConfirmAck);
 
+char * ntyJsonWriteBindOfflineMsgToAdmin(BindOfflineMsgToAdmin *pMsgToAdmin, char *phonenum);
+
+char * ntyJsonWriteBindOfflineMsgToProposer(BindOfflineMsgToProposer *pMsgToProposer);
+
 
 #endif
 
