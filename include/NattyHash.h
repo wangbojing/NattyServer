@@ -83,12 +83,18 @@ typedef struct _Payload {
 typedef struct _HashNode {
 	Payload *info;
 	int sockfd;
-	struct _HashNode *list;
+	struct _HashNode *next;
 } HashNode;
+
+typedef struct _HashSlot {
+	HashNode *list;
+	long slot_lock;
+	int num;
+} HashSlot;
 
 typedef struct _HashTable {
 	const void *_;
-	HashNode *Dictionary;
+	HashSlot *Dictionary;
 } HashTable;
 
 typedef struct _HashTableHandle {

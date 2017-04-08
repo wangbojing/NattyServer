@@ -384,26 +384,6 @@ U32 ntyHashKey(Payload *load) {
 }
 
 #if 0
-U8 ntyPayloadCompare(Payload *a, Payload *b) {
-	if ((a->srcip == b->srcip) && (a->sport == b->sport) 
-		&& (a->dstip == b->dstip) && (a->dport == b->dport)
-		&& (a->proto == b->proto)) { //equal
-		return 1;
-	} else { //no equal
-		return 0;
-	}
-}
-
-void ntyPayloadValue(Payload *pLoad, struct sockaddr_in *addr) {
-	
-	pLoad->srcip = addr->sin_addr.s_addr;
-	pLoad->sport = addr->sin_port;
-	pLoad->dstip = inet_addr("127.0.0.1");
-	pLoad->dport = htons(NATTY_TCP_SERVER_PORT);
-	pLoad->proto = PROTO_TYPE_TCP;
-}
-#endif
-
 U8 ntyHashNodeClear(HashNode *node) {
 	node->sockfd = 0;
 	node->list = NULL;
@@ -455,15 +435,15 @@ U8 ntyHashLinkClear(HashNode *node) {
 	}
 }
 
-
+#endif
 
 void* ntyHashInitialize(HashTable *table) {
 #if 0
 	table->Dictionary = (HashNode*)malloc(NATTY_DICTIONARY_LENGTH*sizeof(HashNode));
 	memset(table->Dictionary, 0, NATTY_DICTIONARY_LENGTH*sizeof(HashNode));
 #else
-	table->Dictionary = (HashNode*)malloc(NATTY_DICTIONARY_LENGTH*sizeof(HashNode));
-	memset(table->Dictionary, 0, NATTY_DICTIONARY_LENGTH*sizeof(HashNode));
+	table->Dictionary = (HashSlot*)malloc(NATTY_DICTIONARY_LENGTH*sizeof(HashSlot));
+	memset(table->Dictionary, 0, NATTY_DICTIONARY_LENGTH*sizeof(HashSlot));
 #endif
 
 	ntyGenHashCrcTable();
@@ -489,8 +469,10 @@ int ntyHashInsert(void *_self, U32 key, Payload* load) {
 	HashTable *table = _self;
 	U32 index = key % NATTY_DICTIONARY_LENGTH;
 
-	if (_self == NULL) return NTY_RESULT_ERROR;
+	if (table == NULL) return NTY_RESULT_ERROR;
 	if (load == NULL) return NTY_RESULT_ERROR;
+	
+#if 0
 
 	HashNode *node = ntyHashSearchNode(table, key);
 	if (node != NULL) {
@@ -504,7 +486,7 @@ int ntyHashInsert(void *_self, U32 key, Payload* load) {
 
 	node = &table->Dictionary[index];
 	//ntylog("ntyHashInsert\n");
-#if 1
+
 	if (node->sockfd == 0x0) { //no exist hash node	
 	
 		node->info = (Payload*)malloc(sizeof(Payload));
@@ -531,8 +513,53 @@ int ntyHashInsert(void *_self, U32 key, Payload* load) {
 		node->list = iter;
 		
 	}
+#else
+
+	HashNode *node = ntyHashSearchNode(table, key);
+	if (node != NULL) {
+		
+		node->sockfd = key;
+		node->info->id = load->id;
+		
+		return NTY_RESULT_EXIST;
+	}
+
+	HashSlot *slot = &table->Dictionary[index];
+
+	//malloc node
+	node = (HashNode*)malloc(sizeof(HashNode));
+	if (node == NULL) return NTY_RESULT_ERROR;
+
+	node->info = (Payload*)malloc(sizeof(Payload));
+	if (node->info == NULL) {
+		free(node);
+
+		return NTY_RESULT_ERROR;
+	}
+
+	node->info->id = load->id;
+	node->sockfd = key;
+	node->next = NULL;
+
+	//insert node
+	if(0 == cmpxchg(&slot->slot_lock, 0, 1, WORD_WIDTH)) {
+		
+		HashNode *iter = slot->list;
+		slot->list = node;
+		node->next = iter;
+
+		slot->num ++;
+		slot->slot_lock = 0;
+	} else {
+		free(node->info);
+		free(node);
+
+		return NTY_RESULT_PROCESS;
+	}
+	
+
 #endif
-	ntylog(" ntyHashInsert --> %lx\n", (long)node);
+	//ntylog(" ntyHashInsert --> %lx\n", (long)node);
 
 	return NTY_RESULT_SUCCESS;
 }
@@ -542,19 +569,21 @@ HashNode* ntyHashSearchNode(void *_self, U32 key) {
 	HashTable *table = _self;
 	U32 index = key % NATTY_DICTIONARY_LENGTH;
 
-	if (_self == NULL) return NULL;
-
+	if (table == NULL) return NULL;
+#if 0
 	HashNode *node = &table->Dictionary[index];
 	if (node->info == NULL) {
 		ntylog("ntyHashSearchNode Empty Node\n");
 		return NULL;
 	} else {
 		if (node->sockfd == key) { //
+			ntylog(" key : %d, clientId : %lld\n", key, node->info->id);
 			return node;
 		} else {
 			HashNode *iter = node->list;
 
 			while (iter != NULL) {
+				ntylog(" key : %d, clientId : %lld\n", key, iter->info->id);
 				if (node->sockfd == key) {
 					return iter;
 				}
@@ -562,7 +591,20 @@ HashNode* ntyHashSearchNode(void *_self, U32 key) {
 			}
 		}
 	}
+#else
 
+	HashSlot *slot = &table->Dictionary[index];
+	HashNode *node = slot->list;
+
+	while (node) {
+		
+		if (node->sockfd == key) {
+			return node;
+		}
+		node = node->next;
+	}
+
+#endif
 	return NULL;
 }
 
@@ -578,8 +620,8 @@ int ntyHashDelete(void *_self, U32 key) {
 	HashTable *table = _self;
 	U32 index = key % NATTY_DICTIONARY_LENGTH;
 
-	if (_self == NULL) return NTY_RESULT_FAILED;
-	
+	if (table == NULL) return NTY_RESULT_FAILED;
+#if 0	
 	HashNode *node = &table->Dictionary[index];
 	if (node->info == NULL) {
 		ntylog("ntyHashDelete\n");
@@ -589,7 +631,7 @@ int ntyHashDelete(void *_self, U32 key) {
 		if (node->sockfd == key) {
 			//ntylog(" Delete Hash Table, ip:%d,port%d\n", load->srcip, load->sport);
 			//delete node
-			ntylog("ntyHashDelete --> %d value:%lld\n", key, node->info->id);
+			ntylog("ntyHashDelete --> table %d value:%lld\n", key, node->info->id);
 			ntyHashDictionaryClear(node);
 			return NTY_RESULT_SUCCESS;
 
@@ -599,7 +641,7 @@ int ntyHashDelete(void *_self, U32 key) {
 				
 			while (iter != NULL) {
 				if (node->sockfd == key) {
-					ntylog("ntyHashDelete --> %d value:%lld", key, node->info->id);
+					ntylog("ntyHashDelete --> node %d value:%lld\n", key, node->info->id);
 					
 					ntyHashLinkClear(iter);
 					pre->list = NULL;
@@ -610,6 +652,55 @@ int ntyHashDelete(void *_self, U32 key) {
 			}
 		}
 	}
+#else
+
+	HashSlot *slot = &table->Dictionary[index];
+	HashNode *node = slot->list;
+
+	if (node == NULL) return NTY_RESULT_NOEXIST;
+
+	HashNode *iter = node->next;
+	
+	
+	while (iter != NULL) {
+		if (iter->sockfd == key) {
+			if (0 == cmpxchg(&slot->slot_lock, 0, 1, WORD_WIDTH)) {
+				slot->num --;
+
+				//delete node
+				node->next = iter->next;
+
+				if (iter->info != NULL) {
+					free(iter->info);
+				}
+				free(iter);				
+				iter = node;
+				
+				slot->slot_lock = 0;
+			}
+		}
+		node = iter;
+		iter = iter->next;
+	}
+
+	//first node
+	iter = slot->list;
+	if (iter->sockfd == key) {
+		if (0 == cmpxchg(&slot->slot_lock, 0, 1, WORD_WIDTH)) {
+			slot->num --;
+
+			slot->list = iter->next;
+
+			if (iter->info != NULL) {
+				free(iter->info);
+			}
+			free(iter);	
+			
+			slot->slot_lock = 0;
+		}
+	}
+
+#endif
 
 	return NTY_RESULT_ERROR;
 }
@@ -675,7 +766,6 @@ int ntyHashTableInsert(void *self, U32 key, Payload* load) {
 Payload* ntyHashTableSearch(void *self, U32 key) {
 	HashTableHandle * const * pHandle = self;
 
-	ntylog("ntyHashTableSearch\n");
 	if (self && (*pHandle) && (*pHandle)->search) {
 		return (*pHandle)->search(self, key);
 	}
@@ -702,139 +792,42 @@ int ntyHashTableUpdate(void *self, U32 key, Payload* load) {
 }
 
 #if 0
-C_DEVID ntySearchDevIdFromHashTable(struct sockaddr_in *addr) {
-	ntylog(" ntySearchDevIdFromHashTable Start --> %d.%d.%d.%d:%d \n", *(unsigned char*)(&addr->sin_addr.s_addr), *((unsigned char*)(&addr->sin_addr.s_addr)+1),													
-				*((unsigned char*)(&addr->sin_addr.s_addr)+2), *((unsigned char*)(&addr->sin_addr.s_addr)+3),													
-				addr->sin_port);
-	C_DEVID id = 0;
-	void *pHash = ntyHashTableInstance();
+int main() {
+	void *hash = ntyHashTableInstance();
 
-	Payload *pLoad = (Payload*)malloc(sizeof(Payload));
-	if (pLoad == NULL) {
-		ntylog("malloc payload is failed\n");
-		return 0;
-	}
-	memset(pLoad, 0, sizeof(Payload));
-	ntyPayloadValue(pLoad, addr);
+	C_DEVID clientId = 240207489190414451;
+	int key = 1;
 
-	U32 key = ntyHashKey(pLoad);
-	id = ntyHashTableSearch(pHash, key);
-	free(pLoad);
+	int i = 0;
+	int Count = NATTY_DICTIONARY_LENGTH*5;
+	Payload payload = {0};
 
-	return id;
-}
+	for (i = 0;i < Count;i ++) {
+		
+		payload.id = clientId;
+		ntyHashTableInsert(hash, key, &payload);
 
-
-int ntyDeleteNodeFromHashTable(struct sockaddr_in *addr, C_DEVID id) {
-	ntylog("ntyDeleteNodeFromHashTable Start --> %d.%d.%d.%d:%d \n", *(unsigned char*)(&addr->sin_addr.s_addr), *((unsigned char*)(&addr->sin_addr.s_addr)+1),													
-				*((unsigned char*)(&addr->sin_addr.s_addr)+2), *((unsigned char*)(&addr->sin_addr.s_addr)+3),													
-				addr->sin_port);
-	
-	int ret = 0;
-	void *pHash = ntyHashTableInstance();
-	if (addr == NULL) return -1;
-
-	Payload *pLoad = (Payload*)malloc(sizeof(Payload));
-	if (pLoad == NULL) {
-		ntylog("malloc payload is failed\n");
-		return -1;
-	}
-	memset(pLoad, 0, sizeof(Payload));
-	ntyPayloadValue(pLoad, addr);
-	U32 key = ntyHashKey(pLoad);
-	if (key == 0x0) {
-		free(pLoad);
-		return -1;
+		key ++;
+		clientId ++;
 	}
 
-	ret = ntyHashTableDelete(pHash, key, pLoad);
-	free(pLoad);
+	for (i = 0;i < Count;i ++) {
+		key = i * 3 + 1;
+		Payload *load = ntyHashTableSearch(hash, key);
 
-	ntylog("ntyDeleteNodeFromHashTable --> %d\n", ret);
-
-	return ret;
-}
-
-
-int ntyInsertNodeToHashTable(struct sockaddr_in *addr, C_DEVID id) {
-	ntylog("ntyInsertNodeToHashTable Start --> %d.%d.%d.%d:%d \n", *(unsigned char*)(&addr->sin_addr.s_addr), *((unsigned char*)(&addr->sin_addr.s_addr)+1),													
-				*((unsigned char*)(&addr->sin_addr.s_addr)+2), *((unsigned char*)(&addr->sin_addr.s_addr)+3),													
-				addr->sin_port);
-	
-	void *pHash = ntyHashTableInstance();
-
-	if (addr == NULL) return -1;
-
-	Payload *pLoad = (Payload*)malloc(sizeof(Payload));
-	if (pLoad == NULL) {
-		ntylog("malloc payload is failed\n");
-		return -1;
-	}
-	memset(pLoad, 0, sizeof(Payload));
-	ntyPayloadValue(pLoad, addr);
-	U32 key = ntyHashKey(pLoad);
-	if (key == 0x0) { 
-		return -1;
+		if (load != NULL) {
+			ntylog(" load info : %lld\n", load->id);
+		}
 	}
 
-	return ntyHashTableInsert(pHash, key, pLoad, id, 0);
-
-}
-
-int ntyUpdateNodeToHashTable(struct sockaddr_in *addr, C_DEVID id, int fd) {
-	void *pHash = ntyHashTableInstance();
-
-	if (addr == NULL) return -1;
-
-	Payload *pLoad = (Payload*)malloc(sizeof(Payload));
-	if (pLoad == NULL) {
-		ntylog("malloc payload is failed\n");
-		return -1;
+	for (i = 0;i < Count;i ++) {
+		key = i+1;
+		ntyHashTableDelete(hash, key);
+		//ntylog(" \n");
 	}
-	memset(pLoad, 0, sizeof(Payload));
-	ntyPayloadValue(pLoad, addr);
-	U32 key = ntyHashKey(pLoad);
-#if 0
-	HashNode *node = ntyHashSearchNode(pHash, key, pLoad);
-	if (node == NULL) {
-		ntylog("Error Hash Key is not Exist\n");
-		free(pLoad);
-		return -1;
-	}
-
-	node->devid = id;
-	node->sockfd = fd;
-#else
-
-	int ret = ntyHashTableUpdate(pHash, key, pLoad, id, fd);
-
-	ntylog(" ret : %d", ret);
-#endif
-	free(pLoad);
-	return ret;
-}
-
-#endif
-
-#if 0
-int ntyInsertNodeToHashTable(struct sockaddr_in *addr, C_DEVID id, int fd) {
-	void *pHash = ntyHashTableInstance();
-	if (addr == NULL) return -1;
-	Payload *pLoad = (Payload*)malloc(sizeof(Payload));
-	if (pLoad == NULL) {
-		ntylog("malloc payload is failed\n");
-		return -1;
-	}
-	memset(pLoad, 0, sizeof(Payload));
-	ntyPayloadValue(pLoad, addr);
-	U32 key = ntyHashKey(pLoad);
-	if (key == 0x0) { 
-		return -1;
-	}
+	ntylog("end\n");
 }
 #endif
-
-
 
 
 
