@@ -842,40 +842,80 @@ int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int lengt
 
 	void *heap = ntyBHeapInstance();
 	NRecord *record = ntyBHeapSelect(heap, gId);
-	if (record == NULL) return NTY_RESULT_NOEXIST;
-	
-	Client *pClient = (Client*)record->value;
-	if (pClient == NULL) return NTY_RESULT_NOEXIST;
-	InterMsg *msg = (InterMsg*)malloc(sizeof(InterMsg));
-	msg->buffer = json;
-	msg->length = length;
-	msg->group = pClient;
-	msg->self = &fromId;
-	msg->arg = index;
+	if (record == NULL) {
+		
+		void *group = ntyVectorCreator();
+		if (group == NULL) return NTY_RESULT_FAILED;
 
-	if (pClient->friends == NULL) {
+		if(-1 == ntyQueryAppIDListSelectHandle(gId, group)) {
+			ntylog(" ntyQueryWatchIDListSelectHandle Failed \n");
+			return NTY_RESULT_FAILED;
+		}
+
+		ntylog(" ntySendCommonBroadCastResult record == NULL \n");
+		
+		InterMsg *msg = (InterMsg*)malloc(sizeof(InterMsg));
+		if (msg == NULL) return NTY_RESULT_FAILED;
+		
+		msg->buffer = json;
+		msg->length = length;
+		msg->group = NULL;
+		msg->self = &fromId;
+		msg->arg = index;
+
+		ntyVectorIterator(group, ntySendVoiceBroadCastIter, msg);
 		free(msg);
-		return NTY_RESULT_ERROR;
-	}
+		ntyVectorDestory(group);
 
-	ntylog(" ntySendVoiceBroadCastResult --> ntyVectorIterator\n");
-	ntyVectorIterator(pClient->friends, ntySendVoiceBroadCastIter, msg);
+		record = ntyBHeapSelect(heap, fromId);
+		if (record == NULL) { 
+			ntylog("ntySendVoiceBroadCastResult Select FromId : %lld is No Exist \n", fromId);
+			return NTY_RESULT_FAILED;
+		}
+		
+		Client *pClient = (Client*)record->value;
+		if (pClient == NULL) return NTY_RESULT_FAILED;
 
-	free(msg);
+		if (pClient->deviceType == NTY_PROTO_CLIENT_ANDROID 
+			|| pClient->deviceType == NTY_PROTO_CLIENT_IOS) {
+			ntySendVoiceBroadCastItem(fromId, gId, json, length, index);
+		}
 
-	//if fromId is AppId, need to send gId self
-	//else don't do that
-	record = ntyBHeapSelect(heap, fromId);
-	if (record == NULL) return NTY_RESULT_NOEXIST;
-
-	pClient = (Client*)record->value;
-	if (pClient == NULL) return NTY_RESULT_NOEXIST;
+		
+	} else {
 	
-	if (pClient->deviceType == NTY_PROTO_CLIENT_ANDROID 
-		|| pClient->deviceType == NTY_PROTO_CLIENT_IOS) {
-		ntySendVoiceBroadCastItem(fromId, gId, json, length, index);
-	}
+		Client *pClient = (Client*)record->value;
+		if (pClient == NULL) return NTY_RESULT_NOEXIST;
+		InterMsg *msg = (InterMsg*)malloc(sizeof(InterMsg));
+		msg->buffer = json;
+		msg->length = length;
+		msg->group = pClient;
+		msg->self = &fromId;
+		msg->arg = index;
 
+		if (pClient->friends == NULL) {
+			free(msg);
+			return NTY_RESULT_ERROR;
+		}
+
+		ntylog(" ntySendVoiceBroadCastResult --> ntyVectorIterator\n");
+		ntyVectorIterator(pClient->friends, ntySendVoiceBroadCastIter, msg);
+
+		free(msg);
+
+		//if fromId is AppId, need to send gId self
+		//else don't do that
+		record = ntyBHeapSelect(heap, fromId);
+		if (record == NULL) return NTY_RESULT_NOEXIST;
+
+		pClient = (Client*)record->value;
+		if (pClient == NULL) return NTY_RESULT_NOEXIST;
+		
+		if (pClient->deviceType == NTY_PROTO_CLIENT_ANDROID 
+			|| pClient->deviceType == NTY_PROTO_CLIENT_IOS) {
+			ntySendVoiceBroadCastItem(fromId, gId, json, length, index);
+		}
+	}
 #else
 	//get fromId group all
 	//fromId type

@@ -69,7 +69,7 @@ void* ntyVectorCtor(void *self, va_list *params) {
 	vector->max_num = NTY_VECTOR_MAX_COUNT;
 	vector->vector_lock = 0;
 
-	ntylog("ntyVectorCtor\n");
+	ntydbg("ntyVectorCtor\n");
 
 	return vector;
 }

@@ -1408,31 +1408,4 @@ char * ntyJsonWriteBindOfflineMsgToProposer(BindOfflineMsgToProposer *pMsgToProp
 	return NULL;
 }
 
-char * ntyJsonWriteSOSReport(SOSReport *pSOSReport) {
-	if (pSOSReport == NULL) {
-		return NULL;
-	}
-	
-	JSON_Value *schema = json_value_init_object();
-	JSON_Object *schema_obj = json_value_get_object(schema);
-
-	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object());
-	JSON_Object *results_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULTS);
-	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_IMEI, pSOSReport->results.IMEI);
-	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_CATEGORY, pSOSReport->results.category);
-	
-	json_object_set_value(results_obj, NATTY_USER_PROTOCOL_SOSREPORT, json_value_init_object());
-	JSON_Object *sosreport_obj = json_object_get_object(results_obj, NATTY_USER_PROTOCOL_SOSREPORT);
-	json_object_set_string(sosreport_obj, NATTY_USER_PROTOCOL_TYPE, pSOSReport->results.sosReport.type);
-	json_object_set_string(sosreport_obj, NATTY_USER_PROTOCOL_RADIUS, pSOSReport->results.sosReport.radius);
-	json_object_set_string(sosreport_obj, NATTY_USER_PROTOCOL_LOCATION, pSOSReport->results.sosReport.location);
-	
-	char *jsonstring = json_serialize_to_string(schema);
-	json_value_free(schema);
-
-	return NULL;
-}
-
-
-
 

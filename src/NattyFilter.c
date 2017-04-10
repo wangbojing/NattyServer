@@ -1368,18 +1368,19 @@ void ntyBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer, 
 		C_DEVID toId =  *(C_DEVID*)(buffer+NTY_PROTO_BIND_DEVICEID_IDX);
 		
 #if 1	//New Version need implement
-		U16 jsonlen = 0;
-		memcpy(&jsonlen, buffer+NTY_PROTO_BIND_JSON_LENGTH_IDX, NTY_JSON_COUNT_LENGTH);
-		char *jsonstring = malloc(jsonlen);
-		memset(jsonstring, 0, jsonlen);
+		U16 jsonlen = *(U16*)(buffer+NTY_PROTO_BIND_JSON_LENGTH_IDX);
+		//memcpy(&jsonlen, buffer+NTY_PROTO_BIND_JSON_LENGTH_IDX, NTY_JSON_COUNT_LENGTH);
+		char *jsonstring = malloc(jsonlen+1);
+		memset(jsonstring, 0, jsonlen+1);
 		memcpy(jsonstring, buffer+NTY_PROTO_BIND_JSON_CONTENT_IDX, jsonlen);
 
 		ntylog("ntyBindDevicePacketHandleRequest --> json : %s  %d\n", jsonstring, jsonlen);
-		
+#if 0		
 		JSON_Value *json = ntyMallocJsonValue(jsonstring);
 		if (json == NULL) { //JSON Error and send Code to FromId Device
 			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
 		} else {
+
 			ActionParam *pActionParam = malloc(sizeof(ActionParam));
 			pActionParam->fromId = fromId;
 			pActionParam->toId = toId;
@@ -1391,9 +1392,30 @@ void ntyBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer, 
 			ntyBindReqAction(pActionParam);
 			
 			free(pActionParam);
+
 		}
 		free(jsonstring);
 		ntyFreeJsonValue(json);
+#else
+		JSON_Value *json = ntyMallocJsonValue(jsonstring);
+		if (json == NULL) { //JSON Error and send Code to FromId Device
+			return ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
+		}
+
+		VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
+		tag->fromId = fromId;
+		tag->gId = toId;
+		
+		tag->Tag = (U8*)json;		
+		tag->length = jsonlen;
+		
+		tag->cb = ntyBindDeviceCheckStatusReqHandle;
+		tag->Type = MSG_TYPE_BIND_CONFIRM_REQ_HANDLE;
+		ntyDaveMqPushMessage(tag);
+		
+		free(jsonstring);
+#endif
+
 
 
 #else

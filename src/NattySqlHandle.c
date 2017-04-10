@@ -251,6 +251,7 @@ int ntyBindConfirmReqHandle(void *arg) {
 		free(pBindBroadCast);
 		
 	} else if (flag == 0) {
+	
 		char phonenum[64] = {0};
 		int ret = ntyBindConfirm(adminId, &proposerId, gId, msgId, phonenum); 
 		BindBroadCast *pBindBroadCast = malloc(sizeof(BindBroadCast));
@@ -299,7 +300,180 @@ int ntyLoginReqHandle(void *arg) {
 	return ret;
 }
 
+int ntyBindPushAdministratorHandle(void *arg) {
+	VALUE_TYPE *tag = (VALUE_TYPE*)arg;
+	
+	if (tag == NULL) return NTY_RESULT_ERROR;
 
+	C_DEVID devId = tag->gId;
+	C_DEVID proposer = tag->fromId;
+	C_DEVID admin = tag->toId;
+
+	char phonenum[30] = {0};
+	ntyQueryPhoneBookSelectHandle(devId, proposer, phonenum);
+	ntylog(" ntyBindPushAdministratorHandle : %s\n", phonenum);
+
+	if (tag->Tag == NULL) return NTY_RESULT_ERROR;
+	
+	BindReq *pBindReq = (BindReq*)tag->Tag;
+	
+	int msgId = tag->arg;
+
+	BindConfirmPush *pBindConfirmPush = malloc(sizeof(BindConfirmPush));
+	pBindConfirmPush->result.IMEI = pBindReq->IMEI;
+	pBindConfirmPush->result.proposer = phonenum;
+	pBindConfirmPush->result.userName = pBindReq->bind.userName;
+	
+	char ids[30] = {0};
+	sprintf(ids, "%d", msgId);
+	pBindConfirmPush->result.msgId = ids;
+	char *jsonstring = ntyJsonWriteBindConfirmPush(pBindConfirmPush);
+
+	ntydbg("-----------------------send json to admin---------------------------------\n");
+		//send json to admin
+	ntySendBindConfirmPushResult(proposer, admin, (U8*)jsonstring, strlen(jsonstring));
+
+	//release 
+	free(pBindConfirmPush);
+	free(pBindReq);
+	free(tag);
+}
+
+int ntyBindParserJsonHandle(void *arg) {
+	VALUE_TYPE *tag = (VALUE_TYPE*)arg;
+
+	if (tag == NULL) return NTY_RESULT_ERROR;
+	
+	JSON_Value *json = (JSON_Value*)tag->Tag;
+	if (json == NULL) {
+		ntylog( " ntyBindParserJsonHandle Json Error\n ");
+		return NTY_RESULT_ERROR;
+	}
+
+	ntylog(" ntyBindParserJsonHandle \n");
+	BindReq *pBindReq = malloc(sizeof(BindReq));
+	if (pBindReq == NULL) return NTY_RESULT_ERROR;
+	ntyJsonBind(json, pBindReq);
+
+
+	C_DEVID proposer = tag->fromId;
+	C_DEVID devId = tag->gId;
+	C_DEVID admin = tag->toId;
+	U8 *name = (U8*)pBindReq->bind.watchName;
+	U8 *wimage = (U8*)pBindReq->bind.watchImage;
+	U8 *call = (U8*)pBindReq->bind.userName;
+	U8 *uimage = (U8*)pBindReq->bind.userImage;
+
+	if (tag->arg == NTY_BIND_ACK_FIRST_BIND) {
+
+		ntyFreeJsonValue(json);
+		free(tag);
+		
+		return ntyQueryAdminGroupInsertHandle(devId, name, proposer, call, wimage, uimage);
+		
+	} else if (tag->arg == NTY_BIND_ACK_SUCCUESS) {
+		int msgId = 0;
+		//绑定确认添加
+		ntyQueryBindConfirmInsertHandle(admin, devId, name, wimage, proposer, call, uimage, &msgId);
+
+		ntyFreeJsonValue(json);
+		tag->Tag = (U8*)pBindReq;
+	
+		tag->arg = msgId;
+		tag->Type = MSG_TYPE_BIND_PUSH_ADMINISTRATOR_HANDLE;
+		tag->cb = ntyBindPushAdministratorHandle;
+		ntyDaveMqPushMessage(tag);
+
+		return NTY_RESULT_PROCESS;
+		
+	}
+
+	ntyFreeJsonValue(json);
+	free(tag);
+}
+
+
+int ntyAdministratorSelectHandle(void *arg) {
+	VALUE_TYPE *tag = (VALUE_TYPE*)arg;
+
+	if (tag == NULL) return NTY_RESULT_ERROR;
+
+	C_DEVID fromId = tag->fromId;
+	C_DEVID devId = tag->gId;
+	C_DEVID admin = 0x0;
+
+	ntylog(" ntyAdministratorSelectHandle fromId:%lld, devId:%lld\n", fromId, devId);
+	if(NTY_RESULT_FAILED == ntyQueryAdminSelectHandle(devId, &admin)) {
+		ntylog(" ntyAdministratorSelectHandle Failed\n");
+		if (tag->Tag != NULL) {
+			JSON_Value *json = (JSON_Value*)tag->Tag;
+			if (json != NULL) {
+				ntyFreeJsonValue(json);
+			}
+			tag->Tag = NULL;
+		}
+		free(tag);
+
+		return NTY_RESULT_ERROR;
+	}
+
+	tag->toId = admin;
+	tag->Type = MSG_TYPE_BIND_JSON_PARSER_HANDLE;
+	tag->cb = ntyBindParserJsonHandle;
+	ntyDaveMqPushMessage(tag);
+
+	return NTY_RESULT_SUCCESS;
+}
+
+
+
+
+int ntyBindDeviceCheckStatusReqHandle(void *arg) {
+	VALUE_TYPE *tag = (VALUE_TYPE*)arg;
+	if (tag == NULL) return NTY_RESULT_ERROR;
+	
+	C_DEVID fromId = tag->fromId;
+	C_DEVID devId = tag->gId;
+
+	ntylog(" ntyBindDeviceCheckStatusReqHandle fromId:%lld, devId:%lld\n", fromId, devId);
+	int ret = ntyQueryDevAppGroupCheckSelectHandle(fromId, devId);
+
+	if (ret == NTY_RESULT_FAILED) {
+		ret = NTY_BIND_ACK_ERROR;
+	}
+	ntyProtoBindAck(fromId, devId, ret); //return to fromId
+
+	ntylog(" ntyBindDeviceCheckStatusReqHandle ret:%d\n", ret);
+	if (ret == NTY_BIND_ACK_FIRST_BIND) { //SQL first band Watch
+	
+		tag->arg = NTY_BIND_ACK_FIRST_BIND;
+		tag->toId = fromId;
+		tag->Type = MSG_TYPE_BIND_JSON_PARSER_HANDLE;
+		tag->cb = ntyBindParserJsonHandle;
+		ntyDaveMqPushMessage(tag);
+		
+		return NTY_RESULT_SUCCESS;
+	} else if (ret == NTY_BIND_ACK_SUCCUESS){
+
+		tag->arg = NTY_BIND_ACK_SUCCUESS;
+		tag->Type = MSG_TYPE_BIND_SELECT_ADMIN_HANDLE;
+		tag->cb = ntyAdministratorSelectHandle;
+		
+		ntyDaveMqPushMessage(tag);
+
+		return NTY_RESULT_SUCCESS;
+	}
+
+	JSON_Value *json = (JSON_Value*)tag->Tag;
+	if (json != NULL) {
+		ntyFreeJsonValue(json);
+	}
+	free(tag);
+
+	return NTY_RESULT_FAILED;
+
+	
+}
 
 
 

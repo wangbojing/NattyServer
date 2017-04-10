@@ -60,6 +60,9 @@ int ntyBindConfirmReqHandle(void *arg);
 
 int ntyLoginReqHandle(void *arg);
 
+int ntyBindDeviceCheckStatusReqHandle(void *arg) ;
+
+
 
 #endif
 
