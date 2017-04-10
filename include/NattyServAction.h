@@ -61,7 +61,7 @@ typedef struct _ActionParam {
 
 void ntyJsonRecvResult(C_DEVID devId, char *jsonresult);
 
-void ntyJsonBroadCastRecvResult(C_DEVID fromId, C_DEVID toId, char *jsonresult, U32 index);
+int ntyJsonBroadCastRecvResult(C_DEVID fromId, C_DEVID toId, char *jsonresult, U32 index);
 
 void ntyJsonCommonResult(C_DEVID devId, const char *code);
 

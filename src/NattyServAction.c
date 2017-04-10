@@ -89,13 +89,13 @@ int checkStringIsAllTimeChar(const char *content) {
 	return 1;
 }
 
-void ntyJsonBroadCastRecvResult(C_DEVID fromId, C_DEVID toId, char *jsonresult, U32 index) {
+int ntyJsonBroadCastRecvResult(C_DEVID fromId, C_DEVID toId, char *jsonresult, U32 index) {
 	if (jsonresult == NULL) {
-		return;
+		return - 1;
 	}
 
 	ntylog("ntyJsonBroadCastRecvResult --> %lld %lld  %s %d %d\n", fromId, toId, (U8*)jsonresult, (int)strlen(jsonresult), index);
-	ntySendCommonBroadCastResult(fromId, toId, (U8*)jsonresult, (int)strlen(jsonresult), index);
+	return ntySendCommonBroadCastResult(fromId, toId, (U8*)jsonresult, (int)strlen(jsonresult), index);
 }
 
 void ntyJsonCommonResult(C_DEVID devId, const char * code) {
@@ -1312,7 +1312,7 @@ void ntyJsonSOSReportAction(ActionParam *pActionParam) {
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;
 
-	int msg = 0;
+	U32 msg = 0;
 	int ret = ntyExecuteCommonMsgInsertHandle(fromId, toId, pActionParam->json, msg);
 	if (ret == -1) {
 		ntylog(" ntyJsonSOSReportAction --> DB Exception\n");
@@ -1331,7 +1331,7 @@ void ntyJsonEfenceReportAction(ActionParam *pActionParam) {
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;
 
-	int msg = 0;
+	U32 msg = 0;
 	int ret = ntyExecuteCommonMsgInsertHandle(fromId, toId, pActionParam->json, msg);
 	if (ret == -1) {
 		ntylog(" ntyJsonSOSReportAction --> DB Exception\n");
@@ -1346,12 +1346,11 @@ void ntyJsonEfenceReportAction(ActionParam *pActionParam) {
 	}
 }
 
-
 void ntyJsonWearStatusAction(ActionParam *pActionParam) {
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;
 
-	int msg = 0;
+	U32 msg = 0;
 	int ret = ntyExecuteCommonMsgInsertHandle(fromId, toId, pActionParam->json, msg);
 	if (ret == -1) {
 		ntylog(" ntyJsonSOSReportAction --> DB Exception\n");
