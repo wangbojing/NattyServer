@@ -363,82 +363,79 @@ void ntyCommonReqAction(ActionParam *pActionParam) {
 	ntydbg("ntyCommonReqPacketHandleRequest --> json : %s\n", pActionParam->jsonstring);
 
 	const char *app_category = ntyJsonAppCategory(pActionParam->json);
-	if (app_category == NULL) {
+	if (app_category != NULL) {
+		if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_EFENCE) == 0) {
+			const char *action = ntyJsonAction(pActionParam->json);
+			if (action == NULL) {
+				ntylog("Can't find action, because action is null\n");
+				return;
+			}
+			if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_ADD) == 0) {
+				ntyJsonAddEfenceAction(pActionParam);
+			} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_DELETE) == 0) {
+				ntyJsonDelEfenceAction(pActionParam);
+			} else {
+				ntylog("Can't find action with: %s\n", action);
+			}
+		} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_RUNTIME) == 0) {
+				ntyJsonRunTimeAction(pActionParam);
+		} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_TURN) == 0) {
+				ntyJsonTurnAction(pActionParam);
+		} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_SCHEDULE) == 0) {
+			const char *action = ntyJsonAction(pActionParam->json);
+			if (action == NULL) {
+				ntylog("Can't find action, because action is null\n");
+				return;
+			}
+			if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_ADD) == 0) {
+				ntyJsonAddScheduleAction(pActionParam);
+			} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_DELETE) == 0) {
+				ntyJsonDelScheduleAction(pActionParam);
+			} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_UPDATE) == 0) {
+				ntyJsonUpdateScheduleAction(pActionParam);
+			} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_SCHEDULE) == 0) {
+				ntyJsonSelectScheduleAction(pActionParam);
+			} else {
+				ntylog("Can't find action with: %s\n", action);
+			}
+		} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_TIMETABLES) == 0) {
+			ntyJsonTimeTablesAction(pActionParam);
+		} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_CONTACTS) == 0) {
+			const char *action = ntyJsonAction(pActionParam->json);
+			if (action == NULL) {
+				ntylog("Can't find action, because action is null\n");
+				return;
+			}
+			if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_ADD) == 0) {
+				ntyJsonAddContactsAction(pActionParam);
+			} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_DELETE) == 0) {
+				ntyJsonDelContactsAction(pActionParam);
+			} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_UPDATE) == 0) {
+				ntyJsonUpdateContactsAction(pActionParam);
+			} else {
+				ntylog("Can't find action with: %s\n", action);
+			}
+		} else {
+			ntylog("Can't find app category with: %s\n", app_category);
+		}
+	}else {
 		ntylog("Can't find app category, because app category is null\n");
-		return;
 	}
-	if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_EFENCE) == 0) {
-		const char *action = ntyJsonAction(pActionParam->json);
-		if (action == NULL) {
-			ntylog("Can't find action, because action is null\n");
-			return;
-		}
-		if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_ADD) == 0) {
-			ntyJsonAddEfenceAction(pActionParam);
-		} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_DELETE) == 0) {
-			ntyJsonDelEfenceAction(pActionParam);
-		} else {
-			ntylog("Can't find action with: %s\n", action);
-		}
-	} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_RUNTIME) == 0) {
-			ntyJsonRunTimeAction(pActionParam);
-	} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_TURN) == 0) {
-			ntyJsonTurnAction(pActionParam);
-	} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_SCHEDULE) == 0) {
-		const char *action = ntyJsonAction(pActionParam->json);
-		if (action == NULL) {
-			ntylog("Can't find action, because action is null\n");
-			return;
-		}
-		if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_ADD) == 0) {
-			ntyJsonAddScheduleAction(pActionParam);
-		} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_DELETE) == 0) {
-			ntyJsonDelScheduleAction(pActionParam);
-		} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_UPDATE) == 0) {
-			ntyJsonUpdateScheduleAction(pActionParam);
-		} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_SCHEDULE) == 0) {
-			ntyJsonSelectScheduleAction(pActionParam);
-		} else {
-			ntylog("Can't find action with: %s\n", action);
-		}
-	} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_TIMETABLES) == 0) {
-		ntyJsonTimeTablesAction(pActionParam);
-	} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_CONTACTS) == 0) {
-		const char *action = ntyJsonAction(pActionParam->json);
-		if (action == NULL) {
-			ntylog("Can't find action, because action is null\n");
-			return;
-		}
-		if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_ADD) == 0) {
-			ntyJsonAddContactsAction(pActionParam);
-		} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_DELETE) == 0) {
-			ntyJsonDelContactsAction(pActionParam);
-		} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_UPDATE) == 0) {
-			ntyJsonUpdateContactsAction(pActionParam);
-		} else {
-			ntylog("Can't find action with: %s\n", action);
-		}
-	} else {
-		ntylog("Can't find app category with: %s\n", app_category);
-	}
-
 
 	const char *watch_category = ntyJsonWatchCategory(pActionParam->json);
-	if (watch_category == NULL) {
-		ntylog("Can't find watch category, because watch category is null\n");
-		return;
-	}
-	if (strcmp(watch_category, NATTY_USER_PROTOCOL_SOSREPORT) == 0) {
-		ntyJsonSOSReportAction(pActionParam);
-	} else if (strcmp(watch_category, NATTY_USER_PROTOCOL_EFENCEREPORT) == 0) {
-		ntyJsonEfenceReportAction(pActionParam);
-	} else if (strcmp(watch_category, NATTY_USER_PROTOCOL_WEARSTATUS) == 0) {
-		ntyJsonWearStatusAction(pActionParam);
+	if (watch_category != NULL) {
+		if (strcmp(watch_category, NATTY_USER_PROTOCOL_SOSREPORT) == 0) {
+			ntyJsonSOSReportAction(pActionParam);
+		} else if (strcmp(watch_category, NATTY_USER_PROTOCOL_EFENCEREPORT) == 0) {
+			ntyJsonEfenceReportAction(pActionParam);
+		} else if (strcmp(watch_category, NATTY_USER_PROTOCOL_WEARSTATUS) == 0) {
+			ntyJsonWearStatusAction(pActionParam);
+		} else {
+			ntylog("Can't find watch category with: %s\n", watch_category);
+		}
 	} else {
-		ntylog("Can't find watch category with: %s\n", watch_category);
+		ntylog("Can't find watch category, because watch category is null\n");
 	}
-
-
 }
 
 void ntyJsonAddEfenceAction(ActionParam *pActionParam) {
