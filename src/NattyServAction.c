@@ -1313,7 +1313,7 @@ void ntyJsonSOSReportAction(ActionParam *pActionParam) {
 	C_DEVID toId = pActionParam->toId;
 
 	U32 msg = 0;
-	int ret = ntyExecuteCommonMsgInsertHandle(fromId, toId, pActionParam->json, msg);
+	int ret = ntyExecuteCommonMsgInsertHandle(fromId, toId, pActionParam->jsonstring, &msg);
 	if (ret == -1) {
 		ntylog(" ntyJsonSOSReportAction --> DB Exception\n");
 		ret = 4;
@@ -1332,7 +1332,7 @@ void ntyJsonEfenceReportAction(ActionParam *pActionParam) {
 	C_DEVID toId = pActionParam->toId;
 
 	U32 msg = 0;
-	int ret = ntyExecuteCommonMsgInsertHandle(fromId, toId, pActionParam->json, msg);
+	int ret = ntyExecuteCommonMsgInsertHandle(fromId, toId, pActionParam->jsonstring, &msg);
 	if (ret == -1) {
 		ntylog(" ntyJsonSOSReportAction --> DB Exception\n");
 		ret = 4;
@@ -1351,7 +1351,7 @@ void ntyJsonWearStatusAction(ActionParam *pActionParam) {
 	C_DEVID toId = pActionParam->toId;
 
 	U32 msg = 0;
-	int ret = ntyExecuteCommonMsgInsertHandle(fromId, toId, pActionParam->json, msg);
+	int ret = ntyExecuteCommonMsgInsertHandle(fromId, toId, pActionParam->jsonstring, &msg);
 	if (ret == -1) {
 		ntylog(" ntyJsonSOSReportAction --> DB Exception\n");
 		ret = 4;
