@@ -2052,7 +2052,7 @@ int ntyExecuteCommonMsgInsert(void *self, C_DEVID sid, C_DEVID gid, const char *
 				*msg = ResultSet_getInt(r, 1);				
 			}
 		}
-	} 
+	}
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);

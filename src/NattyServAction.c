@@ -362,12 +362,12 @@ void ntyCommonReqAction(ActionParam *pActionParam) {
 	ntydbg("ntyCommonReqPacketHandleRequest --> fromId:%lld    toId:%lld\n", pActionParam->fromId, pActionParam->toId);
 	ntydbg("ntyCommonReqPacketHandleRequest --> json : %s\n", pActionParam->jsonstring);
 
-	const char *category = ntyJsonAppCategory(pActionParam->json);
-	if (category == NULL) {
-		ntylog("Can't find category, because category is null\n");
+	const char *app_category = ntyJsonAppCategory(pActionParam->json);
+	if (app_category == NULL) {
+		ntylog("Can't find app category, because app category is null\n");
 		return;
 	}
-	if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_EFENCE) == 0) {
+	if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_EFENCE) == 0) {
 		const char *action = ntyJsonAction(pActionParam->json);
 		if (action == NULL) {
 			ntylog("Can't find action, because action is null\n");
@@ -380,11 +380,11 @@ void ntyCommonReqAction(ActionParam *pActionParam) {
 		} else {
 			ntylog("Can't find action with: %s\n", action);
 		}
-	} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_RUNTIME) == 0) {
+	} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_RUNTIME) == 0) {
 			ntyJsonRunTimeAction(pActionParam);
-	} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_TURN) == 0) {
+	} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_TURN) == 0) {
 			ntyJsonTurnAction(pActionParam);
-	} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_SCHEDULE) == 0) {
+	} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_SCHEDULE) == 0) {
 		const char *action = ntyJsonAction(pActionParam->json);
 		if (action == NULL) {
 			ntylog("Can't find action, because action is null\n");
@@ -401,9 +401,9 @@ void ntyCommonReqAction(ActionParam *pActionParam) {
 		} else {
 			ntylog("Can't find action with: %s\n", action);
 		}
-	} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_TIMETABLES) == 0) {
+	} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_TIMETABLES) == 0) {
 		ntyJsonTimeTablesAction(pActionParam);
-	} else if (strcmp(category, NATTY_USER_PROTOCOL_CATEGORY_CONTACTS) == 0) {
+	} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_CONTACTS) == 0) {
 		const char *action = ntyJsonAction(pActionParam->json);
 		if (action == NULL) {
 			ntylog("Can't find action, because action is null\n");
@@ -419,8 +419,26 @@ void ntyCommonReqAction(ActionParam *pActionParam) {
 			ntylog("Can't find action with: %s\n", action);
 		}
 	} else {
-		ntylog("Can't find category with: %s\n", category);
+		ntylog("Can't find app category with: %s\n", app_category);
 	}
+
+
+	const char *watch_category = ntyJsonWatchCategory(pActionParam->json);
+	if (watch_category == NULL) {
+		ntylog("Can't find watch category, because watch category is null\n");
+		return;
+	}
+	if (strcmp(watch_category, NATTY_USER_PROTOCOL_SOSREPORT) == 0) {
+		ntyJsonSOSReportAction(pActionParam);
+	} else if (strcmp(watch_category, NATTY_USER_PROTOCOL_EFENCEREPORT) == 0) {
+		ntyJsonEfenceReportAction(pActionParam);
+	} else if (strcmp(watch_category, NATTY_USER_PROTOCOL_WEARSTATUS) == 0) {
+		ntyJsonWearStatusAction(pActionParam);
+	} else {
+		ntylog("Can't find watch category with: %s\n", watch_category);
+	}
+
+
 }
 
 void ntyJsonAddEfenceAction(ActionParam *pActionParam) {
@@ -1290,6 +1308,63 @@ exit:
 	free(pDelContactsReq);
 }
 
+void ntyJsonSOSReportAction(ActionParam *pActionParam) {
+	C_DEVID fromId = pActionParam->fromId;
+	C_DEVID toId = pActionParam->toId;
+
+	int msg = 0;
+	int ret = ntyExecuteCommonMsgInsertHandle(fromId, toId, pActionParam->json, msg);
+	if (ret == -1) {
+		ntylog(" ntyJsonSOSReportAction --> DB Exception\n");
+		ret = 4;
+	} else if (ret >= 0) {
+		ret = ntySendRecodeJsonPacket(fromId, toId, pActionParam->jsonstring, pActionParam->jsonlen);
+		if (ret >= 0) {
+			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
+		} else {
+			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
+		}
+	}
+}
+
+void ntyJsonEfenceReportAction(ActionParam *pActionParam) {
+	C_DEVID fromId = pActionParam->fromId;
+	C_DEVID toId = pActionParam->toId;
+
+	int msg = 0;
+	int ret = ntyExecuteCommonMsgInsertHandle(fromId, toId, pActionParam->json, msg);
+	if (ret == -1) {
+		ntylog(" ntyJsonSOSReportAction --> DB Exception\n");
+		ret = 4;
+	} else if (ret >= 0) {
+		ret = ntySendRecodeJsonPacket(fromId, toId, pActionParam->jsonstring, pActionParam->jsonlen);
+		if (ret >= 0) {
+			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
+		} else {
+			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
+		}
+	}
+}
+
+
+void ntyJsonWearStatusAction(ActionParam *pActionParam) {
+	C_DEVID fromId = pActionParam->fromId;
+	C_DEVID toId = pActionParam->toId;
+
+	int msg = 0;
+	int ret = ntyExecuteCommonMsgInsertHandle(fromId, toId, pActionParam->json, msg);
+	if (ret == -1) {
+		ntylog(" ntyJsonSOSReportAction --> DB Exception\n");
+		ret = 4;
+	} else if (ret >= 0) {
+		ret = ntySendRecodeJsonPacket(fromId, toId, pActionParam->jsonstring, pActionParam->jsonlen);
+		if (ret >= 0) {
+			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
+		} else {
+			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
+		}
+	}
+}
 
 void ntyJsonOfflineMsgReqAction(ActionParam *pActionParam) {
 	DelContactsReq *pDelContactsReq = (DelContactsReq*)malloc(sizeof(DelContactsReq));

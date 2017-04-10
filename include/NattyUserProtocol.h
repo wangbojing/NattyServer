@@ -75,6 +75,7 @@
 #define NATTY_USER_PROTOCOL_CATEGORY_LOCATION		"Location"
 #define NATTY_USER_PROTOCOL_CATEGORY_FARE			"Fare"
 
+
 #define NATTY_USER_PROTOCOL_CATEGORY_CONTACTS		"Contacts"
 
 
@@ -105,6 +106,11 @@
 #define NATTY_USER_PROTOCOL_TYPE			"Type"
 #define NATTY_USER_PROTOCOL_RADIUS			"Radius"
 #define NATTY_USER_PROTOCOL_LOCATION		"Location"
+#define NATTY_USER_PROTOCOL_SOSREPORT		"SOSReport"
+#define NATTY_USER_PROTOCOL_EFENCEREPORT	"EfenceReport"
+#define NATTY_USER_PROTOCOL_WEARSTATUS		"WearStatus"
+
+
 
 #define NATTY_USER_PROTOCOL_EFENCE			"Efence"
 #define NATTY_USER_PROTOCOL_NUM 			"Num"
@@ -741,6 +747,25 @@ typedef struct _BindOfflineMsgToProposer {
 	long long proposer;
 	const char *details;
 } BindOfflineMsgToProposer;
+
+
+typedef struct _SOSReportItem {
+	const char *type;
+	const char *radius;
+	const char *location;
+} SOSReportItem;
+
+typedef struct _SOSReportResults {
+	const char *IMEI;
+	const char *category;
+	SOSReportItem sosReport;
+} SOSReportResults;
+
+typedef struct _SOSReport {
+	SOSReportResults results;
+} SOSReport;
+
+
 
 
 #endif

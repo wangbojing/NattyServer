@@ -105,6 +105,12 @@ void ntyJsonICCIDAction(ActionParam *pActionParam);
 
 void ntyJsonOfflineMsgReqAction(ActionParam *pActionParam);
 
+void ntyJsonSOSReportAction(ActionParam *pActionParam);
+
+void ntyJsonEfenceReportAction(ActionParam *pActionParam);
+
+void ntyJsonWearStatusAction(ActionParam *pActionParam);
+
 int ntyVoiceDataReqAction(C_DEVID senderId, C_DEVID gId, char *filename);
 
 int ntyVoiceReqAction(C_DEVID fromId, U32 msgId);

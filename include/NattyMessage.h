@@ -67,6 +67,8 @@
 #define NATTY_RESULT_CODE_ERR_USER_NOTONLINE		"10011"		//UserId不存在
 #define NATTY_RESULT_CODE_ERR_BIND_REPEATE_DATA		"10012"		//UserId与DeviceId已经绑定过
 #define NATTY_RESULT_CODE_ERR_NOACTIVATE			"10013"		//设备没有激活
+#define NATTY_RESULT_CODE_ERR_BROADCAST				"10014"		//广播数据
+
 
 
 const char* ntyCommonResultMessage(const char *code);

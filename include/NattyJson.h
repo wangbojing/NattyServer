@@ -197,6 +197,8 @@ char * ntyJsonWriteBindOfflineMsgToAdmin(BindOfflineMsgToAdmin *pMsgToAdmin, cha
 
 char * ntyJsonWriteBindOfflineMsgToProposer(BindOfflineMsgToProposer *pMsgToProposer);
 
+char * ntyJsonWriteSOSReport(SOSReport *pSOSReport);
+
 
 #endif
 
