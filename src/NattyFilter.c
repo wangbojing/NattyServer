@@ -558,8 +558,8 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 				if (tag == NULL) return ;
 
 				tag->fromId = pClient->devId;
-				tag->Type = MSG_TYPE_LOGIN_REQ_HANDLE;
-				tag->cb = ntyLoginReqHandle;
+				tag->Type = MSG_TYPE_OFFLINE_MSG_REQ_HANDLE;
+				tag->cb = ntyOfflineMsgReqHandle;
 
 				ntyDaveMqPushMessage(tag);
 				

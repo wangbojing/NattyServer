@@ -64,7 +64,8 @@ int ntyVoiceAckHandle(void *arg) {
 	if (ret == NTY_RESULT_FAILED) {
 		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_NOEXIST);
 	} 
-
+	
+	//read offline voice msg
 	ret = ntyReadOfflineVoiceMsgAction(fromId);
 	if (ret == NTY_RESULT_NOEXIST) {
 		//BindConfirmReq
@@ -89,24 +90,14 @@ int ntyCommonAckHandle(void *arg) {
 	if (ret == NTY_RESULT_FAILED) {
 		ntylog("ntyCommonAckHandle DB Error \n");
 	}
-#if 1 //Update By WangBoJing 
-	ret = ntyReadOfflineCommonMsgAction(fromId);
-	if (ret == NTY_RESULT_NOEXIST) {
-#if 1 //Push Message Queue
-		
 
-#endif
-		ret = ntyReadOfflineVoiceMsgAction(fromId);
-		if (ret == NTY_RESULT_NOEXIST) {
-			//read
-			//
+	
+	tag->fromId = fromId;
+	tag->Type = MSG_TYPE_OFFLINE_MSG_REQ_HANDLE;
+	tag->cb = ntyOfflineMsgReqHandle;
 
-			ret = ntyReadOfflineBindMsgToAdminAction(fromId);
-		}
-	}
+	ntyDaveMqPushMessage(tag);
 
-#endif	
-	free(tag);
 
 	return ret;
 }
@@ -283,17 +274,52 @@ int ntyBindConfirmReqHandle(void *arg) {
 	return 0;
 }
 
-
-int ntyLoginReqHandle(void *arg) {
+int ntyReadOfflineBindMsgHandle(void *arg) {
 	VALUE_TYPE *tag = (VALUE_TYPE*)arg;
+	if (tag == NULL) return NTY_RESULT_ERROR;
+	
+	C_DEVID fromId = tag->fromId;
+	
+	int ret = ntyReadOfflineBindMsgToAdminAction(fromId);
+	if (ret == NTY_RESULT_NOEXIST) { 
+		ntylog("ntyReadOfflineBindMsgHandle --> Client Id: %lld have no offline msg\n", fromId);
+	}
+	free(tag);
+
+	return ret;
+}
+
+int ntyReadOfflineVoiceHandle(void *arg) {
+	VALUE_TYPE *tag = (VALUE_TYPE*)arg;
+	if (tag == NULL) return NTY_RESULT_ERROR;
+	
+	C_DEVID fromId = tag->fromId;
+
+	int ret = ntyReadOfflineVoiceMsgAction(fromId);
+	if (ret == NTY_RESULT_NOEXIST) {
+		
+		tag->Type = MSG_TYPE_BIND_OFFLINE_PUSH_HANDLE;
+		tag->cb = ntyReadOfflineBindMsgHandle;
+		return ntyDaveMqPushMessage(tag);
+	}
+	free(tag);
+
+	return ret;
+}
+
+
+int ntyOfflineMsgReqHandle(void *arg) {
+	VALUE_TYPE *tag = (VALUE_TYPE*)arg;
+	if (tag == NULL) return NTY_RESULT_ERROR;
+	
 	C_DEVID fromId = tag->fromId;
 
 	int ret = ntyReadOfflineCommonMsgAction(fromId);
 	if (ret == NTY_RESULT_NOEXIST) {
-		ret = ntyReadOfflineVoiceMsgAction(fromId);
-		if (ret == NTY_RESULT_NOEXIST) {
-			ret = ntyReadOfflineBindMsgToAdminAction(fromId);
-		}
+		
+		tag->Type = MSG_TYPE_VOICE_OFFLINE_READ_HANDLE;
+		tag->cb = ntyReadOfflineVoiceHandle;
+		return ntyDaveMqPushMessage(tag);
 	}
 	free(tag);
 
