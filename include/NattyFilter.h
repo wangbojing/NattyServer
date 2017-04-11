@@ -58,7 +58,7 @@
 
 
 #define NTY_VOICE_FILENAME_LENGTH		128
-#define NTY_VOICE_FILENAME_FORMAT		"./%lld_%lld_%ld.amr" //gId_fromId_stamp.amr
+#define NTY_VOICE_FILENAME_FORMAT		"/home/voice/%lld_%lld_%ld.amr" //gId_fromId_stamp.amr
 
 
 typedef struct {

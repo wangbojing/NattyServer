@@ -59,6 +59,7 @@
 #include <ev.h>
 #include <errno.h>
 #include <netinet/tcp.h> 
+
 #include <time.h>
 
 
@@ -83,6 +84,19 @@ static int ntySetReUseAddr(int fd) {
 	int reuse = 1;
 	return setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse));
 }
+
+static int ntySetAlive(int fd) {
+	int alive = 1;
+	int idle = 60;
+	int interval = 5;
+	int count = 2;
+
+	setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (void*)&alive, sizeof(alive));
+	setsockopt(fd, SOL_TCP, TCP_KEEPIDLE, (void*)&idle, sizeof(idle));
+	setsockopt(fd, SOL_TCP, TCP_KEEPINTVL, (void*)&interval, sizeof(interval));
+	setsockopt(fd, SOL_TCP, TCP_KEEPCNT, (void*)&count, sizeof(count));
+}
+
 
 static int ntyTcpRecv(int fd, U8 *buffer, int length, struct ev_io *watcher, struct ev_loop *loop) {
 	
@@ -470,6 +484,8 @@ void ntyOnAcceptEvent(struct ev_loop *loop, struct ev_io *watcher, int revents){
 	}
 
 	ntySetReUseAddr(client_fd);
+
+	ntySetAlive(client_fd);
 	
 	ntylog(" %d.%d.%d.%d:%d --> New Client Connected \n", 
 		*(unsigned char*)(&client_addr.sin_addr.s_addr), *((unsigned char*)(&client_addr.sin_addr.s_addr)+1),													
