@@ -2044,12 +2044,14 @@ int ntyExecuteCommonMsgInsert(void *self, C_DEVID sid, C_DEVID gid, const char *
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			U8 buffer[512];
-			sprintf(buffer, NTY_DB_INSERT_COMMON_MSG, sid, gid, detatils);
-			ntylog(" sql : %s\n", buffer);
+			ntylog(" ntyExecuteCommonMsgInsert --> start\n");
+			
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_COMMON_MSG, sid, gid, detatils);
 			while (ResultSet_next(r)) {
-				*msg = ResultSet_getInt(r, 1);				
+				*msg = ResultSet_getInt(r, 1);	
+				ret = 0;
+
+				ntylog("ntyExecuteCommonMsgInsert msgId : %d\n", *msg);
 			}
 		}
 	}
