@@ -632,6 +632,10 @@ int ntySendCommonBroadCastIter(void *self, void *arg) {
 	memcpy(&toId, self, sizeof(C_DEVID));
 
 	InterMsg *msg = arg;
+	if (msg == NULL) {
+		ntylog(" ntySendCommonBroadCastIter --> NTY_RESULT_ERROR\n");
+		return NTY_RESULT_ERROR;
+	}
 	U8 *json = msg->buffer;
 	U16 length = (U16)msg->length;
 	Client *client = msg->group;

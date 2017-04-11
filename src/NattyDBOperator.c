@@ -584,7 +584,7 @@ static int ntyQueryCommonOfflineMsgSelect(void *self, C_DEVID deviceId, void *co
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = 0;
+	int ret = -1;
 
 	TRY
 	{
@@ -592,8 +592,7 @@ static int ntyQueryCommonOfflineMsgSelect(void *self, C_DEVID deviceId, void *co
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			U8 buffer[512];
-			sprintf(buffer, NTY_DB_SELECT_COMMON_OFFLINE_MSG, deviceId);
+			
 
 			/*
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_COMMON_OFFLINE_MSG, deviceId);
@@ -784,7 +783,7 @@ static int ntyQueryPhoneBookSelect(void *self, C_DEVID imei, C_DEVID userId, cha
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = 0;
+	int ret = -1;
 	
 
 	TRY 
@@ -793,16 +792,14 @@ static int ntyQueryPhoneBookSelect(void *self, C_DEVID imei, C_DEVID userId, cha
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			U8 buffer[512] = {0};
-
-			sprintf(buffer, NTY_DB_SELECT_PHONE_NUMBER, imei, userId);
-			ntylog("ntyQueryPhoneBookSelect --> sql : %s\n", buffer);
-
+			
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_PHONE_NUMBER, imei, userId);
 			while (ResultSet_next(r)) {
 				const char *pnum = ResultSet_getString(r, 1);
 				ntylog(" ntyQueryPhoneBookSelect --> PhoneNum:%s\n", pnum);
 				memcpy(phonenum, pnum, strlen(pnum));
+
+				ret = 0;
 			}
 		}
 	} 
@@ -1345,7 +1342,7 @@ int ntyExecuteEfenceInsert(void *self, C_DEVID aid, C_DEVID did, int index, int 
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = 0;
+	int ret = -1;
 	U8 u8PhNum[20] = {0};
 
 	TRY 
@@ -1354,13 +1351,11 @@ int ntyExecuteEfenceInsert(void *self, C_DEVID aid, C_DEVID did, int index, int 
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			U8 buffer[512];
-
-			sprintf(buffer, NTY_DB_INSERT_EFENCE, did, index, num, points, runtime);
-			ntylog(" sql : %s\n", buffer);
+			
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_EFENCE, did, index, num, points, runtime);
 			if (ResultSet_next(r)) {
 				*id = ResultSet_getInt(r, 1);
+				ret = 0;
 			}
 		}
 	} 
@@ -1394,10 +1389,7 @@ int ntyExecuteEfenceDelete(void *self, C_DEVID aid, C_DEVID did, int index) {
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			U8 buffer[512];
-
-			sprintf(buffer, NTY_DB_DELETE_EFENCE, did, index);
-			ntylog(" sql : %s\n", buffer);
+			
 			Connection_execute(con, NTY_DB_DELETE_EFENCE, did, index);
 		}
 	} 
@@ -1431,17 +1423,14 @@ int ntyQueryICCIDSelect(void *self, C_DEVID did, const char *iccid, char *phonen
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			U8 buffer[512];
-#if 0
-			sprintf(buffer, NTY_DB_SELECT_ICCID, iccid);
-			ntylog(" sql : %s\n", buffer);
-			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_ICCID, iccid);
-#else
+
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_PHNUM_VALUE_SELECT, did, iccid);
-#endif
+
 			if (ResultSet_next(r)) {
 				const char *temp = ResultSet_getString(r, 1);
 				memcpy(phonenum, temp, strlen(temp));
+
+				ret = 0;
 			}
 		}
 	} 
@@ -1475,9 +1464,7 @@ int ntyExecuteRuntimeUpdate(void *self, C_DEVID aid, C_DEVID did, int auto_conn,
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			U8 buffer[512];
-			sprintf(buffer, NTY_DB_UPDATE_RUNTIME, did, auto_conn, loss_report, light_panel, bell, target_step);
-			ntylog(" sql : %s\n", buffer);
+			
 			Connection_execute(con, NTY_DB_UPDATE_RUNTIME, did, auto_conn, loss_report, light_panel, bell, target_step);
 		}
 	} 
@@ -1510,9 +1497,7 @@ int ntyExecuteRuntimeAutoConnUpdate(void *self, C_DEVID aid, C_DEVID did, int ru
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			U8 buffer[512];
-			sprintf(buffer, NTY_DB_UPDATE_RUNTIME_AUTOCONN, did, runtime_param);
-			ntylog(" sql : %s\n", buffer);
+			
 			Connection_execute(con, NTY_DB_UPDATE_RUNTIME_AUTOCONN, did, runtime_param);
 		}
 	} 
@@ -1546,9 +1531,7 @@ int ntyExecuteRuntimeLossReportUpdate(void *self, C_DEVID aid, C_DEVID did, U8 r
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			//U8 buffer[512];
-			//sprintf(buffer, NTY_DB_UPDATE_RUNTIME_LOSSREPORT, did, runtime_param);
-			//ntylog(" sql : %s\n", buffer);
+			
 			ntylog(" Connection_execute before ntyExecuteRuntimeLossReportUpdate \n");
 			Connection_execute(con, NTY_DB_UPDATE_RUNTIME_LOSSREPORT, did, runtime_param);
 			ntylog(" Connection_execute after ntyExecuteRuntimeLossReportUpdate \n");
@@ -1584,9 +1567,7 @@ int ntyExecuteRuntimeLightPanelUpdate(void *self, C_DEVID aid, C_DEVID did, U8 r
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			U8 buffer[512];
-			sprintf(buffer, NTY_DB_UPDATE_RUNTIME_LIGHTPANEL, did, runtime_param);
-			ntylog(" sql : %s\n", buffer);
+			
 			Connection_execute(con, NTY_DB_UPDATE_RUNTIME_LIGHTPANEL, did, runtime_param);
 		}
 	} 
@@ -1620,9 +1601,7 @@ int ntyExecuteRuntimeBellUpdate(void *self, C_DEVID aid, C_DEVID did, const char
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			U8 buffer[512];
-			sprintf(buffer, NTY_DB_UPDATE_RUNTIME_BELL, did, runtime_param);
-			ntylog(" sql : %s\n", buffer);
+			
 			Connection_execute(con, NTY_DB_UPDATE_RUNTIME_BELL, did, runtime_param);
 		}
 	} 
@@ -1655,9 +1634,7 @@ int ntyExecuteRuntimeTargetStepUpdate(void *self, C_DEVID aid, C_DEVID did, int 
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			//U8 buffer[512];
-			//sprintf(buffer, NTY_DB_UPDATE_RUNTIME_TARGETSTEP, did, runtime_param);
-			//ntylog(" sql : %s\n", buffer);
+			
 			ntylog(" ntyExecuteRuntimeTargetStepUpdate -->  before Connection_execute\n");
 			Connection_execute(con, NTY_DB_UPDATE_RUNTIME_TARGETSTEP, did, runtime_param);
 			ntylog(" ntyExecuteRuntimeTargetStepUpdate -->  after Connection_execute\n");
@@ -1693,8 +1670,7 @@ int ntyExecuteTurnUpdate(void *self, C_DEVID aid, C_DEVID did, U8 status, const 
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			//U8 buffer[512];
-			//ntylog(" sql : %s\n", buffer);
+			
 			ntylog(" ntyExecuteTurnUpdate --> before Connection_execute\n ");
 			Connection_execute(con, NTY_DB_UPDATE_TURN, did, status, ontime, offtime);
 			ntylog(" ntyExecuteTurnUpdate --> after Connection_execute\n ");
@@ -1730,11 +1706,7 @@ int ntyExecuteContactsInsert(void *self, C_DEVID aid, C_DEVID did, Contacts *con
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			//U8 admin = atoi(contacts->admin);
-			//U8 app = atoi(contacts->app);
-			U8 buffer[512] = {0};
-			sprintf(buffer, NTY_DB_INSERT_PHONEBOOK, aid,did,contacts->image,contacts->name,contacts->telphone);
-			ntylog(" sql : %s\n", buffer);
+			
 			ResultSet_T r = Connection_executeQuery(con, 
 				NTY_DB_INSERT_PHONEBOOK, aid,did,contacts->image,contacts->name,contacts->telphone);
 			if (ResultSet_next(r)) {
@@ -1773,11 +1745,7 @@ int ntyExecuteContactsUpdate(void *self, C_DEVID aid, C_DEVID did, Contacts *con
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			//U8 admin = atoi(contacts->admin);
-			//U8 app = atoi(contacts->app);
-			U8 buffer[512] = {0};
-			sprintf(buffer, NTY_DB_UPDATE_PHONEBOOK, aid,did,contacts->image,contacts->name,contacts->telphone, contactsId);
-			ntylog(" sql : %s\n", buffer);
+			
 			Connection_execute(con, NTY_DB_UPDATE_PHONEBOOK, aid,did,contacts->image,contacts->name,contacts->telphone, contactsId);
 		}
 	}
@@ -1811,9 +1779,7 @@ int ntyExecuteContactsDelete(void *self, C_DEVID aid, C_DEVID did, int contactsI
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			U8 buffer[512] = {0};
-			sprintf(buffer, NTY_DB_DELETE_PHONEBOOK, did,contactsId);
-			ntylog(" sql : %s\n", buffer);
+			
 			Connection_execute(con, NTY_DB_DELETE_PHONEBOOK, did, contactsId);
 		}
 	}
@@ -1847,9 +1813,7 @@ int ntyExecuteScheduleInsert(void *self, C_DEVID aid, C_DEVID did, const char *d
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			U8 buffer[512] = {0};
-			sprintf(buffer, NTY_DB_INSERT_SCHEDULE, did, daily, time, status, details);
-			ntylog(" sql : %s\n", buffer);
+			
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_SCHEDULE, did, daily, time, status, details);
 			if (ResultSet_next(r)) {
 				int tempId = ResultSet_getInt(r, 1);
@@ -1886,8 +1850,7 @@ int ntyExecuteScheduleDelete(void *self, C_DEVID aid, C_DEVID did, int scheduleI
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			U8 buffer[512];
-			ntylog(" sql : %s\n", buffer);
+			
 			Connection_execute(con, NTY_DB_DELETE_SCHEDULE, did, scheduleId);
 		}
 	} 
@@ -1920,9 +1883,7 @@ int ntyExecuteScheduleUpdate(void *self, C_DEVID aid, C_DEVID did, int scheduleI
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			U8 buffer[512];
-			sprintf(buffer, NTY_DB_UPDATE_SCHEDULE, did, scheduleId, daily, time, status, details);
-			ntylog(" sql : %s\n", buffer);
+			ntylog(" ntyExecuteScheduleUpdate --> execute\n");
 			Connection_execute(con, NTY_DB_UPDATE_SCHEDULE, did, scheduleId, daily, time, status, details);
 		}
 	} 
@@ -1956,8 +1917,8 @@ int ntyExecuteScheduleSelect(void *self, C_DEVID aid, C_DEVID did, ScheduleAck *
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			U8 buffer[512];
-			ntylog(" sql : %s\n", buffer);
+			ntylog(" ntyExecuteScheduleSelect --> executeQuery\n");
+			
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_SCHEDULE, did);
 			if (pScheduleAck != NULL && pScheduleAck->results.pSchedule != NULL) {
 				size_t i = 0;
@@ -2085,9 +2046,9 @@ int ntyExecuteCommonMsgToProposerInsert(void *self, C_DEVID sid, C_DEVID gid, co
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			U8 buffer[512];
-			sprintf(buffer, NTY_DB_INSERT_COMMON_MSG_REJECT, sid, gid, detatils);
-			ntylog(" sql : %s\n", buffer);
+
+			ntylog(" ntyExecuteCommonMsgToProposerInsert --> executeQuery\n");
+			
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_COMMON_MSG_REJECT, sid, gid, detatils);
 			while (ResultSet_next(r)) {
 				*msg = ResultSet_getInt(r, 1);				
