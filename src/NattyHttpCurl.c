@@ -91,7 +91,17 @@ static size_t ntyHttpQJKFallenHandleResult(void* buffer, size_t size, size_t nme
 #endif
 
 exit:	
+#if 1
+	if (tag->Tag != NULL) {
+		free(tag->Tag);
+		tag->Tag = NULL;
+	}
 
+	if (tag != NULL) {
+		free(tag);
+		tag = NULL;
+	}
+#endif
 
 	return size*nmemb;
 }
@@ -143,7 +153,7 @@ int ntyHttpQJKFallen(void *arg) {
 	
 	curl_easy_cleanup(curl);
 	
-#if 1
+#if 0
 #if ENABLE_DAVE_MSGQUEUE_MALLOC
 	if (tag->Tag != NULL) {
 		free(tag->Tag);
@@ -362,6 +372,18 @@ static size_t ntyHttpGaodeWifiCellAPIHandleResult(void* data, size_t size, size_
 
 #endif
 
+
+	if (tag->Tag != NULL) {
+		free(tag->Tag);
+		tag->Tag = NULL;
+	}
+
+	if (tag != NULL) {
+		free(tag);
+		tag = NULL;
+	}
+
+
 	return size*nmemb;
 }
 
@@ -414,18 +436,6 @@ int ntyHttpGaodeWifiCellAPI(void *arg) {
 	ntylog(" ntyHttpGaodeWifiCellAPI --> res:%d\n", res);
 	curl_easy_cleanup(curl);
 	
-#if 1
-#if ENABLE_DAVE_MSGQUEUE_MALLOC
-	if (tag->Tag != NULL) {
-		free(tag->Tag);
-		tag->Tag = NULL;
-	}
-#endif
-	if (tag != NULL) {
-		free(tag);
-		tag = NULL;
-	}
-#endif
 	
 	return 0;
 }
@@ -608,6 +618,8 @@ int ntyHttpCurlGlobalInit(void) {
 
 static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
 	MessageTag *pMessageTag = (MessageTag *)stream;
+	if (pMessageTag == NULL) return NTY_RESULT_PROCESS;
+
 	U8 *jsonstring = buffer;
 	ntylog("ntyHttpQJKLocationHandleResult json --> %s\n", jsonstring);
 	ntylog("ntyHttpQJKLocationHandleResult url --> %s\n", pMessageTag->Tag);
@@ -646,10 +658,12 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 		}
 	}
 	
-	free(pAMap);
 	free(pLocationAck);
+	free(pAMap);
 #if 1 //Release Message
-	free(pMessageTag->Tag);
+	if (pMessageTag->Tag != NULL) {
+		free(pMessageTag->Tag);
+	}
 	free(pMessageTag);
 #endif
 	
@@ -661,6 +675,8 @@ int ntyHttpQJKLocation(void *arg) {
 	CURLcode res;
 
 	MessageTag *pMessageTag = (MessageTag *)arg;
+	if (pMessageTag == NULL) return NTY_RESULT_ERROR;
+	
 	U8 *tag = pMessageTag->Tag;
 #if 0
 	CURLcode return_code;
@@ -704,12 +720,12 @@ int ntyHttpQJKLocation(void *arg) {
 	}
 	
 	curl_easy_cleanup(curl);
-	
+#if 0	
 	if (tag != NULL) {
 		free(tag);
 		tag = NULL;
 	}
-
+#endif
 	return 0;
 }
 
@@ -740,6 +756,8 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	int ret = 0;
 	ntylog("==================begin ntyHttpQJKWeatherLocationHandleResult ==========================\n");
 	MessageTag *pMessageTag = (MessageTag *)stream;
+	if (pMessageTag == NULL) return NTY_RESULT_ERROR;
+	
 	U8 *jsonstring = buffer;
 	ntylog("ntyHttpQJKWeatherLocationHandleResult json --> %s\n", jsonstring);
 	ntylog("ntyHttpQJKWeatherLocationHandleResult url --> %s\n", pMessageTag->Tag);
@@ -838,7 +856,9 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 
 	
 #if 1 //Release Message
-	free(pMessageTag->Tag);
+	if (pMessageTag->Tag != NULL) {
+		free(pMessageTag->Tag);
+	}
 	free(pMessageTag);
 #endif
 
@@ -851,6 +871,8 @@ int ntyHttpQJKWeatherLocation(void *arg) {
 	CURL *curl;	
 	CURLcode res;	
 	MessageTag *pMessageTag = (MessageTag *)arg;
+	if (pMessageTag == NULL) return NTY_RESULT_ERROR;
+	
 	U8 *tag = pMessageTag->Tag;
 #if 0
 	CURLcode return_code;
@@ -894,12 +916,12 @@ int ntyHttpQJKWeatherLocation(void *arg) {
 	}	
 	
 	curl_easy_cleanup(curl);
-	
+#if 0	
 	if (tag != NULL) {
 		free(tag);
 		tag = NULL;
 	}
-
+#endif
 	return 0;
 }
 
@@ -908,6 +930,8 @@ static size_t ntyHttpQJKWeatherHandleResult(void* buffer, size_t size, size_t nm
 	int flag = 0;
 	ntylog("==================begin ntyHttpQJKWeatherHandleResult ==========================\n");
 	MessageTag *pMessageTag = (MessageTag *)stream;
+	if (pMessageTag == NULL) return NTY_RESULT_ERROR;
+	
 	U8 *jsonstring = buffer;
 	ntylog("ntyHttpQJKWeatherHandleResult json --> %s\n", jsonstring);
 	ntylog("ntyHttpQJKWeatherHandleResult url --> %s\n", pMessageTag->Tag);
@@ -1059,12 +1083,12 @@ int ntyHttpQJKWeather(void *arg) {
 	}
 	
 	curl_easy_cleanup(curl);
-	
+#if 0	
 	if (tag != NULL) {
 		free(tag);
 		tag = NULL;
 	}
-
+#endif
 	return 0;
 }
 
@@ -1149,12 +1173,12 @@ int ntyHttpQJKCommon(void *arg) {
 	}	
 	
 	curl_easy_cleanup(curl);
-	
+#if 0	
 	if (tag != NULL) {
 		free(tag);
 		tag = NULL;
 	}
-
+#endif
 
 	return 0;
 }
