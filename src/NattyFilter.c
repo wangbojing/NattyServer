@@ -500,6 +500,9 @@ int ntyOnlineClientHeap(C_DEVID clientId) {
 void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_LOGIN_REQ) {
+		
+		ntylog("====================begin ntyLoginPacketHandleRequest action ==========================\n");
+
 #if 0
 		int i = 0;
 		void *pRBTree = ntyRBTreeInstance();
@@ -574,7 +577,8 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 #endif
 		//ntylog("Login deal with: %d\n", buffer[NTY_PROTO_MSGTYPE_IDX]);		
 		//send login ack
-
+		
+		ntylog("====================end ntyLoginPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
@@ -599,6 +603,7 @@ static const ProtocolFilter ntyLoginFilter = {
 void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_HEARTBEAT_REQ) {
+		ntylog("====================begin ntyHeartBeatPacketHandleRequest action ==========================\n");
 		const MessagePacket *msg = (const MessagePacket*)obj;
 		if (msg == NULL) return ;
 		const Client *client = msg->client;
@@ -622,6 +627,7 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 #endif
 		ntySendHeartBeatResult(fromId);
 		
+		ntylog("====================end ntyHeartBeatPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);

@@ -51,6 +51,9 @@
 #include "NattyServAction.h"
 #include "NattyUdpServer.h"
 
+int ntyReadOfflineVoiceHandle(void *arg);
+
+
 int ntyVoiceAckHandle(void *arg) {
 	if (arg == NULL) return NTY_RESULT_ERROR;
 	VALUE_TYPE *tag = arg;
@@ -64,7 +67,7 @@ int ntyVoiceAckHandle(void *arg) {
 	if (ret == NTY_RESULT_FAILED) {
 		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_NOEXIST);
 	} 
-	
+#if 0
 	//read offline voice msg
 	ret = ntyReadOfflineVoiceMsgAction(fromId);
 	if (ret == NTY_RESULT_NOEXIST) {
@@ -73,8 +76,15 @@ int ntyVoiceAckHandle(void *arg) {
 	}
 	
 	free(tag);
-
 	return ret;
+#else
+
+	tag->Type = MSG_TYPE_VOICE_OFFLINE_READ_HANDLE;
+	tag->cb = ntyReadOfflineVoiceHandle;
+	return ntyDaveMqPushMessage(tag);
+	
+#endif
+
 }
 
 int ntyCommonAckHandle(void *arg) {
