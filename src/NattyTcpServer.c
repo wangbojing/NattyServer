@@ -164,6 +164,8 @@ int ntyAddRelationMap(MessagePacket *msg) {
 	ClientSocket * value = ntyMapSearch(map, msg->client->devId);
 	if (value == NULL) {
 		ClientSocket *nValue = (NValue*)malloc(sizeof(ClientSocket));
+		if (nValue == NULL) return NTY_RESULT_ERROR;
+		
 #if ENABLE_EV_WATCHER_MODE
 		nValue->watcher = msg->watcher;
 #else

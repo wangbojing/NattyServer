@@ -1317,6 +1317,7 @@ int ntyExecuteAppLogoutUpdate(void *self, C_DEVID aid) {
 		if (con == NULL) {
 			ret = -1;
 		} else {
+			ntylog("ntyExecuteAppLogoutUpdate --> execute\n");
 			Connection_execute(con, NTY_DB_APPLOGOUT_UPDATE_FORMAT, aid);
 		}
 	} 
@@ -1351,7 +1352,7 @@ int ntyExecuteEfenceInsert(void *self, C_DEVID aid, C_DEVID did, int index, int 
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			
+			ntylog("ntyExecuteEfenceInsert --> executeQuery\n");
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_EFENCE, did, index, num, points, runtime);
 			if (ResultSet_next(r)) {
 				*id = ResultSet_getInt(r, 1);
@@ -1389,7 +1390,7 @@ int ntyExecuteEfenceDelete(void *self, C_DEVID aid, C_DEVID did, int index) {
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			
+			ntylog("ntyExecuteEfenceDelete --> execute\n");
 			Connection_execute(con, NTY_DB_DELETE_EFENCE, did, index);
 		}
 	} 
@@ -1423,7 +1424,7 @@ int ntyQueryICCIDSelect(void *self, C_DEVID did, const char *iccid, char *phonen
 		if (con == NULL) {
 			ret = -1;
 		} else {
-
+			ntylog("ntyQueryICCIDSelect --> executeQuery\n");
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_PHNUM_VALUE_SELECT, did, iccid);
 
 			if (ResultSet_next(r)) {
