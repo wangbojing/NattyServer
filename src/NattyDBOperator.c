@@ -1415,7 +1415,7 @@ int ntyQueryICCIDSelect(void *self, C_DEVID did, const char *iccid, char *phonen
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = 0;
+	int ret = -1;
 	U8 u8PhNum[20] = {0};
 
 	TRY 
@@ -1428,8 +1428,12 @@ int ntyQueryICCIDSelect(void *self, C_DEVID did, const char *iccid, char *phonen
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_PHNUM_VALUE_SELECT, did, iccid);
 
 			if (ResultSet_next(r)) {
+				ntylog("ntyQueryICCIDSelect --> ResultSet_getString\n");
 				const char *temp = ResultSet_getString(r, 1);
-				memcpy(phonenum, temp, strlen(temp));
+				ntylog("ntyQueryICCIDSelect --> ResultSet_getString : %s\n", temp);
+				if (temp != NULL) {
+					memcpy(phonenum, temp, strlen(temp));
+				}
 
 				ret = 0;
 			}
