@@ -249,7 +249,7 @@ static int ntyQueryAppIDListSelect(void *self, C_DEVID did, void *container) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = 0;
+	int ret = -1;
 
 	TRY 
 	{
@@ -258,14 +258,17 @@ static int ntyQueryAppIDListSelect(void *self, C_DEVID did, void *container) {
 			ret = -1;
 		} else {
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_APPIDLIST_SELECT_FORMAT, did);
-			while (ResultSet_next(r)) {
-				C_DEVID id = ResultSet_getLLong(r, 1);
-				ntylog("app: %lld\n", id);
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					C_DEVID id = ResultSet_getLLong(r, 1);
+					ntylog("app: %lld\n", id);
 #if 1
-				ntyVectorInsert(container, &id, sizeof(C_DEVID));
+					ntyVectorInsert(container, &id, sizeof(C_DEVID));
 #else
-				ntyFriendsTreeInsert(tree, id);
+					ntyFriendsTreeInsert(tree, id);
 #endif
+					ret = 0;
+				}
 			}
 		}
 	} 
@@ -290,7 +293,7 @@ static int ntyQueryWatchIDListSelect(void *self, C_DEVID aid, void *container) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = 0;
+	int ret = -1;
 
 	TRY 
 	{
@@ -299,14 +302,17 @@ static int ntyQueryWatchIDListSelect(void *self, C_DEVID aid, void *container) {
 			ret = -1;
 		} else {
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_WATCHIDLIST_SELECT_FORMAT, aid);
-			while (ResultSet_next(r)) {
-				C_DEVID id = ResultSet_getLLong(r, 1);
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					C_DEVID id = ResultSet_getLLong(r, 1);
 #if 1
-				ntylog(" ntyQueryWatchIDListSelect : %lld\n", id);
-				ntyVectorInsert(container, &id, sizeof(C_DEVID));
+					ntylog(" ntyQueryWatchIDListSelect : %lld\n", id);
+					ntyVectorInsert(container, &id, sizeof(C_DEVID));
 #else
-				ntyFriendsTreeInsert(tree, id);
+					ntyFriendsTreeInsert(tree, id);
 #endif
+					ret = 0;
+				}
 			}
 		}
 	} 
@@ -330,7 +336,7 @@ static int ntyQueryDevAppRelationInsert(void *self, C_DEVID aid, U8 *imei) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = 0;
+	int ret = -1;
 
 	TRY 
 	{
@@ -339,8 +345,11 @@ static int ntyQueryDevAppRelationInsert(void *self, C_DEVID aid, U8 *imei) {
 			ret = -1;
 		} else {
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_DEV_APP_INSERT_FORMAT, aid, imei);
-			while (ResultSet_next(r)) {
-				ret = ResultSet_getInt(r, 1);
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					ret = ResultSet_getInt(r, 1);
+				}
+				ret = 0;
 			}
 		}
 	} 
@@ -396,7 +405,7 @@ static int ntyQueryDevAppGroupInsert(void *self, C_DEVID aid, C_DEVID imei, U8 *
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = 0;
+	int ret = -1;
 
 	TRY 
 	{
@@ -406,10 +415,11 @@ static int ntyQueryDevAppGroupInsert(void *self, C_DEVID aid, C_DEVID imei, U8 *
 		} else {
 
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_GROUP, imei, aid, name);
-			while (ResultSet_next(r)) {
-				ret = ResultSet_getInt(r, 1);
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					ret = ResultSet_getInt(r, 1);
+				}
 			}
-
 		}
 	} 
 	CATCH(SQLException) 
@@ -443,12 +453,12 @@ static int ntyQueryDevAppGroupCheckSelect(void *self, C_DEVID aid, C_DEVID imei)
 
 			ntylog(" ntyQueryDevAppGroupCheckSelect ...\n");
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_CHECK_GROUP, imei, aid);
-			while (ResultSet_next(r)) {
-				ret = ResultSet_getInt(r, 1);
-				ret = 0;
-				ntylog(" ntyQueryDevAppGroupCheckSelect ...\n");
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					ret = ResultSet_getInt(r, 1);
+					ntylog(" ntyQueryDevAppGroupCheckSelect ...\n");
+				}
 			}
-			
 		}
 	} 
 	CATCH(SQLException) 
@@ -482,16 +492,18 @@ static int ntyExecuteDevAppGroupBindInsert(void *self, int msgId, C_DEVID *propo
 		} else {
 		
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_BIND_GROUP, msgId);
-			while (ResultSet_next(r)) {
-				ret = ResultSet_getInt(r, 1);
-				
-				*proposerId = ResultSet_getLLong(r, 2);
-				const char *num = ResultSet_getString(r, 3);
-				ntylog("ntyExecuteDevAppGroupBindInsert --> num:%s, proposerId:%lld\n", num, *proposerId);
-				if (num != NULL) {
-					memcpy(phonenum, num, strlen(num));
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					ret = ResultSet_getInt(r, 1);
+					
+					*proposerId = ResultSet_getLLong(r, 2);
+					const char *num = ResultSet_getString(r, 3);
+					ntylog("ntyExecuteDevAppGroupBindInsert --> num:%s, proposerId:%lld\n", num, *proposerId);
+					if (num != NULL) {
+						memcpy(phonenum, num, strlen(num));
+					}
+					
 				}
-				
 			}
 		}
 	} 
@@ -524,10 +536,12 @@ static int ntyExecuteBindConfirmDelete(void *self, int msgId, C_DEVID *id) {
 			ret = -1;
 		} else {
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_DELETE_BIND_GROUP, msgId);
-			while (ResultSet_next(r)) {
-				*id = ResultSet_getLLong(r, 1);
-				ntylog("ntyExecuteBindConfirmDelete -->  id:%lld\n", *id);
-				ret = 0;
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					*id = ResultSet_getLLong(r, 1);
+					ntylog("ntyExecuteBindConfirmDelete -->  id:%lld\n", *id);
+					ret = 0;
+				}
 			}
 		}
 	} 
@@ -605,23 +619,26 @@ static int ntyQueryCommonOfflineMsgSelect(void *self, C_DEVID deviceId, void *co
 			ret = -1;
 			
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_COMMON_OFFLINE_MSG, deviceId);
-			while (ResultSet_next(r)) {
-				int msgId = ResultSet_getInt(r, 1);
-				C_DEVID r_senderId = ResultSet_getLLong(r, 2);
-				C_DEVID r_groupId = ResultSet_getLLong(r, 3);
-				const char *r_details = ResultSet_getString(r, 4);
-				size_t details_len = strlen(r_details);
-				
-				CommonOfflineMsg *pCommonOfflineMsg = malloc(sizeof(CommonOfflineMsg));
-				pCommonOfflineMsg->msgId = msgId;
-				pCommonOfflineMsg->senderId = r_senderId;
-				pCommonOfflineMsg->groupId = r_groupId;
 
-				pCommonOfflineMsg->details = malloc(details_len);
-				memset(pCommonOfflineMsg->details, 0, details_len);
-				memcpy(pCommonOfflineMsg->details, r_details, details_len);
-				ntyVectorInsert(container, pCommonOfflineMsg, sizeof(CommonOfflineMsg));
-				ret = 0;
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					int msgId = ResultSet_getInt(r, 1);
+					C_DEVID r_senderId = ResultSet_getLLong(r, 2);
+					C_DEVID r_groupId = ResultSet_getLLong(r, 3);
+					const char *r_details = ResultSet_getString(r, 4);
+					size_t details_len = strlen(r_details);
+					
+					CommonOfflineMsg *pCommonOfflineMsg = malloc(sizeof(CommonOfflineMsg));
+					pCommonOfflineMsg->msgId = msgId;
+					pCommonOfflineMsg->senderId = r_senderId;
+					pCommonOfflineMsg->groupId = r_groupId;
+
+					pCommonOfflineMsg->details = malloc(details_len);
+					memset(pCommonOfflineMsg->details, 0, details_len);
+					memcpy(pCommonOfflineMsg->details, r_details, details_len);
+					ntyVectorInsert(container, pCommonOfflineMsg, sizeof(CommonOfflineMsg));
+					ret = 0;
+				}
 			}
 		}
 	}
@@ -657,27 +674,28 @@ static int ntyQueryVoiceOfflineMsgSelect(void *self, C_DEVID fromId, void *conta
 			ret = -1;
 			
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_VOICE_OFFLINE_MSG, fromId);
-			while (ResultSet_next(r)) {
-				int msgId = ResultSet_getInt(r, 1);
-				C_DEVID r_senderId = ResultSet_getLLong(r, 2);
-				C_DEVID r_groupId = ResultSet_getLLong(r, 3);
-				const char *r_details = ResultSet_getString(r, 4);
-				long timeStamp = ResultSet_getTimestamp(r, 5);
-				size_t details_len = strlen(r_details);
-				
-				nOfflineMsg *pOfflineMsg = malloc(sizeof(nOfflineMsg));
-				pOfflineMsg->msgId = msgId;
-				pOfflineMsg->senderId = r_senderId;
-				pOfflineMsg->groupId = r_groupId;
-				pOfflineMsg->timeStamp = timeStamp;
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					int msgId = ResultSet_getInt(r, 1);
+					C_DEVID r_senderId = ResultSet_getLLong(r, 2);
+					C_DEVID r_groupId = ResultSet_getLLong(r, 3);
+					const char *r_details = ResultSet_getString(r, 4);
+					long timeStamp = ResultSet_getTimestamp(r, 5);
+					size_t details_len = strlen(r_details);
+					
+					nOfflineMsg *pOfflineMsg = malloc(sizeof(nOfflineMsg));
+					pOfflineMsg->msgId = msgId;
+					pOfflineMsg->senderId = r_senderId;
+					pOfflineMsg->groupId = r_groupId;
+					pOfflineMsg->timeStamp = timeStamp;
 
-				pOfflineMsg->details = malloc(details_len);
-				memset(pOfflineMsg->details, 0, details_len);
-				memcpy(pOfflineMsg->details, r_details, details_len);
-				ntyVectorInsert(container, pOfflineMsg, sizeof(CommonOfflineMsg));
-				ret = 0;
+					pOfflineMsg->details = malloc(details_len);
+					memset(pOfflineMsg->details, 0, details_len);
+					memcpy(pOfflineMsg->details, r_details, details_len);
+					ntyVectorInsert(container, pOfflineMsg, sizeof(CommonOfflineMsg));
+					ret = 0;
+				}
 			}
-			
 		}
 	}
 	CATCH(SQLException)
@@ -747,7 +765,7 @@ static int ntyQueryBindConfirmInsert(void *self, C_DEVID admin, C_DEVID imei, U8
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = 0;
+	int ret = -1;
 
 	TRY 
 	{
@@ -757,10 +775,12 @@ static int ntyQueryBindConfirmInsert(void *self, C_DEVID admin, C_DEVID imei, U8
 		} else {
 
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_BIND_CONFIRM, admin, imei, name, wimage, proposer, call, uimage);
-			while (ResultSet_next(r)) {
-				*msgId = ResultSet_getInt(r, 1);
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					*msgId = ResultSet_getInt(r, 1);
+					ret = 0;
+				}
 			}
-			
 		}
 	} 
 	CATCH(SQLException) 
@@ -794,12 +814,14 @@ static int ntyQueryPhoneBookSelect(void *self, C_DEVID imei, C_DEVID userId, cha
 		} else {
 			
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_PHONE_NUMBER, imei, userId);
-			while (ResultSet_next(r)) {
-				const char *pnum = ResultSet_getString(r, 1);
-				ntylog(" ntyQueryPhoneBookSelect --> PhoneNum:%s\n", pnum);
-				memcpy(phonenum, pnum, strlen(pnum));
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					const char *pnum = ResultSet_getString(r, 1);
+					ntylog(" ntyQueryPhoneBookSelect --> PhoneNum:%s\n", pnum);
+					memcpy(phonenum, pnum, strlen(pnum));
 
-				ret = 0;
+					ret = 0;
+				}
 			}
 		}
 	} 
@@ -833,15 +855,16 @@ static int ntyQueryAdminSelect(void *self, C_DEVID did, C_DEVID *appid) {
 		} else {
 
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_ADMIN, did);
-			while (ResultSet_next(r)) {
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
 #if 0
-				ret = ResultSet_getInt(r, 1);
+					ret = ResultSet_getInt(r, 1);
 #else
-				*appid = ResultSet_getLLong(r, 1);
+					*appid = ResultSet_getLLong(r, 1);
 #endif
-				ret = 0;
+					ret = 0;
+				}
 			}
-			
 		}
 	} 
 	CATCH(SQLException) 
@@ -876,30 +899,31 @@ static int ntyQueryBindOfflineMsgToAdminSelect(void *self, C_DEVID fromId, void 
 		} else {
 			ret = -1;
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_BIND_OFFLINE_MSG_TO_ADMIN, fromId);
-			while (ResultSet_next(r)) {
-				int bId = ResultSet_getInt(r, 1);
-				
-				C_DEVID r_admin = ResultSet_getLLong(r, 2);
-				C_DEVID r_imei = ResultSet_getLLong(r, 3);
-				const char *r_watchname = ResultSet_getString(r, 4);
-				const char *r_watchimage = ResultSet_getString(r, 5);
-				C_DEVID r_proposer = ResultSet_getLLong(r, 6);
-				const char *r_usercall = ResultSet_getString(r, 7);
-				const char *r_userimage = ResultSet_getString(r, 8);
-				
-				BindOfflineMsgToAdmin *pMsgToAdmin = malloc(sizeof(BindOfflineMsgToAdmin));
-				pMsgToAdmin->msgId = bId;
-				pMsgToAdmin->IMEI = r_imei;
-				pMsgToAdmin->admin = r_admin;
-				pMsgToAdmin->proposer = r_proposer;
-				pMsgToAdmin->watchName = r_watchname;
-				pMsgToAdmin->watchImage = r_watchimage;
-				pMsgToAdmin->userName = r_usercall;
-				pMsgToAdmin->userImage = r_userimage;
-				ntyVectorAdd(container, pMsgToAdmin, sizeof(BindOfflineMsgToAdmin));	
-				ret = 0;
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					int bId = ResultSet_getInt(r, 1);
+					
+					C_DEVID r_admin = ResultSet_getLLong(r, 2);
+					C_DEVID r_imei = ResultSet_getLLong(r, 3);
+					const char *r_watchname = ResultSet_getString(r, 4);
+					const char *r_watchimage = ResultSet_getString(r, 5);
+					C_DEVID r_proposer = ResultSet_getLLong(r, 6);
+					const char *r_usercall = ResultSet_getString(r, 7);
+					const char *r_userimage = ResultSet_getString(r, 8);
+					
+					BindOfflineMsgToAdmin *pMsgToAdmin = malloc(sizeof(BindOfflineMsgToAdmin));
+					pMsgToAdmin->msgId = bId;
+					pMsgToAdmin->IMEI = r_imei;
+					pMsgToAdmin->admin = r_admin;
+					pMsgToAdmin->proposer = r_proposer;
+					pMsgToAdmin->watchName = r_watchname;
+					pMsgToAdmin->watchImage = r_watchimage;
+					pMsgToAdmin->userName = r_usercall;
+					pMsgToAdmin->userImage = r_userimage;
+					ntyVectorAdd(container, pMsgToAdmin, sizeof(BindOfflineMsgToAdmin));	
+					ret = 0;
+				}
 			}
-			
 		}
 	}
 	CATCH(SQLException)
@@ -923,7 +947,7 @@ static int ntyQueryBindOfflineMsgToProposerSelect(void *self, C_DEVID fromId, vo
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = 0;
+	int ret = -1;
 
 	TRY
 	{
@@ -933,23 +957,24 @@ static int ntyQueryBindOfflineMsgToProposerSelect(void *self, C_DEVID fromId, vo
 		} else {
 			ret = -1;
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_BIND_OFFLINE_MSG_TO_PROPOSER, fromId);
-			while (ResultSet_next(r)) {
-				int bId = ResultSet_getInt(r, 1);
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					int bId = ResultSet_getInt(r, 1);
 
-				C_DEVID r_admin = ResultSet_getLLong(r, 2);
-				C_DEVID r_imei = ResultSet_getLLong(r, 3);
-				const char *r_watchname = ResultSet_getString(r, 4);
-				const char *r_watchimage = ResultSet_getString(r, 5);
+					C_DEVID r_admin = ResultSet_getLLong(r, 2);
+					C_DEVID r_imei = ResultSet_getLLong(r, 3);
+					const char *r_watchname = ResultSet_getString(r, 4);
+					const char *r_watchimage = ResultSet_getString(r, 5);
 
-				BindOfflineMsgToProposer *pMsgToProposer = malloc(sizeof(BindOfflineMsgToProposer));
-				//pMsgToProposer->msgId = bId;
-				//pMsgToProposer->IMEI = r_imei;
-				//pMsgToProposer->admin = r_admin;
-				//pMsgToProposer->proposer = r_proposer;
-				ntyVectorAdd(container, pMsgToProposer, sizeof(BindOfflineMsgToProposer));
-				ret = 0;
+					BindOfflineMsgToProposer *pMsgToProposer = malloc(sizeof(BindOfflineMsgToProposer));
+					//pMsgToProposer->msgId = bId;
+					//pMsgToProposer->IMEI = r_imei;
+					//pMsgToProposer->admin = r_admin;
+					//pMsgToProposer->proposer = r_proposer;
+					ntyVectorAdd(container, pMsgToProposer, sizeof(BindOfflineMsgToProposer));
+					ret = 0;
+				}
 			}
-			
 		}
 	}
 	CATCH(SQLException)
@@ -1048,9 +1073,6 @@ static int ntyExecuteLocationNewInsert(void *self, C_DEVID did, U8 type, const c
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			U8 sql[256];
-			sprintf(sql, NTY_DB_INSERT_LOCATION, did, type, lnglat, info, desc);
-			ntylog(" sql :%s", sql);
 			Connection_execute(con, NTY_DB_INSERT_LOCATION, did, type, lnglat, info, desc);
 		}
 	} 
@@ -1203,8 +1225,8 @@ int ntyQueryPhNumSelect(void *self, C_DEVID did, U8 *iccid, U8 *phnum) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = 0;
-	U8 u8PhNum[20] = {0};
+	int ret = -1;
+	//U8 u8PhNum[20] = {0};
 
 	TRY 
 	{
@@ -1213,14 +1235,17 @@ int ntyQueryPhNumSelect(void *self, C_DEVID did, U8 *iccid, U8 *phnum) {
 			ret = -1;
 		} else {
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_PHNUM_VALUE_SELECT_FORMAT, did, iccid);
-			while (ResultSet_next(r)) {
-				const char *u8pNum = ResultSet_getString(r, 1);
-				int len = strlen(u8pNum);
-				ntylog(" ntyQueryPhNumSelect --> len:%d\n", len);
-				if (len < 20)
-					memcpy(u8PhNum, u8pNum, len);
+
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					const char *u8pNum = ResultSet_getString(r, 1);
+					int len = strlen(u8pNum);
+					ntylog(" ntyQueryPhNumSelect --> len:%d\n", len);
+					if (len < 20)
+						memcpy(phnum, u8pNum, len);
+				}
 			}
-			strcpy(phnum, u8PhNum);
+			//strcpy(phnum, u8PhNum);
 		}
 	} 
 	CATCH(SQLException) 
@@ -1354,9 +1379,12 @@ int ntyExecuteEfenceInsert(void *self, C_DEVID aid, C_DEVID did, int index, int 
 		} else {
 			ntylog("ntyExecuteEfenceInsert --> executeQuery\n");
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_EFENCE, did, index, num, points, runtime);
-			if (ResultSet_next(r)) {
-				*id = ResultSet_getInt(r, 1);
-				ret = 0;
+
+			if (r != NULL) {
+				if (ResultSet_next(r)) {
+					*id = ResultSet_getInt(r, 1);
+					ret = 0;
+				}
 			}
 		}
 	} 
@@ -1427,15 +1455,17 @@ int ntyQueryICCIDSelect(void *self, C_DEVID did, const char *iccid, char *phonen
 			ntylog("ntyQueryICCIDSelect --> executeQuery\n");
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_PHNUM_VALUE_SELECT, did, iccid);
 
-			if (ResultSet_next(r)) {
-				ntylog("ntyQueryICCIDSelect --> ResultSet_getString\n");
-				const char *temp = ResultSet_getString(r, 1);
-				ntylog("ntyQueryICCIDSelect --> ResultSet_getString : %s\n", temp);
-				if (temp != NULL) {
-					memcpy(phonenum, temp, strlen(temp));
-				}
+			if (r != NULL) {
+				if (ResultSet_next(r)) {
+					ntylog("ntyQueryICCIDSelect --> ResultSet_getString\n");
+					const char *temp = ResultSet_getString(r, 1);
+					ntylog("ntyQueryICCIDSelect --> ResultSet_getString : %s\n", temp);
+					if (temp != NULL) {
+						memcpy(phonenum, temp, strlen(temp));
+					}
 
-				ret = 0;
+					ret = 0;
+				}
 			}
 		}
 	} 
@@ -1702,7 +1732,7 @@ int ntyExecuteContactsInsert(void *self, C_DEVID aid, C_DEVID did, Contacts *con
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = 0;
+	int ret = -1;
 	U8 u8PhNum[20] = {0};
 
 	TRY
@@ -1714,9 +1744,12 @@ int ntyExecuteContactsInsert(void *self, C_DEVID aid, C_DEVID did, Contacts *con
 			
 			ResultSet_T r = Connection_executeQuery(con, 
 				NTY_DB_INSERT_PHONEBOOK, aid,did,contacts->image,contacts->name,contacts->telphone);
-			if (ResultSet_next(r)) {
-				int tempId = ResultSet_getInt(r, 1);
-				*contactsId = tempId;
+			if (r != NULL) {
+				if (ResultSet_next(r)) {
+					int tempId = ResultSet_getInt(r, 1);
+					*contactsId = tempId;
+					ret = 0;
+				}
 			}
 		}
 	}
@@ -1809,7 +1842,7 @@ int ntyExecuteScheduleInsert(void *self, C_DEVID aid, C_DEVID did, const char *d
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = 0;
+	int ret = -1;
 	U8 u8PhNum[20] = {0};
 
 	TRY
@@ -1820,9 +1853,12 @@ int ntyExecuteScheduleInsert(void *self, C_DEVID aid, C_DEVID did, const char *d
 		} else {
 			
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_SCHEDULE, did, daily, time, status, details);
-			if (ResultSet_next(r)) {
-				int tempId = ResultSet_getInt(r, 1);
-				*scheduleId = tempId;
+			if (r != NULL) {
+				if (ResultSet_next(r)) {
+					int tempId = ResultSet_getInt(r, 1);
+					*scheduleId = tempId;
+					ret = 0;
+				}
 			}
 		}
 	}
@@ -1913,7 +1949,7 @@ int ntyExecuteScheduleSelect(void *self, C_DEVID aid, C_DEVID did, ScheduleAck *
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = 0;
+	int ret = -1;
 	U8 u8PhNum[20] = {0};
 
 	TRY
@@ -1924,19 +1960,23 @@ int ntyExecuteScheduleSelect(void *self, C_DEVID aid, C_DEVID did, ScheduleAck *
 		} else {
 			ntylog(" ntyExecuteScheduleSelect --> executeQuery\n");
 			
-			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_SCHEDULE, did);
 			if (pScheduleAck != NULL && pScheduleAck->results.pSchedule != NULL) {
 				size_t i = 0;
-				while (ResultSet_next(r)) {
-					pScheduleAck->results.size = i;
-					if (i>=size) {
-						break;
+				ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_SCHEDULE, did);
+				if (r != NULL) {
+					while (ResultSet_next(r)) {
+						pScheduleAck->results.size = i;
+						if (i>=size) {
+							break;
+						}
+						pScheduleAck->results.pSchedule[i].id = ResultSet_getString(r, 1);
+						pScheduleAck->results.pSchedule[i].daily  = ResultSet_getString(r, 3);
+						pScheduleAck->results.pSchedule[i].time = ResultSet_getString(r, 4);
+						pScheduleAck->results.pSchedule[i].details = ResultSet_getString(r, 5);
+						i++;
+
+						ret = 0;
 					}
-					pScheduleAck->results.pSchedule[i].id = ResultSet_getString(r, 1);
-					pScheduleAck->results.pSchedule[i].daily  = ResultSet_getString(r, 3);
-					pScheduleAck->results.pSchedule[i].time = ResultSet_getString(r, 4);
-					pScheduleAck->results.pSchedule[i].details = ResultSet_getString(r, 5);
-					i++;
 				}
 			}
 		}
@@ -1962,7 +2002,7 @@ int ntyExecuteTimeTablesUpdate(void *self, C_DEVID aid, C_DEVID did, const char 
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = 0;
+	int ret = -1;
 	U8 u8PhNum[20] = {0};
 
 	TRY
@@ -1974,10 +2014,13 @@ int ntyExecuteTimeTablesUpdate(void *self, C_DEVID aid, C_DEVID did, const char 
 			
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_UPDATE_TIMETABLE, did, morning, morning_turn, afternoon, afternoon_turn, daily);
 			ntylog(" ntyExecuteTimeTablesUpdate ntyExecuteTimeTablesUpdate --> r ::: \n");
-			while (ResultSet_next(r)) {
-				int temp = ResultSet_getInt(r, 1);
-				*result = temp;
-				ntylog(" ntyExecuteTimeTablesUpdate temp --> r ::: %d\n", temp);
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					int temp = ResultSet_getInt(r, 1);
+					*result = temp;
+					ntylog(" ntyExecuteTimeTablesUpdate temp --> r ::: %d\n", temp);
+					ret = 0;
+				}
 			}
 		}
 	} 
@@ -2001,7 +2044,7 @@ int ntyExecuteCommonMsgInsert(void *self, C_DEVID sid, C_DEVID gid, const char *
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = 0;
+	int ret = -1;
 	U8 u8PhNum[20] = {0};
 
 	TRY
@@ -2013,11 +2056,13 @@ int ntyExecuteCommonMsgInsert(void *self, C_DEVID sid, C_DEVID gid, const char *
 			ntylog(" ntyExecuteCommonMsgInsert --> start\n");
 			
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_COMMON_MSG, sid, gid, detatils);
-			while (ResultSet_next(r)) {
-				*msg = ResultSet_getInt(r, 1);	
-				ret = 0;
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					*msg = ResultSet_getInt(r, 1);	
+					ret = 0;
 
-				ntylog("ntyExecuteCommonMsgInsert msgId : %d\n", *msg);
+					ntylog("ntyExecuteCommonMsgInsert msgId : %d\n", *msg);
+				}
 			}
 		}
 	}
@@ -2042,7 +2087,7 @@ int ntyExecuteCommonMsgToProposerInsert(void *self, C_DEVID sid, C_DEVID gid, co
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = 0;
+	int ret = -1;
 	U8 u8PhNum[20] = {0};
 
 	TRY
@@ -2055,8 +2100,12 @@ int ntyExecuteCommonMsgToProposerInsert(void *self, C_DEVID sid, C_DEVID gid, co
 			ntylog(" ntyExecuteCommonMsgToProposerInsert --> executeQuery\n");
 			
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_COMMON_MSG_REJECT, sid, gid, detatils);
-			while (ResultSet_next(r)) {
-				*msg = ResultSet_getInt(r, 1);				
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					*msg = ResultSet_getInt(r, 1);	
+					ret = 0;
+				}
+				
 			}
 		}
 	} 
@@ -2081,7 +2130,7 @@ int ntyQueryDeviceOnlineStatus(void *self, C_DEVID did, int *online) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = 0;
+	int ret = -1;
 	U8 u8PhNum[20] = {0};
 
 	TRY 
@@ -2091,8 +2140,11 @@ int ntyQueryDeviceOnlineStatus(void *self, C_DEVID did, int *online) {
 			ret = -1;
 		} else {
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_DEVICE_STATUS_SELECT_FORMAT, did);
-			while (ResultSet_next(r)) {
-				*online = ResultSet_getInt(r, 1);				
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					*online = ResultSet_getInt(r, 1);	
+					ret = 0;
+				}
 			}
 		}
 	} 
@@ -2116,7 +2168,7 @@ int ntyQueryAppOnlineStatus(void *self, C_DEVID aid, int *online) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = 0;
+	int ret = -1;
 	U8 u8PhNum[20] = {0};
 
 	TRY 
@@ -2126,8 +2178,11 @@ int ntyQueryAppOnlineStatus(void *self, C_DEVID aid, int *online) {
 			ret = -1;
 		} else {
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_APP_STATUS_SELECT_FORMAT, aid);
-			while (ResultSet_next(r)) {
-				*online = ResultSet_getInt(r, 1);				
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					*online = ResultSet_getInt(r, 1);	
+					ret = 0;
+				}
 			}
 		}
 	} 
@@ -2151,7 +2206,7 @@ int ntyQueryVoiceMsgInsert(void *self, C_DEVID senderId, C_DEVID gId, char *file
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = 0;
+	int ret = -1;
 	U8 u8PhNum[20] = {0};
 
 	TRY
@@ -2161,10 +2216,12 @@ int ntyQueryVoiceMsgInsert(void *self, C_DEVID senderId, C_DEVID gId, char *file
 			ret = -1;
 		} else {
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_VOICE_MSG, senderId, gId, filename);
-			while (ResultSet_next(r)) {
-				*msgId = ResultSet_getInt(r, 1);				
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					*msgId = ResultSet_getInt(r, 1);
+					ret = 0;				
+				}
 			}
-			ret = 0;
 		}
 	} 
 	CATCH(SQLException) 
@@ -2217,7 +2274,7 @@ int ntyQueryVoiceMsgSelect(void *self, int index,C_DEVID *senderId, C_DEVID *gId
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = 0;
+	int ret = -1;
 	U8 u8PhNum[20] = {0};
 
 	TRY
@@ -2228,21 +2285,26 @@ int ntyQueryVoiceMsgSelect(void *self, int index,C_DEVID *senderId, C_DEVID *gId
 		} else {
 			
 			ResultSet_T r =Connection_executeQuery(con, NTY_DB_SELECT_VOICE_MSG, index);
-			while (ResultSet_next(r)) {
-				//*id = ResultSet_getInt(r, 1);	
-				*senderId = ResultSet_getLLong(r, 2);
-				*gId = ResultSet_getLLong(r, 3);
 
-				const char *details = ResultSet_getString(r, 4);
-				int length = strlen(details);
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					//*id = ResultSet_getInt(r, 1);	
+					*senderId = ResultSet_getLLong(r, 2);
+					*gId = ResultSet_getLLong(r, 3);
 
-				time_t nStamp = ResultSet_getTimestamp(r, 5);
-				*stamp = nStamp;
+					const char *details = ResultSet_getString(r, 4);
+					int length = strlen(details);
 
-				memcpy(filename, details, length);
+					time_t nStamp = ResultSet_getTimestamp(r, 5);
+					*stamp = nStamp;
 
-				ntylog(" ntyQueryVoiceMsgSelect --> sender:%lld, gId:%lld\n", *senderId, *gId);
-				ntylog(" ntyQueryVoiceMsgSelect --> details : %s\n", details);
+					memcpy(filename, details, length);
+
+					ntylog(" ntyQueryVoiceMsgSelect --> sender:%lld, gId:%lld\n", *senderId, *gId);
+					ntylog(" ntyQueryVoiceMsgSelect --> details : %s\n", details);
+
+					ret = 0;
+				}
 			}
 		}
 	} 
@@ -2266,7 +2328,7 @@ int ntyQueryAdminGroupInsert(void *self, C_DEVID devId, U8 *bname, C_DEVID fromI
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = 0;
+	int ret = -1;
 	TRY
 	{
 		con = ntyCheckConnection(self, con);
@@ -2275,8 +2337,10 @@ int ntyQueryAdminGroupInsert(void *self, C_DEVID devId, U8 *bname, C_DEVID fromI
 		} else {
 			
 			ResultSet_T r =Connection_executeQuery(con, NTY_DB_INSERT_ADMIN_GROUP, devId, bname, fromId, userCall, wimage, uimage);
-			while (ResultSet_next(r)) {
-				ret = ResultSet_getInt(r, 1);	
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					ret = ResultSet_getInt(r, 1);	
+				}
 			}
 		}
 	} 
