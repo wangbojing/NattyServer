@@ -1874,6 +1874,7 @@ void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length, 
 	const MessagePacket *msg = (const MessagePacket*)obj;
 	if (msg == NULL) return ;
 	const Client *client = msg->client;
+	if (client == NULL) return ;
 #if 0	
 	struct sockaddr_in addr;
 	memcpy(&addr, &client->addr, sizeof(struct sockaddr_in));

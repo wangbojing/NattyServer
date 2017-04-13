@@ -254,7 +254,12 @@ int ntyBindConfirmReqHandle(void *arg) {
 	} else if (flag == 0) {
 	
 		char phonenum[64] = {0};
+#if 0
 		int ret = ntyBindConfirm(adminId, &proposerId, gId, msgId, phonenum); 
+#else
+		int ret = ntyExecuteBindConfirmDeleteHandle(msgId, &proposerId);
+		ntydbg("ntyJsonBroadCastRecvResult->%lld\n", proposerId);
+#endif
 		BindBroadCast *pBindBroadCast = malloc(sizeof(BindBroadCast));
 		memcpy(answer, NATTY_USER_PROTOCOL_REJECT, strlen(NATTY_USER_PROTOCOL_REJECT));
 		
@@ -270,9 +275,7 @@ int ntyBindConfirmReqHandle(void *arg) {
 		int tempMsgId = 0;
 		ret = ntyExecuteCommonMsgToProposerInsertHandle(proposerId, gId, jsonresult, &tempMsgId);
 		
-		ret = ntyExecuteBindConfirmDeleteHandle(msgId, &proposerId);
-		ntydbg("ntyJsonBroadCastRecvResult->%lld\n", proposerId);
-
+		
 		ntyProtoBindAck(proposerId, gId, 6); //reject
 
 		ntyJsonFree(jsonresult);

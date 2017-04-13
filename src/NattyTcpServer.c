@@ -270,6 +270,7 @@ int ntyDelRelationMap(C_DEVID id) {
 
 
 static void ntyTcpServerJob(Job *job) {
+	if (job == NULL) return ;
 	MessagePacket *msg = (RequestPacket*)job->user_data;
 	void* pFilter = ntyProtocolFilterInstance();
 #if 0	
@@ -282,6 +283,7 @@ static void ntyTcpServerJob(Job *job) {
 }
 
 static void ntyReleaseClient(Job *job) {
+	if (job == NULL) return ;
 	RequestPacket *req = (RequestPacket*)job->user_data;
 #if 0
 	struct ev_loop *loop = ntyTcpServerGetMainloop();
