@@ -2125,6 +2125,41 @@ int ntyExecuteCommonMsgToProposerInsert(void *self, C_DEVID sid, C_DEVID gid, co
 }
 
 
+//NTY_DB_UPDATE_DEVICE_STATUS
+int ntyExecuteChangeDeviceOnlineStatus(void *self, C_DEVID did) {
+	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = -1;
+	U8 u8PhNum[20] = {0};
+
+	TRY
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			U8 sql[256] = {0};
+			sprintf(sql, NTY_DB_UPDATE_DEVICE_STATUS, did, 1);			
+			ntylog("%s", sql);	
+			Connection_execute(con, NTY_DB_UPDATE_DEVICE_STATUS, did, 1);
+		}
+	} 
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
 //NTY_DB_DEVICE_STATUS_RESET_FORMAT
 int ntyQueryDeviceOnlineStatus(void *self, C_DEVID did, int *online) {
 	ConnectionPool *pool = self;
@@ -2635,6 +2670,11 @@ int ntyQueryBindOfflineMsgToProposerSelectHandle(C_DEVID fromId, void *container
 int ntyExecuteCommonMsgToProposerInsertHandle(C_DEVID sid, C_DEVID gid, const char *detatils, int *msg) {
 	void *pool = ntyConnectionPoolInstance();
 	return ntyExecuteCommonMsgToProposerInsert(pool, sid, gid, detatils, msg);
+}
+
+int ntyExecuteChangeDeviceOnlineStatusHandle(C_DEVID did) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteChangeDeviceOnlineStatus(pool, did);
 }
 
 

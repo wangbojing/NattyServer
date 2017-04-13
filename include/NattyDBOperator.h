@@ -186,6 +186,7 @@
 
 #define NTY_DB_INSERT_COMMON_MSG_REJECT		"CALL PROC_INSERT_COMMON_MSG_REJECT(%lld, %lld, '%s')"
 
+#define NTY_DB_UPDATE_DEVICE_STATUS			"CALL PROC_UPDATE_DEVICE_STATUS(%lld, %d)"
 
 #define NTY_DB_DELETE_COMMON_OFFLINE_MSG	"CALL PROC_DELETE_COMMON_OFFLINE_MSG(%d, %lld)"
 
@@ -341,6 +342,8 @@ int ntyQueryBindOfflineMsgToAdminSelectHandle(C_DEVID fromId, void *container);
 int ntyQueryBindOfflineMsgToProposerSelectHandle(C_DEVID fromId, void *container);
 
 int ntyExecuteCommonMsgToProposerInsertHandle(C_DEVID sid, C_DEVID gid, const char *detatils, int *msg);
+
+int ntyExecuteChangeDeviceOnlineStatusHandle(C_DEVID did);
 
 
 int ntyConnectionPoolInit(void);

@@ -320,7 +320,6 @@ int ntyReadOfflineVoiceHandle(void *arg) {
 	return ret;
 }
 
-
 int ntyOfflineMsgReqHandle(void *arg) {
 	VALUE_TYPE *tag = (VALUE_TYPE*)arg;
 	if (tag == NULL) return NTY_RESULT_ERROR;
