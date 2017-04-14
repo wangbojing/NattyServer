@@ -1687,17 +1687,22 @@ int ntyReadOfflineVoiceMsgAction(C_DEVID devId) {
  */
 int ntyReadOfflineBindMsgToAdminIter(void *self, void *arg) {
 	BindOfflineMsgToAdmin *pMsgToAdmin = (BindOfflineMsgToAdmin*)self;
-
+	if (pMsgToAdmin == NULL) {
+		return -1;
+	}
 	char phonenum[30] = {0};
 	ntyQueryPhoneBookSelectHandle(pMsgToAdmin->IMEI, pMsgToAdmin->proposer, phonenum);
-
-	ntylog("-- ntyReadOfflineBindMsgToAdminIter ----> phonenum: %s\n", phonenum);
 	
 	char *adminMsg = ntyJsonWriteBindOfflineMsgToAdmin(pMsgToAdmin, phonenum);
 	if (adminMsg==NULL) {
 		ntylog("-- ntyReadOfflineBindMsgToAdminIter iter null----\n");
 		return -1;
 	}
+
+	free(pMsgToAdmin->watchName);
+	free(pMsgToAdmin->watchImage);
+	free(pMsgToAdmin->userName);
+	free(pMsgToAdmin->userImage);
 
 	return ntySendBindConfirmPushResult(pMsgToAdmin->proposer, pMsgToAdmin->admin, adminMsg, strlen(adminMsg));
 }
@@ -1706,7 +1711,7 @@ int ntyReadOfflineBindMsgToAdminAction(C_DEVID devId) {
 	NVector *container = ntyVectorCreator();
 	if (NULL == container) return NTY_RESULT_FAILED;
 	
-	int ret = ntyQueryBindOfflineMsgToAdminSelectHandle(devId);
+	int ret = ntyQueryBindOfflineMsgToAdminSelectHandle(devId, container);
 	if (ret == NTY_RESULT_SUCCESS) {
 		ntyVectorIter(container, ntyReadOfflineBindMsgToAdminIter, &devId);
 	} 

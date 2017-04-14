@@ -735,10 +735,10 @@ typedef struct _BindOfflineMsgToAdmin {
 	long long admin;
 	long long proposer;
 	long long IMEI;
-	const char *watchName;
-	const char *watchImage;
-	const char *userName;
-	const char *userImage;
+	char *watchName;
+	char *watchImage;
+	char *userName;
+	char *userImage;
 } BindOfflineMsgToAdmin;
 
 typedef struct _BindOfflineMsgToProposer {
