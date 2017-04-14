@@ -629,13 +629,17 @@ static int ntyQueryCommonOfflineMsgSelect(void *self, C_DEVID deviceId, void *co
 					size_t details_len = strlen(r_details);
 					
 					CommonOfflineMsg *pCommonOfflineMsg = malloc(sizeof(CommonOfflineMsg));
-					pCommonOfflineMsg->msgId = msgId;
-					pCommonOfflineMsg->senderId = r_senderId;
-					pCommonOfflineMsg->groupId = r_groupId;
+					if (pCommonOfflineMsg != NULL) {
+						pCommonOfflineMsg->msgId = msgId;
+						pCommonOfflineMsg->senderId = r_senderId;
+						pCommonOfflineMsg->groupId = r_groupId;
 
-					pCommonOfflineMsg->details = malloc(details_len);
-					memset(pCommonOfflineMsg->details, 0, details_len);
-					memcpy(pCommonOfflineMsg->details, r_details, details_len);
+						pCommonOfflineMsg->details = malloc(details_len+1);
+						if (pCommonOfflineMsg->details != NULL) {
+							memset(pCommonOfflineMsg->details, 0, details_len+1);
+							memcpy(pCommonOfflineMsg->details, r_details, details_len);
+						}
+					}
 					ntyVectorInsert(container, pCommonOfflineMsg, sizeof(CommonOfflineMsg));
 					ret = 0;
 				}
@@ -684,14 +688,17 @@ static int ntyQueryVoiceOfflineMsgSelect(void *self, C_DEVID fromId, void *conta
 					size_t details_len = strlen(r_details);
 					
 					nOfflineMsg *pOfflineMsg = malloc(sizeof(nOfflineMsg));
-					pOfflineMsg->msgId = msgId;
-					pOfflineMsg->senderId = r_senderId;
-					pOfflineMsg->groupId = r_groupId;
-					pOfflineMsg->timeStamp = timeStamp;
-
-					pOfflineMsg->details = malloc(details_len);
-					memset(pOfflineMsg->details, 0, details_len);
-					memcpy(pOfflineMsg->details, r_details, details_len);
+					if (pOfflineMsg != NULL) {
+						pOfflineMsg->msgId = msgId;
+						pOfflineMsg->senderId = r_senderId;
+						pOfflineMsg->groupId = r_groupId;
+						pOfflineMsg->timeStamp = timeStamp;
+						pOfflineMsg->details = malloc(details_len+1);
+						if (pOfflineMsg->details != NULL) {
+							memset(pOfflineMsg->details, 0, details_len+1);
+							memcpy(pOfflineMsg->details, r_details, details_len);
+						}
+					}
 					ntyVectorInsert(container, pOfflineMsg, sizeof(CommonOfflineMsg));
 					ret = 0;
 				}
@@ -912,14 +919,16 @@ static int ntyQueryBindOfflineMsgToAdminSelect(void *self, C_DEVID fromId, void 
 					const char *r_userimage = ResultSet_getString(r, 8);
 					
 					BindOfflineMsgToAdmin *pMsgToAdmin = malloc(sizeof(BindOfflineMsgToAdmin));
-					pMsgToAdmin->msgId = bId;
-					pMsgToAdmin->IMEI = r_imei;
-					pMsgToAdmin->admin = r_admin;
-					pMsgToAdmin->proposer = r_proposer;
-					pMsgToAdmin->watchName = r_watchname;
-					pMsgToAdmin->watchImage = r_watchimage;
-					pMsgToAdmin->userName = r_usercall;
-					pMsgToAdmin->userImage = r_userimage;
+					if (pMsgToAdmin != NULL) {
+						pMsgToAdmin->msgId = bId;
+						pMsgToAdmin->IMEI = r_imei;
+						pMsgToAdmin->admin = r_admin;
+						pMsgToAdmin->proposer = r_proposer;
+						pMsgToAdmin->watchName = r_watchname;
+						pMsgToAdmin->watchImage = r_watchimage;
+						pMsgToAdmin->userName = r_usercall;
+						pMsgToAdmin->userImage = r_userimage;
+					}
 					ntyVectorAdd(container, pMsgToAdmin, sizeof(BindOfflineMsgToAdmin));	
 					ret = 0;
 				}

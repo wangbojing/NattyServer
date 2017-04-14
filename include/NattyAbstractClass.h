@@ -64,7 +64,7 @@
 
 //ntyLogInfo(format, ##__VA_ARGS__)//
 //fprintf(stdout, format, ##__VA_ARGS__)
-#define NTY_DEBUG 	1
+#define NTY_DEBUG 	2
 #if (NTY_DEBUG == 1) //catcher 
 #define ntylog(format, ...) 		ntyLogInfo(format, ##__VA_ARGS__)
 #define ntydbg(format, ...) 		fprintf(stdout, format, ##__VA_ARGS__)
