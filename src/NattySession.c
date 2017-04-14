@@ -1356,6 +1356,7 @@ int ntySendVoiceBufferResult(U8 *u8Buffer, int length, C_DEVID fromId, C_DEVID g
 
 
 int ntySendBindConfirmPushResult(C_DEVID proposerId, C_DEVID adminId, U8 *json, int length) {
+	ntylog(" -- ntySendBindConfirmPushResult --json: %s \n", json);
 
 	U16 bLength = (U16)length;
 	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};

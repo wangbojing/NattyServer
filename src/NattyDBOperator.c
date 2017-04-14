@@ -929,10 +929,34 @@ static int ntyQueryBindOfflineMsgToAdminSelect(void *self, C_DEVID fromId, void 
 						pMsgToAdmin->IMEI = r_imei;
 						pMsgToAdmin->admin = r_admin;
 						pMsgToAdmin->proposer = r_proposer;
-						pMsgToAdmin->watchName = r_watchname;
-						pMsgToAdmin->watchImage = r_watchimage;
-						pMsgToAdmin->userName = r_usercall;
-						pMsgToAdmin->userImage = r_userimage;
+
+						size_t watchname_len = strlen(r_watchname);
+						size_t watchimage_len = strlen(r_watchimage);
+						size_t usercall_len = strlen(r_usercall);
+						size_t userimage_len = strlen(r_userimage);
+
+						pMsgToAdmin->watchName = malloc(watchname_len+1);
+						pMsgToAdmin->watchImage = malloc(watchimage_len+1);
+						pMsgToAdmin->userName = malloc(usercall_len+1);
+						pMsgToAdmin->userImage = malloc(userimage_len+1);
+
+						if (pMsgToAdmin->watchName != NULL) {
+							memset(pMsgToAdmin->watchName, 0, watchname_len+1);
+							memcpy(pMsgToAdmin->watchName, r_watchname, watchname_len);
+						}
+						if (pMsgToAdmin->watchImage != NULL) {
+							memset(pMsgToAdmin->watchImage, 0, watchimage_len+1);
+							memcpy(pMsgToAdmin->watchImage, r_watchimage, watchimage_len);
+						}
+						if (pMsgToAdmin->userName != NULL) {
+							memset(pMsgToAdmin->userName, 0, usercall_len+1);
+							memcpy(pMsgToAdmin->userName, r_usercall, usercall_len);
+						}
+						if (pMsgToAdmin->userImage != NULL) {
+							memset(pMsgToAdmin->userImage, 0, userimage_len+1);
+							memcpy(pMsgToAdmin->userImage, r_userimage, userimage_len);
+						}
+						
 					}
 					ntyVectorAdd(container, pMsgToAdmin, sizeof(BindOfflineMsgToAdmin));	
 					ret = 0;
