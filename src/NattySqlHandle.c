@@ -358,10 +358,13 @@ int ntyBindPushAdministratorHandle(void *arg) {
 	int msgId = tag->arg;
 
 	BindConfirmPush *pBindConfirmPush = malloc(sizeof(BindConfirmPush));
+	if (pBindConfirmPush == NULL) {
+		goto exit;
+	}
 	pBindConfirmPush->result.IMEI = pBindReq->IMEI;
 	pBindConfirmPush->result.proposer = phonenum;
 	pBindConfirmPush->result.userName = pBindReq->bind.userName;
-	
+
 	char ids[30] = {0};
 	sprintf(ids, "%d", msgId);
 	pBindConfirmPush->result.msgId = ids;
@@ -373,6 +376,8 @@ int ntyBindPushAdministratorHandle(void *arg) {
 
 	//release 
 	free(pBindConfirmPush);
+	
+exit:
 	free(pBindReq);
 	free(tag);
 }

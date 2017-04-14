@@ -1690,9 +1690,12 @@ int ntyReadOfflineBindMsgToAdminIter(void *self, void *arg) {
 
 	char phonenum[30] = {0};
 	ntyQueryPhoneBookSelectHandle(pMsgToAdmin->IMEI, pMsgToAdmin->proposer, phonenum);
+
+	ntylog("-- ntyReadOfflineBindMsgToAdminIter ----> phonenum: %s\n", phonenum);
 	
 	char *adminMsg = ntyJsonWriteBindOfflineMsgToAdmin(pMsgToAdmin, phonenum);
 	if (adminMsg==NULL) {
+		ntylog("-- ntyReadOfflineBindMsgToAdminIter iter null----\n");
 		return -1;
 	}
 
