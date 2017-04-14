@@ -309,6 +309,9 @@ Client* ntyAddClientHeap(const void * obj, int *result) {
 		ntylog(" ntyAddClientHeap 1111 \n");
 		if (pClient->friends == NULL) {
 			pClient->friends = ntyVectorCreator();
+			if (pClient->friends == NULL) {
+				return NULL;
+			}
 #if ENABLE_CONNECTION_POOL
 			if (pClient->deviceType == NTY_PROTO_CLIENT_ANDROID 
 				|| pClient->deviceType == NTY_PROTO_CLIENT_IOS) { //App
