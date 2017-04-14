@@ -1104,13 +1104,14 @@ void ntyJsonTimeTablesAction(ActionParam *pActionParam) {
 		
 		if (ret == -1) {
 			ntylog(" ntyJsonTimeTables --> DB Exception\n");
-			ret = 4;
+			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_EXCEPTION);
+			goto exit;
 		}
 	}
 	
 	if (ret == -1) {
 		ntylog(" ntyJsonTimeTables --> DB Exception\n");
-		ret = 4;
+		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_EXCEPTION);
 	} else if (ret == 0 && result == -2) {
 		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_NOEXIST);
 	} else if (ret >= 0) {
