@@ -89,11 +89,11 @@ void ntyJsonSelectScheduleAction(ActionParam *pActionParam);
 
 void ntyJsonTimeTablesAction(ActionParam *pActionParam);
 
-void ntyJsonLocationWIFIAction(ActionParam *pActionParam);
+int ntyJsonLocationWIFIAction(ActionParam *pActionParam);
 
-void ntyJsonLocationLabAction(ActionParam *pActionParam);
+int ntyJsonLocationLabAction(ActionParam *pActionParam);
 
-void ntyJsonWeatherAction(ActionParam *pActionParam);
+int ntyJsonWeatherAction(ActionParam *pActionParam);
 
 void ntyJsonAddContactsAction(ActionParam *pActionParam);
 

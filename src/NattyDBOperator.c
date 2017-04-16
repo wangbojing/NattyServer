@@ -199,8 +199,12 @@ Connection_T ntyCheckConnection(void *self, Connection_T con) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return con;
 	if (con == NULL) {
+#if 0
 		int n = ConnectionPool_reapConnections(pool->nPool);
 		Connection_T con = ConnectionPool_getConnection(pool->nPool);
+#else
+		return NULL;
+#endif
 	}
 	return con;
 }

@@ -230,7 +230,10 @@ int ntyVectorDel(void *self, void *data) {
 void ntyVectorIter(void *self, NVECTOR_CB *cb, void *arg) {
 	NVector *vector = self;
 	if (vector == NULL) return ;
+	
 	NKnot *knot = vector->header;
+	if (knot == NULL) return ;
+	
 	NKnot *iter = NULL;
 #if 0
 	for (knot = vector->header.lh_first;knot != NULL;knot = knot->entries.le_next) {

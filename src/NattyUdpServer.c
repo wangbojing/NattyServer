@@ -109,6 +109,8 @@ void* allocRequestPacket(void) {
 		perror("malloc Request Packet failed\n");
 		return NULL;
 	}
+	memset(req, 0, sizeof(RequestPacket));
+	
 	req->client = (Client*)malloc(sizeof(Client));
 	if (req->client == NULL ) {
 		perror("malloc client failed\n");
@@ -116,6 +118,8 @@ void* allocRequestPacket(void) {
 		free(req);
 		return NULL;
 	}
+	memset(req->client, 0, sizeof(Client));
+	
 #if 0
 	req->buffer = (U8*)malloc(sizeof(RECV_BUFFER_SIZE));
 	if (req->buffer == NULL) {
@@ -196,7 +200,8 @@ int ntyUdpServerProcess(const void *_self) {
 				free(req->client);
 				free(req);
 				continue;
-			}			
+			}	
+			memset(req->buffer, 0, sizeof(n));
 			memcpy(req->buffer, buf, n);
 
 			job = (Job*)malloc(sizeof(*job));
@@ -206,7 +211,7 @@ int ntyUdpServerProcess(const void *_self) {
 				freeRequestPacket(req);
 				continue;
 			}
-
+			memset(job, 0, sizeof(Job));
 			job->job_function  = ntyUdpServerJob;
 			job->user_data = req;
 

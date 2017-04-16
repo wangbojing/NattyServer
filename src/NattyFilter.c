@@ -272,7 +272,8 @@ Client* ntyAddClientHeap(const void * obj, int *result) {
 	if (record == NULL) {
 		Client *pClient = (Client*)malloc(sizeof(Client));
 		ASSERT(pClient != NULL);
-
+		memset(pClient, 0, sizeof(Client));
+		
 		memcpy(pClient, client, sizeof(Client));
 		ntylog("ntyAddClientHeap is not exist %lld\n", client->devId);
 
@@ -310,17 +311,26 @@ Client* ntyAddClientHeap(const void * obj, int *result) {
 		if (pClient->friends == NULL) {
 			pClient->friends = ntyVectorCreator();
 			if (pClient->friends == NULL) {
-				return NULL;
+				*result = NTY_RESULT_ERROR;
+				return pClient;
 			}
+
+			ntylog("ntyAddClientHeap --> friend addr:%llx\n", (C_DEVID)pClient->friends);
 #if ENABLE_CONNECTION_POOL
 			if (pClient->deviceType == NTY_PROTO_CLIENT_ANDROID 
 				|| pClient->deviceType == NTY_PROTO_CLIENT_IOS) { //App
 				if(-1 == ntyQueryWatchIDListSelectHandle(pClient->devId, pClient->friends)) {
 					ntylog(" ntyQueryWatchIDListSelectHandle Failed \n");
+					
+					ntyVectorDestory(pClient->friends);
+					pClient->friends = NULL;
 				}
 			} else if (pClient->deviceType == NTY_PROTO_CLIENT_WATCH) { //Device
 				if (-1 == ntyQueryAppIDListSelectHandle(pClient->devId, pClient->friends)) {
 					ntylog(" ntyQueryAppIDListSelectHandle Failed \n");
+					
+					ntyVectorDestory(pClient->friends);
+					pClient->friends = NULL;
 				}
 			} else {
 				ntylog(" Protocol Device Type is Error : %c\n", pClient->deviceType);
@@ -334,13 +344,13 @@ Client* ntyAddClientHeap(const void * obj, int *result) {
 #if 1 //Add Groups
 #endif
 		}
-	
+#if 0 //cancel timer
 		//start timer,
 		NWTimer* nwTimer = ntyTimerInstance();
 		unsigned long addr = (unsigned long)pClient;
 		void* timer = ntyTimerAdd(nwTimer, 60, ntyCheckOnlineAlarmNotify, (void*)&addr, sizeof(unsigned long));
 		pClient->hbdTimer = timer;
-
+#endif
 		*result = NTY_RESULT_SUCCESS;
 		return pClient;
 	} else {
@@ -381,13 +391,13 @@ int ntyDelClientHeap(C_DEVID clientId) {
 		if (pClient->recvBuffer != NULL) {
 			free(pClient->recvBuffer);
 		}
-
+#if 0 //cancel timer
 		NWTimer* nwTimer = ntyTimerInstance();
 		if (pClient->hbdTimer != NULL) {
 			ntyTimerDel(nwTimer, pClient->hbdTimer);
 			pClient->hbdTimer = NULL;
 		}
-
+#endif
 		if (pClient->friends != NULL) {
 			ntyVectorDestory(pClient->friends);
 		}
@@ -1540,8 +1550,10 @@ void ntyLocationAsyncReqPacketHandleRequest(const void *_self, unsigned char *bu
 
 		U16 jsonlen = 0;
 		memcpy(&jsonlen, buffer+NTY_PROTO_LOCATION_ASYNC_REQ_JSON_LENGTH_IDX, NTY_JSON_COUNT_LENGTH);
-		char *jsonstring = malloc(jsonlen);
-		memset(jsonstring, 0, jsonlen);
+		char *jsonstring = malloc(jsonlen+1);
+		if (jsonstring == NULL) return ;
+		
+		memset(jsonstring, 0, jsonlen+1);
 		memcpy(jsonstring, buffer+NTY_PROTO_LOCATION_ASYNC_REQ_JSON_CONTENT_IDX, jsonlen);
 
 		C_DEVID deviceId = *(C_DEVID*)(buffer+NTY_PROTO_LOCATION_ASYNC_REQ_DEVID_IDX);
@@ -1948,12 +1960,12 @@ void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length, 
 	}
 
 	if (Record != NULL) {
-		if (Record->value != NULL) {
-			Client* pClient = Record->value;
-			if (pClient != NULL) {
-				pClient->rLength = 0;
-			}
+		//if (Record->value != NULL) {
+		Client* pClient = Record->value;
+		if (pClient != NULL) {
+			pClient->rLength = 0;
 		}
+		//}
 	}
 #endif	
 	return ntyHandleRequest(_filter, buffer, length, obj);

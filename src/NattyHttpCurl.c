@@ -52,6 +52,7 @@
 #include "NattyUserProtocol.h"
 #include "NattyDaveMQ.h"
 #include "NattyJson.h"
+#include "NattySqlHandle.h"
 
 #include <curl/curl.h>
 #include <string.h>
@@ -63,6 +64,11 @@
 #define JEMALLOC_NO_DEMANGLE 1
 #define JEMALLOC_NO_RENAME	 1
 #include <jemalloc/jemalloc.h>
+
+
+nHttpRequest *ntyHttpRequestGetCURL(void);
+
+
 
 static size_t ntyHttpQJKFallenHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
 	VALUE_TYPE *tag = stream;
@@ -400,6 +406,13 @@ int ntyHttpGaodeWifiCellAPI(void *arg) {
 		return -1;
 	}
 #endif
+	curl_version_info_data *info=curl_version_info(CURLVERSION_NOW);
+	if (info->features & CURL_VERSION_ASYNCHDNS) {
+		ntylog("ares enabled\n");
+	} else {
+		ntylog("ares NOT enabled\n");
+	}
+
 	curl = curl_easy_init();	
 	if (!curl)	{		
 		ntylog("curl init failed\n");		
@@ -554,6 +567,13 @@ int ntyHttpMtkQuickLocation(void *arg) {
 	CURLcode res;	
 	VALUE_TYPE *tag = arg;
 
+	curl_version_info_data *info=curl_version_info(CURLVERSION_NOW);
+	if (info->features & CURL_VERSION_ASYNCHDNS) {
+		ntylog("ares enabled\n");
+	} else {
+		ntylog("ares NOT enabled\n");
+	}
+
 	curl = curl_easy_init();	
 	if (!curl)	{		
 		ntylog("curl init failed\n");		
@@ -605,14 +625,83 @@ int ntyHttpMtkQuickLocation(void *arg) {
 	return 0;
 }
 
+static nRequestMotor *nReqMoter = NULL;
+
+nHttpRequest *ntyHttpRequestGetCURL(void) {
+	int i = 0;
+	nHttpRequest *req = NULL;
+
+	if (nReqMoter == NULL) return NULL;
+
+	for (i = 0;i < MAX_HTTTP_REQUEST_COUNT;i ++) {
+		if (nReqMoter->request[i].enable == 1) {
+			if(0 == cmpxchg(&nReqMoter->request[i].req_lock, 0, 1, WORD_WIDTH)) {
+
+				req = nReqMoter->request+i;
+
+				nReqMoter->request[i].enable = 0;
+				nReqMoter->request[i].req_lock = 0;
+			}
+		}
+	}
+
+	return req;
+}
+
+int ntyHttpRequestResetCURL(nHttpRequest *req) {
+	int i = 0;
+
+	if (req == NULL) return NTY_RESULT_ERROR;
+	if (nReqMoter == NULL) return NTY_RESULT_ERROR;
+
+	if(0 == cmpxchg(&nReqMoter->request[req->index].req_lock, 0, 1, WORD_WIDTH)) {
+
+		nReqMoter->request[i].enable = 1;
+		nReqMoter->request[i].req_lock = 0;
+	}
+
+	return NTY_RESULT_SUCCESS;
+}
+
+
+
 int ntyHttpCurlGlobalInit(void) {
+	int i = 0;
 	CURLcode return_code;
+	
 	return_code = curl_global_init(CURL_GLOBAL_ALL);
 	if (CURLE_OK != return_code) {
 		ntylog("init libcurl failed.\n");		
 		return -1;
 	}
-	return 0;
+
+	nReqMoter = (nRequestMotor*)malloc(sizeof(nRequestMotor));
+	if (nReqMoter == NULL) {
+		return NTY_RESULT_ERROR;
+	}
+	for (i = 0;i < MAX_HTTTP_REQUEST_COUNT;i ++) {
+		nReqMoter->request[i].curl = curl_easy_init();
+		nReqMoter->request[i].arg = NULL;
+		nReqMoter->request[i].index = i;
+		nReqMoter->request[i].enable = 1; //1:enable,0:disable
+		nReqMoter->request[i].req_lock = 0;
+	}
+	
+	
+	return NTY_RESULT_ERROR;
+}
+
+int ntyHttpCurlDeInit(void) {
+	int i = 0;
+
+	if (nReqMoter == NULL) return NTY_RESULT_ERROR;
+
+	for (i = 0;i < MAX_HTTTP_REQUEST_COUNT;i ++) {
+		
+		curl_easy_cleanup(nReqMoter->request[i].curl);
+	}
+
+	return NTY_RESULT_SUCCESS;
 }
 
 
@@ -622,16 +711,22 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 
 	U8 *jsonstring = buffer;
 	ntylog("ntyHttpQJKLocationHandleResult json --> %s\n", jsonstring);
-	ntylog("ntyHttpQJKLocationHandleResult url --> %s\n", pMessageTag->Tag);
+	if (pMessageTag->Tag != NULL) {
+		ntylog("ntyHttpQJKLocationHandleResult url --> %s\n", pMessageTag->Tag);
+	}
 
 	JSON_Value *json = ntyMallocJsonValue(jsonstring);
 	AMap *pAMap = malloc(sizeof(AMap));
 	ntyJsonAMap(json, pAMap);
 	if (pAMap == NULL) {
-		return -1;
+		return NTY_RESULT_ERROR;
 	}
 	LocationAck *pLocationAck = malloc(sizeof(LocationAck));
-
+	if (pLocationAck == NULL) {
+		free(pAMap);
+		return NTY_RESULT_ERROR;
+	}
+	
 	char bufIMEI[50] = {0};
 	sprintf(bufIMEI, "%llx", pMessageTag->fromId);
 	ntydbg("bufIMEI %s %lld %lld\n", bufIMEI, pMessageTag->fromId, pMessageTag->toId);
@@ -654,13 +749,31 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 		ntylog("ntyHttpQJKLocationHandleResult jsonresult --> %s\n", jsonresult);
 		ret = ntySendLocationPushResult(pMessageTag->toId, jsonresult, strlen(jsonresult));
 		if (ret > 0) {
+#if 0
+			
 			ntySendLocationBroadCastResult(pMessageTag->fromId, pMessageTag->toId, jsonresult, strlen(jsonresult));
+#else
+			VALUE_TYPE *tag = (VALUE_TYPE*)malloc(sizeof(VALUE_TYPE));
+			tag->fromId = pMessageTag->fromId;
+			tag->gId = pMessageTag->toId;
+			tag->length = strlen(jsonresult);
+			tag->Tag = malloc(tag->length+1);
+			memcpy(tag->Tag, jsonresult, tag->length);
+
+			tag->Type = MSG_TYPE_LOCATION_BROADCAST_HANDLE;
+			tag->cb = ntyLocationBroadCastHandle;
+			ntyDaveMqPushMessage(tag);
+
+#endif
 		}
 	}
 	
 	free(pLocationAck);
 	free(pAMap);
 #if 1 //Release Message
+	nHttpRequest *req = (nHttpRequest *)pMessageTag->param;
+	ntyHttpRequestResetCURL(req);
+
 	if (pMessageTag->Tag != NULL) {
 		free(pMessageTag->Tag);
 	}
@@ -686,7 +799,20 @@ int ntyHttpQJKLocation(void *arg) {
 		return -1;
 	}
 #endif
+	curl_version_info_data *info=curl_version_info(CURLVERSION_NOW);
+	if (info->features & CURL_VERSION_ASYNCHDNS) {
+		ntylog("ares enabled\n");
+	} else {
+		ntylog("ares NOT enabled\n");
+	}
+#if 0
 	curl = curl_easy_init();
+#else
+	nHttpRequest *req = ntyHttpRequestGetCURL();
+	if (req == NULL) return NTY_RESULT_ERROR;
+	curl = req->curl;
+	pMessageTag->param = req;
+#endif
 	if (!curl)	{		
 		ntylog("curl init failed\n");
 		return -2;	
@@ -718,8 +844,9 @@ int ntyHttpQJKLocation(void *arg) {
 		}		
 		return -3;	
 	}
-	
+#if 0	
 	curl_easy_cleanup(curl);
+#endif
 #if 0	
 	if (tag != NULL) {
 		free(tag);
@@ -729,7 +856,7 @@ int ntyHttpQJKLocation(void *arg) {
 	return 0;
 }
 
-
+#if 0
 int ntyStringReplace(char res[], char from[], char to[]) {
     int i,flag = 0;
     char *p,*q,*ts;
@@ -751,6 +878,7 @@ int ntyStringReplace(char res[], char from[], char to[]) {
     }
     return flag;
 }
+#endif
 
 static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
 	int ret = 0;
@@ -764,6 +892,14 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	
 	JSON_Value *json = ntyMallocJsonValue(jsonstring);
 	AMap *pAMap = (AMap*)malloc(sizeof(AMap));
+	if (pAMap == NULL) {
+		if (pMessageTag->Tag != NULL) {
+			free(pMessageTag->Tag);
+		}
+		free(pMessageTag);
+		return NTY_RESULT_ERROR;
+	}
+	
 	ntyJsonAMap(json, pAMap);
 	if (strcmp(pAMap->status, "1") != 0) {
 		ntylog(" status is %s\n", pAMap->status);
@@ -797,6 +933,15 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 
 #if 1 //Update By WangBoJing
 	LocationAck *pLocationAck = malloc(sizeof(LocationAck));
+	if (pLocationAck == NULL) {
+		if (pMessageTag->Tag != NULL) {
+			free(pMessageTag->Tag);
+		}
+		free(pMessageTag);
+	
+		goto exit;
+	}
+	memset(pLocationAck, 0, sizeof(LocationAck));
 
 	char bufIMEI[50] = {0};
 	sprintf(bufIMEI, "%llx", pMessageTag->fromId);
@@ -834,6 +979,18 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	int length = strlen(weatherbuf);
 
 	MessageTag *pMessageSendTag = malloc(sizeof(MessageTag));
+	if (pMessageSendTag == NULL) {
+		free(pLocationAck);
+		
+		if (pMessageTag->Tag != NULL) {
+			free(pMessageTag->Tag);
+		}
+		free(pMessageTag);
+		
+		goto exit;
+	}
+	memset(pMessageSendTag, 0, sizeof(MessageTag));
+	
 	pMessageSendTag->Type = MSG_TYPE_WEATHER_API;
 	pMessageSendTag->fromId = pMessageTag->fromId;
 	pMessageSendTag->toId = pMessageTag->toId;
@@ -841,6 +998,18 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 
 #if ENABLE_DAVE_MSGQUEUE_MALLOC
 	pMessageSendTag->Tag = malloc((length+1)*sizeof(U8));
+	if (pMessageSendTag->Tag == NULL) {
+		free(pMessageSendTag);
+		free(pLocationAck);
+
+		if (pMessageTag->Tag != NULL) {
+			free(pMessageTag->Tag);
+		}
+		free(pMessageTag);
+
+		goto exit;
+	}
+
 	memset(pMessageSendTag->Tag, 0, length+1);
 	memcpy(pMessageSendTag->Tag, weatherbuf, length);
 #else
@@ -856,6 +1025,9 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 
 	
 #if 1 //Release Message
+	nHttpRequest *req = (nHttpRequest *)pMessageTag->param;
+	ntyHttpRequestResetCURL(req);
+
 	if (pMessageTag->Tag != NULL) {
 		free(pMessageTag->Tag);
 	}
@@ -882,7 +1054,21 @@ int ntyHttpQJKWeatherLocation(void *arg) {
 		return -1;
 	}
 #endif
+	curl_version_info_data *info=curl_version_info(CURLVERSION_NOW);
+	if (info->features & CURL_VERSION_ASYNCHDNS) {
+		ntylog("ares enabled\n");
+	} else {
+		ntylog("ares NOT enabled\n");
+	}
+#if 0
 	curl = curl_easy_init();
+#else
+	nHttpRequest *req = ntyHttpRequestGetCURL();
+	if (req == NULL) return NTY_RESULT_ERROR;
+
+	curl = req->curl;
+	pMessageTag->param = req;
+#endif
 	if (!curl)	{
 		ntylog("curl init failed\n");	
 		return -2;
@@ -914,8 +1100,10 @@ int ntyHttpQJKWeatherLocation(void *arg) {
 		}
 		return -3;	
 	}	
-	
+#if 0
 	curl_easy_cleanup(curl);
+#endif
+
 #if 0	
 	if (tag != NULL) {
 		free(tag);
@@ -981,6 +1169,11 @@ exit:
 	free(pWeatherReq);
 	
 #if 1 //Release Message
+	nHttpRequest *req = (nHttpRequest *)pMessageTag->param;
+	if (req != NULL) {
+		ntyHttpRequestResetCURL(req);
+	} 
+
 	free(pMessageTag->Tag);
 	free(pMessageTag);
 #endif
@@ -1045,10 +1238,24 @@ int ntyHttpQJKWeather(void *arg) {
 		return -1;
 	}
 #endif
+	curl_version_info_data *info=curl_version_info(CURLVERSION_NOW);
+	if (info->features & CURL_VERSION_ASYNCHDNS) {
+		ntylog("ares enabled\n");
+	} else {
+		ntylog("ares NOT enabled\n");
+	}
+#if 0
 	curl = curl_easy_init();
+#else
+	nHttpRequest *req = ntyHttpRequestGetCURL();
+	if (req == NULL) return NTY_RESULT_ERROR;
+
+	curl = req->curl;
+	pMessageTag->param = req;
+#endif
 	if (!curl)	{		
 		ntylog("curl init failed\n");		
-		return -2;	
+		return NTY_RESULT_ERROR;	
 	}
 
 	ntylog("QJK url:%s\n", tag);
@@ -1081,8 +1288,9 @@ int ntyHttpQJKWeather(void *arg) {
 		}		
 		return -3;	
 	}
-	
+#if 0
 	curl_easy_cleanup(curl);
+#endif
 #if 0	
 	if (tag != NULL) {
 		free(tag);
@@ -1139,10 +1347,23 @@ int ntyHttpQJKCommon(void *arg) {
 		return -1;
 	}
 #endif
+	curl_version_info_data *info=curl_version_info(CURLVERSION_NOW);
+	if (info->features & CURL_VERSION_ASYNCHDNS) {
+		ntylog("ares enabled\n");
+	} else {
+		ntylog("ares NOT enabled\n");
+	}
+#if 1
 	curl = curl_easy_init();
+#else
+	nHttpRequest req = ntyHttpRequestGetCURL();
+	curl = req->curl;
+	pMessageTag->param = req;
+#endif
 	if (!curl)	{		
 		ntylog("curl init failed\n");		
-		return -2;	
+
+		return NTY_RESULT_ERROR;	
 	}
 
 	ntylog("QJK url:%s\n", tag);
@@ -1171,8 +1392,9 @@ int ntyHttpQJKCommon(void *arg) {
 		}		
 		return -3;	
 	}	
-	
+#if 0
 	curl_easy_cleanup(curl);
+#endif
 #if 0	
 	if (tag != NULL) {
 		free(tag);
@@ -1182,6 +1404,10 @@ int ntyHttpQJKCommon(void *arg) {
 
 	return 0;
 }
+
+
+
+
 
 
 #if 0

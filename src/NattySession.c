@@ -717,6 +717,10 @@ int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int leng
 		msg->arg = index;
 
 		ntylog(" ntySendCommonBroadCastResult ntyVectorIterator \n");
+		if (pClient->friends == NULL) {
+			free(msg);
+			return NTY_RESULT_ERROR;
+		}
 		ntyVectorIterator(pClient->friends, ntySendCommonBroadCastIter, msg);
 
 		free(msg);
@@ -1019,11 +1023,22 @@ int ntySendLocationBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int le
 	if (pClient == NULL) return NTY_RESULT_NOEXIST;
 	
 	InterMsg *msg = (InterMsg*)malloc(sizeof(InterMsg));
+	if (msg == NULL) {
+		return NTY_RESULT_ERROR;
+	}
+	memset(msg, 0, sizeof(InterMsg));
 	msg->buffer = json;
 	msg->length = length;
 	msg->group = pClient;
 	msg->self = &fromId;
+
+	if (pClient->friends == NULL) {
+		free(msg);
+		return NTY_RESULT_ERROR;
+	}
 #if 1
+	ntylog("ntyAddClientHeap --> friend addr:%llx\n", (C_DEVID)pClient->friends);
+	ntylog(" ntySendLocationBroadCastResult --> fromId:%lld, devId:%lld \n", fromId, pClient->devId);
 	ntyVectorIterator(pClient->friends, ntySendLocationBroadCastIter, msg);
 #else
 	ntyVectorIter(pClient->friends, ntySendLocationBroadCastIter, msg);

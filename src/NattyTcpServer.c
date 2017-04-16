@@ -331,6 +331,7 @@ extern void ntySelfLogoutPacket(C_DEVID id, U8 *buffer);
 void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 	U8 buffer[RECV_BUFFER_SIZE] = {0};
 	int rLen = 0;
+	int nSize = sizeof(struct sockaddr_in);
 
 	if (EV_ERROR & revents) {
 		ntylog("error event in read");
@@ -345,15 +346,35 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 #endif
 	if (rLen < 0) {
 		if (errno == EAGAIN) return ;
-		if (errno == ETIMEDOUT || errno == EBADF) {
-			ntyReleaseSocket(loop, watcher);
+
+		struct sockaddr_in client_addr;
+		getpeername(watcher->fd,(struct sockaddr*)&client_addr, &nSize); 
+		ntylog(" %d.%d.%d.%d:%d --> Recv Error\n", *(unsigned char*)(&client_addr.sin_addr.s_addr), *((unsigned char*)(&client_addr.sin_addr.s_addr)+1),													
+				*((unsigned char*)(&client_addr.sin_addr.s_addr)+2), *((unsigned char*)(&client_addr.sin_addr.s_addr)+3),													
+				client_addr.sin_port);
+		
+		if (errno == ETIMEDOUT || errno == EBADF || errno == ECONNRESET) {
+			ntylog(" release client socket\n");
+				
+			void *hash = ntyHashTableInstance();
+			Payload *load = ntyHashTableSearch(hash, watcher->fd);
+			ASSERT(load != NULL);
+
+			int ret = ntyDelRelationMap(load->id);
+			if (ret == NTY_RESULT_NOEXIST) {
+				ntyReleaseSocket(loop, watcher);
+			}
+
+			ret = ntyOfflineClientHeap(load->id);
+			if (ret = NTY_RESULT_SUCCESS) {
+				ntylog(" Release Client Success\n");
+			}
 		}
 		
 		ntylog("read error :%d :%s\n", errno, strerror(errno));
 	} else if (rLen == 0) {
 	
 		struct sockaddr_in client_addr;
-		int nSize = sizeof(struct sockaddr_in);
 		void* pThreadPool = ntyThreadPoolInstance();
 
 		getpeername(watcher->fd,(struct sockaddr*)&client_addr, &nSize); 
@@ -379,7 +400,6 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 
 	} else {
 		int i = 0;
-		int nSize = sizeof(struct sockaddr_in);	 
 		void* pThreadPool = ntyThreadPoolInstance();
 		
 		MessagePacket *msg = (MessagePacket*)allocRequestPacket();

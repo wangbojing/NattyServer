@@ -320,6 +320,7 @@ int ntyReadOfflineVoiceHandle(void *arg) {
 	return ret;
 }
 
+
 int ntyOfflineMsgReqHandle(void *arg) {
 	VALUE_TYPE *tag = (VALUE_TYPE*)arg;
 	if (tag == NULL) return NTY_RESULT_ERROR;
@@ -364,7 +365,7 @@ int ntyBindPushAdministratorHandle(void *arg) {
 	pBindConfirmPush->result.IMEI = pBindReq->IMEI;
 	pBindConfirmPush->result.proposer = phonenum;
 	pBindConfirmPush->result.userName = pBindReq->bind.userName;
-
+	
 	char ids[30] = {0};
 	sprintf(ids, "%d", msgId);
 	pBindConfirmPush->result.msgId = ids;
@@ -518,6 +519,27 @@ int ntyBindDeviceCheckStatusReqHandle(void *arg) {
 	
 }
 
+
+int ntyLocationBroadCastHandle(void *arg) {
+	VALUE_TYPE *tag = (VALUE_TYPE*)arg;
+
+	if (tag == NULL) return NTY_RESULT_ERROR;
+
+	C_DEVID fromId = tag->fromId;
+	C_DEVID gId = tag->gId;
+	U8 *json = tag->Tag;
+	int length = tag->length;
+
+
+	ntySendLocationBroadCastResult(fromId, gId, json, length);
+
+	if (tag->Tag == NULL) {
+		free(tag->Tag);
+	}
+	free(tag);
+
+	return NTY_RESULT_SUCCESS;
+}
 
 
 

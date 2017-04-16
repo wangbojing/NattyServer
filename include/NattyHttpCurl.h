@@ -48,6 +48,22 @@
 
 #include "NattyAbstractClass.h"
 
+#include <curl/curl.h>
+
+#define MAX_HTTTP_REQUEST_COUNT				30
+
+typedef struct NTY_HTTP_REQUEST {
+	CURL *curl;	
+	void *arg;
+	U8 enable;
+	U8 index;
+	long req_lock;
+} nHttpRequest;
+
+
+typedef struct NTY_HTTP_REQUEST_MOTOR {
+	nHttpRequest request[MAX_HTTTP_REQUEST_COUNT];
+} nRequestMotor;
 
 int ntyHttpMtkQuickLocation(void *arg);
 int ntyHttpGaodeWifiCellAPI(void *arg);

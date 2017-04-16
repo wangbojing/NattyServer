@@ -62,6 +62,8 @@ int ntyOfflineMsgReqHandle(void *arg);
 
 int ntyBindDeviceCheckStatusReqHandle(void *arg) ;
 
+int ntyLocationBroadCastHandle(void *arg);
+
 
 
 #endif

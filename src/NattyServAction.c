@@ -137,8 +137,14 @@ void ntyJsonCommonExtendResult(C_DEVID devId, const char * code, int id) {
  * 20:08:d5,-55,CMCC-EDU|5c:63:bf:a4:bf:56,-86,TP-LINK|d8:c7:c8:a8:1a:13,-42,TP-LINK&serverip=10.2.166.4&output=json&key=<用户 Key>
  *
  */
-void ntyJsonLocationWIFIAction(ActionParam *pActionParam) {
+int ntyJsonLocationWIFIAction(ActionParam *pActionParam) {
+	if (pActionParam == NULL) return NTY_RESULT_FAILED;
+	
 	WIFIReq *pWIFIReq = (WIFIReq*)malloc(sizeof(WIFIReq));
+	if (pWIFIReq == NULL) {
+		return NTY_RESULT_ERROR;
+	}
+	
 	ntyJsonWIFI(pActionParam->json, pWIFIReq);
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;
@@ -166,6 +172,12 @@ void ntyJsonLocationWIFIAction(ActionParam *pActionParam) {
 
 #if 1 //Push to MessageQueue
 	MessageTag *pMessageTag = malloc(sizeof(MessageTag));
+	if (pMessageTag == NULL) {
+		free(pWIFIReq);
+		
+		return NTY_RESULT_ERROR;
+	}
+		
 	pMessageTag->Type = MSG_TYPE_LOCATION_WIFI_API;
 	pMessageTag->fromId = fromId;
 	pMessageTag->toId = toId;
@@ -173,6 +185,12 @@ void ntyJsonLocationWIFIAction(ActionParam *pActionParam) {
 
 #if ENABLE_DAVE_MSGQUEUE_MALLOC
 	pMessageTag->Tag = malloc((length+1)*sizeof(U8));
+	if (pMessageTag->Tag == NULL) {
+		free(pMessageTag);
+		free(pWIFIReq);
+		
+		return NTY_RESULT_ERROR;
+	}
 	memset(pMessageTag->Tag, 0, length+1);
 	memcpy(pMessageTag->Tag, wifibuf, length);
 #else
@@ -204,9 +222,17 @@ void ntyJsonLocationWIFIAction(ActionParam *pActionParam) {
  * 40977,2205409,-65|460,01,40977,2205409,-65|460,01,40977,2205409,-65&serverip=10.2.166.4&output=json&key=<用户 Key>
  *
  */
-void ntyJsonLocationLabAction(ActionParam *pActionParam) {
+int ntyJsonLocationLabAction(ActionParam *pActionParam) {
 	ntydbg(" ntyJsonLocationLabAction begin --> \n");
+	if (pActionParam == NULL) {
+		return NTY_RESULT_FAILED;
+	}
+	
 	LABReq *pLABReq = (LABReq*)malloc(sizeof(LABReq));
+	if (pLABReq == NULL) {
+		return NTY_RESULT_ERROR;
+	}
+	
 	ntyJsonLAB(pActionParam->json, pLABReq);
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;
@@ -231,6 +257,10 @@ void ntyJsonLocationLabAction(ActionParam *pActionParam) {
 	int length = strlen(labbuf);
 
 	MessageTag *pMessageTag = malloc(sizeof(MessageTag));
+	if (pMessageTag == NULL) {
+		free(pLABReq);
+		return NTY_RESULT_ERROR;
+	}
 	pMessageTag->Type = MSG_TYPE_LOCATION_LAB_API;
 	pMessageTag->fromId = fromId;
 	pMessageTag->toId = toId;
@@ -239,6 +269,11 @@ void ntyJsonLocationLabAction(ActionParam *pActionParam) {
 
 #if ENABLE_DAVE_MSGQUEUE_MALLOC
 	pMessageTag->Tag = malloc((length+1)*sizeof(U8));
+	if (pMessageTag->Tag == NULL) {
+		free(pLABReq);
+		free(pMessageTag);
+		return NTY_RESULT_ERROR;
+	}
 	memset(pMessageTag->Tag, 0, length+1);
 	memcpy(pMessageTag->Tag, labbuf, length);
 #else
@@ -254,7 +289,7 @@ void ntyJsonLocationLabAction(ActionParam *pActionParam) {
 
 	int ret = ntyDaveMqPushMessage(pMessageTag);
 	//int ret = ntyHttpQJKLocation(pMessageTag);
-	free(pMessageTag);
+	//free(pMessageTag);
 	if (ret == -1) {
 		ntylog(" ntyHttpQJKLocation --> Http Exception\n");
 		ret = 4;
@@ -267,8 +302,15 @@ void ntyJsonLocationLabAction(ActionParam *pActionParam) {
 	ntydbg(" ntyJsonLocationLabAction end --> \n");
 }
 
-void ntyJsonWeatherAction(ActionParam *pActionParam) {
+int ntyJsonWeatherAction(ActionParam *pActionParam) {
+	if (pActionParam == NULL)  {
+		return NTY_RESULT_FAILED;
+	}
+	
 	WeatherLocationReq *pWeatherLocationReq = (WeatherLocationReq*)malloc(sizeof(WeatherLocationReq));
+	if (pWeatherLocationReq == NULL) {
+		return NTY_RESULT_ERROR;
+	}
 	ntyJsonWeatherLocation(pActionParam->json, pWeatherLocationReq);
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;
@@ -280,6 +322,11 @@ void ntyJsonWeatherAction(ActionParam *pActionParam) {
 	int length = strlen(weatherbuf);
 
 	MessageTag *pMessageTag = malloc(sizeof(MessageTag));
+	if (pMessageTag == NULL) {
+		free(pWeatherLocationReq);
+		return NTY_RESULT_ERROR;
+	}
+	
 	pMessageTag->Type = MSG_TYPE_WEATHER_API;
 	pMessageTag->fromId = fromId;
 	pMessageTag->toId = toId;
@@ -287,6 +334,13 @@ void ntyJsonWeatherAction(ActionParam *pActionParam) {
 	
 #if ENABLE_DAVE_MSGQUEUE_MALLOC
 	pMessageTag->Tag = malloc((length+1)*sizeof(U8));
+	if (pMessageTag->Tag == NULL) {
+		free(pMessageTag);
+		free(pWeatherLocationReq);
+
+		return NTY_RESULT_ERROR;
+	}
+
 	memset(pMessageTag->Tag, 0, length+1);
 	memcpy(pMessageTag->Tag, weatherbuf, length);
 #else
@@ -1634,11 +1688,15 @@ int ntyReadOfflineCommonMsgAction(C_DEVID devId) {
 	if (ret == NTY_RESULT_SUCCESS) {
 		ntyVectorIterator(container, ntyReadOfflineCommonMsgIter, &devId);
 	} 
-	if (container->num == 0) { //count == 0
-		ret = NTY_RESULT_NOEXIST;
-	} else {
-		ret = 0;
-	}
+	ntylog("ntyReadOfflineCommonMsgAction --> ret : %d\n", ret);
+
+	if (ret != NTY_RESULT_BUSY) {
+		if (container->num == 0) { //count == 0
+			ret = NTY_RESULT_NOEXIST;
+		} else {
+			ret = NTY_RESULT_SUCCESS;
+		}
+	} 
 	
 	ntyVectorDestory(container);
 
@@ -1669,11 +1727,16 @@ int ntyReadOfflineVoiceMsgAction(C_DEVID devId) {
 	if (ret == NTY_RESULT_SUCCESS) {
 		ntyVectorIterator(container, ntyReadOfflineVoiceMsgIter, &devId);
 	} 
-	if (container->num == 0) { //count == 0
-		ret = NTY_RESULT_NOEXIST;
-	} else {
-		ret = 0;
-	}
+
+	ntylog("ntyReadOfflineVoiceMsgAction --> ret : %d\n", ret);
+	
+	if (ret != NTY_RESULT_BUSY) {
+		if (container->num == 0) { //count == 0
+			ret = NTY_RESULT_NOEXIST;
+		} else {
+			ret = NTY_RESULT_SUCCESS;
+		}
+	} 
 	
 	ntyVectorDestory(container);
 
@@ -1715,11 +1778,16 @@ int ntyReadOfflineBindMsgToAdminAction(C_DEVID devId) {
 	if (ret == NTY_RESULT_SUCCESS) {
 		ntyVectorIter(container, ntyReadOfflineBindMsgToAdminIter, &devId);
 	} 
-	if (container->num == 0) { //count == 0
-		ret = NTY_RESULT_NOEXIST;
-	} else {
-		ret = 0;
-	}
+
+	ntylog(" ntyReadOfflineBindMsgToAdminAction --> ret : %d\n", ret);
+	
+	if (ret != NTY_RESULT_BUSY) {
+		if (container->num == 0) { //count == 0
+			ret = NTY_RESULT_NOEXIST;
+		} else {
+			ret = NTY_RESULT_SUCCESS;
+		}
+	} 
 	
 	ntyVectorDestory(container);
 	return ret;
@@ -1749,11 +1817,14 @@ int ntyReadOfflineBindMsgToProposerAction(C_DEVID devId) {
 	if (ret == NTY_RESULT_SUCCESS) {
 		ntyVectorIter(container, ntyReadOfflineBindMsgToProposerIter, &devId);
 	} 
-	if (container->num == 0) { //count == 0
-		ret = NTY_RESULT_NOEXIST;
-	} else {
-		ret = 0;
-	}
+	
+	if (ret != NTY_RESULT_BUSY) {
+		if (container->num == 0) { //count == 0
+			ret = NTY_RESULT_NOEXIST;
+		} else {
+			ret = NTY_RESULT_SUCCESS;
+		}
+	} 
 	
 	ntyVectorDestory(container);
 	return ret;
