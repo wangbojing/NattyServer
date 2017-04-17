@@ -50,8 +50,8 @@
 
 #include <curl/curl.h>
 
-#define MAX_HTTTP_REQUEST_COUNT				30
-#define NTY_CURL_TIMEOUT					5
+#define MAX_HTTTP_REQUEST_COUNT				50
+#define NTY_CURL_TIMEOUT					3
 
 typedef struct NTY_HTTP_REQUEST {
 	CURL *curl;	

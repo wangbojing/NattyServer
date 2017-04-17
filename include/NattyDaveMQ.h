@@ -97,7 +97,6 @@ typedef struct _MESSAGETAG {
 	C_DEVID fromId;
 	C_DEVID toId;
 	C_DEVID gId;
-	void *param;
 	U8 u8LocationType;
 #if 1
 	DAVE_MESSAGE_CALLBACK cb;

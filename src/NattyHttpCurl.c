@@ -773,8 +773,8 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 	free(pLocationAck);
 	free(pAMap);
 #if 1 //Release Message
-	nHttpRequest *req = (nHttpRequest *)pMessageTag->param;
-	ntyHttpRequestResetCURL(req);
+	//nHttpRequest *req = (nHttpRequest *)pMessageTag->param;
+	
 
 	if (pMessageTag->Tag != NULL) {
 		free(pMessageTag->Tag);
@@ -811,13 +811,27 @@ int ntyHttpQJKLocation(void *arg) {
 	curl = curl_easy_init();
 #else
 	nHttpRequest *req = ntyHttpRequestGetCURL();
-	if (req == NULL) return NTY_RESULT_ERROR;
+	if (req == NULL) { 
+
+		if (pMessageTag->Tag != NULL) {
+			free(pMessageTag->Tag);
+		}
+		free(pMessageTag);
+		
+		return NTY_RESULT_ERROR;
+	}
 	curl = req->curl;
-	pMessageTag->param = req;
+	//pMessageTag->param = req;
 #endif
 	if (!curl)	{		
 		ntylog("curl init failed\n");
-		return -2;	
+
+		if (pMessageTag->Tag != NULL) {
+			free(pMessageTag->Tag);
+		}
+		free(pMessageTag);
+		
+		return NTY_RESULT_ERROR;	
 	}
 
 	ntylog("QJK url:%s\n", tag);
@@ -850,6 +864,7 @@ int ntyHttpQJKLocation(void *arg) {
 #if 0	
 	curl_easy_cleanup(curl);
 #endif
+	ntyHttpRequestResetCURL(req);
 #if 0	
 	if (tag != NULL) {
 		free(tag);
@@ -896,10 +911,12 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	JSON_Value *json = ntyMallocJsonValue(jsonstring);
 	AMap *pAMap = (AMap*)malloc(sizeof(AMap));
 	if (pAMap == NULL) {
+		
 		if (pMessageTag->Tag != NULL) {
 			free(pMessageTag->Tag);
 		}
 		free(pMessageTag);
+		
 		return NTY_RESULT_ERROR;
 	}
 	
@@ -937,6 +954,7 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 #if 1 //Update By WangBoJing
 	LocationAck *pLocationAck = malloc(sizeof(LocationAck));
 	if (pLocationAck == NULL) {
+		
 		if (pMessageTag->Tag != NULL) {
 			free(pMessageTag->Tag);
 		}
@@ -1028,8 +1046,7 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 
 	
 #if 1 //Release Message
-	nHttpRequest *req = (nHttpRequest *)pMessageTag->param;
-	ntyHttpRequestResetCURL(req);
+	
 
 	if (pMessageTag->Tag != NULL) {
 		free(pMessageTag->Tag);
@@ -1067,14 +1084,27 @@ int ntyHttpQJKWeatherLocation(void *arg) {
 	curl = curl_easy_init();
 #else
 	nHttpRequest *req = ntyHttpRequestGetCURL();
-	if (req == NULL) return NTY_RESULT_ERROR;
+	if (req == NULL) { 
+
+		if (pMessageTag->Tag != NULL) {
+			free(pMessageTag->Tag);
+		}
+		free(pMessageTag);
+		
+		return NTY_RESULT_ERROR;
+	}
 
 	curl = req->curl;
-	pMessageTag->param = req;
+	//pMessageTag->param = req;
 #endif
 	if (!curl)	{
 		ntylog("curl init failed\n");	
-		return -2;
+		if (pMessageTag->Tag != NULL) {
+			free(pMessageTag->Tag);
+		}
+		free(pMessageTag);
+		
+		return NTY_RESULT_ERROR;
 	}
 
 	ntylog("QJK url:%s\n", tag);
@@ -1102,12 +1132,13 @@ int ntyHttpQJKWeatherLocation(void *arg) {
 			default:				
 				ntylog("default %d\n",res);		
 		}
-		return -3;	
+		//return -3;	
 	}	
 #if 0
 	curl_easy_cleanup(curl);
 #endif
-
+	//nHttpRequest *req = (nHttpRequest *)pMessageTag->param;
+	ntyHttpRequestResetCURL(req);
 #if 0	
 	if (tag != NULL) {
 		free(tag);
@@ -1173,11 +1204,7 @@ exit:
 	free(pWeatherReq);
 	
 #if 1 //Release Message
-	nHttpRequest *req = (nHttpRequest *)pMessageTag->param;
-	if (req != NULL) {
-		ntyHttpRequestResetCURL(req);
-	} 
-
+	
 	free(pMessageTag->Tag);
 	free(pMessageTag);
 #endif
@@ -1252,13 +1279,28 @@ int ntyHttpQJKWeather(void *arg) {
 	curl = curl_easy_init();
 #else
 	nHttpRequest *req = ntyHttpRequestGetCURL();
-	if (req == NULL) return NTY_RESULT_ERROR;
+	if (req == NULL) { 
+
+		if (pMessageTag->Tag != NULL) {
+			free(pMessageTag->Tag);
+		}
+		free(pMessageTag);
+		
+		return NTY_RESULT_ERROR;
+	}
 
 	curl = req->curl;
-	pMessageTag->param = req;
+	//pMessageTag->param = req;
 #endif
 	if (!curl)	{		
-		ntylog("curl init failed\n");		
+		ntylog("curl init failed\n");	
+
+		if (pMessageTag->Tag != NULL) {
+			free(pMessageTag->Tag);
+		}
+		free(pMessageTag);
+		
+		
 		return NTY_RESULT_ERROR;	
 	}
 
@@ -1291,11 +1333,13 @@ int ntyHttpQJKWeather(void *arg) {
 			default:				
 				ntylog("default %d\n",res);		
 		}		
-		return -3;	
+		//return -3;	
 	}
 #if 0
 	curl_easy_cleanup(curl);
 #endif
+	
+	ntyHttpRequestResetCURL(req);
 #if 0	
 	if (tag != NULL) {
 		free(tag);
