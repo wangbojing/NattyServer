@@ -423,6 +423,7 @@ int ntyHttpGaodeWifiCellAPI(void *arg) {
 
 	curl_easy_setopt(curl, CURLOPT_URL, tag->Tag); 
 	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L); 
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, NTY_CURL_TIMEOUT);
 #if 1
 	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
 #endif
@@ -584,6 +585,7 @@ int ntyHttpMtkQuickLocation(void *arg) {
 
 	curl_easy_setopt(curl, CURLOPT_URL, tag->Tag); 
 	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L); 
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, NTY_CURL_TIMEOUT);
 #if 1
 	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
 #endif
@@ -822,6 +824,7 @@ int ntyHttpQJKLocation(void *arg) {
 
 	curl_easy_setopt(curl, CURLOPT_URL, tag);
 	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, NTY_CURL_TIMEOUT);
 #if 1
 	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
 #endif
@@ -1078,6 +1081,7 @@ int ntyHttpQJKWeatherLocation(void *arg) {
 
 	curl_easy_setopt(curl, CURLOPT_URL, tag);
 	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, NTY_CURL_TIMEOUT);
 #if 1
 	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
 #endif
@@ -1266,6 +1270,7 @@ int ntyHttpQJKWeather(void *arg) {
 
 	curl_easy_setopt(curl, CURLOPT_URL, tag); 
 	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L); 
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, NTY_CURL_TIMEOUT);
 #if 1
 	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
 #endif
@@ -1370,6 +1375,7 @@ int ntyHttpQJKCommon(void *arg) {
 
 	curl_easy_setopt(curl, CURLOPT_URL, tag); 
 	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L); 
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, NTY_CURL_TIMEOUT);
 #if 1
 	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
 #endif
