@@ -56,7 +56,7 @@ void* ntyConnectionPoolInitialize(ConnectionPool *pool) {
 	ConnectionPool_setInitialConnections(pool->nPool, 4);
     ConnectionPool_setMaxConnections(pool->nPool, 200);
     ConnectionPool_setConnectionTimeout(pool->nPool, 2);
-    ConnectionPool_setReaper(pool->nPool, 2);
+    ConnectionPool_setReaper(pool->nPool, 1);
 	
 	ConnectionPool_start(pool->nPool);
 
@@ -126,10 +126,11 @@ int ntyConnectionPoolDynamicsSize(void *self) {
 			ntylog(" Connection Need to Raise Connection Size\n");
 		}
 	}
-	if (size >= max*CONNECTION_SIZE_THRESHOLD_RATIO || active >=CONNECTION_SIZE_REAP_RATIO) {
+#if 0
+	if (size >= max*CONNECTION_SIZE_THRESHOLD_RATIO || active >= max*CONNECTION_SIZE_REAP_RATIO) {
 		return 1;
 	}
-	
+#endif	
 	ntylog(" size:%d, active:%d, max:%d\n", size, active, max);
 	return 0;
 }
