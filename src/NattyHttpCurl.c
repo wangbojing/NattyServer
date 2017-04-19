@@ -859,7 +859,7 @@ int ntyHttpQJKLocation(void *arg) {
 			default:				
 				ntylog("default %d\n",res);		
 		}		
-		return -3;	
+		//return -3;	
 	}
 #if 0	
 	curl_easy_cleanup(curl);
