@@ -885,7 +885,7 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 		memset(jsonstring, 0, jsonlen+1);
 		memcpy(jsonstring, buffer+NTY_PROTO_COMMON_REQ_JSON_CONTENT_IDX, jsonlen);
 
-		ntylog("ntyCommonReqPacketHandleRequest --> json : %s  %d\n", jsonstring, jsonlen);
+		ntylog("ntyCommonReqPacketHandleRequest --> fromId:%lld, toId:%lld, json : %s  %d\n", fromId, toId, jsonstring, jsonlen);
 		
 		JSON_Value *json = ntyMallocJsonValue(jsonstring);
 		if (json == NULL) { //JSON Error and send Code to FromId Device
@@ -935,7 +935,7 @@ void ntyCommonAckPacketHandleRequest(const void *_self, unsigned char *buffer, i
 
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_COMMON_ACK_DEVID_IDX);
 		U32 msgId = *(U32*)(buffer+NTY_PROTO_COMMON_ACK_MSGID_IDX);
-		ntylog("ntyCommonAckPacketHandleRequest msgId:%d\n", msgId);
+		ntylog("ntyCommonAckPacketHandleRequest fromId:%lld, msgId:%d\n", fromId, msgId);
 #if 0
 
 		int ret = ntyExecuteCommonOfflineMsgDeleteHandle(msgId, fromId);
@@ -1680,6 +1680,8 @@ void ntyRoutePacketHandleRequest(const void *_self, unsigned char *buffer, int l
 
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_DATA_ROUTE_DEVID_IDX);
 		C_DEVID toId = *(C_DEVID*)(buffer+NTY_PROTO_DATA_ROUTE_RECVID_IDX);
+
+		ntylog("ntyRoutePacketHandleRequest --> fromId:%lld, toId:%lld\n", fromId, toId);
 		
 		int len = ntySendDataRoute(toId, (U8*)buffer, length);
 		if (len>=0) {
