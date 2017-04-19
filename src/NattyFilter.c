@@ -322,15 +322,15 @@ Client* ntyAddClientHeap(const void * obj, int *result) {
 				if(-1 == ntyQueryWatchIDListSelectHandle(pClient->devId, pClient->friends)) {
 					ntylog(" ntyQueryWatchIDListSelectHandle Failed \n");
 					
-					ntyVectorDestory(pClient->friends);
-					pClient->friends = NULL;
+					//ntyVectorDestory(pClient->friends);
+					//pClient->friends = NULL;
 				}
 			} else if (pClient->deviceType == NTY_PROTO_CLIENT_WATCH) { //Device
 				if (-1 == ntyQueryAppIDListSelectHandle(pClient->devId, pClient->friends)) {
 					ntylog(" ntyQueryAppIDListSelectHandle Failed \n");
 					
-					ntyVectorDestory(pClient->friends);
-					pClient->friends = NULL;
+					//ntyVectorDestory(pClient->friends);
+					//pClient->friends = NULL;
 				}
 			} else {
 				ntylog(" Protocol Device Type is Error : %c\n", pClient->deviceType);
