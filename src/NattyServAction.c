@@ -100,11 +100,18 @@ int ntyJsonBroadCastRecvResult(C_DEVID fromId, C_DEVID toId, char *jsonresult, U
 
 void ntyJsonCommonResult(C_DEVID devId, const char * code) {
 	CommonAck *pCommonAck = (CommonAck*)malloc(sizeof(CommonAck));
+	if (pCommonAck == NULL) {
+		ntylog("ntyJsonCommonResult --> malloc CommonAck failed ");
+		return ;
+	}
+	memset(pCommonAck, 0, sizeof(CommonAck));
+	
 	pCommonAck->result.code = code;
 	pCommonAck->result.message = ntyCommonResultMessage(pCommonAck->result.code);
 
 	char *jsonresult = ntyJsonWriteCommon(pCommonAck);
 	ntylog("ntyJsonCommonResult %s -> %lld, %s  %d\n", code, devId, jsonresult, (int)strlen(jsonresult));
+	
 	ntySendDataResult(devId, (U8*)jsonresult, strlen(jsonresult), 200);
 	ntyJsonFree(jsonresult);
 	free(pCommonAck);
@@ -119,12 +126,20 @@ void ntyJsonCommonContextResult(C_DEVID devId, const char *context) {
 void ntyJsonCommonExtendResult(C_DEVID devId, const char * code, int id) {
 	char ids[20] = {0};
 	CommonExtendAck *pCommonExtendAck = (CommonExtendAck*)malloc(sizeof(CommonExtendAck));
+	if (pCommonExtendAck == NULL) {
+		ntylog("ntyJsonCommonExtendResult --> malloc CommonExtendAck failed\n");
+		return ;
+	}
+	memset(pCommonExtendAck, 0, sizeof(CommonExtendAck));
+	
 	pCommonExtendAck->id = ids;
 	sprintf(ids, "%d", id);
 	pCommonExtendAck->result.code = code;
 	pCommonExtendAck->result.message = ntyCommonResultMessage(pCommonExtendAck->result.code);
+	
 	char *jsonresult = ntyJsonWriteCommonExtend(pCommonExtendAck);
 	ntylog("ntyJsonCommonExtendResult %s -> %d %lld, %s  %d\n", code, id, devId, jsonresult, (int)strlen(jsonresult));
+	
 	ntySendDataResult(devId, (U8*)jsonresult, strlen(jsonresult), 200);
 	ntyJsonFree(jsonresult);
 	free(pCommonExtendAck);
@@ -177,6 +192,7 @@ int ntyJsonLocationWIFIAction(ActionParam *pActionParam) {
 		
 		return NTY_RESULT_ERROR;
 	}
+	memset(pMessageTag, 0, sizeof(MessageTag));
 		
 	pMessageTag->Type = MSG_TYPE_LOCATION_WIFI_API;
 	pMessageTag->fromId = fromId;
@@ -232,6 +248,7 @@ int ntyJsonLocationLabAction(ActionParam *pActionParam) {
 	if (pLABReq == NULL) {
 		return NTY_RESULT_ERROR;
 	}
+	memset(pLABReq, 0, sizeof(LABReq));
 	
 	ntyJsonLAB(pActionParam->json, pLABReq);
 	C_DEVID fromId = pActionParam->fromId;
@@ -261,6 +278,8 @@ int ntyJsonLocationLabAction(ActionParam *pActionParam) {
 		free(pLABReq);
 		return NTY_RESULT_ERROR;
 	}
+	memset(pMessageTag, 0, sizeof(MessageTag));
+	
 	pMessageTag->Type = MSG_TYPE_LOCATION_LAB_API;
 	pMessageTag->fromId = fromId;
 	pMessageTag->toId = toId;
@@ -309,8 +328,11 @@ int ntyJsonWeatherAction(ActionParam *pActionParam) {
 	
 	WeatherLocationReq *pWeatherLocationReq = (WeatherLocationReq*)malloc(sizeof(WeatherLocationReq));
 	if (pWeatherLocationReq == NULL) {
+		ntylog("ntyJsonWeatherAction --> WeatherLocationReq malloc failed \n");
 		return NTY_RESULT_ERROR;
 	}
+	memset(pWeatherLocationReq, 0, sizeof(WeatherLocationReq));
+	
 	ntyJsonWeatherLocation(pActionParam->json, pWeatherLocationReq);
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;
@@ -326,6 +348,7 @@ int ntyJsonWeatherAction(ActionParam *pActionParam) {
 		free(pWeatherLocationReq);
 		return NTY_RESULT_ERROR;
 	}
+	memset(pMessageTag, 0, sizeof(MessageTag));
 	
 	pMessageTag->Type = MSG_TYPE_WEATHER_API;
 	pMessageTag->fromId = fromId;
@@ -494,6 +517,13 @@ void ntyCommonReqAction(ActionParam *pActionParam) {
 
 void ntyJsonAddEfenceAction(ActionParam *pActionParam) {
 	AddEfenceReq *pAddEfenceReq = (AddEfenceReq*)malloc(sizeof(AddEfenceReq));
+	if (pAddEfenceReq == NULL) {
+		ntylog("ntyJsonAddEfenceAction --> malloc AddEfenceReq failed\n");
+		return ;
+	}
+	memset(pAddEfenceReq, 0, sizeof(AddEfenceReq));
+
+	
 	ntyJsonAddEfence(pActionParam->json, pAddEfenceReq);
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;
@@ -541,6 +571,12 @@ void ntyJsonAddEfenceAction(ActionParam *pActionParam) {
 		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
 
 		AddEfenceAck *pAddEfenceAck = (AddEfenceAck*)malloc(sizeof(AddEfenceAck));
+		if (pAddEfenceAck == NULL) {
+			ntylog("ntyJsonAddEfenceAction --> malloc AddEfenceAck failed\n");
+			return ;
+		}
+
+		
 		char ids[20] = {0};
 		sprintf(ids, "%d", id);
 		pAddEfenceAck->id = ids;
@@ -602,6 +638,12 @@ void ntyJsonDelEfenceAction(ActionParam *pActionParam) {
 		
 		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
 		DelEfenceAck *pDelEfenceAck = (DelEfenceAck*)malloc(sizeof(DelEfenceAck));
+		if (pDelEfenceAck == NULL) {
+			ntylog("ntyJsonDelEfenceAction --> malloc DelEfenceAck failed\n");
+			goto exit;
+		}
+		memset(pDelEfenceAck, 0, sizeof(DelEfenceAck));
+		
 		pDelEfenceAck->result = *(DelEfenceResult*)pDelEfenceReq;
 		char msgs[20] = {0};
 		sprintf(msgs, "%d", pActionParam->index);
@@ -628,6 +670,12 @@ exit:
 
 void ntyJsonICCIDAction(ActionParam *pActionParam) {
 	ICCIDReq *pICCIDReq = (ICCIDReq*)malloc(sizeof(ICCIDReq));
+	if (pICCIDReq == NULL) {
+		ntylog("ntyJsonICCIDAction --> malloc failed ICCIDReq\n");
+		
+		return ;
+	}
+	
 	ntyJsonICCID(pActionParam->json, pICCIDReq);
 	C_DEVID devId = pActionParam->toId;
 	
@@ -652,9 +700,14 @@ void ntyJsonICCIDAction(ActionParam *pActionParam) {
 	
 	char phonenum[20] = {0};
 	int ret = ntyExecuteICCIDSelectHandle(devId, iccid, phonenum);
-	ntydbg(" ntyJsonICCIDAction --> phonenum:%s\n", phonenum);
+	ntylog(" ntyJsonICCIDAction --> phonenum:%s\n", phonenum);
 
 	ICCIDAck *pICCIDAck = (ICCIDAck*)malloc(sizeof(ICCIDAck));
+	if (pICCIDAck == NULL) {
+		ntylog(" ntyJsonICCIDAction --> malloc failed ICCIDAck");
+		goto exit;
+	}
+	
 	pICCIDAck->IMEI = pICCIDReq->IMEI;
 	if (ret == -1) {
 		ntylog(" ntyJsonICCIDAction --> DB Exception\n");
@@ -696,8 +749,9 @@ void ntyJsonICCIDAction(ActionParam *pActionParam) {
 		
 	}
 
-exit:
+
 	free(pICCIDAck);
+exit:
 	free(pICCIDReq);
 }
 
@@ -791,6 +845,12 @@ void ntyJsonRunTimeAction(ActionParam *pActionParam) {
 		pRunTimeReq->msg = msgs;
 		
 		RunTimeAck *pRunTimeAck = (RunTimeAck*)malloc(sizeof(RunTimeAck));
+		if (pRunTimeAck == NULL) {
+			ntylog("ntyJsonRunTimeAction --> malloc failed RunTimeAck\n");
+			goto exit;
+		}
+		memset(pRunTimeAck, 0, sizeof(RunTimeAck));
+		
 		pRunTimeAck->result = *(RunTimeResult*)pRunTimeReq;			
 		char *jsonresult = ntyJsonWriteRunTime(pRunTimeAck);
 
@@ -815,6 +875,12 @@ exit:
 
 void ntyJsonTurnAction(ActionParam *pActionParam) {
 	TurnReq *pTurnReq = (TurnReq*)malloc(sizeof(TurnReq));
+	if (pTurnReq == NULL) {
+		ntylog("ntyJsonTurnAction --> malloc failed TurnReq\n");
+		return ;
+	}
+	memset(pTurnReq, 0, sizeof(TurnReq));
+	
 	ntyJsonTurn(pActionParam->json, pTurnReq);
 
 	C_DEVID fromId = pActionParam->fromId;
@@ -827,6 +893,11 @@ void ntyJsonTurnAction(ActionParam *pActionParam) {
 	}
 
 	char *turn_on = malloc(50);
+	if (turn_on == NULL) {
+		ntylog("ntyJsonTurnAction --> malloc failed turn_on \n");
+		free(pTurnReq);
+		return ;
+	}
 	memset(turn_on, 0, 50);
 	int check_on = checkStringIsAllTimeChar(pTurnReq->turn.on.time);
 	if (check_on != 1) {
@@ -835,6 +906,12 @@ void ntyJsonTurnAction(ActionParam *pActionParam) {
 		memcpy(turn_on, pTurnReq->turn.on.time, sizeof(pTurnReq->turn.on.time));
 	}
 	char *turn_off = malloc(50);
+	if (turn_off == NULL) {
+		free(pTurnReq);
+		free(turn_off);
+		ntylog("ntyJsonTurnAction --> malloc failed turn_off \n");
+		return ;
+	}
 	memset(turn_off, 0, 50);
 	int check_off = checkStringIsAllTimeChar(pTurnReq->turn.off.time);
 	if (check_off != 1) {
@@ -860,6 +937,12 @@ void ntyJsonTurnAction(ActionParam *pActionParam) {
 		pTurnReq->msg = msgs;
 		
 		TurnAck *pTurnAck = (TurnAck*)malloc(sizeof(TurnAck));
+		if (pTurnAck == NULL) {
+			ntylog(" ntyJsonTurnAction --> malloc failed TurnAck\n");
+			goto exit;
+		}
+		memset(pTurnAck, 0, sizeof(TurnAck));
+		
 		pTurnAck->result = *(TurnResult*)pTurnReq;
 		char *jsonresult = ntyJsonWriteTurn(pTurnAck);
 
@@ -877,15 +960,30 @@ void ntyJsonTurnAction(ActionParam *pActionParam) {
 		ntyJsonFree(jsonresult);
 		free(pTurnAck);
 	}
-	free(turn_on);
-	free(turn_off);
-	
+
 exit:
-	free(pTurnReq);
+	if (turn_on != NULL) {
+		free(turn_on);
+	}
+	if (turn_off != NULL) {
+		free(turn_off);
+	}
+	if (pTurnReq != NULL) {
+		free(pTurnReq);
+	}
+	return ;
 }
 
 void ntyJsonAddScheduleAction(ActionParam *pActionParam) {
+	if (pActionParam == NULL) return ;
+	
 	AddScheduleReq *pAddScheduleReq = (AddScheduleReq*)malloc(sizeof(AddScheduleReq));
+	if (pAddScheduleReq == NULL) {
+		ntylog("ntyJsonAddScheduleAction --> malloc failed AddScheduleReq\n");
+		return ;
+	}
+	memset(pAddScheduleReq, 0, sizeof(AddScheduleReq));
+
 	ntyJsonAddSchedule(pActionParam->json, pAddScheduleReq);
 
 	C_DEVID fromId = pActionParam->fromId;
@@ -954,7 +1052,15 @@ exit:
 }
 
 void ntyJsonDelScheduleAction(ActionParam *pActionParam) {
+	if (pActionParam == NULL) return ;
+	
 	DelScheduleReq *pDelScheduleReq = (DelScheduleReq*)malloc(sizeof(DelScheduleReq));
+	if (pDelScheduleReq == NULL) {
+		ntylog("ntyJsonDelScheduleAction --> malloc failed DelScheduleReq\n");
+		return ;
+	}
+	memset(pDelScheduleReq, 0, sizeof(DelScheduleReq));
+	
 	ntyJsonDelSchedule(pActionParam->json, pDelScheduleReq);
 
 	C_DEVID fromId = pActionParam->fromId;
@@ -985,6 +1091,12 @@ void ntyJsonDelScheduleAction(ActionParam *pActionParam) {
 		pDelScheduleReq->msg = msgs;
 		
 		DelScheduleAck *pDelScheduleAck = (DelScheduleAck*)malloc(sizeof(DelScheduleAck));
+		if (pDelScheduleAck == NULL) {
+			ntylog("ntyJsonDelScheduleAction --> malloc failed DelScheduleAck\n");
+			goto exit;
+		}
+		memset(pDelScheduleAck, 0, sizeof(DelScheduleAck));
+
 		pDelScheduleAck->result = *(DelScheduleResult*)pDelScheduleReq;
 		
 		char *jsonresult = ntyJsonWriteDelSchedule(pDelScheduleAck);
@@ -1007,7 +1119,14 @@ exit:
 }
 
 void ntyJsonUpdateScheduleAction(ActionParam *pActionParam) {
+	if (pActionParam == NULL) return ;
+	
 	UpdateScheduleReq *pUpdateScheduleReq = (UpdateScheduleReq*)malloc(sizeof(UpdateScheduleReq));
+	if (pUpdateScheduleReq == NULL) {
+		ntylog("ntyJsonUpdateScheduleAction --> malloc failed UpdateScheduleReq\n");
+		return ;
+	}
+
 	ntyJsonUpdateSchedule(pActionParam->json, pUpdateScheduleReq);
 
 	C_DEVID fromId = pActionParam->fromId;
@@ -1049,6 +1168,12 @@ void ntyJsonUpdateScheduleAction(ActionParam *pActionParam) {
 		pUpdateScheduleReq->msg = msgs;
 		
 		UpdateScheduleAck *pUpdateScheduleAck = (UpdateScheduleAck*)malloc(sizeof(UpdateScheduleAck));
+		if (pUpdateScheduleAck == NULL) {
+			ntylog("ntyJsonUpdateScheduleAction --> malloc failed UpdateScheduleAck\n");
+			goto exit; 
+		}
+		memset(pUpdateScheduleAck, 0, sizeof(UpdateScheduleAck));
+		
 		pUpdateScheduleAck->result = *(UpdateScheduleResult*)pUpdateScheduleReq;
 		char *jsonresult = ntyJsonWriteUpdateSchedule(pUpdateScheduleAck);
 
@@ -1072,6 +1197,8 @@ exit:
 
 
 void ntyJsonSelectScheduleAction(ActionParam *pActionParam) {
+	if (pActionParam == NULL) return ;
+	
 	CommonReq *pCommonReq = (CommonReq*)malloc(sizeof(CommonReq));
 	ntyJsonCommon(pActionParam->json, pCommonReq);
 
@@ -1198,7 +1325,15 @@ exit:
 }
 
 void ntyJsonAddContactsAction(ActionParam *pActionParam) {
+	if (pActionParam == NULL) return ;
+	
 	AddContactsReq *pAddContactsReq = (AddContactsReq*)malloc(sizeof(AddContactsReq));
+	if (pAddContactsReq == NULL) {
+		ntylog("ntyJsonAddContactsAction --> malloc failed AddContactsReq\n");
+		return ;
+	}
+	memset(pAddContactsReq, 0, sizeof(AddContactsReq));
+
 	ntyJsonAddContacts(pActionParam->json, pAddContactsReq);
 
 	C_DEVID fromId = pActionParam->fromId;
@@ -1224,6 +1359,12 @@ void ntyJsonAddContactsAction(ActionParam *pActionParam) {
 		pAddContactsReq->msg = msgs;
 		
 		DeviceAddContactsAck *pDeviceAddContactsAck = (DeviceAddContactsAck*)malloc(sizeof(DeviceAddContactsAck));
+		if (pDeviceAddContactsAck == NULL) {
+			ntylog("ntyJsonAddContactsAction --> malloc failed DeviceAddContactsAck\n");
+			goto exit;
+		}
+		memset(pDeviceAddContactsAck, 0, sizeof(DeviceAddContactsAck));
+
 		pDeviceAddContactsAck = (DeviceAddContactsAck*)pAddContactsReq;
 		pDeviceAddContactsAck->id = ids;
 		char *jsondeviceresult = ntyJsonWriteDeviceAddContacts(pDeviceAddContactsAck);
@@ -1235,6 +1376,15 @@ void ntyJsonAddContactsAction(ActionParam *pActionParam) {
 			ntyJsonCommonExtendResult(fromId, NATTY_RESULT_CODE_SUCCESS, contactsId);
 			
 			AddContactsAck *pAddContactsAck = malloc(sizeof(AddContactsAck));
+			if (pAddContactsAck == NULL) {
+				ntylog("ntyJsonAddContactsAction --> malloc failed AddContactsAck\n");
+
+				free(jsondeviceresult);
+				free(pDeviceAddContactsAck);
+
+				goto exit;
+			}
+			
 			pAddContactsAck->results = *(AddContactsResults*)pAddContactsReq;
 			char *jsonresult = ntyJsonWriteAddContacts(pAddContactsAck);
 			ret = ntySaveCommonMsgData(
@@ -1260,7 +1410,12 @@ exit:
 }
 
 void ntyJsonUpdateContactsAction(ActionParam *pActionParam) {
+	if (pActionParam == NULL) return ;
+	
 	UpdateContactsReq *pUpdateContactsReq = (UpdateContactsReq*)malloc(sizeof(UpdateContactsReq));
+	if (pUpdateContactsReq == NULL) return ;
+	memset(pUpdateContactsReq, 0, sizeof(UpdateContactsReq));
+	
 	ntyJsonUpdateContacts(pActionParam->json, pUpdateContactsReq);
 
 	C_DEVID fromId = pActionParam->fromId;
@@ -1289,7 +1444,13 @@ void ntyJsonUpdateContactsAction(ActionParam *pActionParam) {
 		sprintf(msgs, "%d", pActionParam->index);
 		pUpdateContactsReq->msg = msgs;
 		
-		UpdateContactsAck *pUpdateContactsAck = malloc(sizeof(UpdateContactsAck));
+		UpdateContactsAck *pUpdateContactsAck = (UpdateContactsAck*)malloc(sizeof(UpdateContactsAck));
+		if (pUpdateContactsAck == NULL) {
+			goto exit;
+		}
+		memset(pUpdateContactsAck, 0, sizeof(UpdateContactsAck));
+
+		
 		pUpdateContactsAck->results = *(UpdateContactsResults*)pUpdateContactsReq;
 		char *jsonresult = ntyJsonWriteUpdateContacts(pUpdateContactsAck);
 		ret = ntySaveCommonMsgData(
@@ -1312,6 +1473,10 @@ exit:
 
 void ntyJsonDelContactsAction(ActionParam *pActionParam) {
 	DelContactsReq *pDelContactsReq = (DelContactsReq*)malloc(sizeof(DelContactsReq));
+	if (pDelContactsReq == NULL) return ;
+
+	memset(pDelContactsReq, 0, sizeof(DelContactsReq));
+
 	ntyJsonDelContacts(pActionParam->json, pDelContactsReq);
 
 	C_DEVID fromId = pActionParam->fromId;
@@ -1340,6 +1505,12 @@ void ntyJsonDelContactsAction(ActionParam *pActionParam) {
 		pDelContactsReq->msg = msgs;
 			
 		DelContactsAck *pDelContactsAck = malloc(sizeof(DelContactsAck));
+		if (pDelContactsAck == NULL) { 
+			goto exit;
+			return ;
+		}
+		memset(pDelContactsAck, 0, sizeof(DelContactsAck));
+		
 		pDelContactsAck->results = *(DelContactsResults*)pDelContactsReq;
 		char *jsonresult = ntyJsonWriteDelContacts(pDelContactsAck);
 		ret = ntySaveCommonMsgData(
@@ -1419,6 +1590,12 @@ void ntyJsonWearStatusAction(ActionParam *pActionParam) {
 
 void ntyJsonOfflineMsgReqAction(ActionParam *pActionParam) {
 	DelContactsReq *pDelContactsReq = (DelContactsReq*)malloc(sizeof(DelContactsReq));
+	if (pDelContactsReq == NULL) {
+		ntylog("ntyJsonOfflineMsgReqAction --> malloc DelContactsReq failed\n");
+		return ;
+	}
+	memset(pDelContactsReq, 0, sizeof(DelContactsReq));
+
 	ntyJsonDelContacts(pActionParam->json, pDelContactsReq);
 
 	C_DEVID fromId = pActionParam->fromId;
@@ -1440,6 +1617,13 @@ void ntyJsonOfflineMsgReqAction(ActionParam *pActionParam) {
 			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
 
 			DelContactsAck *pDelContactsAck = malloc(sizeof(DelContactsAck));
+			if (pDelContactsAck == NULL) {
+				free(pDelContactsReq);
+				ntylog("ntyJsonOfflineMsgReqAction --> malloc DelContactsAck failed\n");
+				
+				return ;
+			}
+			
 			pDelContactsAck->results = *(DelContactsResults*)pDelContactsReq;
 			char *jsonresult = ntyJsonWriteDelContacts(pDelContactsAck);
 			ntyJsonBroadCastRecvResult(fromId, toId, (U8*)jsonresult, pActionParam->index);
@@ -1471,6 +1655,7 @@ int ntyVoiceDataReqAction(C_DEVID senderId, C_DEVID gId, char *filename) {
 
 	VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
 	if (tag == NULL) return NTY_RESULT_FAILED;
+	memset(tag, 0, sizeof(VALUE_TYPE));
 
 	int sLen = strlen(filename);
 	tag->Tag = malloc(sLen+1);
@@ -1512,6 +1697,11 @@ int ntyVoiceReqAction(C_DEVID fromId, U32 msgId) {
 
 	ntylog(" ntyVoiceReqAction --> senderId:%lld, gId:%lld, filename:%s\n", senderId, gId, filename);
 	U8 *pData = (U8 *)malloc(NTY_VOICEREQ_COUNT_LENGTH*NTY_VOICEREQ_PACKET_LENGTH);
+	if (pData == NULL) {
+		ntylog("ntyVoiceReqAction --> malloc failed\n");
+		return NTY_RESULT_ERROR;
+	}
+	memset(pData, 0, NTY_VOICEREQ_COUNT_LENGTH*NTY_VOICEREQ_PACKET_LENGTH);
 	int size = ntyReadDat(filename, pData, NTY_VOICEREQ_COUNT_LENGTH*NTY_VOICEREQ_PACKET_LENGTH);
 	
 	ntylog(" ntyVoiceReqAction --> size:%d\n", size);
@@ -1539,6 +1729,10 @@ int ntyVoiceAckAction(C_DEVID fromId, U32 msgId) {
 #else
 
 	VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
+	if (tag == NULL) {
+		ntylog("ntyVoiceAckAction --> malloc failed\n");
+		return NTY_RESULT_ERROR;
+	}
 	memset(tag, 0, sizeof(VALUE_TYPE));
 
 	tag->fromId = fromId;
@@ -1582,7 +1776,11 @@ int ntyBindReqAction(ActionParam *pActionParam) {
 
 	ntylog(" ntyBindReqAction after ntyQueryDevAppGroupCheckSelectHandle\n");
 	BindReq *pBindReq = malloc(sizeof(BindReq));
-	if (pBindReq == NULL) return NTY_RESULT_ERROR;
+	if (pBindReq == NULL) { 
+		ntylog("ntyBindReqAction --> malloc failed\n");
+		return NTY_RESULT_ERROR;
+	}
+	memset(pBindReq, 0, sizeof(BindReq));
 	ntyJsonBind(pActionParam->json, pBindReq);
 
 	ntylog(" ntyBindReqAction before ntyQueryAdminSelectHandle\n");

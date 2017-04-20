@@ -1816,6 +1816,8 @@ int ntyExecuteContactsInsert(void *self, C_DEVID aid, C_DEVID did, Contacts *con
 int ntyExecuteContactsUpdate(void *self, C_DEVID aid, C_DEVID did, Contacts *contacts, int contactsId) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
+
+	if (contacts == NULL) return NTY_RESULT_FAILED;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
 	U8 u8PhNum[20] = {0};
