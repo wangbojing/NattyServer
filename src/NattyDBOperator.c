@@ -2054,9 +2054,6 @@ int ntyExecuteTimeTablesUpdate(void *self, C_DEVID aid, C_DEVID did, const char 
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			char sql[512] = {0};
-			sprintf(sql, NTY_DB_UPDATE_TIMETABLE, did, morning, morning_turn, afternoon, afternoon_turn, daily);			
-			ntylog("%s\n", sql);
 			
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_UPDATE_TIMETABLE, did, morning, morning_turn, afternoon, afternoon_turn, daily);
 			ntylog(" ntyExecuteTimeTablesUpdate ntyExecuteTimeTablesUpdate --> r ::: \n");
@@ -2185,9 +2182,7 @@ int ntyExecuteChangeDeviceOnlineStatus(void *self, C_DEVID did) {
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			U8 sql[256] = {0};
-			sprintf(sql, NTY_DB_UPDATE_DEVICE_STATUS, did, 1);			
-			ntylog("%s", sql);	
+			ntylog(" ntyExecuteChangeDeviceOnlineStatus --> Connection_execute\n");
 			Connection_execute(con, NTY_DB_UPDATE_DEVICE_STATUS, did, 1);
 		}
 	} 
