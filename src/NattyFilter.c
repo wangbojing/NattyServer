@@ -882,6 +882,12 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 		U16 jsonlen = 0;
 		memcpy(&jsonlen, buffer+NTY_PROTO_COMMON_REQ_JSON_LENGTH_IDX, NTY_JSON_COUNT_LENGTH);
 		char *jsonstring = malloc(jsonlen+1);
+		if (jsonstring == NULL) {
+			ntylog("ntyCommonReqPacketHandleRequest --> malloc failed jsonstring\n");
+			
+			return ;
+		}
+		
 		memset(jsonstring, 0, jsonlen+1);
 		memcpy(jsonstring, buffer+NTY_PROTO_COMMON_REQ_JSON_CONTENT_IDX, jsonlen);
 
@@ -892,6 +898,13 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
 		} else {
 			ActionParam *pActionParam = malloc(sizeof(ActionParam));
+			if (pActionParam == NULL) {
+				ntylog("ntyCommonReqPacketHandleRequest --> malloc failed ActionParam");
+				free(jsonstring);
+
+				return ;
+			}
+			
 			pActionParam->fromId = fromId;
 			pActionParam->toId = toId;
 			pActionParam->json = json;
