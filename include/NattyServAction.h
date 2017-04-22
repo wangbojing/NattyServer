@@ -103,6 +103,8 @@ void ntyJsonDelContactsAction(ActionParam *pActionParam);
 
 void ntyJsonICCIDAction(ActionParam *pActionParam);
 
+void ntyJsonQRCodeAction(ActionParam *pActionParam);
+
 void ntyJsonOfflineMsgReqAction(ActionParam *pActionParam);
 
 void ntyJsonSOSReportAction(ActionParam *pActionParam);
@@ -110,6 +112,8 @@ void ntyJsonSOSReportAction(ActionParam *pActionParam);
 void ntyJsonEfenceReportAction(ActionParam *pActionParam);
 
 void ntyJsonWearStatusAction(ActionParam *pActionParam);
+
+void ntyJsonBindAgreeAction(char *imei, char *adminIds, C_DEVID fromId, C_DEVID toId, U32 msgId);
 
 int ntyVoiceDataReqAction(C_DEVID senderId, C_DEVID gId, char *filename);
 

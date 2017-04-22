@@ -214,17 +214,20 @@ int ntyBindConfirmReqHandle(void *arg) {
 	C_DEVID gId = tag->gId;
 	U32 msgId = tag->arg;
 
+	
 	char msgIds[64] = {0};
 	char answer[64] = {0};
 	char imei[64] = {0};
+	char adminIds[64] = {0};
 	char bindConfirmReq[64] = {0};
 	memcpy(bindConfirmReq, NATTY_USER_PROTOCOL_BINDCONFIRMREQ, strlen(NATTY_USER_PROTOCOL_BINDCONFIRMREQ));
 	sprintf(imei, "%llx", gId);
 	sprintf(msgIds, "%d", msgId);
+	sprintf(adminIds, "%lld", tag->fromId);
 	
 	U8 flag = tag->u8LocationType;
 	ntylog(" ntyBindConfirmReqHandle flag:%d, %lld\n", flag, proposerId);
-	if (flag == 1) { 
+	if (flag == 1) { // AGREE
 		char phonenum[64] = {0};
 		int ret = ntyBindConfirm(adminId, &proposerId, gId, msgId, phonenum); 
 #if 0
@@ -250,9 +253,11 @@ int ntyBindConfirmReqHandle(void *arg) {
 		ntyJsonBroadCastRecvResult(adminId, gId, (U8*)jsonresult, msgId);
 		ntyJsonFree(jsonresult);
 		free(pBindBroadCast);
-		
-	} else if (flag == 0) {
-	
+
+		//发送管理员同意消息到手表
+		ntyJsonBindAgreeAction(imei, adminIds, tag->fromId, tag->toId, msgId);
+	} else if (flag == 0) {  // REJECT
+
 		char phonenum[64] = {0};
 #if 0
 		int ret = ntyBindConfirm(adminId, &proposerId, gId, msgId, phonenum); 
@@ -282,6 +287,7 @@ int ntyBindConfirmReqHandle(void *arg) {
 		free(pBindBroadCast);
 	}
 	
+exit:
 	free(tag);
 	
 	return 0;

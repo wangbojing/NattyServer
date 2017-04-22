@@ -474,6 +474,10 @@ int ntyOfflineClientHeap(C_DEVID clientId) {
 		return NTY_RESULT_NOEXIST;
 	}
 
+	
+	//将此处的添加到队列里面
+	ntyExecuteChangeDeviceOnlineStatusHandle(pClient->devId, 0);
+
 	pClient->online = 0;
 	return NTY_RESULT_SUCCESS;
 }
@@ -495,6 +499,9 @@ int ntyOnlineClientHeap(C_DEVID clientId) {
 		ntyPrintTree(heap->root);
 		return NTY_RESULT_NOEXIST;
 	}
+
+	//将此处的添加到队列里面
+	ntyExecuteChangeDeviceOnlineStatusHandle(pClient->devId, 1);
 	
 #if ENABLE_NATTY_TIME_STAMP //TIME Stamp 	
 	pClient->stamp = ntyTimeStampGenrator();
@@ -552,9 +559,6 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 #elif 0
 				ntySendDeviceTimeCheckAck(pClient, 1);
 #else	
-
-				//将此处的添加到队列里面
-				ntyExecuteChangeDeviceOnlineStatusHandle(pClient->devId);
 
 				//ntySendLoginAckResult(pClient->devId, "", 0, 200);
 				ntySendDeviceTimeCheckAck(pClient->devId, 1);
@@ -786,6 +790,61 @@ static const ProtocolFilter ntyICCIDReqFilter = {
 	ntyPacketGetSuccessor,
 	ntyICCIDReqPacketHandleRequest,
 };
+
+
+void ntyQRCodeReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
+	
+	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_QRCODE_REQ) {
+		ntylog("====================begin ntyQRCodeReqPacketHandleRequest action ==========================\n");
+
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if (msg == NULL) return ;
+		const Client *client = msg->client;
+
+		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_ICCID_REQ_DEVID_IDX);
+
+		U16 jsonlen = 0;
+		memcpy(&jsonlen, buffer+NTY_PROTO_QRCODE_REQ_JSON_LENGTH_IDX, NTY_JSON_COUNT_LENGTH);
+		char *jsonstring = malloc(jsonlen);
+		memset(jsonstring, 0, jsonlen);
+		memcpy(jsonstring, buffer+NTY_PROTO_QRCODE_REQ_JSON_CONTENT_IDX, jsonlen);
+
+		JSON_Value *json = ntyMallocJsonValue(jsonstring);
+		if (json == NULL) {
+			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
+		} else {
+			ActionParam *pActionParam = malloc(sizeof(ActionParam));
+			pActionParam->fromId = fromId;
+			pActionParam->toId = fromId;
+			pActionParam->json = json;
+			pActionParam->jsonstring = jsonstring;
+			pActionParam->jsonlen = jsonlen;
+			pActionParam->index = 0;
+			ntyJsonQRCodeAction(pActionParam);
+			free(pActionParam);
+		}
+		ntyFreeJsonValue(json);
+		free(jsonstring);
+
+		ntylog("====================end ntyQRCodeReqPacketHandleRequest action ==========================\n");
+	} else if (ntyPacketGetSuccessor(_self) != NULL) {
+		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
+		(*succ)->handleRequest(succ, buffer, length, obj);
+	} else {
+		ntylog("Can't deal with: %d\n", buffer[NTY_PROTO_MSGTYPE_IDX]);
+	}
+}
+
+
+static const ProtocolFilter ntyQRCodeReqFilter = {
+	sizeof(Packet),
+	ntyPacketCtor,
+	ntyPacketDtor,
+	ntyPacketSetSuccessor,
+	ntyPacketGetSuccessor,
+	ntyQRCodeReqPacketHandleRequest,
+};
+
 
 void ntyVoiceReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	
@@ -1776,6 +1835,7 @@ const void *pNtyHeartBeatFilter = &ntyHeartBeatFilter;
 const void *pNtyLogoutFilter = &ntyLogoutFilter;
 const void *pNtyTimeCheckFilter = &ntyTimeCheckFilter;
 const void *pNtyICCIDReqFilter = &ntyICCIDReqFilter;
+const void *pNtyQRCodeReqFilter = &ntyQRCodeReqFilter;
 
 const void *pNtyVoiceReqFilter = &ntyVoiceReqFilter;
 const void *pNtyVoiceAckFilter = &ntyVoiceAckFilter;
@@ -1811,6 +1871,7 @@ void* ntyProtocolFilterInit(void) {
 	
 	void *pTimeCheckFilter = New(pNtyTimeCheckFilter);
 	void *pICCIDReqFilter = New(pNtyICCIDReqFilter);
+	void *pQRCodeReqFilter = New(pNtyQRCodeReqFilter);
 	
 	void *pVoiceReqFilter = New(pNtyVoiceReqFilter);
 	void *pVoiceAckFilter = New(pNtyVoiceAckFilter);
@@ -1840,6 +1901,7 @@ void* ntyProtocolFilterInit(void) {
 	ntySetSuccessor(pHeartBeatFilter, pLogoutFilter);
 	ntySetSuccessor(pLogoutFilter, pTimeCheckFilter);
 	ntySetSuccessor(pTimeCheckFilter, pICCIDReqFilter);
+	ntySetSuccessor(pTimeCheckFilter, pQRCodeReqFilter);
 	
 	ntySetSuccessor(pICCIDReqFilter, pVoiceReqFilter);
 	ntySetSuccessor(pVoiceReqFilter, pVoiceAckFilter);

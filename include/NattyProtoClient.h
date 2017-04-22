@@ -113,6 +113,7 @@ void ntySetVoiceDataAckResult(NTY_STATUS_CALLBACK cb);
 void ntySetCommonReqResult(NTY_RETURN_CALLBACK cb);
 
 void ntySetICCIDAckResult(NTY_PARAM_CALLBACK cb);
+void ntyQRCodeAckResult(NTY_PARAM_CALLBACK cb);
 void ntySetTimeAckResult(NTY_PARAM_CALLBACK cb);
 
 void ntySetLogoutAckResult(NTY_STATUS_CALLBACK cb);

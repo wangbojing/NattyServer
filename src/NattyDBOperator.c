@@ -2171,7 +2171,7 @@ int ntyExecuteCommonMsgToProposerInsert(void *self, C_DEVID sid, C_DEVID gid, co
 
 
 //NTY_DB_UPDATE_DEVICE_STATUS
-int ntyExecuteChangeDeviceOnlineStatus(void *self, C_DEVID did) {
+int ntyExecuteChangeDeviceOnlineStatus(void *self, C_DEVID did, int status) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
@@ -2185,7 +2185,7 @@ int ntyExecuteChangeDeviceOnlineStatus(void *self, C_DEVID did) {
 			ret = -1;
 		} else {
 			ntylog(" ntyExecuteChangeDeviceOnlineStatus --> Connection_execute\n");
-			Connection_execute(con, NTY_DB_UPDATE_DEVICE_STATUS, did, 1);
+			Connection_execute(con, NTY_DB_UPDATE_DEVICE_STATUS, did, status);
 		}
 	} 
 	CATCH(SQLException) 
@@ -2715,9 +2715,9 @@ int ntyExecuteCommonMsgToProposerInsertHandle(C_DEVID sid, C_DEVID gid, const ch
 	return ntyExecuteCommonMsgToProposerInsert(pool, sid, gid, detatils, msg);
 }
 
-int ntyExecuteChangeDeviceOnlineStatusHandle(C_DEVID did) {
+int ntyExecuteChangeDeviceOnlineStatusHandle(C_DEVID did, int status) {
 	void *pool = ntyConnectionPoolInstance();
-	return ntyExecuteChangeDeviceOnlineStatus(pool, did);
+	return ntyExecuteChangeDeviceOnlineStatus(pool, did, status);
 }
 
 

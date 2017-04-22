@@ -609,6 +609,25 @@ int ntyProtoClientICCIDReq(void *_self, C_DEVID gId, U8 *json, U16 length) {
 	return ntySendFrame(pNetwork, buf, length);
 }
 
+int ntyProtoClientQRCode(void *_self, C_DEVID gId, U8 *json, U16 length) {
+	NattyProto *proto = _self;
+	U8 buf[RECV_BUFFER_SIZE] = {0}; 
+
+	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
+	buf[NTY_PROTO_PROTOTYPE_IDX] = (U8) PROTO_ASYNCREQ; 
+	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_QRCODE_REQ;
+
+	memcpy(&buf[NTY_PROTO_QRCODE_REQ_DEVID_IDX], &proto->selfId, sizeof(C_DEVID));
+	memcpy(&buf[NTY_PROTO_QRCODE_REQ_JSON_LENGTH_IDX], &length, sizeof(U16));
+	memcpy(&buf[NTY_PROTO_QRCODE_REQ_JSON_CONTENT_IDX], json, length);
+
+	length = NTY_PROTO_QRCODE_ACK_JSON_CONTENT_IDX + length + sizeof(U32);
+	
+	void *pNetwork = ntyNetworkInstance();
+	return ntySendFrame(pNetwork, buf, length);
+}
+
+
 int ntyProtoClientCommonAck(void *_self, U32 msgId, U8 *json, U16 length) {
 	NattyProto *proto = _self;
 
@@ -834,6 +853,10 @@ void ntySetICCIDAckResult(NTY_PARAM_CALLBACK cb) {
 	onICCIDAckResult = cb;
 }
 
+void ntyQRCodeAckResult(NTY_PARAM_CALLBACK cb) {
+	onICCIDAckResult = cb;
+}
+
 void ntySetCommonReqResult(NTY_RETURN_CALLBACK cb) {
 	onCommonReqResult = cb;
 }
@@ -998,6 +1021,15 @@ int ntyICCIDReqClient(C_DEVID gId, U8 *json, U16 length) {
 	}
 	return -1;
 }
+
+int ntyQRCodeReqClient(C_DEVID gId, U8 *json, U16 length) {
+	NattyProto* proto = ntyProtoGetInstance();
+	if (proto) {
+		return ntyProtoClientQRCode(proto, gId, json, length);
+	}
+	return -1;
+}
+
 
 int ntyCommonAckClient(U32 msgId, U8 *json, U16 length) {
 	NattyProto* proto = ntyProtoGetInstance();

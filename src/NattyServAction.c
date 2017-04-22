@@ -578,7 +578,6 @@ void ntyJsonAddEfenceAction(ActionParam *pActionParam) {
 			return ;
 		}
 
-		
 		char ids[20] = {0};
 		sprintf(ids, "%d", id);
 		pAddEfenceAck->id = ids;
@@ -765,6 +764,47 @@ void ntyJsonICCIDAction(ActionParam *pActionParam) {
 exit:
 	free(pICCIDReq);
 }
+
+void ntyJsonQRCodeAction(ActionParam *pActionParam) {
+	if (pActionParam == NULL) return;
+	
+	QRCodeReq *pQRCodeReq = (QRCodeReq*)malloc(sizeof(QRCodeReq));
+	if (pQRCodeReq == NULL) {
+		ntylog("ntyJsonQRCodeAction --> malloc failed QRCodeReq\n");
+		return;
+	}
+	memset(pQRCodeReq, 0, sizeof(QRCodeReq));
+	
+	ntyJsonQRCode(pActionParam->json, pQRCodeReq);
+	C_DEVID devId = pActionParam->toId;
+	
+	if (pQRCodeReq==NULL) {
+		ntyJsonCommonResult(devId, NATTY_RESULT_CODE_ERR_JSON_CONVERT);
+		goto exit;
+	}
+	QRCodeAck *pQRCodeAck = (QRCodeAck*)malloc(sizeof(QRCodeAck));
+	if (pQRCodeAck == NULL) {
+		ntylog(" ntyJsonQRCodeAction --> malloc failed QRCodeAck\n");
+		goto exit;
+	}
+	char urls[256] = {0};
+	sprintf(urls, "%s?IMEI=%s", HTTP_QRCODE_URL, pQRCodeReq->IMEI);
+	memset(pQRCodeAck, 0, sizeof(QRCodeAck));
+	pQRCodeAck->IMEI = pQRCodeAck->IMEI;
+	pQRCodeAck->url = urls;
+	char msgs[32] = {0};
+	sprintf(msgs, "%d", pActionParam->index);
+	//pQRCodeAck->msg = msgs;
+	char *jsonstringQRCode = ntyJsonWriteQRCode(pQRCodeAck);
+	ntylog("jsonstringQRCode --> %s\n", jsonstringQRCode);
+	ntySendQRCodeAckResult(devId, (U8*)jsonstringQRCode, strlen(jsonstringQRCode), 200);
+	ntyJsonFree(jsonstringQRCode);
+
+	free(pQRCodeAck);
+exit:
+	free(pQRCodeReq);
+}
+
 
 void ntyJsonRunTimeAction(ActionParam *pActionParam) {
 	if (pActionParam == NULL) return ;
@@ -1647,6 +1687,29 @@ void ntyJsonWearStatusAction(ActionParam *pActionParam) {
 		} else {
 			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
 		}
+	}
+}
+
+//发送管理员同意消息到手表
+void ntyJsonBindAgreeAction(char *imei, char *adminIds, C_DEVID fromId, C_DEVID toId, U32 msgId) {
+	char bindAgreeAck[64] = {0};
+	memcpy(bindAgreeAck, NATTY_USER_PROTOCOL_BINDAGREE, strlen(NATTY_USER_PROTOCOL_BINDAGREE));
+	size_t len_bindAgreeAck = sizeof(BindAgreeAck);
+	BindAgreeAck *pBindAgreeAck = malloc(len_bindAgreeAck);
+	if (pBindAgreeAck == NULL) {
+		return;
+	}
+
+	char msgIds[64] = {0};
+	sprintf(msgIds, "%d", msgId);
+	pBindAgreeAck->IMEI = imei;
+	pBindAgreeAck->category = bindAgreeAck;
+	pBindAgreeAck->adminId = adminIds;
+	pBindAgreeAck->msgId = msgIds;
+	char *jsonagree = ntyJsonWriteBindAgree(pBindAgreeAck);
+	int ret = ntySendRecodeJsonPacket(fromId, toId, jsonagree, (int)strlen(jsonagree));
+	if (ret < 0) {
+		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
 	}
 }
 

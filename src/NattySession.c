@@ -466,7 +466,6 @@ void ntyProtoBindAck(C_DEVID aid, C_DEVID did, int result) {
 }
 
 
-
 /*
  * result : 0 --> OK
  *          1 --> AppId No Exist 
@@ -1202,6 +1201,30 @@ int ntySendICCIDAckResult(C_DEVID fromId, U8 *json, int length, U16 status) {
 }
 
 
+int ntySendQRCodeAckResult(C_DEVID fromId, U8 *json, int length, U16 status) {
+	U16 bLength = (U16)length;
+	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
+
+	
+	buffer[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
+	buffer[NTY_PROTO_DEVTYPE_IDX] = NTY_PROTO_CLIENT_DEFAULT;
+	buffer[NTY_PROTO_PROTOTYPE_IDX] = PROTO_ACK;
+	buffer[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_QRCODE_ACK;
+
+	*(U16*)(buffer+NTY_PROTO_QRCODE_ACK_STATUS_IDX) = status;
+	memcpy(&buffer[NTY_PROTO_QRCODE_ACK_JSON_LENGTH_IDX], &bLength, sizeof(U16));
+	memcpy(&buffer[NTY_PROTO_QRCODE_ACK_JSON_CONTENT_IDX], json, bLength);
+
+	ntylog("\n ntySendQRCodeAckResult:%s, length:%d\n", json, length);
+	bLength = bLength + NTY_PROTO_QRCODE_ACK_JSON_CONTENT_IDX + sizeof(U32);
+
+	void *map = ntyMapInstance();
+	ClientSocket *client = ntyMapSearch(map, fromId);
+	
+	return ntySendBuffer(client, buffer, bLength);
+}
+
+
 int ntySendRecodeJsonPacket(C_DEVID fromId, C_DEVID toId, U8 *json, int length) {
 	
 	U16 bLength = (U16)length;
@@ -1402,6 +1425,5 @@ int ntySendBindConfirmPushResult(C_DEVID proposerId, C_DEVID adminId, U8 *json, 
 
 	
 }
-
 
 

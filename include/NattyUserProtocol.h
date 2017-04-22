@@ -49,7 +49,7 @@
 
 #include <stdio.h>
 
-
+#define HTTP_QRCODE_URL			"http://app.quanjiakan.com/familycare/activate"
 #define HTTP_QJK_BASE_URL		"http://app.quanjiakan.com"
 #define HTTP_GAODE_BASE_URL		"http://apilocate.amap.com"
 #define HTTP_WEATHER_BASE_URL	"http://api.thinkpage.cn"
@@ -83,6 +83,8 @@
 #define NATTY_USER_PROTOCOL_REJECT			"Reject"
 #define NATTY_USER_PROTOCOL_BINDCONFIRM		"BindConfirm"
 #define NATTY_USER_PROTOCOL_BINDCONFIRMREQ	"BindConfirmReq"
+#define NATTY_USER_PROTOCOL_BINDAGREE		"BindAgree"
+
 
 
 #define NATTY_USER_PROTOCOL_WIFI			"WIFI"
@@ -148,6 +150,9 @@
 #define NATTY_USER_PROTOCOL_APP 			"App"
 #define NATTY_USER_PROTOCOL_ADMIN 			"Admin"
 
+
+#define NATTY_USER_PROTOCOL_QRCODE 			"QRCode"
+#define NATTY_USER_PROTOCOL_URL 			"URL"
 #define NATTY_USER_PROTOCOL_ICCID 			"ICCID"
 #define NATTY_USER_PROTOCOL_CODE 			"Code"
 #define NATTY_USER_PROTOCOL_MESSAGE 		"Message"
@@ -157,6 +162,7 @@
 #define NATTY_USER_PROTOCOL_PROPOSER 		"Proposer"
 #define NATTY_USER_PROTOCOL_USERNAME 		"UserName"
 #define NATTY_USER_PROTOCOL_MSGID 			"MsgId"
+#define NATTY_USER_PROTOCOL_ADMINID 		"AdminId"
 #define NATTY_USER_PROTOCOL_ANSWER 			"Answer"
 
 
@@ -329,6 +335,19 @@ typedef struct _ICCIDAck {
 	const char *IMEI;
 	const char *phone_num;
 } ICCIDAck;
+
+
+typedef struct _QRCodeReq {
+	const char *IMEI;
+	const char *qrcode;
+} QRCodeReq;
+
+typedef struct _QRCodeAck {
+	//const char *msg;
+	const char *IMEI;
+	const char *qrcode;
+	const char *url;
+} QRCodeAck;
 
 
 typedef struct _CommonResult {
@@ -708,6 +727,14 @@ typedef struct _BindConfirmAck {
 	const char *answer;
 	const char *msgId;
 } BindConfirmAck;
+
+typedef struct _BindAgreeAck {
+	const char *IMEI;
+	const char *category;
+	const char *adminId;
+	const char *msgId;
+} BindAgreeAck;
+
 
 typedef struct _OfflineMsgResult {
 	const char *category;

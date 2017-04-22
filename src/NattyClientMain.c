@@ -321,6 +321,14 @@ int main() {
 		//sleep(20);
 		//break;
 
+
+		char *json_qrcode = "{\"IMEI\":\"352315052834187\",\"QRCode\":\"89860116425100650036\"}";
+		ntydbg("Request qrcode  : %s\n", json_qrcode);
+		ntyQRCodeReqClient(g_devid, json_qrcode, strlen(json_qrcode));
+		sleep(20);
+		//break;
+
+
 		//char *json_iccid = "{\"IMEI\":\"352315052834187\",\"ICCID\":\"89860116425100650036\"}";
 		//ntydbg("Request iccid  : %s\n", json_iccid);
 		//ntyICCIDReqClient(g_devid, json_iccid, strlen(json_iccid));
@@ -355,9 +363,15 @@ int main() {
 		//char *json_common = "{\"Category\":\"Contacts\",\"Action\":\"Update\",\"IMEI\":\"355637053995130\",\"Contacts\":{\"Userid\":\"11299\",\"Id\":\"229\",\"Tel\":\"15889650380\",\"Admin\":0,\"Name\":\"%E5%B9%B2%E7%88%B9\",\"Image\":\"http:\/\/picture.quanjiakan.com:9080\/quanjiakan\/resources\/missing\/20170329115531_83i472.png\",\"App\":1}}";
 		//char *json_common = "{\"IMEI\":\"355637052788650\",\"Category\":\"Efence\",\"Action\":\"Add\", \"Index\":\"1\",\"Efence\":{\"Num\":\"3\",\"Points\":[\"113.2409402,23.1326885\",\"113.2409412,23.1326895\",\"113.2409408,23.1326890\"]}}";
 
-		char *json_common = "{\"Results\":{\"IMEI\":\"355637052238805\",\"Category\":\"WearStatus\",\"WearStatus\":\"On\"}}";
+
+		char *json_common = "{\"IMEI\":\"355637052788450\",\"Category\":\"BindAgree\",\"AdminId\":\"11782\",\"MsgId\":\"13453\"}";
 		ntyCommonReqClient(g_devid,json_common,strlen(json_common));
 		sleep(30);
+		
+		
+		//char *json_common = "{\"Results\":{\"IMEI\":\"355637052238805\",\"Category\":\"WearStatus\",\"WearStatus\":\"On\"}}";
+		//ntyCommonReqClient(g_devid,json_common,strlen(json_common));
+		//sleep(30);
 
 		//char *json_location = "{\"IMEI\":\"355637052788650\",\"Category\":\"LAB\",\"LAB\":{\"Bts\":\"460,01,40977,2205409,-65\",\"Nearbts\":[{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"},{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"},{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"}]}}";
 		//char *json_location = "{\"IMEI\":\"135790246811220\",\"Category\":\"WIFI\",\"WIFI\":[{\"SSID\":\"TP-LINK_42ED\",\"MAC\":\"F4:83:CD:3A:42:ED\",\"V\":\"-37\"},{\"SSID\":\"EXT\",\"MAC\":\"04:95:E6:22:DA:48\",\"V\":\"-52\"}]}";
