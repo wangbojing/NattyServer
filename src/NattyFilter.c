@@ -279,6 +279,7 @@ Client* ntyAddClientHeap(const void * obj, int *result) {
 
 		//insert bheap
 		ret = ntyBHeapInsert(heap, client->devId, pClient);
+#if 0
 		if (ret == NTY_RESULT_EXIST || ret == NTY_RESULT_FAILED) {
 			ntylog("ret : %d\n", ret);
 			free(pClient);
@@ -292,7 +293,15 @@ Client* ntyAddClientHeap(const void * obj, int *result) {
 			*result = ret;
 			return NULL;
 		}
-		
+#else
+		if (ret != NTY_RESULT_SUCCESS) {
+			ntylog("ret : %d\n", ret);
+			free(pClient);
+
+			*result = ret;
+			return NULL;
+		}
+#endif
 		pthread_mutex_t blank_mutex = PTHREAD_MUTEX_INITIALIZER;
 		memcpy(&pClient->bMutex, &blank_mutex, sizeof(pClient->bMutex));
 		
@@ -657,8 +666,9 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 		
 
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_HEARTBEAT_REQ_DEVID_IDX);
-		int ret = NTY_RESULT_SUCCESS;
 #if 1
+		int ret = NTY_RESULT_SUCCESS;
+
 		Client *pClient = ntyAddClientHeap(client, &ret);
 		if (pClient == NULL) {
 			ntylog(" ntyHeartBeatPacketHandleRequest --> Error\n");
@@ -1994,6 +2004,7 @@ void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length, 
 				pClient->rLength %= PACKET_BUFFER_SIZE;
 				pClient->rLength += bCopy;
 
+				memset(bBuffer, 0, PACKET_BUFFER_SIZE);
 				memcpy(bBuffer, pClient->recvBuffer, pClient->rLength);
 				bLength = pClient->rLength;
 				pthread_mutex_unlock(&pClient->bMutex);
