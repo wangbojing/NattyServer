@@ -1980,7 +1980,7 @@ int ntyReadDeviceOfflineCommonMsgAction(C_DEVID devId) {
 	if (ret == NTY_RESULT_SUCCESS) {
 		ntyVectorIterator(container, ntyReadDeviceOfflineCommonMsgIter, &devId);
 	} 
-	ntylog("ntyReadOfflineCommonMsgAction --> ret : %d\n", ret);
+	ntylog("ntyReadDeviceOfflineCommonMsgAction --> ret : %d\n", ret);
 
 	if (ret != NTY_RESULT_BUSY) {
 		if (container->num == 0) { //count == 0

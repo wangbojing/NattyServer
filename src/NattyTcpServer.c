@@ -388,6 +388,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		ASSERT(load != NULL);
 
 		//ntyHashTableDelete(hash, watcher->fd);
+		ntylog("Client --> %lld Disconnected\n", load->id);
 		int ret = ntyDelRelationMap(load->id);
 		if (ret == NTY_RESULT_NOEXIST) {
 			ntyReleaseSocket(loop, watcher);

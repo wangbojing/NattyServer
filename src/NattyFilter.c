@@ -267,13 +267,15 @@ Client* ntyAddClientHeap(const void * obj, int *result) {
 
 	//pClient->
 	BPTreeHeap *heap = ntyBHeapInstance();
-	//ASSERT(heap != NULL);
+	if (heap == NULL) return NULL;
 	NRecord *record = ntyBHeapSelect(heap, client->devId);
 	if (record == NULL) {
 		Client *pClient = (Client*)malloc(sizeof(Client));
-		ASSERT(pClient != NULL);
-		memset(pClient, 0, sizeof(Client));
-		
+		if (pClient == NULL) {
+			*result = NTY_RESULT_ERROR;
+			return NULL;
+		}
+		memset(pClient, 0, sizeof(Client));		
 		memcpy(pClient, client, sizeof(Client));
 		ntylog("ntyAddClientHeap is not exist %lld\n", client->devId);
 
@@ -301,6 +303,7 @@ Client* ntyAddClientHeap(const void * obj, int *result) {
 			*result = ret;
 			return NULL;
 		}
+		ntyPrintTree(heap->root);
 #endif
 		pthread_mutex_t blank_mutex = PTHREAD_MUTEX_INITIALIZER;
 		memcpy(&pClient->bMutex, &blank_mutex, sizeof(pClient->bMutex));
@@ -336,15 +339,11 @@ Client* ntyAddClientHeap(const void * obj, int *result) {
 				if(-1 == ntyQueryWatchIDListSelectHandle(pClient->devId, pClient->friends)) {
 					ntylog(" ntyQueryWatchIDListSelectHandle Failed \n");
 					
-					//ntyVectorDestory(pClient->friends);
-					//pClient->friends = NULL;
 				}
 			} else if (pClient->deviceType == NTY_PROTO_CLIENT_WATCH) { //Device
 				if (-1 == ntyQueryAppIDListSelectHandle(pClient->devId, pClient->friends)) {
 					ntylog(" ntyQueryAppIDListSelectHandle Failed \n");
 					
-					//ntyVectorDestory(pClient->friends);
-					//pClient->friends = NULL;
 				}
 			} else {
 				ntylog(" Protocol Device Type is Error : %c\n", pClient->deviceType);

@@ -43,7 +43,7 @@
 
 
 
-#include "../include/NattyBPlusTree.h"
+#include "NattyBPlusTree.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -89,7 +89,7 @@ void ntyPrintTree(NBPNode *root) {
 	int i = 0, rank = 0, new_rank = 0;
 
 	if (root == NULL) {
-		printf("Empty Tree.\n");
+		ntylog("Empty Tree.\n");
 		return ;
 	}
 
@@ -102,18 +102,18 @@ void ntyPrintTree(NBPNode *root) {
 			new_rank = ntyPathToRoot(root, node);
 			if (new_rank != rank) {
 				rank = new_rank;
-				printf("\n");
+				ntylog("\n");
 			}
 		}
 		if (bVerboseOutput) {
-			printf("(%lx)", (unsigned long)node);
+			ntylog("(%lx)", (unsigned long)node);
 		}
 
 		for (i = 0;i < node->nKeys;i ++) {
 			if (bVerboseOutput) {
-				printf("(%lx)", (unsigned long)node->pointers[i]);
+				ntylog("(%lx)", (unsigned long)node->pointers[i]);
 			}
-			printf("%lld ", node->keys[i]);
+			ntylog("%lld ", node->keys[i]);
 		}
 
 		if (!node->isLeaf) {
@@ -124,22 +124,22 @@ void ntyPrintTree(NBPNode *root) {
 
 		if (bVerboseOutput) {
 			if (node->isLeaf) {
-				printf("%lx ", (unsigned long)node->pointers[NTY_BPLUSTREE_ORDER-1]);
+				ntylog("%lx ", (unsigned long)node->pointers[NTY_BPLUSTREE_ORDER-1]);
 			} else {
-				printf("%lx ", (unsigned long)node->pointers[node->nKeys]);
+				ntylog("%lx ", (unsigned long)node->pointers[node->nKeys]);
 			}
 		}
-		printf("| ");
+		ntylog("| ");
 	}
-	printf("\n");
+	ntylog("\n");
 }
 
 void ntyFindAndPrint(NBPNode *root, NTY_ID key, bool verbose) {
 	NRecord *r = ntyFind(root, key, verbose);
 	if (r == NULL) {
-		printf("Record not found under key %lld.\n", key);
+		ntylog("Record not found under key %lld.\n", key);
 	} else {
-		printf("Record at %lx -- key %lld\n", (unsigned long)r, key);
+		ntylog("Record at %lx -- key %lld\n", (unsigned long)r, key);
 	}
 }
 
@@ -149,18 +149,18 @@ NBPNode *ntyFindLeaf(NBPNode *root, NTY_ID key, bool verbose) {
 
 	if (c == NULL) {
 		if (verbose) {
-			printf("Empty tree. \n");
+			ntylog("Empty tree. \n");
 		}
 		return c;
 	}
 
 	while (!c->isLeaf) {
 		if (verbose) {
-			printf("[");
+			ntylog("[");
 			for (i = 0;i < c->nKeys-1;i ++) {
-				printf("%lld ", c->keys[i]);
+				ntylog("%lld ", c->keys[i]);
 			}
-			printf("%lld]", c->keys[i]);
+			ntylog("%lld]", c->keys[i]);
 		}
 		i = 0;
 		while (i < c->nKeys) {
@@ -169,15 +169,15 @@ NBPNode *ntyFindLeaf(NBPNode *root, NTY_ID key, bool verbose) {
 		}
 
 		if (verbose)
-			printf("%d ->\n", i);
+			ntylog("%d ->\n", i);
 		c = (NBPNode*)c->pointers[i];
 	}
 
 	if (verbose) {
-		printf("Leaf [");
+		ntylog("Leaf [");
 		for (i = 0;i < c->nKeys-1;i ++) 
-			printf("%lld ", c->keys[i]);
-		printf("%lld] ->\n", c->keys[i]);
+			ntylog("%lld ", c->keys[i]);
+		ntylog("%lld] ->\n", c->keys[i]);
 	}
 	return c;
 }
