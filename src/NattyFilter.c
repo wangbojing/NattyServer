@@ -656,7 +656,10 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 		const Client *client = msg->client;
 
 		MessagePacket *pMsg = (MessagePacket *)malloc(sizeof(MessagePacket));
-		if (pMsg == NULL) return ;
+		if (pMsg == NULL) {
+			ntylog(" %s --> malloc failed MessagePacket. \n", __func__);
+			return;
+		}
 		memset(pMsg, 0, sizeof(MessagePacket));
 		memcpy(pMsg, msg, sizeof(MessagePacket));
 		
@@ -779,24 +782,26 @@ void ntyICCIDReqPacketHandleRequest(const void *_self, unsigned char *buffer, in
 
 		U16 jsonlen = 0;
 		memcpy(&jsonlen, buffer+NTY_PROTO_ICCID_REQ_JSON_LENGTH_IDX, NTY_JSON_COUNT_LENGTH);
-		char *jsonstring = malloc(jsonlen);
+		char *jsonstring = malloc(jsonlen+1);
 		if (jsonstring == NULL) {
-			return ;
+			ntylog(" %s --> malloc failed jsonstring. \n", __func__);
+			return;
 		}
 		
-		memset(jsonstring, 0, jsonlen);
+		memset(jsonstring, 0, jsonlen+1);
 		memcpy(jsonstring, buffer+NTY_PROTO_ICCID_REQ_JSON_CONTENT_IDX, jsonlen);
 
 		JSON_Value *json = ntyMallocJsonValue(jsonstring);
 		if (json == NULL) {
 			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
 		} else {
-			ActionParam *pActionParam = malloc(sizeof(ActionParam));
+			size_t len_ActionParam = sizeof(ActionParam);
+			ActionParam *pActionParam = malloc(len_ActionParam);
 			if (pActionParam == NULL) {
-				free(jsonstring);
-
-				return ;
+				ntylog(" %s --> malloc failed ActionParam. \n", __func__);
+				return;
 			}
+			memset(pActionParam, 0, len_ActionParam);
 			
 			pActionParam->fromId = fromId;
 			pActionParam->toId = fromId;
@@ -926,7 +931,7 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 		memcpy(&jsonlen, buffer+NTY_PROTO_COMMON_REQ_JSON_LENGTH_IDX, NTY_JSON_COUNT_LENGTH);
 		char *jsonstring = malloc(jsonlen+1);
 		if (jsonstring == NULL) {
-			ntylog("ntyCommonReqPacketHandleRequest --> malloc failed jsonstring\n");
+			ntylog(" %s --> malloc failed jsonstring\n", __func__);
 			
 			return ;
 		}
@@ -940,14 +945,16 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 		if (json == NULL) { //JSON Error and send Code to FromId Device
 			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
 		} else {
-			ActionParam *pActionParam = malloc(sizeof(ActionParam));
+			size_t len_ActionParam = sizeof(ActionParam);
+			ActionParam *pActionParam = malloc(len_ActionParam);
 			if (pActionParam == NULL) {
-				ntylog("ntyCommonReqPacketHandleRequest --> malloc failed ActionParam");
+				ntylog(" %s --> malloc failed ActionParam", __func__);
 				free(jsonstring);
 
 				return ;
 			}
-			
+			memset(pActionParam, 0, len_ActionParam);
+			 
 			pActionParam->fromId = fromId;
 			pActionParam->toId = toId;
 			pActionParam->json = json;
@@ -1000,7 +1007,10 @@ void ntyCommonAckPacketHandleRequest(const void *_self, unsigned char *buffer, i
 		}
 #else	
 		VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
-		if (tag == NULL) return;
+		if (tag == NULL) {
+			ntylog(" %s --> malloc failed VALUE_TYPE. \n", __func__);
+			return;
+		}
 		
 		memset(tag, 0, sizeof(VALUE_TYPE));
 
@@ -1363,6 +1373,7 @@ void ntyBindConfirmReqPacketHandleRequest(const void *_self, unsigned char *buff
 		} else {
 			BindConfirmReq *pBindConfirmReq = (BindConfirmReq*)malloc(sizeof(BindConfirmReq));
 			if (pBindConfirmReq == NULL) {
+				ntylog(" %s --> malloc failed BindConfirmReq. \n", __func__);
 				return ;
 			}
 			memset(pBindConfirmReq, 0, sizeof(BindConfirmReq));
@@ -1464,6 +1475,10 @@ void ntyBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer, 
 		U16 jsonlen = *(U16*)(buffer+NTY_PROTO_BIND_JSON_LENGTH_IDX);
 		//memcpy(&jsonlen, buffer+NTY_PROTO_BIND_JSON_LENGTH_IDX, NTY_JSON_COUNT_LENGTH);
 		char *jsonstring = malloc(jsonlen+1);
+		if (jsonstring == NULL) {
+			ntylog(" %s --> malloc failed jsonstring. \n", __func__);
+			return;
+		}
 		memset(jsonstring, 0, jsonlen+1);
 		memcpy(jsonstring, buffer+NTY_PROTO_BIND_JSON_CONTENT_IDX, jsonlen);
 
@@ -1475,6 +1490,11 @@ void ntyBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer, 
 		} else {
 
 			ActionParam *pActionParam = malloc(sizeof(ActionParam));
+			if (pActionParam == NULL) {
+				ntylog(" %s --> malloc failed ActionParam. \n", __func__);
+				free(jsonstring);
+				return;
+			}
 			pActionParam->fromId = fromId;
 			pActionParam->toId = toId;
 			pActionParam->json = json;
@@ -1496,6 +1516,12 @@ void ntyBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer, 
 		}
 
 		VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
+		if (tag == NULL) {
+			ntylog(" %s --> malloc VALUE_TYPE error. \n", __func__);
+			free(jsonstring);
+			return;
+		}
+		
 		tag->fromId = fromId;
 		tag->gId = toId;
 		
@@ -1621,8 +1647,10 @@ void ntyLocationAsyncReqPacketHandleRequest(const void *_self, unsigned char *bu
 		U16 jsonlen = 0;
 		memcpy(&jsonlen, buffer+NTY_PROTO_LOCATION_ASYNC_REQ_JSON_LENGTH_IDX, NTY_JSON_COUNT_LENGTH);
 		char *jsonstring = malloc(jsonlen+1);
-		if (jsonstring == NULL) return ;
-		
+		if (jsonstring == NULL) {
+			ntylog(" %s --> malloc failed jsonstring. \n", __func__);
+			return;
+		}
 		memset(jsonstring, 0, jsonlen+1);
 		memcpy(jsonstring, buffer+NTY_PROTO_LOCATION_ASYNC_REQ_JSON_CONTENT_IDX, jsonlen);
 
@@ -1632,7 +1660,14 @@ void ntyLocationAsyncReqPacketHandleRequest(const void *_self, unsigned char *bu
 		if (json == NULL) {
 			ntyJsonCommonResult(deviceId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
 		} else {
-			ActionParam *pActionParam = malloc(sizeof(ActionParam));
+			size_t len_ActionParam = sizeof(ActionParam);
+			ActionParam *pActionParam = malloc(len_ActionParam);
+			if (pActionParam == NULL) {
+				ntylog(" %s --> malloc failed ActionParam. \n", __func__);
+				goto exit;
+			}
+			memset(pActionParam, 0, len_ActionParam);
+
 			pActionParam->fromId = client->devId;
 			pActionParam->toId = deviceId;
 			pActionParam->json = json;
@@ -1651,6 +1686,8 @@ void ntyLocationAsyncReqPacketHandleRequest(const void *_self, unsigned char *bu
 		}
 		
 		ntyFreeJsonValue(json);
+
+exit:
 		free(jsonstring);
 		ntylog("====================end ntyLocationAsyncReqPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
@@ -1682,8 +1719,13 @@ void ntyWeatherAsyncReqPacketHandleRequest(const void *_self, unsigned char *buf
 
 		U16 jsonlen = 0;
 		memcpy(&jsonlen, buffer+NTY_PROTO_WEATHER_ASYNC_REQ_JSON_LENGTH_IDX, NTY_JSON_COUNT_LENGTH);
-		char *jsonstring = malloc(jsonlen);
-		memset(jsonstring, 0, jsonlen);
+		char *jsonstring = malloc(jsonlen+1);
+		if (jsonstring == NULL) {
+			ntylog(" %s --> malloc failed jsonstring. \n", __func__);
+			return;
+		}
+
+		memset(jsonstring, 0, jsonlen+1);
 		memcpy(jsonstring, buffer+NTY_PROTO_WEATHER_ASYNC_REQ_JSON_CONTENT_IDX, jsonlen);
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_WEATHER_ASYNC_REQ_DEVID_IDX);
 
@@ -1693,7 +1735,14 @@ void ntyWeatherAsyncReqPacketHandleRequest(const void *_self, unsigned char *buf
 		if (json == NULL) {
 			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
 		} else {
-			ActionParam *pActionParam = malloc(sizeof(ActionParam));
+			size_t len_ActionParam = sizeof(ActionParam);
+			ActionParam *pActionParam = malloc(len_ActionParam);
+			if (pActionParam == NULL) {
+				ntylog(" %s --> malloc failed ActionParam. \n", __func__);
+				goto exit;
+			}
+			memset(pActionParam, 0, len_ActionParam);
+			
 			pActionParam->fromId = fromId;
 			pActionParam->toId = client->devId;
 			pActionParam->json = json;
@@ -1704,6 +1753,8 @@ void ntyWeatherAsyncReqPacketHandleRequest(const void *_self, unsigned char *buf
 			free(pActionParam);
 		}
 		ntyFreeJsonValue(json);
+
+exit:
 		free(jsonstring);
 		ntylog("====================end ntyWeatherAsyncReqPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {

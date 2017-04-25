@@ -48,6 +48,7 @@
 
 #include "NattyAbstractClass.h"
 #include "NattyResult.h"
+#include "NattyTimer.h"
 
 #include <stdio.h>
 #include <stdlib.h>

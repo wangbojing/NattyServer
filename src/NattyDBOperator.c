@@ -635,7 +635,7 @@ static int ntyQueryCommonOfflineMsgSelect(void *self, C_DEVID deviceId, void *co
 					
 					CommonOfflineMsg *pCommonOfflineMsg = malloc(sizeof(CommonOfflineMsg));
 					if (pCommonOfflineMsg == NULL) {
-						ntylog("ntyQueryCommonOfflineMsgSelect --> malloc failed CommonOfflineMsg\n");
+						ntylog(" %s --> malloc failed CommonOfflineMsg. \n", __func__);
 						break;
 					}
 					
@@ -647,7 +647,7 @@ static int ntyQueryCommonOfflineMsgSelect(void *self, C_DEVID deviceId, void *co
 
 					pCommonOfflineMsg->details = malloc(details_len+1);
 					if (pCommonOfflineMsg->details == NULL) {
-						ntylog("ntyQueryCommonOfflineMsgSelect --> malloc failed CommonOfflineMsg->details\n");
+						ntylog(" %s --> malloc failed CommonOfflineMsg->details\n", __func__);
 						free(pCommonOfflineMsg);
 						break;
 					}
@@ -703,19 +703,22 @@ static int ntyQueryVoiceOfflineMsgSelect(void *self, C_DEVID fromId, void *conta
 					size_t details_len = strlen(r_details);
 					
 					nOfflineMsg *pOfflineMsg = malloc(sizeof(nOfflineMsg));
-					if (pOfflineMsg != NULL) {
-						memset(pOfflineMsg, 0, sizeof(nOfflineMsg));
-						
-						pOfflineMsg->msgId = msgId;
-						pOfflineMsg->senderId = r_senderId;
-						pOfflineMsg->groupId = r_groupId;
-						pOfflineMsg->timeStamp = timeStamp;
-						pOfflineMsg->details = malloc(details_len+1);
-						if (pOfflineMsg->details != NULL) {
-							memset(pOfflineMsg->details, 0, details_len+1);
-							memcpy(pOfflineMsg->details, r_details, details_len);
-						}
+					if (pOfflineMsg == NULL) {
+						ntylog(" %s --> malloc nOfflineMsg.details error. \n", __func__);
+						break;
 					}
+					memset(pOfflineMsg, 0, sizeof(nOfflineMsg));
+					
+					pOfflineMsg->msgId = msgId;
+					pOfflineMsg->senderId = r_senderId;
+					pOfflineMsg->groupId = r_groupId;
+					pOfflineMsg->timeStamp = timeStamp;
+					pOfflineMsg->details = malloc(details_len+1);
+					if (pOfflineMsg->details != NULL) {
+						memset(pOfflineMsg->details, 0, details_len+1);
+						memcpy(pOfflineMsg->details, r_details, details_len);
+					}
+					
 					ntyVectorInsert(container, pOfflineMsg, sizeof(CommonOfflineMsg));
 					ret = 0;
 				}
@@ -941,42 +944,44 @@ static int ntyQueryBindOfflineMsgToAdminSelect(void *self, C_DEVID fromId, void 
 					const char *r_usercall = ResultSet_getString(r, 7);
 					const char *r_userimage = ResultSet_getString(r, 8);
 					BindOfflineMsgToAdmin *pMsgToAdmin = malloc(sizeof(BindOfflineMsgToAdmin));
-					if (pMsgToAdmin != NULL) {
-						memset(pMsgToAdmin, 0, sizeof(BindOfflineMsgToAdmin));
-						
-						pMsgToAdmin->msgId = bId;
-						pMsgToAdmin->IMEI = r_imei;
-						pMsgToAdmin->admin = r_admin;
-						pMsgToAdmin->proposer = r_proposer;
-
-						size_t watchname_len = strlen(r_watchname);
-						size_t watchimage_len = strlen(r_watchimage);
-						size_t usercall_len = strlen(r_usercall);
-						size_t userimage_len = strlen(r_userimage);
-
-						pMsgToAdmin->watchName = malloc(watchname_len+1);
-						if (pMsgToAdmin->watchName != NULL) {
-							memset(pMsgToAdmin->watchName, 0, watchname_len+1);
-							memcpy(pMsgToAdmin->watchName, r_watchname, watchname_len);
-						}
-						
-						pMsgToAdmin->watchImage = malloc(watchimage_len+1);
-						if (pMsgToAdmin->watchImage != NULL) {
-							memset(pMsgToAdmin->watchImage, 0, watchimage_len+1);
-							memcpy(pMsgToAdmin->watchImage, r_watchimage, watchimage_len);
-						}
-						pMsgToAdmin->userName = malloc(usercall_len+1);
-						if (pMsgToAdmin->userName != NULL) {
-							memset(pMsgToAdmin->userName, 0, usercall_len+1);
-							memcpy(pMsgToAdmin->userName, r_usercall, usercall_len);
-						}
-						pMsgToAdmin->userImage = malloc(userimage_len+1);
-						if (pMsgToAdmin->userImage != NULL) {
-							memset(pMsgToAdmin->userImage, 0, userimage_len+1);
-							memcpy(pMsgToAdmin->userImage, r_userimage, userimage_len);
-						}
-						
+					if (pMsgToAdmin == NULL) {
+						ntylog(" %s --> malloc BindOfflineMsgToAdmin error. \n", __func__);
+						break;
 					}
+					memset(pMsgToAdmin, 0, sizeof(BindOfflineMsgToAdmin));
+					
+					pMsgToAdmin->msgId = bId;
+					pMsgToAdmin->IMEI = r_imei;
+					pMsgToAdmin->admin = r_admin;
+					pMsgToAdmin->proposer = r_proposer;
+
+					size_t watchname_len = strlen(r_watchname);
+					size_t watchimage_len = strlen(r_watchimage);
+					size_t usercall_len = strlen(r_usercall);
+					size_t userimage_len = strlen(r_userimage);
+
+					pMsgToAdmin->watchName = malloc(watchname_len+1);
+					if (pMsgToAdmin->watchName != NULL) {
+						memset(pMsgToAdmin->watchName, 0, watchname_len+1);
+						memcpy(pMsgToAdmin->watchName, r_watchname, watchname_len);
+					}
+						
+					pMsgToAdmin->watchImage = malloc(watchimage_len+1);
+					if (pMsgToAdmin->watchImage != NULL) {
+						memset(pMsgToAdmin->watchImage, 0, watchimage_len+1);
+						memcpy(pMsgToAdmin->watchImage, r_watchimage, watchimage_len);
+					}
+					pMsgToAdmin->userName = malloc(usercall_len+1);
+					if (pMsgToAdmin->userName != NULL) {
+						memset(pMsgToAdmin->userName, 0, usercall_len+1);
+						memcpy(pMsgToAdmin->userName, r_usercall, usercall_len);
+					}
+					pMsgToAdmin->userImage = malloc(userimage_len+1);
+					if (pMsgToAdmin->userImage != NULL) {
+						memset(pMsgToAdmin->userImage, 0, userimage_len+1);
+						memcpy(pMsgToAdmin->userImage, r_userimage, userimage_len);
+					}
+						
 					ntyVectorAdd(container, pMsgToAdmin, sizeof(BindOfflineMsgToAdmin));	
 					ret = 0;
 				}
@@ -1024,6 +1029,12 @@ static int ntyQueryBindOfflineMsgToProposerSelect(void *self, C_DEVID fromId, vo
 					const char *r_watchimage = ResultSet_getString(r, 5);
 
 					BindOfflineMsgToProposer *pMsgToProposer = malloc(sizeof(BindOfflineMsgToProposer));
+					if (pMsgToProposer == NULL) {
+						ntylog(" %s --> malloc BindOfflineMsgToProposer.details error. \n", __func__);
+						break;
+					}
+					memset(pMsgToProposer, 0, sizeof(BindOfflineMsgToProposer));
+										
 					//pMsgToProposer->msgId = bId;
 					//pMsgToProposer->IMEI = r_imei;
 					//pMsgToProposer->admin = r_admin;

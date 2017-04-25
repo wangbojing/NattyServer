@@ -74,7 +74,13 @@ void ntyJsonGetLocationType(const int u8LocationType, char* locationType) {
 }
 
 WeatherAck* ntyInitWeather() {
-	WeatherAck *pWeatherAck = malloc(sizeof(WeatherAck));
+	size_t len_WeatherAck = sizeof(WeatherAck);
+	WeatherAck *pWeatherAck = malloc(len_WeatherAck);
+	if (pWeatherAck == NULL) {
+		ntylog(" ---ntyInitWeather  error ---\n");
+		return NULL;
+	}
+	memset(pWeatherAck, 0, len_WeatherAck);
 	return pWeatherAck;
 }
 
@@ -94,7 +100,13 @@ void ntyReleaseWeather(WeatherAck *pWeatherAck) {
 }
 
 ScheduleAck* ntyInitScheduleAck() {
-	ScheduleAck *pScheduleAck = malloc(sizeof(ScheduleAck));
+	size_t len_ScheduleAck = sizeof(ScheduleAck);
+	ScheduleAck *pScheduleAck = malloc(len_ScheduleAck);
+	if (pScheduleAck == NULL) {
+		ntylog(" ---ntyInitScheduleAck  error ---\n");
+		return NULL;
+	}
+	memset(pScheduleAck, 0, len_ScheduleAck);
 	return pScheduleAck;
 }
 
@@ -108,7 +120,13 @@ void ntyReleaseScheduleAck(ScheduleAck *pScheduleAck) {
 }
 
 TimeTablesAck* ntyInitTimeTablesAck() {
-	TimeTablesAck *pTimeTablesAck = malloc(sizeof(TimeTablesAck));
+	size_t len_TimeTablesAck = sizeof(TimeTablesAck);
+	TimeTablesAck *pTimeTablesAck = malloc(len_TimeTablesAck);
+	if (pTimeTablesAck == NULL) {
+		ntylog(" ---ntyInitTimeTablesAck  error ---\n");
+		return NULL;
+	}
+	memset(pTimeTablesAck, 0, len_TimeTablesAck);
 	return pTimeTablesAck;
 }
 
@@ -188,7 +206,7 @@ void ntyJsonWIFI(JSON_Value *json, WIFIReq *pWIFIReq) {
 	JSON_Object *root_object = json_value_get_object(json);
 	pWIFIReq->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
 	pWIFIReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
-	ntydbg("IMEI:%s   Category:%s\n", pWIFIReq->IMEI, pWIFIReq->category);
+	//ntydbg("IMEI:%s   Category:%s\n", pWIFIReq->IMEI, pWIFIReq->category);
 	
 	JSON_Object *wifi_object = NULL;
 	JSON_Array *wifi_array = json_object_get_array(root_object, NATTY_USER_PROTOCOL_WIFI);
@@ -202,7 +220,7 @@ void ntyJsonWIFI(JSON_Value *json, WIFIReq *pWIFIReq) {
 		pWIFI[i].SSID = json_object_get_string(wifi_object, NATTY_USER_PROTOCOL_SSID);
 		pWIFI[i].MAC = json_object_get_string(wifi_object, NATTY_USER_PROTOCOL_MAC);
 		pWIFI[i].V = json_object_get_string(wifi_object, NATTY_USER_PROTOCOL_V);
-		ntydbg("SSID:%s   MAC:%s   V:%s\n", pWIFI[i].SSID, pWIFI[i].MAC, pWIFI[i].V);
+		//ntydbg("SSID:%s   MAC:%s   V:%s\n", pWIFI[i].SSID, pWIFI[i].MAC, pWIFI[i].V);
 	}
 }
 
@@ -235,7 +253,7 @@ void ntyJsonLAB(JSON_Value *json, LABReq *pLABReq) {
 		nearbts_object = json_array_get_object(nearbts_array, i);
 		pNearbts[i].cell = json_object_get_string(nearbts_object, NATTY_USER_PROTOCOL_CELL);
 		pNearbts[i].signal = json_object_get_string(nearbts_object, NATTY_USER_PROTOCOL_SIGNAL);
-		ntydbg("cell:%s   signal:%s\n", pNearbts[i].cell, pNearbts[i].signal);
+		//ntydbg("cell:%s   signal:%s\n", pNearbts[i].cell, pNearbts[i].signal);
 	}
 }
 
@@ -366,7 +384,7 @@ void ntyJsonICCID(JSON_Value *json, ICCIDReq *pICCIDReq) {
 	pICCIDReq->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
 	pICCIDReq->ICCID = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ICCID);
 	
-	ntydbg("IMEI:%s\n", pICCIDReq->IMEI);
+	//ntydbg("IMEI:%s\n", pICCIDReq->IMEI);
 }
 
 void ntyJsonCommon(JSON_Value *json, CommonReq *pCommonReq) {

@@ -718,16 +718,29 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 	}
 
 	JSON_Value *json = ntyMallocJsonValue(jsonstring);
-	AMap *pAMap = malloc(sizeof(AMap));
-	ntyJsonAMap(json, pAMap);
+	size_t len_AMap = sizeof(AMap);
+	AMap *pAMap = malloc(len_AMap);
 	if (pAMap == NULL) {
+		if (pMessageTag->Tag != NULL) {
+			free(pMessageTag->Tag);
+		}
+		free(pMessageTag);
 		return NTY_RESULT_ERROR;
 	}
-	LocationAck *pLocationAck = malloc(sizeof(LocationAck));
+	memset(pAMap, 0, len_AMap);
+	ntyJsonAMap(json, pAMap);
+
+	size_t len_LocationAck = sizeof(LocationAck);
+	LocationAck *pLocationAck = malloc(len_LocationAck);
 	if (pLocationAck == NULL) {
+		if (pMessageTag->Tag != NULL) {
+			free(pMessageTag->Tag);
+		}
+		free(pMessageTag);
 		free(pAMap);
 		return NTY_RESULT_ERROR;
 	}
+	memset(pLocationAck, 0, len_LocationAck);
 	
 	char bufIMEI[50] = {0};
 	sprintf(bufIMEI, "%llx", pMessageTag->fromId);
@@ -755,11 +768,18 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 			
 			ntySendLocationBroadCastResult(pMessageTag->fromId, pMessageTag->toId, jsonresult, strlen(jsonresult));
 #else
-			VALUE_TYPE *tag = (VALUE_TYPE*)malloc(sizeof(VALUE_TYPE));
+			size_t len_ValueType = sizeof(VALUE_TYPE);
+			VALUE_TYPE *tag = (VALUE_TYPE*)malloc(len_ValueType);
+			if (tag == NULL) {
+				goto exit;
+			}
+			memset(tag, 0, len_ValueType);
+
 			tag->fromId = pMessageTag->fromId;
 			tag->gId = pMessageTag->toId;
 			tag->length = strlen(jsonresult);
 			tag->Tag = malloc(tag->length+1);
+			memset(tag->Tag, 0, tag->length+1);
 			memcpy(tag->Tag, jsonresult, tag->length);
 
 			tag->Type = MSG_TYPE_LOCATION_BROADCAST_HANDLE;
@@ -769,7 +789,8 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 #endif
 		}
 	}
-	
+
+exit:
 	free(pLocationAck);
 	free(pAMap);
 #if 1 //Release Message
@@ -909,7 +930,8 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	ntylog("ntyHttpQJKWeatherLocationHandleResult url --> %s\n", pMessageTag->Tag);
 	
 	JSON_Value *json = ntyMallocJsonValue(jsonstring);
-	AMap *pAMap = (AMap*)malloc(sizeof(AMap));
+	size_t len_AMap = sizeof(AMap);
+	AMap *pAMap = (AMap*)malloc(len_AMap);
 	if (pAMap == NULL) {
 		
 		if (pMessageTag->Tag != NULL) {
@@ -919,6 +941,7 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 		
 		return NTY_RESULT_ERROR;
 	}
+	memset(pAMap, 0, len_AMap);
 	
 	ntyJsonAMap(json, pAMap);
 	if (strcmp(pAMap->status, "1") != 0) {
@@ -1003,7 +1026,8 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	ntylog(" weatherbuf --> %s\n", weatherbuf);
 	int length = strlen(weatherbuf);
 
-	MessageTag *pMessageSendTag = malloc(sizeof(MessageTag));
+	size_t len_MessageTag = sizeof(MessageTag);
+	MessageTag *pMessageSendTag = malloc(len_MessageTag);
 	if (pMessageSendTag == NULL) {
 		free(pLocationAck);
 		
@@ -1014,7 +1038,7 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 		
 		goto exit;
 	}
-	memset(pMessageSendTag, 0, sizeof(MessageTag));
+	memset(pMessageSendTag, 0, len_MessageTag);
 	
 	pMessageSendTag->Type = MSG_TYPE_WEATHER_API;
 	pMessageSendTag->fromId = pMessageTag->fromId;
@@ -1164,13 +1188,15 @@ static size_t ntyHttpQJKWeatherHandleResult(void* buffer, size_t size, size_t nm
 	ntylog("ntyHttpQJKWeatherHandleResult url --> %s\n", pMessageTag->Tag);
 
 	JSON_Value *json = ntyMallocJsonValue(jsonstring);
-	WeatherReq *pWeatherReq = malloc(sizeof(WeatherReq));
-	ntyJsonWeather(json, pWeatherReq);
+	size_t len_WeatherReq = sizeof(WeatherReq);
+	WeatherReq *pWeatherReq = malloc(len_WeatherReq);
 	if (pWeatherReq == NULL) {
 		flag = -1;
 		goto exit;
 	}
-
+	memset(pWeatherReq, 0, len_WeatherReq);
+	
+	ntyJsonWeather(json, pWeatherReq);
 	WeatherAck *pWeatherAck = (WeatherAck*)pWeatherReq;
 	/*
 	size_t i,j;

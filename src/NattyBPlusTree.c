@@ -291,8 +291,7 @@ NBPNode *ntyInsertIntoLeafAfterSplitting(NBPNode *root, NBPNode *leaf, NTY_ID ke
 	NBPNode *new_leaf;
 	NTY_ID *temp_keys;
 	void **temp_pointers;
-	NTY_ID new_key;
-	int insertion_index, split , i, j;
+	int insertion_index, split, new_key, i, j;
 
 	new_leaf = ntyMakeLeaf();
 	temp_keys = malloc(NTY_BPLUSTREE_ORDER * sizeof(NTY_ID));
@@ -697,8 +696,7 @@ NBPNode *ntyDeleteEntry(NBPNode *root, NBPNode *node, NTY_ID key, void *pointer)
 	int min_keys;
 	NBPNode *neighbor;
 	int neighbor_index;
-	int k_prime_index;
-	NTY_ID k_prime;
+	int k_prime_index, k_prime;
 	int capacity;
 
 	node = ntyRemoveEntryFromNode(node, key, pointer);
@@ -939,13 +937,10 @@ int main (int argc, char **argv) {
 				ntyPrintTree(root);
 				break;
 			}
-			case 'f': {
+			case 'f': 
+			case 'p': {
 				scanf("%lld", &input);
 				ntyFindAndPrint(root, input, instruction == 'p');
-				break;
-			}
-			case 'p': {
-				ntyPrintTree(root);
 				break;
 			}
 		}
@@ -979,13 +974,10 @@ int main (int argc, char **argv) {
 				ntyPrintTree(heap->root);
 				break;
 			}
-			case 'f': {
+			case 'f': 
+			case 'p': {
 				scanf("%lld", &input);
 				ntyFindAndPrint(heap->root, input, instruction == 'p');
-				break;
-			}
-			case 'p': {
-				ntyPrintTree(heap->root);
 				break;
 			}
 			case 'q': {

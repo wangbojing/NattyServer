@@ -529,7 +529,7 @@ void ntyJsonAddEfenceAction(ActionParam *pActionParam) {
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;
 
-	U8 points[200] = {0};
+	U8 points[256] = {0};
 	size_t i;
 	for (i=0; i<pAddEfenceReq->efence.size; i++) {
 		strcat(points, pAddEfenceReq->efence.pPoints[i].point);
@@ -543,7 +543,7 @@ void ntyJsonAddEfenceAction(ActionParam *pActionParam) {
 	struct tm *p;
 	time(&timep);
 	p = localtime(&timep);
-	U8 runtime[50] = {0};
+	U8 runtime[64] = {0};
 	sprintf(runtime, "%04d/%02d/%02d %02d:%02d:%02d", 1900+p->tm_year, 1+p->tm_mon, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec);
 	int index = 0;
 	int check_index = checkStringIsAllNumber(pAddEfenceReq->index);
@@ -577,12 +577,13 @@ void ntyJsonAddEfenceAction(ActionParam *pActionParam) {
 			free(pAddEfenceReq);
 			return ;
 		}
-
-		char ids[20] = {0};
+		memset(pAddEfenceAck, 0, sizeof(AddEfenceAck));
+		
+		char ids[32] = {0};
 		sprintf(ids, "%d", id);
 		pAddEfenceAck->id = ids;
 
-		char msgs[20] = {0};
+		char msgs[32] = {0};
 		sprintf(msgs, "%d", pActionParam->index);
 		pAddEfenceReq->msg = msgs;
 		
@@ -1734,12 +1735,17 @@ int ntyVoiceDataReqAction(C_DEVID senderId, C_DEVID gId, char *filename) {
 #else
 
 	VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
-	if (tag == NULL) return NTY_RESULT_FAILED;
+	if (tag == NULL) {
+		ntylog("ntyVoiceDataReqAction --> malloc VALUE_TYPE failed\n");
+		return NTY_RESULT_FAILED;
+	}
+	
 	memset(tag, 0, sizeof(VALUE_TYPE));
 
 	int sLen = strlen(filename);
 	tag->Tag = malloc(sLen+1);
 	if (tag->Tag == NULL) {
+		ntylog("ntyVoiceDataReqAction --> malloc VALUE_TYPE failed\n");
 		free(tag);
 		return ;
 	}
@@ -1857,7 +1863,7 @@ int ntyBindReqAction(ActionParam *pActionParam) {
 	ntylog(" ntyBindReqAction after ntyQueryDevAppGroupCheckSelectHandle\n");
 	BindReq *pBindReq = malloc(sizeof(BindReq));
 	if (pBindReq == NULL) { 
-		ntylog("ntyBindReqAction --> malloc failed\n");
+		ntylog("ntyBindReqAction --> malloc BindReq failed\n");
 		return NTY_RESULT_ERROR;
 	}
 	memset(pBindReq, 0, sizeof(BindReq));
@@ -1903,6 +1909,12 @@ int ntyBindReqAction(ActionParam *pActionParam) {
 		ntydbg("-----------------------encode JSON write here---------------------------------\n");
 		//Encode JSON write here
 		BindConfirmPush *pBindConfirmPush = malloc(sizeof(BindConfirmPush));
+		if (pBindConfirmPush == NULL) {
+			ntylog("ntyBindReqAction --> malloc BindConfirmPush failed\n");
+			goto exit;
+		}
+		memset(pBindConfirmPush, 0, sizeof(BindConfirmPush));
+		
 		pBindConfirmPush->result.IMEI = pBindReq->IMEI;
 		pBindConfirmPush->result.proposer = phonenum;
 		pBindConfirmPush->result.userName = pBindReq->bind.userName;
@@ -1920,6 +1932,8 @@ int ntyBindReqAction(ActionParam *pActionParam) {
 
 		free(pBindConfirmPush);
 	}
+
+exit:
 	free(pBindReq);
 
 	return ret;
