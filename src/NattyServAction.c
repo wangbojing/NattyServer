@@ -891,6 +891,8 @@ exit:
 }
 
 void ntyJsonTurnAction(ActionParam *pActionParam) {
+	if (pActionParam == NULL) return ;
+	
 	TurnReq *pTurnReq = (TurnReq*)malloc(sizeof(TurnReq));
 	if (pTurnReq == NULL) {
 		ntylog("ntyJsonTurnAction --> malloc failed TurnReq\n");
@@ -941,6 +943,8 @@ void ntyJsonTurnAction(ActionParam *pActionParam) {
 		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
 		goto exit;
 	}
+
+	ntylog(" ntyJsonTurnAction --> fromId:%lld, toId:%lld status:%d, turn_on:%s, turn_off:%s\n", fromId, toId, status, turn_on, turn_off);
 	ret = ntyExecuteTurnUpdateHandle(fromId, toId, status, turn_on, turn_off);
 	if (ret == -1) {
 		ntylog(" ntyJsonTurnAction --> DB Exception\n");
@@ -1034,6 +1038,12 @@ void ntyJsonAddScheduleAction(ActionParam *pActionParam) {
 		pAddScheduleReq->msg = msgs;
 		
 		DeviceAddScheduleAck *pDeviceAddScheduleAck = (DeviceAddScheduleAck*)malloc(sizeof(DeviceAddScheduleAck));
+		if (pDeviceAddScheduleAck == NULL) {
+			free(pAddScheduleReq);
+			ntylog("ntyJsonAddScheduleAction --> malloc failed DeviceAddScheduleAck\n");
+			return ;
+		}
+		memset(pDeviceAddScheduleAck, 0, sizeof(DeviceAddScheduleAck));
 		pDeviceAddScheduleAck = (DeviceAddScheduleAck*)pAddScheduleReq;
 		pDeviceAddScheduleAck->id = ids;
 		char *jsondeviceresult = ntyJsonWriteDeviceAddSchedule(pDeviceAddScheduleAck);
@@ -1043,6 +1053,14 @@ void ntyJsonAddScheduleAction(ActionParam *pActionParam) {
 			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
 		} else {
 			AddScheduleAck *pAddScheduleAck = (AddScheduleAck*)malloc(sizeof(AddScheduleAck));
+			if (pAddScheduleAck == NULL) {
+				ntylog("ntyJsonAddScheduleAction --> malloc failed AddScheduleAck\n");
+				free(pDeviceAddScheduleAck);
+				free(pAddScheduleReq);
+				return ;
+			}
+			memset(pAddScheduleAck, 0, sizeof(AddScheduleAck));
+			
 			pAddScheduleAck->result = *(AddScheduleResult*)pAddScheduleReq;
 			pAddScheduleAck->result.id = ids;
 			char *jsonresult = ntyJsonWriteAddSchedule(pAddScheduleAck);

@@ -583,10 +583,13 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 					if (pClient->token == NULL) {
 						pClient->token = malloc(tokenLen + 1);
 					}
-					memset(pClient->token, 0, tokenLen + 1);
 
-					memcpy(pClient->token, token, tokenLen);
-					ntylog(" LOGIN --> %s\n", pClient->token);
+					if (pClient->token != NULL) {
+						memset(pClient->token, 0, tokenLen + 1);
+
+						memcpy(pClient->token, token, tokenLen);
+						ntylog(" LOGIN --> %s\n", pClient->token);
+					}
 				}
 
 				VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
@@ -765,6 +768,10 @@ void ntyICCIDReqPacketHandleRequest(const void *_self, unsigned char *buffer, in
 		U16 jsonlen = 0;
 		memcpy(&jsonlen, buffer+NTY_PROTO_ICCID_REQ_JSON_LENGTH_IDX, NTY_JSON_COUNT_LENGTH);
 		char *jsonstring = malloc(jsonlen);
+		if (jsonstring == NULL) {
+			return ;
+		}
+		
 		memset(jsonstring, 0, jsonlen);
 		memcpy(jsonstring, buffer+NTY_PROTO_ICCID_REQ_JSON_CONTENT_IDX, jsonlen);
 
@@ -773,6 +780,12 @@ void ntyICCIDReqPacketHandleRequest(const void *_self, unsigned char *buffer, in
 			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
 		} else {
 			ActionParam *pActionParam = malloc(sizeof(ActionParam));
+			if (pActionParam == NULL) {
+				free(jsonstring);
+
+				return ;
+			}
+			
 			pActionParam->fromId = fromId;
 			pActionParam->toId = fromId;
 			pActionParam->json = json;
