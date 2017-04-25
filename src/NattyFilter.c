@@ -541,6 +541,9 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 		const Client *client = msg->client;
 
 		MessagePacket *pMsg = (MessagePacket *)malloc(sizeof(MessagePacket));
+		if (pMsg == NULL) return ;
+		
+		memset(pMsg, 0, sizeof(MessagePacket));		
 		memcpy(pMsg, msg, sizeof(MessagePacket));
 		
 		ntyAddRelationMap(pMsg);
@@ -1350,10 +1353,20 @@ void ntyBindConfirmReqPacketHandleRequest(const void *_self, unsigned char *buff
 			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
 		} else {
 			BindConfirmReq *pBindConfirmReq = (BindConfirmReq*)malloc(sizeof(BindConfirmReq));
+			if (pBindConfirmReq == NULL) {
+				return ;
+			}
+			memset(pBindConfirmReq, 0, sizeof(BindConfirmReq));
 			ntyJsonBindConfirmReq(json, pBindConfirmReq);
 
 			if (strcmp(pBindConfirmReq->category, NATTY_USER_PROTOCOL_BINDCONFIRMREQ) == 0) {
 				VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
+				if (tag == NULL) {
+					free(pBindConfirmReq);
+					return ;
+				}
+				memset(tag, 0, sizeof(VALUE_TYPE));
+				
 				tag->fromId = fromId;
 				tag->toId = AppId;
 				tag->gId = DeviceId;

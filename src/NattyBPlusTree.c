@@ -206,6 +206,8 @@ NRecord *ntyMakeRecord(RECORDTYPE value) {
 		perror("Record Creation.\n");
 		return NULL;
 	} else {
+
+		memset(new_record, 0, sizeof(NRecord));
 		new_record->value = value;
 	}
 	return new_record;
@@ -217,16 +219,20 @@ NBPNode *ntyMakeNode(void) {
 		perror("Node creation.");
 		return NULL;
 	}
+	memset(new_node, 0, sizeof(NBPNode));
 	new_node->keys = malloc((NTY_BPLUSTREE_ORDER-1) * sizeof(NTY_ID));
 	if (new_node->keys == NULL) {
 		perror("New Node Keys Array.\n");
 		return NULL;
 	}
+	memset(new_node->keys, 0, (NTY_BPLUSTREE_ORDER-1) * sizeof(NTY_ID));
+	
 	new_node->pointers = malloc(NTY_BPLUSTREE_ORDER*sizeof(void*));
 	if (new_node->pointers == NULL) {
 		perror("New Node Keys Array.\n");
 		return NULL;
 	}
+	memset(new_node->pointers, 0, NTY_BPLUSTREE_ORDER*sizeof(void*));
 
 	new_node->isLeaf = false;
 	new_node->nKeys = 0;
@@ -293,12 +299,14 @@ NBPNode *ntyInsertIntoLeafAfterSplitting(NBPNode *root, NBPNode *leaf, NTY_ID ke
 		perror("Temporary keys array.\n");
 		return NULL;
 	}
+	memset(temp_keys, 0, NTY_BPLUSTREE_ORDER * sizeof(NTY_ID));
 
 	temp_pointers = malloc(NTY_BPLUSTREE_ORDER * sizeof(void*));
 	if (temp_pointers == NULL) {
 		perror("Temporary pointers array.\n");
 		return NULL;
 	}
+	memset(temp_pointers, 0, NTY_BPLUSTREE_ORDER * sizeof(void*));
 
 	insertion_index = 0;
 	while (insertion_index < (NTY_BPLUSTREE_ORDER-1) && leaf->keys[insertion_index] < key)
@@ -379,12 +387,14 @@ NBPNode *ntyInsertIntoNodeAfterSplitting(NBPNode *root, NBPNode *old_node, int l
 		perror("Temporary pointers array for splitting nodes.");
 		return NULL;
 	}
+	memset(temp_pointers, 0, (NTY_BPLUSTREE_ORDER+1) * sizeof(NBPNode *));
 
 	temp_keys = malloc(NTY_BPLUSTREE_ORDER * sizeof(NTY_ID));
 	if (temp_keys == NULL) {
 		perror("Temporary pointers array for splitting nodes.");
 		return NULL;
 	}
+	memset(temp_keys, 0, NTY_BPLUSTREE_ORDER * sizeof(NTY_ID));
 
 	for (i = 0,j = 0;i < old_node->nKeys+1;i ++, j++) {
 		if (j == left_index + 1) j ++;

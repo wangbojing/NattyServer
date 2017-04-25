@@ -635,6 +635,8 @@ static int ntyQueryCommonOfflineMsgSelect(void *self, C_DEVID deviceId, void *co
 					
 					CommonOfflineMsg *pCommonOfflineMsg = malloc(sizeof(CommonOfflineMsg));
 					if (pCommonOfflineMsg != NULL) {
+						memset(pCommonOfflineMsg, 0, sizeof(CommonOfflineMsg));
+						
 						pCommonOfflineMsg->msgId = msgId;
 						pCommonOfflineMsg->senderId = r_senderId;
 						pCommonOfflineMsg->groupId = r_groupId;
@@ -694,6 +696,8 @@ static int ntyQueryVoiceOfflineMsgSelect(void *self, C_DEVID fromId, void *conta
 					
 					nOfflineMsg *pOfflineMsg = malloc(sizeof(nOfflineMsg));
 					if (pOfflineMsg != NULL) {
+						memset(pOfflineMsg, 0, sizeof(nOfflineMsg));
+						
 						pOfflineMsg->msgId = msgId;
 						pOfflineMsg->senderId = r_senderId;
 						pOfflineMsg->groupId = r_groupId;
@@ -930,6 +934,8 @@ static int ntyQueryBindOfflineMsgToAdminSelect(void *self, C_DEVID fromId, void 
 					const char *r_userimage = ResultSet_getString(r, 8);
 					BindOfflineMsgToAdmin *pMsgToAdmin = malloc(sizeof(BindOfflineMsgToAdmin));
 					if (pMsgToAdmin != NULL) {
+						memset(pMsgToAdmin, 0, sizeof(BindOfflineMsgToAdmin));
+						
 						pMsgToAdmin->msgId = bId;
 						pMsgToAdmin->IMEI = r_imei;
 						pMsgToAdmin->admin = r_admin;
@@ -941,22 +947,22 @@ static int ntyQueryBindOfflineMsgToAdminSelect(void *self, C_DEVID fromId, void 
 						size_t userimage_len = strlen(r_userimage);
 
 						pMsgToAdmin->watchName = malloc(watchname_len+1);
-						pMsgToAdmin->watchImage = malloc(watchimage_len+1);
-						pMsgToAdmin->userName = malloc(usercall_len+1);
-						pMsgToAdmin->userImage = malloc(userimage_len+1);
-
 						if (pMsgToAdmin->watchName != NULL) {
 							memset(pMsgToAdmin->watchName, 0, watchname_len+1);
 							memcpy(pMsgToAdmin->watchName, r_watchname, watchname_len);
 						}
+						
+						pMsgToAdmin->watchImage = malloc(watchimage_len+1);
 						if (pMsgToAdmin->watchImage != NULL) {
 							memset(pMsgToAdmin->watchImage, 0, watchimage_len+1);
 							memcpy(pMsgToAdmin->watchImage, r_watchimage, watchimage_len);
 						}
+						pMsgToAdmin->userName = malloc(usercall_len+1);
 						if (pMsgToAdmin->userName != NULL) {
 							memset(pMsgToAdmin->userName, 0, usercall_len+1);
 							memcpy(pMsgToAdmin->userName, r_usercall, usercall_len);
 						}
+						pMsgToAdmin->userImage = malloc(userimage_len+1);
 						if (pMsgToAdmin->userImage != NULL) {
 							memset(pMsgToAdmin->userImage, 0, userimage_len+1);
 							memcpy(pMsgToAdmin->userImage, r_userimage, userimage_len);

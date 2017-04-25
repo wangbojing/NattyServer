@@ -66,6 +66,8 @@ DaveQueue* ntyDaveQueueInitialize(DaveQueue *Queue) {
 	//Queue = (DaveQueue *)malloc(sizeof(DaveQueue));
 
 	Queue->nil = (DaveNode*)malloc(sizeof(DaveNode));
+	if (Queue->nil == NULL) return NULL;
+	
 	memset(Queue->nil, 0, sizeof(DaveNode));
 
 	Queue->head = Queue->nil;
@@ -82,6 +84,7 @@ void ntyDaveQueueDestroy(DaveQueue *Queue) {
 void ntyDaveEnQueue(DaveQueue *Queue, VALUE_TYPE *val) {
 	DaveNode *tail = Queue->nil;
 	DaveNode *node = (DaveNode*)malloc(sizeof(DaveNode));
+	if (node == NULL) return ;
 	
 	memset(node, 0, sizeof(DaveNode));
 	node->value = val;
@@ -324,6 +327,7 @@ static void ntyDaveMqPullMessage(void *arg) {
 		ntylog(" job == NULL");
 		return ;
 	}
+	memset(job, 0, sizeof(Job));
 	ntylog(" ntyDaveMqPullMessage --> type:%d\n", tag->Type);
 
 	if (MSG_TYPE_START <= tag->Type && MSG_TYPE_END >= tag->Type) {
