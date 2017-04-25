@@ -634,19 +634,27 @@ static int ntyQueryCommonOfflineMsgSelect(void *self, C_DEVID deviceId, void *co
 					size_t details_len = strlen(r_details);
 					
 					CommonOfflineMsg *pCommonOfflineMsg = malloc(sizeof(CommonOfflineMsg));
-					if (pCommonOfflineMsg != NULL) {
-						memset(pCommonOfflineMsg, 0, sizeof(CommonOfflineMsg));
-						
-						pCommonOfflineMsg->msgId = msgId;
-						pCommonOfflineMsg->senderId = r_senderId;
-						pCommonOfflineMsg->groupId = r_groupId;
-
-						pCommonOfflineMsg->details = malloc(details_len+1);
-						if (pCommonOfflineMsg->details != NULL) {
-							memset(pCommonOfflineMsg->details, 0, details_len+1);
-							memcpy(pCommonOfflineMsg->details, r_details, details_len);
-						}
+					if (pCommonOfflineMsg == NULL) {
+						ntylog("ntyQueryCommonOfflineMsgSelect --> malloc failed CommonOfflineMsg\n");
+						break;
 					}
+					
+					memset(pCommonOfflineMsg, 0, sizeof(CommonOfflineMsg));
+					
+					pCommonOfflineMsg->msgId = msgId;
+					pCommonOfflineMsg->senderId = r_senderId;
+					pCommonOfflineMsg->groupId = r_groupId;
+
+					pCommonOfflineMsg->details = malloc(details_len+1);
+					if (pCommonOfflineMsg->details == NULL) {
+						ntylog("ntyQueryCommonOfflineMsgSelect --> malloc failed CommonOfflineMsg->details\n");
+						free(pCommonOfflineMsg);
+						break;
+					}
+					
+					memset(pCommonOfflineMsg->details, 0, details_len+1);
+					memcpy(pCommonOfflineMsg->details, r_details, details_len);
+					
 					ntyVectorInsert(container, pCommonOfflineMsg, sizeof(CommonOfflineMsg));
 					ret = 0;
 				}
