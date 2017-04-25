@@ -229,6 +229,9 @@
 
 #define NTY_DB_SELECT_BIND_OFFLINE_MSG_TO_PROPOSER	"CALL PROC_SELECT_BIND_OFFLINE_MSG_TO_PROPOSER(%lld)"
 
+#define NTY_DB_INSERT_COMMON_ITEM_MSG		"CALL PROC_INSERT_COMMON_ITEM_MSG(%lld, %lld, '%s')"
+
+#define NTY_DB_DELETE_COMMON_ITEM_MSG		"CALL PROC_DELETE_COMMON_ITEM_MSG(%d)"
 
 
 typedef struct _CONN_POOL {
@@ -305,6 +308,10 @@ int ntyExecuteTimeTablesUpdateHandle(C_DEVID aid, C_DEVID did, const char *morni
 
 int ntyExecuteCommonMsgInsertHandle(C_DEVID sid, C_DEVID gid, const char *detatils, int *msg);
 
+int ntyExecuteCommonItemMsgInsertHandle(C_DEVID sid, C_DEVID gid, const char *detatils, int *msg);
+
+int ntyExecuteCommonItemMsgDeleteHandle(int msgId);
+
 int ntyQueryCommonMsgSelectHandle(C_DEVID msgId, C_DEVID *senderId, C_DEVID *groupId, char *json);
 
 int ntyQueryPhNumSelect(void *self, C_DEVID did, U8 *imei, U8 *phnum);
@@ -343,7 +350,7 @@ int ntyQueryBindOfflineMsgToProposerSelectHandle(C_DEVID fromId, void *container
 
 int ntyExecuteCommonMsgToProposerInsertHandle(C_DEVID sid, C_DEVID gid, const char *detatils, int *msg);
 
-int ntyExecuteChangeDeviceOnlineStatusHandle(C_DEVID did, int status);
+int ntyExecuteChangeDeviceOnlineStatusHandle(C_DEVID did);
 
 
 int ntyConnectionPoolInit(void);

@@ -78,7 +78,6 @@ int ntySendDeviceTimeCheckAck(C_DEVID fromId, U32 ackNum);
 void ntyProtoUnBindAck(C_DEVID aid, C_DEVID did, int result);
 void ntyProtoBindAck(C_DEVID aid, C_DEVID did, int result);
 
-
 void ntySelfLogoutPacket(C_DEVID id, U8 *buffer);
 int ntyIterFriendsMessage(void *self, void *arg);
 
@@ -94,13 +93,13 @@ int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int leng
 int ntySendDataResult(C_DEVID toId, U8 *json, int length, U16 status);
 int ntySendDataRoute(C_DEVID toId, U8 *buffer, int length);
 
+int ntySendCommonReq(C_DEVID fromId, C_DEVID toId, U8 *json, int length, int msgId);
+
 
 int ntySendLocationPushResult(C_DEVID fromId, U8 *json, int length);
 int ntySendWeatherPushResult(C_DEVID fromId, U8 *json, int length);
 
 int ntySendICCIDAckResult(C_DEVID fromId, U8 *json, int length, U16 status);
-int ntySendQRCodeAckResult(C_DEVID fromId, U8 *json, int length, U16 status);
-
 int ntySendRecodeJsonPacket(C_DEVID fromId, C_DEVID toId, U8 *json, int length);
 
 int ntySendBinBufferBroadCastResult(U8 *u8Buffer, int length, C_DEVID fromId, C_DEVID gId, U32 index);

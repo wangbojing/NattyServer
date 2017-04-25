@@ -2126,6 +2126,85 @@ int ntyExecuteCommonMsgInsert(void *self, C_DEVID sid, C_DEVID gid, const char *
 	return ret;
 }
 
+//NTY_DB_INSERT_COMMON_ITEM_MSG
+int ntyExecuteCommonItemMsgInsert(void *self, C_DEVID sid, C_DEVID gid, const char *detatils, int *msg) {
+	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = -1;
+	U8 u8PhNum[20] = {0};
+
+	TRY
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			ntylog(" ntyExecuteCommonItemMsgInsert --> start\n");
+			
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_COMMON_ITEM_MSG, sid, gid, detatils);
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					*msg = ResultSet_getInt(r, 1);	
+					ret = 0;
+
+					ntylog("ntyExecuteCommonMsgInsert msgId : %d\n", *msg);
+				}
+			}
+		}
+	}
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+
+//NTY_DB_DELETE_COMMON_ITEM_MSG
+int ntyExecuteCommonItemMsgDelete(void *self, int msgId) {
+	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = -1;
+	U8 u8PhNum[20] = {0};
+
+	TRY
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			ntylog(" ntyExecuteCommonItemMsgDelete --> start\n");
+			
+			Connection_execute(con, NTY_DB_DELETE_COMMON_ITEM_MSG, msgId);
+			ret = 0;
+		}
+	}
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+
 
 //NTY_DB_INSERT_COMMON_MSG_REJECT
 int ntyExecuteCommonMsgToProposerInsert(void *self, C_DEVID sid, C_DEVID gid, const char *detatils, int *msg) {
@@ -2171,7 +2250,7 @@ int ntyExecuteCommonMsgToProposerInsert(void *self, C_DEVID sid, C_DEVID gid, co
 
 
 //NTY_DB_UPDATE_DEVICE_STATUS
-int ntyExecuteChangeDeviceOnlineStatus(void *self, C_DEVID did, int status) {
+int ntyExecuteChangeDeviceOnlineStatus(void *self, C_DEVID did) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
@@ -2185,7 +2264,7 @@ int ntyExecuteChangeDeviceOnlineStatus(void *self, C_DEVID did, int status) {
 			ret = -1;
 		} else {
 			ntylog(" ntyExecuteChangeDeviceOnlineStatus --> Connection_execute\n");
-			Connection_execute(con, NTY_DB_UPDATE_DEVICE_STATUS, did, status);
+			Connection_execute(con, NTY_DB_UPDATE_DEVICE_STATUS, did, 1);
 		}
 	} 
 	CATCH(SQLException) 
@@ -2657,6 +2736,17 @@ int ntyExecuteCommonMsgInsertHandle(C_DEVID sid, C_DEVID gid, const char *detati
 	return ntyExecuteCommonMsgInsert(pool, sid, gid, detatils, msg);
 }
 
+int ntyExecuteCommonItemMsgInsertHandle(C_DEVID sid, C_DEVID gid, const char *detatils, int *msg) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteCommonItemMsgInsert(pool, sid, gid, detatils, msg);
+}
+
+int ntyExecuteCommonItemMsgDeleteHandle(int msgId) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteCommonItemMsgDelete(pool, msgId);
+}
+
+
 int ntyQueryVoiceMsgInsertHandle(C_DEVID senderId, C_DEVID gId, char *filename, U32 *msgId) {
 	void *pool = ntyConnectionPoolInstance();
 	return ntyQueryVoiceMsgInsert(pool, senderId, gId, filename, msgId);
@@ -2715,9 +2805,9 @@ int ntyExecuteCommonMsgToProposerInsertHandle(C_DEVID sid, C_DEVID gid, const ch
 	return ntyExecuteCommonMsgToProposerInsert(pool, sid, gid, detatils, msg);
 }
 
-int ntyExecuteChangeDeviceOnlineStatusHandle(C_DEVID did, int status) {
+int ntyExecuteChangeDeviceOnlineStatusHandle(C_DEVID did) {
 	void *pool = ntyConnectionPoolInstance();
-	return ntyExecuteChangeDeviceOnlineStatus(pool, did, status);
+	return ntyExecuteChangeDeviceOnlineStatus(pool, did);
 }
 
 

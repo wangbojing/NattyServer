@@ -765,47 +765,6 @@ exit:
 	free(pICCIDReq);
 }
 
-void ntyJsonQRCodeAction(ActionParam *pActionParam) {
-	if (pActionParam == NULL) return;
-	
-	QRCodeReq *pQRCodeReq = (QRCodeReq*)malloc(sizeof(QRCodeReq));
-	if (pQRCodeReq == NULL) {
-		ntylog("ntyJsonQRCodeAction --> malloc failed QRCodeReq\n");
-		return;
-	}
-	memset(pQRCodeReq, 0, sizeof(QRCodeReq));
-	
-	ntyJsonQRCode(pActionParam->json, pQRCodeReq);
-	C_DEVID devId = pActionParam->toId;
-	
-	if (pQRCodeReq==NULL) {
-		ntyJsonCommonResult(devId, NATTY_RESULT_CODE_ERR_JSON_CONVERT);
-		goto exit;
-	}
-	QRCodeAck *pQRCodeAck = (QRCodeAck*)malloc(sizeof(QRCodeAck));
-	if (pQRCodeAck == NULL) {
-		ntylog(" ntyJsonQRCodeAction --> malloc failed QRCodeAck\n");
-		goto exit;
-	}
-	char urls[256] = {0};
-	sprintf(urls, "%s?IMEI=%s", HTTP_QRCODE_URL, pQRCodeReq->IMEI);
-	memset(pQRCodeAck, 0, sizeof(QRCodeAck));
-	pQRCodeAck->IMEI = pQRCodeAck->IMEI;
-	pQRCodeAck->url = urls;
-	char msgs[32] = {0};
-	sprintf(msgs, "%d", pActionParam->index);
-	//pQRCodeAck->msg = msgs;
-	char *jsonstringQRCode = ntyJsonWriteQRCode(pQRCodeAck);
-	ntylog("jsonstringQRCode --> %s\n", jsonstringQRCode);
-	ntySendQRCodeAckResult(devId, (U8*)jsonstringQRCode, strlen(jsonstringQRCode), 200);
-	ntyJsonFree(jsonstringQRCode);
-
-	free(pQRCodeAck);
-exit:
-	free(pQRCodeReq);
-}
-
-
 void ntyJsonRunTimeAction(ActionParam *pActionParam) {
 	if (pActionParam == NULL) return ;
 	RunTimeReq *pRunTimeReq = (RunTimeReq*)malloc(sizeof(RunTimeReq));
@@ -1690,29 +1649,6 @@ void ntyJsonWearStatusAction(ActionParam *pActionParam) {
 	}
 }
 
-//发送管理员同意消息到手表
-void ntyJsonBindAgreeAction(char *imei, char *adminIds, C_DEVID fromId, C_DEVID toId, U32 msgId) {
-	char bindAgreeAck[64] = {0};
-	memcpy(bindAgreeAck, NATTY_USER_PROTOCOL_BINDAGREE, strlen(NATTY_USER_PROTOCOL_BINDAGREE));
-	size_t len_bindAgreeAck = sizeof(BindAgreeAck);
-	BindAgreeAck *pBindAgreeAck = malloc(len_bindAgreeAck);
-	if (pBindAgreeAck == NULL) {
-		return;
-	}
-
-	char msgIds[64] = {0};
-	sprintf(msgIds, "%d", msgId);
-	pBindAgreeAck->IMEI = imei;
-	pBindAgreeAck->category = bindAgreeAck;
-	pBindAgreeAck->adminId = adminIds;
-	pBindAgreeAck->msgId = msgIds;
-	char *jsonagree = ntyJsonWriteBindAgree(pBindAgreeAck);
-	int ret = ntySendRecodeJsonPacket(fromId, toId, jsonagree, (int)strlen(jsonagree));
-	if (ret < 0) {
-		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
-	}
-}
-
 void ntyJsonOfflineMsgReqAction(ActionParam *pActionParam) {
 	DelContactsReq *pDelContactsReq = (DelContactsReq*)malloc(sizeof(DelContactsReq));
 	if (pDelContactsReq == NULL) {
@@ -1980,8 +1916,72 @@ int ntyOfflineAction(C_DEVID fromId, U32 msgId) {
 	return 0;
 }
 
+
+int ntyReadDeviceOfflineCommonMsgIter(void *self, void *arg) {
+	CommonOfflineMsg *pCommonOfflineMsg = (CommonOfflineMsg*)self;
+	if (pCommonOfflineMsg == NULL) {
+		return NTY_RESULT_ERROR;
+	}
+	
+	C_DEVID fromId = *(C_DEVID*)arg;
+	char *json = pCommonOfflineMsg->details;
+	if (json == NULL) {
+		return -1;
+	}
+#if 0	
+	int ret = ntySendCommonBroadCastItem(
+		pCommonOfflineMsg->senderId, 
+		fromId, 
+		json, 
+		strlen(json), 
+		pCommonOfflineMsg->msgId);
+	if (ret<0) {
+		ntyJsonCommonResult(pCommonOfflineMsg->senderId, NATTY_RESULT_CODE_ERR_DB_SEND_OFFLINE);
+	}
+#else
+
+	int ret = ntySendCommonReq(pCommonOfflineMsg->senderId, pCommonOfflineMsg->groupId, json, strlen(json), pCommonOfflineMsg->msgId);
+	if (ret < 0) {
+		ntylog("ntyReadDeviceOfflineCommonMsgIter");
+	}
+	
+#endif
+	free(json);
+	
+	return 0;
+}
+
+
+
+int ntyReadDeviceOfflineCommonMsgAction(C_DEVID devId) {
+	NVector *container = ntyVectorCreator();
+	if (NULL == container) return NTY_RESULT_FAILED;
+
+	ntylog("ntyReadDeviceOfflineCommonMsgAction --> %lld\n", devId);
+	int ret = ntyQueryCommonOfflineMsgSelectHandle(devId, container);
+	if (ret == NTY_RESULT_SUCCESS) {
+		ntyVectorIterator(container, ntyReadDeviceOfflineCommonMsgIter, &devId);
+	} 
+	ntylog("ntyReadOfflineCommonMsgAction --> ret : %d\n", ret);
+
+	if (ret != NTY_RESULT_BUSY) {
+		if (container->num == 0) { //count == 0
+			ret = NTY_RESULT_NOEXIST;
+		} else {
+			ret = NTY_RESULT_SUCCESS;
+		}
+	} 
+	
+	ntyVectorDestory(container);
+
+	return ret;
+}
+
+
 int ntyReadOfflineCommonMsgIter(void *self, void *arg) {
 	CommonOfflineMsg *pCommonOfflineMsg = (CommonOfflineMsg*)self;
+	if (pCommonOfflineMsg == NULL) return NTY_RESULT_ERROR;
+	
 	C_DEVID fromId = *(C_DEVID*)arg;
 	char *json = pCommonOfflineMsg->details;
 	if (json == NULL) {

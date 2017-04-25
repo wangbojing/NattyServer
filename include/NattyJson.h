@@ -101,8 +101,6 @@ void ntyJsonWeatherRelease(WeatherReq *pWeatherReq);
 
 void ntyJsonICCID(JSON_Value *json, ICCIDReq *pICCIDReq);
 
-void ntyJsonQRCode(JSON_Value *json, QRCodeReq *pQRCodeReq);
-
 void ntyJsonCommon(JSON_Value *json, CommonReq *pCommonReq);
 
 void ntyJsonCommonExtend(JSON_Value *json, CommonReqExtend *pCommonReqExtend);
@@ -138,8 +136,6 @@ char * ntyJsonBind(JSON_Value *json, BindReq *pBindReq);
 char * ntyJsonWriteBindConfirmReq(BindConfirmReq *pBindConfirmReq);
 
 char * ntyJsonWriteICCID(ICCIDAck *pICCIDAck);
-
-char * ntyJsonWriteQRCode(QRCodeAck *pQRCodeAck);
 
 char * ntyJsonWriteCommon(CommonAck *pCommonAck);
 
@@ -200,8 +196,6 @@ char * ntyJsonWriteBindConfirmAck(BindConfirmAck *pBindConfirmAck);
 char * ntyJsonWriteBindOfflineMsgToAdmin(BindOfflineMsgToAdmin *pMsgToAdmin, char *phonenum);
 
 char * ntyJsonWriteBindOfflineMsgToProposer(BindOfflineMsgToProposer *pMsgToProposer);
-
-char * ntyJsonWriteBindAgree(BindAgreeAck *pBindAgreeAck);
 
 
 #endif
