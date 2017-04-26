@@ -525,6 +525,9 @@ int ntyOnlineClientHeap(C_DEVID clientId) {
 #if ENABLE_NATTY_TIME_STAMP //TIME Stamp 	
 	pClient->stamp = ntyTimeStampGenrator();
 #endif
+	if (pClient->online == 0 && pClient->deviceType == NTY_PROTO_CLIENT_WATCH) {
+		ntyExecuteChangeDeviceOnlineStatusHandle(pClient->devId, 1);
+	}
 	pClient->online = 1;
 
 	return NTY_RESULT_SUCCESS;
