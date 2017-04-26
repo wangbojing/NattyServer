@@ -353,7 +353,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 				*((unsigned char*)(&client_addr.sin_addr.s_addr)+2), *((unsigned char*)(&client_addr.sin_addr.s_addr)+3),													
 				client_addr.sin_port);
 		
-		if (errno == ETIMEDOUT || errno == EBADF || errno == ECONNRESET) {
+		if (errno == ETIMEDOUT || errno == EBADF || errno == ECONNRESET || errno == ENOTCONN) {
 			ntylog(" release client socket\n");
 				
 			void *hash = ntyHashTableInstance();
