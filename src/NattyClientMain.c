@@ -151,6 +151,11 @@ void ntyDataResult(U8 *json, int length) {
 	ntydbg(" ntyDataResult:%d\n", length);
 }
 
+void ntyUserDataAck(U8 *json, int length) {
+	ntydbg(" ntyUserDataAck: %s , %d\n",json, length);
+}
+
+
 void ntyVoiceBroadCastResult(DEVID fromId, U8 *json, int length) {
 	ntydbg(" ntyVoiceBroadCastResult:%s\n", json);
 }
@@ -200,7 +205,7 @@ int main() {
 	ntySetLoginAckResult(ntyLoginAckResult);
 	ntySetLocationPushResult(ntyLocationPush);
 	ntySetDataResult(ntyDataResult);
-
+	ntySetUserDataAckResult(ntyUserDataAck);
 	
 	//ntySetDevId(did);
 	ntySetDevId(AppId);

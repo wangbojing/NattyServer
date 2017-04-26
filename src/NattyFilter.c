@@ -1862,7 +1862,24 @@ void ntyUserDataPacketReqHandleRequest(const void *_self, unsigned char *buffer,
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_DATAPACKET_REQ) {
 		ntylog("====================begin ntyUserDataPacketReqHandleRequest action ==========================\n");
 
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if (msg == NULL) return ;
+		const Client *client = msg->client;
+
+		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_USERDATA_PACKET_REQ_DEVICEID_IDX);
+		U16 jsonLength = *(U16*)(buffer+NTY_PROTO_USERDATA_PACKET_REQ_JSON_LENGTH_IDX);
+		U8 *json = (U8*)malloc(jsonLength+1);
+		if (json == NULL) { 
+			ntylog("ntyUserDataPacketReqHandleRequest --> malloc failed json buffer\n");
+			return ;
+		}
+		memset(json, 0, jsonLength+1);
+		memcpy(json, buffer+NTY_PROTO_USERDATA_PACKET_REQ_JSON_CONTENT_IDX, jsonLength);
 		
+		ntylog("ntyUserDataPacketReqHandleRequest --> fromId:%lld, json:%s\n", fromId, json);
+		
+
+		free(json);
 		
 		ntylog("====================end ntyUserDataPacketReqHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
