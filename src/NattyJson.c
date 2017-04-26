@@ -287,7 +287,7 @@ void ntyJsonAMap(JSON_Value *json, AMap *pAMap) {
 	pAMap->result.street = json_object_get_string(result_object, NATTY_AMAP_PROTOCOL_STREET);
 	pAMap->result.poi = json_object_get_string(result_object, NATTY_AMAP_PROTOCOL_POI);
 	
-	ntydbg("status:%s,  info:%s,  infocode:%s,  location:%s\n", pAMap->status, pAMap->info, pAMap->infocode, pAMap->result.location);
+	//ntydbg("status:%s,  info:%s,  infocode:%s,  location:%s\n", pAMap->status, pAMap->info, pAMap->infocode, pAMap->result.location);
 
 	if (pAMap->result.location != NULL) {
 		if (strcmp(pAMap->result.location, "(null)") == 0) {
@@ -307,7 +307,7 @@ void ntyJsonWeatherLocation(JSON_Value *json, WeatherLocationReq *pWeatherLocati
 	pWeatherLocationReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
 	pWeatherLocationReq->bts = json_object_get_string(root_object, NATTY_USER_PROTOCOL_BTS);
 	
-	ntydbg("IMEI:%s,  category:%s,  bts:%s\n", pWeatherLocationReq->IMEI, pWeatherLocationReq->category, pWeatherLocationReq->bts);
+	//ntydbg("IMEI:%s,  category:%s,  bts:%s\n", pWeatherLocationReq->IMEI, pWeatherLocationReq->category, pWeatherLocationReq->bts);
 }
 
 void ntyJsonWeather(JSON_Value *json, WeatherReq *pWeatherReq) {
@@ -437,7 +437,7 @@ void ntyJsonAddEfence(JSON_Value *json, AddEfenceReq *pAddEfenceReq) {
 	size_t i;
 	for (i = 0; i < points_count; i++) {
 		pPoints[i].point = json_array_get_string(points_array, i);
-		ntydbg("point:%s\n", pPoints[i].point);
+		//ntydbg("point:%s\n", pPoints[i].point);
 	}
 }
 
@@ -469,7 +469,7 @@ void ntyJsonRuntime(JSON_Value *json, RunTimeReq *pRunTimeReq) {
 	JSON_Object *root_object = json_value_get_object(json);
 	pRunTimeReq->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
 	pRunTimeReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
-	ntydbg("IMEI:%s   Category:%s\n", pRunTimeReq->IMEI, pRunTimeReq->category);
+	//ntydbg("IMEI:%s   Category:%s\n", pRunTimeReq->IMEI, pRunTimeReq->category);
 	
 	JSON_Object *runtime_object = json_object_get_object(root_object, NATTY_USER_PROTOCOL_RUNTIME);
 	pRunTimeReq->runtime.auto_connection = json_object_get_string(runtime_object, NATTY_USER_PROTOCOL_AUTOCONNECTION);
@@ -495,7 +495,7 @@ void ntyJsonTurn(JSON_Value *json, TurnReq *pTurnReq) {
 	JSON_Object *root_object = json_value_get_object(json);
 	pTurnReq->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
 	pTurnReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
-	ntydbg("IMEI:%s   Category:%s\n", pTurnReq->IMEI, pTurnReq->category);
+	//ntydbg("IMEI:%s   Category:%s\n", pTurnReq->IMEI, pTurnReq->category);
 	
 	JSON_Object *turn_object = json_object_get_object(root_object, NATTY_USER_PROTOCOL_TURN);
 	JSON_Object *on_object = json_object_get_object(turn_object, NATTY_USER_PROTOCOL_ON);
@@ -515,14 +515,14 @@ void ntyJsonAddSchedule(JSON_Value *json, AddScheduleReq *pAddScheduleReq) {
 	pAddScheduleReq->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
 	pAddScheduleReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
 	pAddScheduleReq->action = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ACTION);
-	ntydbg("IMEI:%s   Category:%s  Action:%s\n", pAddScheduleReq->IMEI, pAddScheduleReq->category, pAddScheduleReq->action);
+	//ntydbg("IMEI:%s   Category:%s  Action:%s\n", pAddScheduleReq->IMEI, pAddScheduleReq->category, pAddScheduleReq->action);
 
 	JSON_Object *schedule_object = json_object_get_object(root_object, NATTY_USER_PROTOCOL_SCHEDULE);
 	pAddScheduleReq->schedule.daily = json_object_get_string(schedule_object, NATTY_USER_PROTOCOL_DAILY);
 	pAddScheduleReq->schedule.time = json_object_get_string(schedule_object, NATTY_USER_PROTOCOL_TIME);
 	pAddScheduleReq->schedule.details = json_object_get_string(schedule_object, NATTY_USER_PROTOCOL_DETAILS);
 	pAddScheduleReq->schedule.status = json_object_get_string(schedule_object, NATTY_USER_PROTOCOL_STATUS);
-	ntydbg("Daily:%s, Time:%s, Details:%s\n", pAddScheduleReq->schedule.daily, pAddScheduleReq->schedule.time, pAddScheduleReq->schedule.details);
+	//ntydbg("Daily:%s, Time:%s, Details:%s\n", pAddScheduleReq->schedule.daily, pAddScheduleReq->schedule.time, pAddScheduleReq->schedule.details);
 }
 
 void ntyJsonUpdateSchedule(JSON_Value *json, UpdateScheduleReq *pUpdateScheduleReq) {
@@ -536,14 +536,14 @@ void ntyJsonUpdateSchedule(JSON_Value *json, UpdateScheduleReq *pUpdateScheduleR
 	pUpdateScheduleReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
 	pUpdateScheduleReq->action = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ACTION);
 	pUpdateScheduleReq->id = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ID);
-	ntydbg("IMEI:%s   Category:%s  Action:%s  id:%s\n", pUpdateScheduleReq->IMEI, pUpdateScheduleReq->category, pUpdateScheduleReq->action, pUpdateScheduleReq->id);
+	//ntydbg("IMEI:%s   Category:%s  Action:%s  id:%s\n", pUpdateScheduleReq->IMEI, pUpdateScheduleReq->category, pUpdateScheduleReq->action, pUpdateScheduleReq->id);
 
 	JSON_Object *schedule_object = json_object_get_object(root_object, NATTY_USER_PROTOCOL_SCHEDULE);
 	pUpdateScheduleReq->schedule.daily = json_object_get_string(schedule_object, NATTY_USER_PROTOCOL_DAILY);
 	pUpdateScheduleReq->schedule.time = json_object_get_string(schedule_object, NATTY_USER_PROTOCOL_TIME);
 	pUpdateScheduleReq->schedule.details = json_object_get_string(schedule_object, NATTY_USER_PROTOCOL_DETAILS);
 	pUpdateScheduleReq->schedule.status = json_object_get_string(schedule_object, NATTY_USER_PROTOCOL_STATUS);
-	ntydbg("Daily:%s, Time:%s, Details:%s\n", pUpdateScheduleReq->schedule.daily, pUpdateScheduleReq->schedule.time, pUpdateScheduleReq->schedule.details);
+	//ntydbg("Daily:%s, Time:%s, Details:%s\n", pUpdateScheduleReq->schedule.daily, pUpdateScheduleReq->schedule.time, pUpdateScheduleReq->schedule.details);
 }
 
 void ntyJsonDelSchedule(JSON_Value *json, DelScheduleReq *pDelScheduleReq) {
@@ -557,7 +557,7 @@ void ntyJsonDelSchedule(JSON_Value *json, DelScheduleReq *pDelScheduleReq) {
 	pDelScheduleReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
 	pDelScheduleReq->action = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ACTION);
 	pDelScheduleReq->id = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ID);
-	ntydbg("IMEI:%s   Category:%s  Action:%s  id:%s\n", pDelScheduleReq->IMEI, pDelScheduleReq->category, pDelScheduleReq->action, pDelScheduleReq->id);
+	//ntydbg("IMEI:%s   Category:%s  Action:%s  id:%s\n", pDelScheduleReq->IMEI, pDelScheduleReq->category, pDelScheduleReq->action, pDelScheduleReq->id);
 }
 
 void ntyJsonTimeTables(JSON_Value *json, TimeTablesReq *pTimeTablesReq) {
@@ -569,7 +569,7 @@ void ntyJsonTimeTables(JSON_Value *json, TimeTablesReq *pTimeTablesReq) {
 	JSON_Object *root_object = json_value_get_object(json);
 	pTimeTablesReq->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
 	pTimeTablesReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
-	ntydbg("IMEI:%s   Category:%s\n", pTimeTablesReq->IMEI, pTimeTablesReq->category);
+	//ntydbg("IMEI:%s   Category:%s\n", pTimeTablesReq->IMEI, pTimeTablesReq->category);
 
 	JSON_Object *timetables_object = NULL;
 	JSON_Object *morning_object = NULL;
@@ -1425,5 +1425,28 @@ char * ntyJsonWriteBindOfflineMsgToProposer(BindOfflineMsgToProposer *pMsgToProp
 	
 	return NULL;
 }
+
+/**
+ * 手表收到管理员同意的协议
+ * {\"IMEI\":\"355637052788450\",\"Category\":\"BindAgree\",\"AdminId\":\"11782\",\"MsgId\":\"13453\"}
+ *
+ */
+char * ntyJsonWriteBindAgree(BindAgreeAck *pBindAgreeAck) {
+	if (pBindAgreeAck == NULL) {
+		return NULL;
+	}
+	
+	JSON_Value *schema = json_value_init_object();
+	JSON_Object *schema_obj = json_value_get_object(schema);
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_IMEI, pBindAgreeAck->IMEI);
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_CATEGORY, pBindAgreeAck->category);
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_MSGID, pBindAgreeAck->msgId);
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_ADMINID, pBindAgreeAck->adminId);
+
+	char *jsonstring =	json_serialize_to_string(schema);
+	json_value_free(schema);
+	return jsonstring;
+}
+
 
 

@@ -111,6 +111,8 @@ void ntyJsonEfenceReportAction(ActionParam *pActionParam);
 
 void ntyJsonWearStatusAction(ActionParam *pActionParam);
 
+void ntyBindAgreeAction(char *imei, char *adminIds, C_DEVID fromId, C_DEVID toId, U32 msgId);
+
 int ntyVoiceDataReqAction(C_DEVID senderId, C_DEVID gId, char *filename);
 
 int ntyVoiceReqAction(C_DEVID fromId, U32 msgId);

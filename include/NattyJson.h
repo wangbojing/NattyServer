@@ -197,6 +197,7 @@ char * ntyJsonWriteBindOfflineMsgToAdmin(BindOfflineMsgToAdmin *pMsgToAdmin, cha
 
 char * ntyJsonWriteBindOfflineMsgToProposer(BindOfflineMsgToProposer *pMsgToProposer);
 
+char * ntyJsonWriteBindAgree(BindAgreeAck *pBindAgreeAck);
 
 #endif
 

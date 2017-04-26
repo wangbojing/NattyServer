@@ -53,7 +53,7 @@
 #define CONNECTION_SIZE_REAP_RATIO				0.1			
 
 
-
+//#define MYSQL_DB_CONN_STRING				"mysql://192.168.1.178:3306/NATTYDB?user=juguikeji&password=qjk.123456"
 #define MYSQL_DB_CONN_STRING				"mysql://112.93.116.188:3306/NATTYDB?user=watch_server&password=123456"
 
 #define NTY_DB_WATCH_INSERT_FORMAT			"CALL PROC_WATCH_INSERT('%s')"			//CALL PROC_WATCH_INSERT('352315052834187');

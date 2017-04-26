@@ -818,6 +818,21 @@ void ntyICCIDReqPacketHandleRequest(const void *_self, unsigned char *buffer, in
 				return;
 			}
 			memset(pActionParam, 0, len_ActionParam);
+
+			/*
+			VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
+			if (tag == NULL) {
+				ntylog(" %s --> malloc failed VALUE_TYPE. \n", __func__);
+				return;
+			}
+			memset(tag, 0, sizeof(VALUE_TYPE));
+			tag->fromId = fromId;
+			tag->toId = fromId;
+			tag->Type = MSG_TYPE_OFFLINE_MSG_REQ_HANDLE;
+			tag->cb = ntyDeviceOfflineMsgReqHandle;
+
+			ntyDaveMqPushMessage(tag);
+			*/	
 			
 			pActionParam->fromId = fromId;
 			pActionParam->toId = fromId;

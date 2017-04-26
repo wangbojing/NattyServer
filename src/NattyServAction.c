@@ -1668,10 +1668,36 @@ void ntyJsonWearStatusAction(ActionParam *pActionParam) {
 	}
 }
 
+//发送管理员同意消息到手表
+void ntyBindAgreeAction(char *imei, char *adminIds, C_DEVID fromId, C_DEVID toId, U32 msgId) {
+	char bindAgreeAck[64] = {0};
+	memcpy(bindAgreeAck, NATTY_USER_PROTOCOL_BINDAGREE, strlen(NATTY_USER_PROTOCOL_BINDAGREE));
+	size_t len_bindAgreeAck = sizeof(BindAgreeAck);
+	BindAgreeAck *pBindAgreeAck = malloc(len_bindAgreeAck);
+	if (pBindAgreeAck == NULL) {
+		ntylog("ntyBindAgreeAction --> malloc failed BindAgreeAck\n");
+		
+		return;
+	}
+	memset(pBindAgreeAck, 0, len_bindAgreeAck);
+	
+	char msgIds[64] = {0};
+	sprintf(msgIds, "%d", msgId);
+	pBindAgreeAck->IMEI = imei;
+	pBindAgreeAck->category = bindAgreeAck;
+	pBindAgreeAck->adminId = adminIds;
+	pBindAgreeAck->msgId = msgIds;
+	char *jsonagree = ntyJsonWriteBindAgree(pBindAgreeAck);
+	int ret = ntySendRecodeJsonPacket(fromId, toId, jsonagree, (int)strlen(jsonagree));
+	if (ret < 0) {
+		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
+	}
+}
+
 void ntyJsonOfflineMsgReqAction(ActionParam *pActionParam) {
 	DelContactsReq *pDelContactsReq = (DelContactsReq*)malloc(sizeof(DelContactsReq));
 	if (pDelContactsReq == NULL) {
-		ntylog("ntyJsonOfflineMsgReqAction --> malloc DelContactsReq failed\n");
+		ntylog("ntyJsonOfflineMsgReqAction --> malloc failed DelContactsReq\n");
 		return ;
 	}
 	memset(pDelContactsReq, 0, sizeof(DelContactsReq));
