@@ -1009,10 +1009,11 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	if (ret == 0) {
 		char *jsonresult = ntyJsonWriteLocation(pLocationAck);
 		ntylog("ntyHttpQJKLocationHandleResult jsonresult --> %s\n", jsonresult);
-#if 0 //cancel return to watchid
+#if 1 //cancel return to watchid
 		ret = ntySendLocationPushResult(pMessageTag->toId, jsonresult, strlen(jsonresult));
-		if (ret > 0) {
-			ntySendLocationBroadCastResult(pMessageTag->fromId, pMessageTag->toId, jsonresult, strlen(jsonresult));
+		if (ret < 0) {
+			//ntySendLocationBroadCastResult(pMessageTag->fromId, pMessageTag->toId, jsonresult, strlen(jsonresult));
+			ntylog("ntySendLocationPushResult --> send failed n");
 		}
 #else
 		ntySendLocationBroadCastResult(pMessageTag->fromId, pMessageTag->toId, jsonresult, strlen(jsonresult));

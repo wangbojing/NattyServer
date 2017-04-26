@@ -1838,12 +1838,17 @@ static const ProtocolFilter ntyRoutePacketFilter = {
 	ntyPacketGetSuccessor,
 	ntyRoutePacketHandleRequest,
 };
-#if 0
-void ntyUserDataPacketAckHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
+
+
+
+void ntyUserDataPacketReqHandleRequest(const void *_self, unsigned char *buffer, int length,const void* obj) {
 	const UdpClient *client = obj;
-	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_DATAPACKET_ACK) {
+	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_DATAPACKET_REQ) {
+		ntylog("====================begin ntyUserDataPacketReqHandleRequest action ==========================\n");
 
-
+		
+		
+		ntylog("====================end ntyUserDataPacketReqHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
 		(*succ)->handleRequest(succ, buffer, length, obj);
@@ -1853,15 +1858,15 @@ void ntyUserDataPacketAckHandleRequest(const void *_self, unsigned char *buffer,
 
 }
 
-static const ProtocolFilter ntyUserDataPacketAckFilter = {
+static const ProtocolFilter ntyUserDataPacketReqFilter = {
 	sizeof(Packet),
 	ntyPacketCtor,
 	ntyPacketDtor,
 	ntyPacketSetSuccessor,
 	ntyPacketGetSuccessor,
-	ntyUserDataPacketAckHandleRequest,
+	ntyUserDataPacketReqHandleRequest,
 };
-#endif
+
 
 
 
@@ -1909,6 +1914,7 @@ const void *pNtyMutlcastAckFilter = &ntyMutlcastAckFilter;
 const void *pNtyLocationAsyncReqFilter = &ntyLocationAsyncReqFilter;
 const void *pNtyWeatherAsyncReqFilter = &ntyWeatherAsyncReqFilter;
 
+const void *pNtyUserDataPacketReqFilter = &ntyUserDataPacketReqFilter;
 
 //ntyVoiceReqPacketHandleRequest
 
@@ -1944,6 +1950,8 @@ void* ntyProtocolFilterInit(void) {
 	void *pLocationAsyncReqFilter = New(pNtyLocationAsyncReqFilter);
 	void *pWeatherAsyncReqFilter = New(pNtyWeatherAsyncReqFilter);
 
+	void *pUserDataPacketReqFilter = New(pNtyUserDataPacketReqFilter);
+
 	ntySetSuccessor(pLoginFilter, pHeartBeatFilter);
 	ntySetSuccessor(pHeartBeatFilter, pLogoutFilter);
 	ntySetSuccessor(pLogoutFilter, pTimeCheckFilter);
@@ -1972,7 +1980,9 @@ void* ntyProtocolFilterInit(void) {
 	ntySetSuccessor(pMutlcastAckFilter, pLocationAsyncReqFilter);
 	
 	ntySetSuccessor(pLocationAsyncReqFilter, pWeatherAsyncReqFilter);
-	ntySetSuccessor(pWeatherAsyncReqFilter, NULL);
+	ntySetSuccessor(pWeatherAsyncReqFilter, pUserDataPacketReqFilter);
+
+	ntySetSuccessor(pUserDataPacketReqFilter, NULL);
 
 	
 	/*
