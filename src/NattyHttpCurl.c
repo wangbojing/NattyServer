@@ -974,7 +974,7 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	strncat(latlng, colon, (size_t)strlen(colon));
 	strncat(latlng, lng, (size_t)strlen(lng));
 
-#if 1 //Update By WangBoJing
+#if 0 //Update By WangBoJing
 	LocationAck *pLocationAck = malloc(sizeof(LocationAck));
 	if (pLocationAck == NULL) {
 		
@@ -1005,6 +1005,7 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	pLocationAck->results.location = pAMap->result.location;
 	pLocationAck->results.radius = pAMap->result.radius;
 
+
 	ret = ntyExecuteLocationNewInsertHandle(pMessageTag->toId, (U8)pMessageTag->Type, pAMap->result.location, pAMap->info, pAMap->result.desc);
 	if (ret == 0) {
 		char *jsonresult = ntyJsonWriteLocation(pLocationAck);
@@ -1019,7 +1020,10 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 		ntySendLocationBroadCastResult(pMessageTag->fromId, pMessageTag->toId, jsonresult, strlen(jsonresult));
 #endif
 	}
+	free(pLocationAck);
 #endif
+
+
 
 	U8 weatherbuf[500] = {0};
 	sprintf(weatherbuf, "%s/v3/weather/daily.json?key=%s&location=%s&language=zh-Hans&unit=c&start=0&days=2", 
@@ -1030,8 +1034,7 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	size_t len_MessageTag = sizeof(MessageTag);
 	MessageTag *pMessageSendTag = malloc(len_MessageTag);
 	if (pMessageSendTag == NULL) {
-		free(pLocationAck);
-		
+
 		if (pMessageTag->Tag != NULL) {
 			free(pMessageTag->Tag);
 		}
@@ -1050,8 +1053,7 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	pMessageSendTag->Tag = malloc((length+1)*sizeof(U8));
 	if (pMessageSendTag->Tag == NULL) {
 		free(pMessageSendTag);
-		free(pLocationAck);
-
+		
 		if (pMessageTag->Tag != NULL) {
 			free(pMessageTag->Tag);
 		}
