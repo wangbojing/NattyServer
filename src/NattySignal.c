@@ -61,14 +61,13 @@ static void ntySignalProcess(int sign_no) {
 			ntyConnectionPoolDeInit(); //Release MYSQL SOCKET CONNECTION
 			break;
 		}
-#if 0
-		case NTY_SIGNAL_PIPE: {
-			break;
-		}
+#if 1
+		case NTY_SIGNAL_PIPE: 
 		case NTY_SIGNAL_QUIT: 
 		case NTY_SIGNAL_KILL:	
 		case NTY_SIGNAL_FPE: 
 		case NTY_SIGNAL_SEGV: {
+			exit(1);
 			break;
 		}
 #endif
@@ -79,7 +78,7 @@ static void ntySignalProcess(int sign_no) {
 void ntySignalRegister(void) {
 	SIGNAL_REGISTER(NTY_SIGNAL_INT);
 	SIGNAL_REGISTER(NTY_SIGNAL_TERM);
-#if 0
+#if 1
 	SIGNAL_REGISTER(NTY_SIGNAL_KILL);
 	SIGNAL_REGISTER(NTY_SIGNAL_FPE);
 	SIGNAL_REGISTER(NTY_SIGNAL_SEGV);
