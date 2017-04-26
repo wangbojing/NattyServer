@@ -278,8 +278,6 @@ Client* ntyAddClientHeap(const void * obj, int *result) {
 		memset(pClient, 0, sizeof(Client));		
 		memcpy(pClient, client, sizeof(Client));
 		ntylog("ntyAddClientHeap is not exist %lld\n", client->devId);
-
-		ntyExecuteChangeDeviceOnlineStatusHandle(pClient->devId, 1);
 		
 		//insert bheap
 		ret = ntyBHeapInsert(heap, client->devId, pClient);
@@ -309,6 +307,12 @@ Client* ntyAddClientHeap(const void * obj, int *result) {
 #endif
 		pthread_mutex_t blank_mutex = PTHREAD_MUTEX_INITIALIZER;
 		memcpy(&pClient->bMutex, &blank_mutex, sizeof(pClient->bMutex));
+
+		
+		pClient->online = 1;
+		if (pClient->deviceType == NTY_PROTO_CLIENT_WATCH) {
+			ntyExecuteChangeDeviceOnlineStatusHandle(pClient->devId, 1);
+		}
 		
 		pClient->rLength = 0;
 		pClient->recvBuffer = malloc(PACKET_BUFFER_SIZE);
@@ -382,7 +386,7 @@ Client* ntyAddClientHeap(const void * obj, int *result) {
 #if ENABLE_NATTY_TIME_STAMP //TIME Stamp 	
 		pClient->stamp = ntyTimeStampGenrator();
 #endif
-		if (pClient->online == 0) {
+		if (pClient->online == 0 && pClient->deviceType == NTY_PROTO_CLIENT_WATCH) {
 			ntyExecuteChangeDeviceOnlineStatusHandle(pClient->devId, 1);
 		}
 		pClient->online = 1;
