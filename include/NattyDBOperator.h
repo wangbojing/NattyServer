@@ -350,7 +350,7 @@ int ntyQueryBindOfflineMsgToProposerSelectHandle(C_DEVID fromId, void *container
 
 int ntyExecuteCommonMsgToProposerInsertHandle(C_DEVID sid, C_DEVID gid, const char *detatils, int *msg);
 
-int ntyExecuteChangeDeviceOnlineStatusHandle(C_DEVID did);
+int ntyExecuteChangeDeviceOnlineStatusHandle(C_DEVID did, int status);
 
 
 int ntyConnectionPoolInit(void);

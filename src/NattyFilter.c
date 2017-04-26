@@ -279,6 +279,8 @@ Client* ntyAddClientHeap(const void * obj, int *result) {
 		memcpy(pClient, client, sizeof(Client));
 		ntylog("ntyAddClientHeap is not exist %lld\n", client->devId);
 
+		ntyExecuteChangeDeviceOnlineStatusHandle(pClient->devId, 1);
+		
 		//insert bheap
 		ret = ntyBHeapInsert(heap, client->devId, pClient);
 #if 0
@@ -380,6 +382,9 @@ Client* ntyAddClientHeap(const void * obj, int *result) {
 #if ENABLE_NATTY_TIME_STAMP //TIME Stamp 	
 		pClient->stamp = ntyTimeStampGenrator();
 #endif
+		if (pClient->online == 0) {
+			ntyExecuteChangeDeviceOnlineStatusHandle(pClient->devId, 1);
+		}
 		pClient->online = 1;
 
 		return pClient;
@@ -488,6 +493,10 @@ int ntyOfflineClientHeap(C_DEVID clientId) {
 	}
 
 	pClient->online = 0;
+	if (pClient->deviceType == NTY_PROTO_CLIENT_WATCH) {
+		ntyExecuteChangeDeviceOnlineStatusHandle(pClient->devId, 0);
+	}
+	
 	return NTY_RESULT_SUCCESS;
 }
 
@@ -568,10 +577,10 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 #elif 0
 				ntySendDeviceTimeCheckAck(pClient, 1);
 #else	
-
+#if 0
 				//将此处的添加到队列里面
 				ntyExecuteChangeDeviceOnlineStatusHandle(pClient->devId);
-
+#endif
 				//ntySendLoginAckResult(pClient->devId, "", 0, 200);
 				ntySendDeviceTimeCheckAck(pClient->devId, 1);
 
