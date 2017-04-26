@@ -358,7 +358,11 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 				
 			void *hash = ntyHashTableInstance();
 			Payload *load = ntyHashTableSearch(hash, watcher->fd);
-			ASSERT(load != NULL);
+			if (load == NULL) {
+				ntylog("ntyOnReadEvent --> ntyHashTableSearch : %d\n", watcher->fd);
+				return ;
+			}
+			ntylog("ntyOnReadEvent --> ntyHashTableSearch Payload : %lld, errno:%d\n", load->id, errno);
 
 			int ret = ntyDelRelationMap(load->id);
 			if (ret == NTY_RESULT_NOEXIST) {
