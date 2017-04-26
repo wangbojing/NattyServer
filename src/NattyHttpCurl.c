@@ -725,7 +725,7 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 			free(pMessageTag->Tag);
 		}
 		free(pMessageTag);
-		return NTY_RESULT_ERROR;
+		return size * nmemb;
 	}
 	memset(pAMap, 0, len_AMap);
 	ntyJsonAMap(json, pAMap);
@@ -738,7 +738,7 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 		}
 		free(pMessageTag);
 		free(pAMap);
-		return NTY_RESULT_ERROR;
+		return size * nmemb;
 	}
 	memset(pLocationAck, 0, len_LocationAck);
 	
@@ -803,7 +803,7 @@ exit:
 	free(pMessageTag);
 #endif
 	
-	return 0;
+	return size * nmemb;
 }
 
 int ntyHttpQJKLocation(void *arg) {
@@ -939,7 +939,7 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 		}
 		free(pMessageTag);
 		
-		return NTY_RESULT_ERROR;
+		return size * nmemb;
 	}
 	memset(pAMap, 0, len_AMap);
 	
@@ -1087,7 +1087,8 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 
 exit:
 	free(pAMap);
-	return ret;
+	
+	return size * nmemb;
 }
 
 int ntyHttpQJKWeatherLocation(void *arg) {
@@ -1242,7 +1243,7 @@ exit:
 	free(pMessageTag);
 #endif
 	
-	return flag;
+	return size * nmemb;
 }
 
 /*
