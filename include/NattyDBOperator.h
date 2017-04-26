@@ -233,6 +233,9 @@
 
 #define NTY_DB_DELETE_COMMON_ITEM_MSG		"CALL PROC_DELETE_COMMON_ITEM_MSG(%d)"
 
+#define NTY_DB_SELECT_PHONEBOOK_BINDAGREE	"CALL PROC_SELECT_PHONEBOOK_BINDAGREE(%lld, '%s')"
+
+
 
 typedef struct _CONN_POOL {
 	const void *_;
@@ -341,6 +344,8 @@ int ntyExecuteCommonOfflineMsgDeleteHandle(int msgId, C_DEVID clientId);
 int ntyQueryAdminGroupInsertHandle(C_DEVID devId, U8 *bname, C_DEVID fromId, U8 *userCall, U8 *wimage, U8 *uimage);
 
 int ntyQueryVoiceOfflineMsgSelectHandle(C_DEVID fromId, void *container);
+
+int ntyQueryPhonebookBindAgreeSelectHandle(C_DEVID did, char *phonenum, U8 *pname, U8 *pimage);
 
 int ntyExecuteBindConfirmDeleteHandle(int msgId, C_DEVID *id);
 

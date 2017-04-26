@@ -258,7 +258,7 @@ int ntyBindConfirmReqHandle(void *arg) {
 		free(pBindBroadCast);
 
 		//发送管理员同意消息到手表
-		ntyBindAgreeAction(imei, adminIds, tag->fromId, tag->toId, msgId);
+		ntyBindAgreeAction(imei, adminId, gId, phonenum, msgId);
 	} else if (flag == 0) {  // REJECT
 
 		char phonenum[64] = {0};

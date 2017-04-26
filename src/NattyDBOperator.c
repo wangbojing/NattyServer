@@ -741,6 +741,64 @@ static int ntyQueryVoiceOfflineMsgSelect(void *self, C_DEVID fromId, void *conta
 }
 
 
+//NTY_DB_SELECT_PHONEBOOK_BINDAGREE
+
+static int ntyQueryPhonebookBindAgreeSelect(void *self, C_DEVID did, char *phonenum, char *pname, char *pimage) {
+	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+
+	TRY
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			
+			ret = -1;
+			
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_PHONEBOOK_BINDAGREE, did, phonenum);
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					const char *r_name = ResultSet_getString(r, 1);
+					const char *r_image = ResultSet_getString(r, 2);
+
+					size_t name_len = strlen(r_name);
+					size_t image_len = strlen(r_image);
+					pname = malloc(name_len+1);
+					if (pname != NULL) {
+						memset(pname, 0, name_len+1);
+						memcpy(pname, r_name, name_len);
+					}
+					
+					pimage = malloc(image_len+1);
+					if (pimage != NULL) {
+						memset(pimage, 0, image_len+1);
+						memcpy(pimage, r_image, image_len);
+					}
+					
+					ret = 0;
+				}
+			}
+		}
+	}
+	CATCH(SQLException)
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+
 
 //NTY_DB_SELECT_COMMON_MSG
 static int ntyQueryCommonMsgSelect(void *self, C_DEVID msgId, C_DEVID *senderId, C_DEVID *groupId, char *json) {
@@ -2600,6 +2658,11 @@ int ntyQueryCommonOfflineMsgSelectHandle(C_DEVID deviceId, void *container) {
 int ntyQueryVoiceOfflineMsgSelectHandle(C_DEVID fromId, void *container) {
 	void *pool = ntyConnectionPoolInstance();
 	return ntyQueryVoiceOfflineMsgSelect(pool, fromId, container);
+}
+
+int ntyQueryPhonebookBindAgreeSelectHandle(C_DEVID did, char *phonenum, U8 *pname, U8 *pimage) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyQueryPhonebookBindAgreeSelect(pool, did, phonenum, pname, pimage);
 }
 
 int ntyQueryCommonMsgSelectHandle(C_DEVID msgId, C_DEVID *senderId, C_DEVID *groupId, char *json) {

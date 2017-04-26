@@ -1669,7 +1669,8 @@ void ntyJsonWearStatusAction(ActionParam *pActionParam) {
 }
 
 //发送管理员同意消息到手表
-void ntyBindAgreeAction(char *imei, char *adminIds, C_DEVID fromId, C_DEVID toId, U32 msgId) {
+void ntyBindAgreeAction(char *imei, C_DEVID fromId, C_DEVID toId, char *phonenum, U32 msgId) {
+#if 0
 	char bindAgreeAck[64] = {0};
 	memcpy(bindAgreeAck, NATTY_USER_PROTOCOL_BINDAGREE, strlen(NATTY_USER_PROTOCOL_BINDAGREE));
 	size_t len_bindAgreeAck = sizeof(BindAgreeAck);
@@ -1687,11 +1688,56 @@ void ntyBindAgreeAction(char *imei, char *adminIds, C_DEVID fromId, C_DEVID toId
 	pBindAgreeAck->category = bindAgreeAck;
 	pBindAgreeAck->adminId = adminIds;
 	pBindAgreeAck->msgId = msgIds;
+
 	char *jsonagree = ntyJsonWriteBindAgree(pBindAgreeAck);
 	int ret = ntySendRecodeJsonPacket(fromId, toId, jsonagree, (int)strlen(jsonagree));
 	if (ret < 0) {
 		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
 	}
+#else
+	
+	char *pname = NULL;
+	char *pimage = NULL;
+	int ret = ntyQueryPhonebookBindAgreeSelectHandle(toId, phonenum, pname, pimage);
+	if (ret == -1) {
+		ntylog(" ntyJsonDelContactsAction --> DB Exception\n");
+		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
+	} else if (ret >= 0) {
+		AddContactsAck *pAddContactsAck = malloc(sizeof(AddContactsAck));
+		if (pAddContactsAck == NULL) {
+			ntylog("ntyBindAgreeAction --> malloc AddContactsAck failed\n");
+			return;
+		}
+		memset(pAddContactsAck, 0, sizeof(AddContactsAck));
+
+		char add[16] = {0};
+		char category[16] = {0};
+		strcat(add, "Add");
+		strcat(category, "Contacts");
+		pAddContactsAck->results.IMEI = imei;
+		pAddContactsAck->results.category = category;
+		pAddContactsAck->results.action = add;
+		pAddContactsAck->results.contacts.image = pimage;
+		pAddContactsAck->results.contacts.name = pname;
+		pAddContactsAck->results.contacts.telphone = phonenum;
+
+		char *jsonagree = ntyJsonWriteAddContacts(pAddContactsAck);
+		int ret = ntySendRecodeJsonPacket(fromId, toId, jsonagree, (int)strlen(jsonagree));
+		if (ret < 0) {
+			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
+		}
+		ntyJsonFree(jsonagree);
+		free(pAddContactsAck);
+	}
+
+	if (pname != NULL) {
+		free(pname);
+	}
+	if (pimage != NULL) {
+		free(pimage);
+	}
+	
+#endif
 }
 
 void ntyJsonOfflineMsgReqAction(ActionParam *pActionParam) {
