@@ -324,7 +324,7 @@ int ntySendBuffer(ClientSocket *client, unsigned char *buffer, int length) {
 		if (ret == -1) {
 			ntylog(" tcp send errno : %d\n", errno);
 			//delete client all fromId;
-			ntyClientCleanup(client);
+			//ntyClientCleanup(client);
 		} else {
 			ntylog(" tcp send success : %d\n", ret);
 		}
@@ -344,7 +344,7 @@ int ntyProxyBuffer(ClientSocket *client, unsigned char *buffer, int length) {
 		if (ret == -1) {
 			ntylog(" tcp send errno : %d\n", errno);
 			//release Client Resource
-			ntyClientCleanup(client);
+			//ntyClientCleanup(client);
 		} else {
 			ntylog(" tcp send success : %d\n", ret);
 		}

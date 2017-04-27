@@ -389,7 +389,10 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 
 		void *hash = ntyHashTableInstance();
 		Payload *load = ntyHashTableSearch(hash, watcher->fd);
-		ASSERT(load != NULL);
+		if (load == NULL) {
+			ntylog("ntyOnReadEvent --> Disconnected ntyHashTableSearch : %d\n", watcher->fd);
+			return ;
+		}
 
 		//ntyHashTableDelete(hash, watcher->fd);
 		ntylog("Client --> %lld Disconnected\n", load->id);

@@ -1495,7 +1495,10 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 			
 			memcpy(&u16Length, buf+NTY_PROTO_USERDATA_PACKET_ACK_JSON_LENGTH_IDX, sizeof(U16));
 			json = buf+NTY_PROTO_USERDATA_PACKET_ACK_JSON_CONTENT_IDX;
-			
+			if (proto->onUserDataAck) {
+				proto->onUserDataAck(json, u16Length);
+			}
+			break;
 		}
 		case NTY_PROTO_COMMON_BROADCAST: {
 			C_DEVID fromId = 0;
