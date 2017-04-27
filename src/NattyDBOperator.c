@@ -2168,7 +2168,7 @@ int ntyExecuteTimeTablesUpdate(void *self, C_DEVID aid, C_DEVID did, const char 
 }
 
 //NTY_DB_INSERT_COMMON_MSG
-int ntyExecuteCommonMsgInsert(void *self, C_DEVID sid, C_DEVID gid, const char *detatils, int *msg) {
+int ntyExecuteCommonMsgInsert(void *self, C_DEVID sid, C_DEVID gid, char *details, int *msg) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
@@ -2181,9 +2181,9 @@ int ntyExecuteCommonMsgInsert(void *self, C_DEVID sid, C_DEVID gid, const char *
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			ntylog(" ntyExecuteCommonMsgInsert --> start\n");
+			ntylog(" ntyExecuteCommonMsgInsert --> sid:%lld, gid:%lld, details:%s\n", sid, gid, details);
 			
-			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_COMMON_MSG, sid, gid, detatils);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_COMMON_MSG, sid, gid, details);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
 					*msg = ResultSet_getInt(r, 1);	
@@ -2821,14 +2821,14 @@ int ntyExecuteTimeTablesUpdateHandle(C_DEVID aid, C_DEVID did, const char *morni
 	return ntyExecuteTimeTablesUpdate(pool, aid, did, morning, morning_turn, afternoon, afternoon_turn, daily, result);
 }
 
-int ntyExecuteCommonMsgInsertHandle(C_DEVID sid, C_DEVID gid, const char *detatils, int *msg) {
+int ntyExecuteCommonMsgInsertHandle(C_DEVID sid, C_DEVID gid, char *details, int *msg) {
 	void *pool = ntyConnectionPoolInstance();
-	return ntyExecuteCommonMsgInsert(pool, sid, gid, detatils, msg);
+	return ntyExecuteCommonMsgInsert(pool, sid, gid, details, msg);
 }
 
-int ntyExecuteCommonItemMsgInsertHandle(C_DEVID sid, C_DEVID gid, char *detatils, int *msg) {
+int ntyExecuteCommonItemMsgInsertHandle(C_DEVID sid, C_DEVID gid, char *details, int *msg) {
 	void *pool = ntyConnectionPoolInstance();
-	return ntyExecuteCommonItemMsgInsert(pool, sid, gid, detatils, msg);
+	return ntyExecuteCommonItemMsgInsert(pool, sid, gid, details, msg);
 }
 
 int ntyExecuteCommonItemMsgDeleteHandle(int msgId) {

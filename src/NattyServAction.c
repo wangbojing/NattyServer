@@ -1668,7 +1668,7 @@ void ntyJsonWearStatusAction(ActionParam *pActionParam) {
 	}
 }
 
-//发送管理员同意消息到手表
+//添加联系人消息发送到管理员
 void ntyBindAgreeAction(char *imei, C_DEVID fromId, C_DEVID toId, char *phonenum, U32 msgId) {
 #if 0
 	char bindAgreeAck[64] = {0};
