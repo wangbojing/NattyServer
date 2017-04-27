@@ -85,7 +85,7 @@ typedef struct _RBTreeOpera {
 	void* (*search)(void *_self, C_DEVID key);
 	int (*delete)(void *_self, C_DEVID key);
 	int (*update)(void *_self, C_DEVID key, void *value);
-	void (*traversal)(void *_self, HANDLE_CLIENTID handle_FN);
+	void (*traversal)(void *_self, HASHMAP_TRAVERSAL_CB handle_FN);
 	void (*notify)(void *_self, C_DEVID selfId, HANDLE_NOTIFY notify_FN);
 	void (*mass)(void *_self, HANDLE_MASS handle_FN, U8 *buf, int length);
 	void (*broadcast)(void *_self, HANDLE_BROADCAST handle_FN, void *client, U8 *buf, int length);
@@ -109,13 +109,17 @@ void *ntyFriendsTreeInstance(void);
 int ntyFriendsTreeInsert(void *self, C_DEVID key);
 void* ntyFriendsTreeSearch(void *self, C_DEVID key);
 int ntyFriendsTreeDelete(void *self, C_DEVID key);
-void ntyFriendsTreeTraversal(void *self, HANDLE_CLIENTID handle_FN);
+
+
+void ntyFriendsTreeTraversal(void *self, HASHMAP_TRAVERSAL_CB handle_FN);
 int ntyFriendsTreeIsExist(void *self, C_DEVID key);
 int ntyFriendsTreeIsEmpty(const void *self);
 void ntyFriendsTreeRelease(void *self);
+
 C_DEVID* ntyFriendsTreeGetAllNodeList(const void *self);
 U16 ntyFriendsTreeGetNodeCount(const void *self);
 C_DEVID ntyFriendsTreeGetFristNodeKey(void *self);
+
 void ntyFriendsTreeMass(void *self, HANDLE_MASS handle_FN, U8 *buf, int length);
 void ntyRBTreeHeartBeatDetect(void *self, HANDLE_HEARTBEAT handle_FN, void *mainloop, TIMESTAMP stamp);
 void ntyFriendsTreeBroadcast(void *self, HANDLE_BROADCAST handle_FN, void *client, U8 *buf, int length);
@@ -125,7 +129,9 @@ void* ntyMapInstance(void);
 int ntyMapInsert(void *self, C_DEVID key, void *value);
 void* ntyMapSearch(void *self, C_DEVID key);
 int ntyMapDelete(void *self, C_DEVID key);
+
 int ntyMapUpdate(void *self, C_DEVID key, void *value);
+void ntyMapTraversal(void *self, HASHMAP_TRAVERSAL_CB handle_FN);
 void ntyMapRelease(void *self);
 
 

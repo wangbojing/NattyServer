@@ -479,6 +479,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 	return;
 }
 
+
 void ntyOnTimeoutEvent(struct ev_loop *loop, struct ev_timer *watcher, int revents) {
 	ntylog(" ntyOnTimeoutEvent --> Start\n");
 
@@ -488,6 +489,11 @@ void ntyOnTimeoutEvent(struct ev_loop *loop, struct ev_timer *watcher, int reven
 	}
 
 	//ntyHeartBeatDetectTraversal(loop);	
+	
+	void *map = ntyMapInstance();
+	
+	ntyMapTraversal(map, ntyHashMapTraversal);
+	
 }
 
 

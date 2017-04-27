@@ -443,11 +443,11 @@ int ntyRBTreeOperaUpdate(void *_self, C_DEVID key, void *value) {
 	return 0;
 }
 
-static void ntyInOrderTraversal(RBTree *T, RBTreeNode *node, HANDLE_CLIENTID handle_FN) {
+static void ntyInOrderTraversal(RBTree *T, RBTreeNode *node, HASHMAP_TRAVERSAL_CB hashmap_cb) {
 	if (node != T->nil) {
-		ntyInOrderTraversal(T, node->left, handle_FN);		
-		handle_FN(T, node->key);
-		ntyInOrderTraversal(T, node->right, handle_FN);
+		ntyInOrderTraversal(T, node->left, hashmap_cb);		
+		hashmap_cb(node->value, node->key);
+		ntyInOrderTraversal(T, node->right, hashmap_cb);
 	}
 	return ;
 }
@@ -561,10 +561,10 @@ static void ntyLevelOrderTraversal(RBTree *T, RBTreeNode *node) {
 }
 
 
-void ntyRBTreeOperaTraversal(void *_self, HANDLE_CLIENTID handle_FN) {
+void ntyRBTreeOperaTraversal(void *_self, HASHMAP_TRAVERSAL_CB hashmap_cb) {
 	RBTree *self = _self;
 
-	return ntyInOrderTraversal(self, self->root, handle_FN);
+	return ntyInOrderTraversal(self, self->root, hashmap_cb);
 }
 
 
@@ -670,6 +670,8 @@ int ntyRBTreeInterfaceUpdate(void *self, C_DEVID key, void *value) {
 	return -1;
 }
 
+
+
 void ntyRBTreeRelease(void *self) {
 	return Delete(self);
 }
@@ -705,7 +707,7 @@ int ntyFriendsTreeDelete(void *self, C_DEVID key) {
 	return ntyRBTreeInterfaceDelete(self, key);
 }
 
-void ntyFriendsTreeTraversal(void *self, HANDLE_CLIENTID handle_FN) {
+void ntyFriendsTreeTraversal(void *self, HASHMAP_TRAVERSAL_CB handle_FN) {
 	RBTreeOpera **pRBTreeOpera = self;
 
 	if (self && (*pRBTreeOpera) && (*pRBTreeOpera)->traversal) {
@@ -873,6 +875,16 @@ int ntyMapUpdate(void *self, C_DEVID key, void *value) {
 	}
 	return NTY_RESULT_FAILED;
 }
+
+
+void ntyMapTraversal(void *self, HASHMAP_TRAVERSAL_CB handle_FN) {
+	RBTreeOpera **pRBTreeOpera = self;
+
+	if (self && (*pRBTreeOpera) && (*pRBTreeOpera)->traversal) {
+		return (*pRBTreeOpera)->traversal(self, handle_FN);
+	}
+}
+
 
 
 void ntyMapRelease(void *self) {

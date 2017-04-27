@@ -156,6 +156,48 @@ int ntyCheckOnlineAlarmNotify(NITIMER_ID id, void *arg, int len) {
 }
 
 
+static int ntyHeartBeatDetectItem(void *client, C_DEVID clientId) {
+	TIMESTAMP stamp = 0;
+	
+	BPTreeHeap *heap = ntyBHeapInstance();
+	NRecord *record = ntyBHeapSelect(heap, clientId);
+	
+	
+	if (record == NULL) {
+		ntylog(" ntyHashMapTraversal --> %lld is not exist\n", clientId);
+		return NTY_RESULT_NOEXIST;
+	}
+
+	Client* pClient = (Client*)record->value;
+	if (pClient == NULL) {
+		ntylog(" ntyHashMapTraversal --> pClient == NULL\n");
+		return NTY_RESULT_NOEXIST;
+	}
+
+	if (pClient->stamp == 0) return NTY_RESULT_FAILED;
+	
+#if ENABLE_NATTY_TIME_STAMP //TIME Stamp 	
+	stamp = ntyTimeStampGenrator();
+#endif
+
+	TIMESTAMP dur_time = stamp - pClient->stamp;
+
+	if (dur_time > NATTY_HEARTBEAT_THRESHOLD) { //timeout
+		
+		ntyClientCleanup(client);
+	}
+
+	return 0;
+}
+
+
+int ntyHashMapTraversal(void *client, C_DEVID clientId) {
+	return ntyHeartBeatDetectItem(client, clientId);
+}
+
+
+
+
 #endif
 
 

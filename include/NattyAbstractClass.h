@@ -114,6 +114,8 @@ typedef int (*HANDLE_NOTIFY)(C_DEVID from, C_DEVID to);
 typedef int (*HANDLE_MASS)(C_DEVID to, U8 *data, int length);
 typedef int (*HANDLE_BROADCAST)(void* client, C_DEVID to, U8 *data, int length);
 typedef int (*HANDLE_HEARTBEAT)(void* node, void *mainloop, TIMESTAMP stamp);
+typedef int (*HASHMAP_TRAVERSAL_CB)(void* client, C_DEVID id);
+
 
 /*
  * AbstractClass

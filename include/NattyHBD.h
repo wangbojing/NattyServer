@@ -54,16 +54,19 @@
 #include "NattyResult.h"
 
 
-#define NATTY_HEARTBEAT_DURATION		(5*60)
+#define NATTY_HEARTBEAT_DURATION		60
 #define NATTY_HEARTBEAT_RATIO			6/5
 #define NATTY_HEARTBEAT_THRESHOLD		(NATTY_HEARTBEAT_DURATION*NATTY_HEARTBEAT_RATIO)
 
-#define NATTY_DURATION_EVENT			(2*60)
+#define NATTY_DURATION_EVENT			10
 
 #if 0
 void ntyHeartBeatDetectTraversal(void *mainloop);
 #else
 int ntyCheckOnlineAlarmNotify(NITIMER_ID id, void *arg, int len);
+
+int ntyHashMapTraversal(void *client, C_DEVID clientId);
+
 
 
 #endif
