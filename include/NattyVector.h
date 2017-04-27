@@ -95,6 +95,8 @@ void* ntyVectorInsert(void *self, void *data, int len);
 int ntyVectorDelete(void *self, void *data);
 void ntyVectorIterator(void *self, NVECTOR_CB *cb, void *arg);
 
+int ntyVectorSetMaxNum(void *self, int max);
+
 
 void *ntyVectorGetNodeList(void *self, int *num);
 

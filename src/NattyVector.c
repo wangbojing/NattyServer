@@ -268,6 +268,12 @@ void *ntyVectorGetNodeList(void *self, int *num) {
 #endif
 }
 
+int ntyVectorSetMaxNum(void *self, int max) {
+	NVector *vector = self;
+	if (vector == NULL) return NTY_RESULT_ERROR;
+
+	vector->max_num = max;
+}
 
 
 static const NVectorHandle ntyVectorHandle  = {
