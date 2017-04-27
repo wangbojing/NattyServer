@@ -2210,7 +2210,7 @@ int ntyExecuteCommonMsgInsert(void *self, C_DEVID sid, C_DEVID gid, const char *
 }
 
 //NTY_DB_INSERT_COMMON_ITEM_MSG
-int ntyExecuteCommonItemMsgInsert(void *self, C_DEVID sid, C_DEVID gid, const char *detatils, int *msg) {
+int ntyExecuteCommonItemMsgInsert(void *self, C_DEVID sid, C_DEVID gid, char *details, int *msg) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
@@ -2223,11 +2223,13 @@ int ntyExecuteCommonItemMsgInsert(void *self, C_DEVID sid, C_DEVID gid, const ch
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			ntylog(" ntyExecuteCommonItemMsgInsert --> start\n");
+			ntylog(" ntyExecuteCommonItemMsgInsert --> sid:%lld, gid:%lld, details:%s\n", sid, gid, details);
 			
-			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_COMMON_ITEM_MSG, sid, gid, detatils);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_COMMON_ITEM_MSG, sid, gid, details);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
+					ntylog("ntyExecuteCommonItemMsgInsert --> getInt\n");
+					
 					*msg = ResultSet_getInt(r, 1);	
 					ret = 0;
 
@@ -2824,7 +2826,7 @@ int ntyExecuteCommonMsgInsertHandle(C_DEVID sid, C_DEVID gid, const char *detati
 	return ntyExecuteCommonMsgInsert(pool, sid, gid, detatils, msg);
 }
 
-int ntyExecuteCommonItemMsgInsertHandle(C_DEVID sid, C_DEVID gid, const char *detatils, int *msg) {
+int ntyExecuteCommonItemMsgInsertHandle(C_DEVID sid, C_DEVID gid, char *detatils, int *msg) {
 	void *pool = ntyConnectionPoolInstance();
 	return ntyExecuteCommonItemMsgInsert(pool, sid, gid, detatils, msg);
 }

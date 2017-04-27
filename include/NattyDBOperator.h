@@ -311,7 +311,7 @@ int ntyExecuteTimeTablesUpdateHandle(C_DEVID aid, C_DEVID did, const char *morni
 
 int ntyExecuteCommonMsgInsertHandle(C_DEVID sid, C_DEVID gid, const char *detatils, int *msg);
 
-int ntyExecuteCommonItemMsgInsertHandle(C_DEVID sid, C_DEVID gid, const char *detatils, int *msg);
+int ntyExecuteCommonItemMsgInsertHandle(C_DEVID sid, C_DEVID gid, char *details, int *msg);
 
 int ntyExecuteCommonItemMsgDeleteHandle(int msgId);
 
