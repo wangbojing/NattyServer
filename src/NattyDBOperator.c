@@ -53,8 +53,8 @@ void* ntyConnectionPoolInitialize(ConnectionPool *pool) {
 	pool->url = URL_new(MYSQL_DB_CONN_STRING);
 	pool->nPool = ConnectionPool_new(pool->url);
 
-	ConnectionPool_setInitialConnections(pool->nPool, 4);
-    ConnectionPool_setMaxConnections(pool->nPool, 200);
+	ConnectionPool_setInitialConnections(pool->nPool, 20);
+    ConnectionPool_setMaxConnections(pool->nPool, 100);
     ConnectionPool_setConnectionTimeout(pool->nPool, 2);
     ConnectionPool_setReaper(pool->nPool, 1);
 	
