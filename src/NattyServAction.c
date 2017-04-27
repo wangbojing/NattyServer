@@ -1317,6 +1317,7 @@ void ntyJsonTimeTablesAction(ActionParam *pActionParam) {
 		ntylog("ntyJsonTimeTablesAction --> malloc failed TimeTablesReq\n");
 		return ;
 	}
+	memset(pTimeTablesReq, 0, sizeof(TimeTablesReq));
 	
 	ntyJsonTimeTables(pActionParam->json, pTimeTablesReq);
 
@@ -1339,6 +1340,7 @@ void ntyJsonTimeTablesAction(ActionParam *pActionParam) {
 		U8 morning[200] = {0}, afternoon[200] = {0};
 		sprintf(morning, "%s|%s", pTimeTablesReq->pTimeTables[i].morning.startTime, pTimeTablesReq->pTimeTables[i].morning.endTime);
 		sprintf(afternoon, "%s|%s", pTimeTablesReq->pTimeTables[i].afternoon.startTime, pTimeTablesReq->pTimeTables[i].afternoon.endTime);
+
 		ret = ntyExecuteTimeTablesUpdateHandle(fromId, toId, 
 			morning, morning_status,
 			afternoon, afternoon_status,
