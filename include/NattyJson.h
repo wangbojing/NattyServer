@@ -131,6 +131,13 @@ void ntyJsonUpdateContacts(JSON_Value *json, UpdateContactsReq *pUpdateContactsR
 
 void ntyJsonDelContacts(JSON_Value *json, DelContactsReq *pDelContactsReq);
 
+void ntyJsonLocationReport(JSON_Value *json,  LocationReport *pLocationReport);
+
+void ntyJsonStepsReport(JSON_Value *json,  StepsReport *pStepsReport);
+
+void ntyJsonHeartReport(JSON_Value *json,  HeartReport *pHeartReport);
+
+
 char * ntyJsonBind(JSON_Value *json, BindReq *pBindReq);
 
 char * ntyJsonWriteBindConfirmReq(BindConfirmReq *pBindConfirmReq);

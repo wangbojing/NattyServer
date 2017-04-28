@@ -86,6 +86,10 @@
 #define NATTY_USER_PROTOCOL_BINDAGREE		"BindAgree"
 
 
+#define NATTY_USER_PROTOCOL_GPS				"GPS"
+#define NATTY_USER_PROTOCOL_STEPSREPORT		"StepsReport"
+#define NATTY_USER_PROTOCOL_HEARTREPORT		"HeartReport"
+
 
 #define NATTY_USER_PROTOCOL_WIFI			"WIFI"
 #define NATTY_USER_PROTOCOL_SSID			"SSID"
@@ -112,7 +116,9 @@
 #define NATTY_USER_PROTOCOL_EFENCEREPORT	"EfenceReport"
 #define NATTY_USER_PROTOCOL_WEARSTATUS		"WearStatus"
 
-
+#define NATTY_USER_PROTOCOL_LOCATIONREPORT	"LocationReport"
+#define NATTY_USER_PROTOCOL_STEPSREPORT		"StepsReport"
+#define NATTY_USER_PROTOCOL_HEARTREPORT		"HeartReport"
 
 #define NATTY_USER_PROTOCOL_EFENCE			"Efence"
 #define NATTY_USER_PROTOCOL_NUM 			"Num"
@@ -780,6 +786,49 @@ typedef struct _SOSReport {
 	SOSReportResults results;
 } SOSReport;
 
+
+
+typedef struct _LocationReportItem {
+	const char *type;
+	const char *radius;
+	const char *location;
+} LocationReportItem;
+
+typedef struct _LocationReportResults {
+	const char *IMEI;
+	const char *category;
+	LocationReportItem locationReport;
+} LocationReportResults;
+
+typedef struct _LocationReport {
+	LocationReportResults results;
+} LocationReport;
+
+
+
+typedef struct _StepsReportResults {
+	const char *IMEI;
+	const char *category;
+	const char *stepsReport;
+	const char *time;
+} StepsReportResults;
+
+typedef struct _StepsReport {
+	StepsReportResults results;
+} StepsReport;
+
+
+
+typedef struct _HeartReportResults {
+	const char *IMEI;
+	const char *category;
+	const char *heartReport;
+	const char *time;
+} HeartReportResults;
+
+typedef struct _HeartReport {
+	HeartReportResults results;
+} HeartReport;
 
 
 

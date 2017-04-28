@@ -184,6 +184,14 @@
 //
 #define NTY_DB_INSERT_COMMON_MSG			"CALL PROC_INSERT_COMMON_MSG(%lld, %lld, '%s')"
 
+
+#define NTY_DB_INSERT_LOCATIONREPORT		"CALL PROC_INSERT_LOCATIONREPORT(%lld, %d, '%s', '%s', '%s')"
+
+#define NTY_DB_INSERT_STEPSREPORT			"CALL PROC_INSERT_STEPSREPORT(%lld, %d)"
+
+#define NTY_DB_INSERT_HEARTREPORT			"CALL PROC_INSERT_HEARTREPORT(%lld, %d)"
+
+
 #define NTY_DB_INSERT_COMMON_MSG_REJECT		"CALL PROC_INSERT_COMMON_MSG_REJECT(%lld, %lld, '%s')"
 
 #define NTY_DB_UPDATE_DEVICE_STATUS			"CALL PROC_UPDATE_DEVICE_STATUS(%lld, %d)"
@@ -272,6 +280,13 @@ int ntyExecuteDeviceLogoutUpdateHandle(C_DEVID did);
 int ntyExecuteAppLoginUpdateHandle(C_DEVID aid);
 int ntyExecuteAppLogoutUpdateHandle(C_DEVID aid);
 
+
+
+int ntyExecuteLocationReportInsertHandle(C_DEVID did, U8 type, const char *info, const char *lnglat, const char *detatils, int *msg);
+
+int ntyExecuteStepsReportInsertHandle(C_DEVID did, int step, int *msg);
+
+int ntyExecuteHeartReportInsertHandle(C_DEVID did, int heart, int *msg);
 
 int ntyExecuteEfenceInsertHandle(C_DEVID aid, C_DEVID did, int index, int num, U8 *points, U8 *runtime, int *id);
 

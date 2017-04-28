@@ -2209,6 +2209,139 @@ int ntyExecuteCommonMsgInsert(void *self, C_DEVID sid, C_DEVID gid, char *detail
 	return ret;
 }
 
+
+//NTY_DB_INSERT_LOCATIONREPORT
+int ntyExecuteLocationReportInsert(void *self, C_DEVID did, U8 type, const char *info, const char *lnglat, const char *detatils, int *msg) {
+	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = -1;
+	U8 u8PhNum[20] = {0};
+
+	TRY
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			ntylog(" ntyExecuteLocationReportInsert --> start\n");
+
+			U8 sql[256] = {0};		
+			sprintf(sql, NTY_DB_INSERT_LOCATIONREPORT, did, type, info, lnglat, detatils);		
+			ntylog("%s", sql);
+			
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_LOCATIONREPORT, did, type, info, lnglat, detatils);
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					*msg = ResultSet_getInt(r, 1);	
+					ret = 0;
+
+					ntylog("ntyExecuteHeartReportInsert msgId : %d\n", *msg);
+				}
+			}
+		}
+	}
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+
+//NTY_DB_INSERT_STEPSREPORT
+int ntyExecuteStepsReportInsert(void *self, C_DEVID did, int step, int *msg) {
+	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = -1;
+	U8 u8PhNum[20] = {0};
+
+	TRY
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			ntylog(" ntyExecuteStepsReportInsert --> start\n");
+			
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_STEPSREPORT, did, step);
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					*msg = ResultSet_getInt(r, 1);	
+					ret = 0;
+
+					ntylog("ntyExecuteStepsReportInsert msgId : %d\n", *msg);
+				}
+			}
+		}
+	}
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+
+//NTY_DB_INSERT_HEARTREPORT
+int ntyExecuteHeartReportInsert(void *self, C_DEVID did, int heart, int *msg) {
+	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = -1;
+	U8 u8PhNum[20] = {0};
+
+	TRY
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			ntylog(" ntyExecuteHeartReportInsert --> start\n");
+			
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_HEARTREPORT, did, heart);
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					*msg = ResultSet_getInt(r, 1);	
+					ret = 0;
+
+					ntylog("ntyExecuteHeartReportInsert msgId : %d\n", *msg);
+				}
+			}
+		}
+	}
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
 //NTY_DB_INSERT_COMMON_ITEM_MSG
 int ntyExecuteCommonItemMsgInsert(void *self, C_DEVID sid, C_DEVID gid, char *details, int *msg) {
 	ConnectionPool *pool = self;
@@ -2825,6 +2958,24 @@ int ntyExecuteCommonMsgInsertHandle(C_DEVID sid, C_DEVID gid, char *details, int
 	void *pool = ntyConnectionPoolInstance();
 	return ntyExecuteCommonMsgInsert(pool, sid, gid, details, msg);
 }
+
+
+int ntyExecuteLocationReportInsertHandle(C_DEVID did, U8 type, const char *info, const char *lnglat, const char *detatils, int *msg) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteLocationReportInsert(pool, did, type, info, lnglat, detatils, msg);
+}
+
+int ntyExecuteStepsReportInsertHandle(C_DEVID did, int step, int *msg) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteStepsReportInsert(pool, did, step, msg);
+}
+
+int ntyExecuteHeartReportInsertHandle(C_DEVID did, int heart, int *msg) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteHeartReportInsert(pool, did, heart, msg);
+}
+
+
 
 int ntyExecuteCommonItemMsgInsertHandle(C_DEVID sid, C_DEVID gid, char *details, int *msg) {
 	void *pool = ntyConnectionPoolInstance();

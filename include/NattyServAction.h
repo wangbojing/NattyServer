@@ -107,6 +107,12 @@ void ntyJsonOfflineMsgReqAction(ActionParam *pActionParam);
 
 void ntyJsonSOSReportAction(ActionParam *pActionParam);
 
+void ntyJsonLocationReportAction(ActionParam *pActionParam);
+
+void ntyJsonStepsReportAction(ActionParam *pActionParam);
+
+void ntyJsonHeartReportAction(ActionParam *pActionParam);
+
 void ntyJsonEfenceReportAction(ActionParam *pActionParam);
 
 void ntyJsonWearStatusAction(ActionParam *pActionParam);

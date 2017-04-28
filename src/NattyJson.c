@@ -646,6 +646,51 @@ void ntyJsonDelContacts(JSON_Value *json, DelContactsReq *pDelContactsReq) {
 	pDelContactsReq->id = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ID);
 }
 
+
+void ntyJsonLocationReport(JSON_Value *json,  LocationReport *pLocationReport) {
+	if (json == NULL || pLocationReport == NULL) {
+		ntylog("param is null.\n");
+		return;
+	}
+
+	JSON_Object *root_object = json_value_get_object(json);
+	JSON_Object *results_object = json_object_get_object(root_object, NATTY_USER_PROTOCOL_RESULTS);
+	pLocationReport->results.IMEI = json_object_get_string(results_object, NATTY_USER_PROTOCOL_IMEI);
+	pLocationReport->results.category = json_object_get_string(results_object, NATTY_USER_PROTOCOL_CATEGORY);
+	JSON_Object *locationreport_object = json_object_get_object(results_object, NATTY_USER_PROTOCOL_LOCATIONREPORT);
+	pLocationReport->results.locationReport.location = json_object_get_string(locationreport_object, NATTY_USER_PROTOCOL_LOCATION);
+	pLocationReport->results.locationReport.radius = json_object_get_string(locationreport_object, NATTY_USER_PROTOCOL_RADIUS);
+	pLocationReport->results.locationReport.type = json_object_get_string(locationreport_object, NATTY_USER_PROTOCOL_TYPE);
+}
+
+void ntyJsonStepsReport(JSON_Value *json,  StepsReport *pStepsReport) {
+	if (json == NULL || pStepsReport == NULL) {
+		ntylog("param is null.\n");
+		return;
+	}
+	
+	JSON_Object *root_object = json_value_get_object(json);
+	JSON_Object *results_object = json_object_get_object(root_object, NATTY_USER_PROTOCOL_RESULTS);
+	pStepsReport->results.IMEI  = json_object_get_string(results_object, NATTY_USER_PROTOCOL_IMEI);
+	pStepsReport->results.category = json_object_get_string(results_object, NATTY_USER_PROTOCOL_CATEGORY);
+	pStepsReport->results.stepsReport = json_object_get_string(results_object, NATTY_USER_PROTOCOL_STEPSREPORT);
+	pStepsReport->results.time = json_object_get_string(results_object, NATTY_USER_PROTOCOL_TIME);
+}
+
+void ntyJsonHeartReport(JSON_Value *json,  HeartReport *pHeartReport) {
+	if (json == NULL || pHeartReport == NULL) {
+		ntylog("param is null.\n");
+		return;
+	}
+	
+	JSON_Object *root_object = json_value_get_object(json);
+	JSON_Object *results_object = json_object_get_object(root_object, NATTY_USER_PROTOCOL_RESULTS);
+	pHeartReport->results.IMEI  = json_object_get_string(results_object, NATTY_USER_PROTOCOL_IMEI);
+	pHeartReport->results.category = json_object_get_string(results_object, NATTY_USER_PROTOCOL_CATEGORY);
+	pHeartReport->results.heartReport = json_object_get_string(results_object, NATTY_USER_PROTOCOL_HEARTREPORT);
+}
+
+
 char * ntyJsonBind(JSON_Value *json, BindReq *pBindReq) {
 	if (json == NULL || pBindReq == NULL) {
 		ntylog("param is null.\n");

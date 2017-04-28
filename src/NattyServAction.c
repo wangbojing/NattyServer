@@ -398,7 +398,7 @@ int CheckNumber(char *num, int length) {
 #endif
 
 //将离线数据保存到数据库
-int ntySaveCommonMsgData(C_DEVID sid, C_DEVID gid, const char *jsonstring, int *msgId) {
+int ntySaveCommonMsgData(C_DEVID sid, C_DEVID gid, char *jsonstring, int *msgId) {
 	//C_DEVID sid = pActionParam->fromId;
 	//C_DEVID gid = pActionParam->toId;
 	//const char *jsonstring = pActionParam->jsonstring;
@@ -504,6 +504,12 @@ void ntyCommonReqAction(ActionParam *pActionParam) {
 	if (watch_category != NULL) {
 		if (strcmp(watch_category, NATTY_USER_PROTOCOL_SOSREPORT) == 0) {
 			ntyJsonSOSReportAction(pActionParam);
+		} else if (strcmp(watch_category, NATTY_USER_PROTOCOL_LOCATIONREPORT) == 0) {
+			ntyJsonLocationReportAction(pActionParam);
+		} else if (strcmp(watch_category, NATTY_USER_PROTOCOL_STEPSREPORT) == 0) {
+			ntyJsonStepsReportAction(pActionParam);
+		} else if (strcmp(watch_category, NATTY_USER_PROTOCOL_HEARTREPORT) == 0) {
+			ntyJsonHeartReportAction(pActionParam);
 		} else if (strcmp(watch_category, NATTY_USER_PROTOCOL_EFENCEREPORT) == 0) {
 			ntyJsonEfenceReportAction(pActionParam);
 		} else if (strcmp(watch_category, NATTY_USER_PROTOCOL_WEARSTATUS) == 0) {
@@ -1621,7 +1627,6 @@ void ntyJsonSOSReportAction(ActionParam *pActionParam) {
 	int ret = ntyExecuteCommonMsgInsertHandle(fromId, toId, pActionParam->jsonstring, &msg);
 	if (ret == -1) {
 		ntylog(" ntyJsonSOSReportAction --> DB Exception\n");
-		ret = 4;
 	} else if (ret >= 0) {
 		ret = ntyJsonBroadCastRecvResult(fromId, toId, pActionParam->jsonstring, msg);
 		if (ret >= 0) {
@@ -1631,6 +1636,111 @@ void ntyJsonSOSReportAction(ActionParam *pActionParam) {
 		}
 	}
 }
+
+void ntyJsonLocationReportAction(ActionParam *pActionParam) {
+	C_DEVID fromId = pActionParam->fromId;
+	C_DEVID toId = pActionParam->toId;
+
+	LocationReport *pLocationReport = malloc(sizeof(LocationReport));
+	if (pLocationReport == NULL) {
+		ntylog("ntyJsonLocationReportAction --> malloc failed LocationReport\n");
+		return;
+	}
+	memset(pLocationReport, 0, sizeof(LocationReport));
+	ntyJsonLocationReport(pActionParam->json, pLocationReport);
+
+	U8 type = 1;
+	if (strcmp(pLocationReport->results.locationReport.type, NATTY_USER_PROTOCOL_WIFI) == 0) {
+		type = 1;
+	} else if (strcmp(pLocationReport->results.locationReport.type, NATTY_USER_PROTOCOL_GPS) == 0) {
+		type = 2;
+	} else if (strcmp(pLocationReport->results.locationReport.type, NATTY_USER_PROTOCOL_LAB) == 0) {
+		type = 3;
+	}
+
+	char info[8] = {0};
+	strcat(info, "OK");
+	const char *lnglat = pLocationReport->results.locationReport.location;
+	const char *detatils = pLocationReport->results.locationReport.radius;
+	
+	U32 msg = 0;
+	int ret = ntyExecuteLocationReportInsertHandle(toId, (U8)type, info, lnglat, detatils, &msg);
+	if (ret == -1) {
+		ntylog(" ntyJsonLocationReportAction --> DB Exception\n");
+	} else if (ret >= 0) {
+		ret = ntyJsonBroadCastRecvResult(fromId, toId, pActionParam->jsonstring, msg);
+		if (ret >= 0) {
+			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
+		} else {
+			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
+		}
+	}
+}
+
+
+void ntyJsonStepsReportAction(ActionParam *pActionParam) {
+	C_DEVID fromId = pActionParam->fromId;
+	C_DEVID toId = pActionParam->toId;
+
+	StepsReport *pStepsReport = malloc(sizeof(StepsReport));
+	if (pStepsReport == NULL) {
+		ntylog("ntyJsonStepsReportAction --> malloc failed StepsReport\n");
+		return;
+	}
+	memset(pStepsReport, 0, sizeof(StepsReport));
+	ntyJsonStepsReport(pActionParam->json, pStepsReport);
+	int stepReport = 0;
+	int stepReport_check = checkStringIsAllNumber(pStepsReport->results.stepsReport);
+	if (stepReport_check == 1) {
+		stepReport = atoi(pStepsReport->results.stepsReport);
+	}
+
+	U32 msg = 0;
+	int ret = ntyExecuteStepsReportInsertHandle(toId, stepReport, &msg);
+	if (ret == -1) {
+		ntylog(" ntyJsonStepsReportAction --> DB Exception\n");
+	} else if (ret >= 0) {
+		ret = ntyJsonBroadCastRecvResult(fromId, toId, pActionParam->jsonstring, msg);
+		if (ret >= 0) {
+			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
+		} else {
+			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
+		}
+	}
+}
+
+void ntyJsonHeartReportAction(ActionParam *pActionParam) {
+	C_DEVID fromId = pActionParam->fromId;
+	C_DEVID toId = pActionParam->toId;
+
+	HeartReport *pHeartReport = malloc(sizeof(HeartReport));
+	if (pHeartReport == NULL) {
+		ntylog("ntyJsonHeartReportAction --> malloc failed HeartReport\n");
+		return;
+	}
+	memset(pHeartReport, 0, sizeof(HeartReport));
+	ntyJsonHeartReport(pActionParam->json, pHeartReport);
+
+	int heartReport = 0;
+	int heartReport_check = checkStringIsAllNumber(pHeartReport->results.heartReport);
+	if (heartReport_check == 1) {
+		heartReport = atoi(pHeartReport->results.heartReport);
+	}
+
+	U32 msg = 0;
+	int ret = ntyExecuteHeartReportInsertHandle(toId, heartReport, &msg);
+	if (ret == -1) {
+		ntylog(" ntyJsonHeartReportAction --> DB Exception\n");
+	} else if (ret >= 0) {
+		ret = ntyJsonBroadCastRecvResult(fromId, toId, pActionParam->jsonstring, msg);
+		if (ret >= 0) {
+			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
+		} else {
+			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
+		}
+	}
+}
+
 
 void ntyJsonEfenceReportAction(ActionParam *pActionParam) {
 	C_DEVID fromId = pActionParam->fromId;
