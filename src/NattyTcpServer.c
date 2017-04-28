@@ -391,6 +391,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		Payload *load = ntyHashTableSearch(hash, watcher->fd);
 		if (load == NULL) {
 			ntylog("ntyOnReadEvent --> Disconnected ntyHashTableSearch : %d\n", watcher->fd);
+			ntyReleaseSocket(loop, watcher);
 			return ;
 		}
 
