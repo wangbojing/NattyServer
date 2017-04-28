@@ -182,7 +182,7 @@ static int ntyHeartBeatDetectItem(void *client, C_DEVID clientId) {
 
 	TIMESTAMP dur_time = stamp - pClient->stamp;
 
-	if (dur_time > NATTY_HEARTBEAT_THRESHOLD) { //timeout
+	if (dur_time > NATTY_HEARTBEAT_THRESHOLD && pClient->deviceType == NTY_PROTO_CLIENT_WATCH) { //timeout
 		ntylog("ntyHeartBeatDetectItem timeout --> %lld, prepare to cleanup client \n", clientId);
 		ntyClientCleanup(client);
 	}
