@@ -459,6 +459,8 @@ int ntyClientCleanup(ClientSocket *client) { //
 
 	C_DEVID Id = load->id;
 	ntylog(" ntyClientCleanup --> %lld\n", Id);
+	if (load->id == NATTY_NULL_DEVID) return NTY_RESULT_NOEXIST;
+	
 	//delete hash key 
 	int ret = ntyHashTableDelete(hash, sockfd);
 	if (ret == NTY_RESULT_SUCCESS) {
