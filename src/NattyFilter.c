@@ -882,6 +882,7 @@ void ntyVoiceReqPacketHandleRequest(const void *_self, unsigned char *buffer, in
 #if 0
 		ntyVoiceReqAction(fromId, msgId);
 #else
+		
 		VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
 		if (tag == NULL) return ;
 
@@ -1890,7 +1891,7 @@ void ntyUserDataPacketReqHandleRequest(const void *_self, unsigned char *buffer,
 		}
 		memset(json, 0, jsonLength+1);
 		memcpy(json, buffer+NTY_PROTO_USERDATA_PACKET_REQ_JSON_CONTENT_IDX, jsonLength);
-		
+	
 		ntylog("ntyUserDataPacketReqHandleRequest --> fromId:%lld, json:%s\n", fromId, json);
 		
 
@@ -1928,9 +1929,18 @@ static void ntySetSuccessor(void *_filter, void *_succ) {
 static void ntyHandleRequest(void *_filter, unsigned char *buffer, U32 length, const void *obj) {
 	ProtocolFilter **filter = _filter;
 	if (_filter && (*filter) && (*filter)->handleRequest) {
+#if 1 //update client timestamp
+
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if (msg == NULL) return ;
+		
+		const Client *client = msg->client;
+		ntyOnlineClientHeap(client->devId);
+#endif
 		(*filter)->handleRequest(_filter, buffer, length, obj);
 	}
 }
+
 
 const void *pNtyLoginFilter = &ntyLoginFilter;
 const void *pNtyHeartBeatFilter = &ntyHeartBeatFilter;
