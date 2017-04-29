@@ -387,6 +387,19 @@ void ntyJsonICCID(JSON_Value *json, ICCIDReq *pICCIDReq) {
 	//ntydbg("IMEI:%s\n", pICCIDReq->IMEI);
 }
 
+void ntyJsonICCIDSet(JSON_Value *json, ICCIDSet *pICCIDSet) {
+	if (json == NULL || pICCIDSet == NULL) {
+		ntylog("param is null.\n");
+		return;
+	}
+	
+	JSON_Object *root_object = json_value_get_object(json);
+	pICCIDSet->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
+	pICCIDSet->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
+	pICCIDSet->ICCID = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ICCID);
+	pICCIDSet->phone_num = json_object_get_string(root_object, NATTY_USER_PROTOCOL_PHONENUM);
+}
+
 void ntyJsonCommon(JSON_Value *json, CommonReq *pCommonReq) {
 	if (json == NULL || pCommonReq == NULL) {
 		ntylog("param is null.\n");

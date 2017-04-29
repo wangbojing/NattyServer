@@ -1611,6 +1611,53 @@ int ntyQueryICCIDSelect(void *self, C_DEVID did, const char *iccid, char *phonen
 }
 
 
+//NTY_DB_SET_ICCID
+int ntyExecuteICCIDSetInsert(void *self, C_DEVID did, const char *iccid, char *phonenum) {
+	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = -1;
+	U8 u8PhNum[20] = {0};
+
+	TRY 
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			U8 sql[512] = {0};
+			sprintf(sql, NTY_DB_SET_ICCID, did, iccid, phonenum);			
+			ntylog("%s\n", sql);	
+
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SET_ICCID, did, iccid, phonenum);
+			if (r != NULL) {
+				if (ResultSet_next(r)) {
+					int tempId = ResultSet_getInt(r, 1);
+					if (tempId == 1) {
+						ret = 0;
+					} else if (tempId == -1) {
+						ret = -1;
+					}
+				}
+			}
+		}
+	} 
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+
 //NTY_DB_UPDATE_RUNTIME
 int ntyExecuteRuntimeUpdate(void *self, C_DEVID aid, C_DEVID did, int auto_conn, U8 loss_report, U8 light_panel, const char *bell, int target_step) {
 	ConnectionPool *pool = self;
@@ -2877,6 +2924,11 @@ int ntyExecuteEfenceDeleteHandle(C_DEVID aid, C_DEVID did, int index) {
 int ntyExecuteICCIDSelectHandle(C_DEVID did, const char *iccid, char *phonenum) {
 	void *pool = ntyConnectionPoolInstance();
 	return ntyQueryICCIDSelect(pool, did, iccid, phonenum);
+}
+
+int ntyExecuteICCIDSetInsertHandle(C_DEVID did, const char *iccid, char *phonenum) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteICCIDSetInsert(pool, did, iccid, phonenum);
 }
 
 int ntyExecuteRuntimeUpdateHandle(C_DEVID aid, C_DEVID did, int auto_conn, U8 loss_report, U8 light_panel, const char *bell, int target_step) {

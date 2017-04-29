@@ -1874,7 +1874,6 @@ static const ProtocolFilter ntyRoutePacketFilter = {
 };
 
 
-
 void ntyUserDataPacketReqHandleRequest(const void *_self, unsigned char *buffer, int length,const void* obj) {
 	const UdpClient *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_DATAPACKET_REQ) {
@@ -1886,19 +1885,42 @@ void ntyUserDataPacketReqHandleRequest(const void *_self, unsigned char *buffer,
 
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_USERDATA_PACKET_REQ_DEVICEID_IDX);
 		U16 jsonLength = *(U16*)(buffer+NTY_PROTO_USERDATA_PACKET_REQ_JSON_LENGTH_IDX);
-		U8 *json = (U8*)malloc(jsonLength+1);
-		if (json == NULL) { 
+		U8 *jsonstring = (U8*)malloc(jsonLength+1);
+		if (jsonstring == NULL) { 
 			ntylog("ntyUserDataPacketReqHandleRequest --> malloc failed json buffer\n");
-			return ;
+			return ;
 		}
-		memset(json, 0, jsonLength+1);
-		memcpy(json, buffer+NTY_PROTO_USERDATA_PACKET_REQ_JSON_CONTENT_IDX, jsonLength);
+		memset(jsonstring, 0, jsonLength+1);
+		memcpy(jsonstring, buffer+NTY_PROTO_USERDATA_PACKET_REQ_JSON_CONTENT_IDX, jsonLength);
 	
-		ntylog("ntyUserDataPacketReqHandleRequest --> fromId:%lld, json:%s\n", fromId, json);
-		
+		ntylog("ntyUserDataPacketReqHandleRequest --> fromId:%lld, json:%s   %d\n", fromId, jsonstring, jsonLength);
 
-		free(json);
-		
+		JSON_Value *json = ntyMallocJsonValue(jsonstring);
+		if (json == NULL) { //JSON Error and send Code to FromId Device
+			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
+		} else {
+			size_t len_ActionParam = sizeof(ActionParam);
+			ActionParam *pActionParam = malloc(len_ActionParam);
+			if (pActionParam == NULL) {
+				ntylog(" %s --> malloc failed ActionParam", __func__);
+				free(jsonstring);
+				return;
+			}
+			memset(pActionParam, 0, len_ActionParam);
+			 
+			pActionParam->fromId = fromId;
+			pActionParam->toId = 0;
+			pActionParam->json = json;
+			pActionParam->jsonstring = jsonstring;
+			pActionParam->jsonlen = jsonLength;
+			pActionParam->index = 0;
+
+			ntyUserDataReqAction(pActionParam);
+			free(pActionParam);
+		}
+		free(jsonstring);
+		ntyFreeJsonValue(json);
+
 		ntylog("====================end ntyUserDataPacketReqHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
@@ -1908,6 +1930,7 @@ void ntyUserDataPacketReqHandleRequest(const void *_self, unsigned char *buffer,
 	}
 
 }
+
 
 static const ProtocolFilter ntyUserDataPacketReqFilter = {
 	sizeof(Packet),

@@ -522,6 +522,57 @@ void ntyCommonReqAction(ActionParam *pActionParam) {
 	}
 }
 
+void ntyUserDataReqAction(ActionParam *pActionParam) {
+	ntydbg("ntyCommonReqPacketHandleRequest --> fromId:%lld   \n", pActionParam->fromId);
+	ntydbg("ntyCommonReqPacketHandleRequest --> json : %s\n", pActionParam->jsonstring);
+	if (pActionParam == NULL) {
+		return;
+	}
+
+	const char *device_category = ntyJsonAppCategory(pActionParam->json);
+	if (device_category == NULL) {
+		ntylog("Can't find device category, because device category is null\n");
+		return;
+	}
+
+	if (strcmp(device_category, NATTY_USER_PROTOCOL_CATEGORY_ICCID) == 0) {
+		const char *action = ntyJsonAction(pActionParam->json);
+		if (action == NULL) {
+			ntylog("Can't find action, because action is null\n");
+			return;
+		}
+		if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_SET) == 0) {
+			ntyJsonICCIDSetAction(pActionParam);
+		} else {
+			ntylog("Can't find action with: %s\n", action);
+		}
+	}
+}
+
+void ntyJsonICCIDSetAction(ActionParam *pActionParam) {
+	if (pActionParam == NULL) return ;
+
+	ICCIDSet *pICCIDSet = (ICCIDSet*)malloc(sizeof(ICCIDSet));
+	if(pICCIDSet == NULL) {
+		ntylog("ntyJsonICCIDSetAction --> malloc failed ICCIDSet\n");
+		return ;
+	}
+	memset(pICCIDSet, 0, sizeof(ICCIDSet));
+	
+	ntyJsonICCIDSet(pActionParam->json, pICCIDSet);
+	C_DEVID fromId = pActionParam->fromId;
+	
+	int ret = ntyExecuteICCIDSetInsertHandle(fromId, pICCIDSet->ICCID,  pICCIDSet->phone_num);
+	if (ret == -1) {
+		ntylog(" ntyJsonICCIDSetAction --> DB Exception\n");
+		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_EXCEPTION);
+	} else if (ret >= 0) {
+		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
+	}
+	free(pICCIDSet);
+}
+
+
 void ntyJsonAddEfenceAction(ActionParam *pActionParam) {
 	AddEfenceReq *pAddEfenceReq = (AddEfenceReq*)malloc(sizeof(AddEfenceReq));
 	if (pAddEfenceReq == NULL) {
@@ -530,7 +581,6 @@ void ntyJsonAddEfenceAction(ActionParam *pActionParam) {
 	}
 	memset(pAddEfenceReq, 0, sizeof(AddEfenceReq));
 
-	
 	ntyJsonAddEfence(pActionParam->json, pAddEfenceReq);
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;
@@ -565,7 +615,6 @@ void ntyJsonAddEfenceAction(ActionParam *pActionParam) {
 	if (ret < 0) {
 		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
 		goto exit;
-
 	}
 	int id = 0;
 	ret = ntyExecuteEfenceInsertHandle(fromId, toId, index, pAddEfenceReq->efence.size, points, runtime, &id);
@@ -581,7 +630,7 @@ void ntyJsonAddEfenceAction(ActionParam *pActionParam) {
 		if (pAddEfenceAck == NULL) {
 			ntylog("ntyJsonAddEfenceAction --> malloc AddEfenceAck failed\n");
 			free(pAddEfenceReq);
-			return ;
+			return;
 		}
 		memset(pAddEfenceAck, 0, sizeof(AddEfenceAck));
 		
@@ -794,7 +843,6 @@ void ntyJsonRunTimeAction(ActionParam *pActionParam) {
 		goto exit;
 	}
 	
-	ntydbg("---------------------1----------------------\n");
 	
 	if (pRunTimeReq->runtime.auto_connection != NULL) {
 		size_t len_auto_connection = strlen(pRunTimeReq->runtime.auto_connection);
@@ -807,7 +855,6 @@ void ntyJsonRunTimeAction(ActionParam *pActionParam) {
 			}
 		}
 	}
-	ntydbg("---------------------2----------------------\n");
 
 	if (pRunTimeReq->runtime.loss_report != NULL) {
 		size_t len_loss_report = strlen(pRunTimeReq->runtime.loss_report);
@@ -820,7 +867,7 @@ void ntyJsonRunTimeAction(ActionParam *pActionParam) {
 			}
 		}
 	}
-	ntydbg("---------------------3----------------------\n");
+
 	if (pRunTimeReq->runtime.light_panel != NULL) {
 		size_t len_light_panel = strlen(pRunTimeReq->runtime.light_panel);
 		if (len_light_panel != 0) {
@@ -832,7 +879,7 @@ void ntyJsonRunTimeAction(ActionParam *pActionParam) {
 			}
 		}
 	}
-	ntydbg("---------------------4----------------------\n");
+
 	if (pRunTimeReq->runtime.watch_bell != NULL) {
 		size_t len_bell = strlen(pRunTimeReq->runtime.watch_bell);
 		if (len_bell != 0) {
@@ -843,7 +890,7 @@ void ntyJsonRunTimeAction(ActionParam *pActionParam) {
 			}
 		}
 	}
-	ntydbg("---------------------5----------------------\n");
+
 
 	if (pRunTimeReq->runtime.taget_step != NULL) {
 		size_t len_taget_step = strlen(pRunTimeReq->runtime.taget_step);
@@ -856,7 +903,7 @@ void ntyJsonRunTimeAction(ActionParam *pActionParam) {
 			}
 		}
 	}
-	ntydbg("---------------------6----------------------\n");
+
 	if (ret == -1) {
 		ntylog(" ntyJsonRunTimeAction --> DB Exception\n");
 		ret = 4;
@@ -891,7 +938,6 @@ void ntyJsonRunTimeAction(ActionParam *pActionParam) {
 		ntyJsonFree(jsonresult);
 		free(pRunTimeAck);
 	}
-	ntydbg("---------------------7----------------------\n");
 
 exit:
 	free(pRunTimeReq);
@@ -1032,7 +1078,6 @@ void ntyJsonAddScheduleAction(ActionParam *pActionParam) {
 		&scheduleId);
 	if (ret == -1) {
 		ntylog(" ntyJsonAddScheduleAction --> DB Exception\n");
-		ret = 4;
 	} else if (ret >= 0) {
 		//ret = ntySaveCommonMsgData(pActionParam);
 		//if (ret >= 0) {

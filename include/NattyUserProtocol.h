@@ -68,12 +68,19 @@
 #define NATTY_USER_PROTOCOL_CATEGORY_ADD			"Add"
 #define NATTY_USER_PROTOCOL_CATEGORY_DELETE			"Delete"
 #define NATTY_USER_PROTOCOL_CATEGORY_UPDATE			"Update"
+#define NATTY_USER_PROTOCOL_CATEGORY_SET			"Set"
+
 #define NATTY_USER_PROTOCOL_CATEGORY_TIMETABLES		"TimeTables"
 #define NATTY_USER_PROTOCOL_CATEGORY_CONFIG			"Config"
 #define NATTY_USER_PROTOCOL_CATEGORY_POWER			"Power"
 #define NATTY_USER_PROTOCOL_CATEGORY_SIGNAL			"Signal"
 #define NATTY_USER_PROTOCOL_CATEGORY_LOCATION		"Location"
 #define NATTY_USER_PROTOCOL_CATEGORY_FARE			"Fare"
+#define NATTY_USER_PROTOCOL_CATEGORY_ICCID			"ICCID"
+
+
+
+
 
 
 #define NATTY_USER_PROTOCOL_CATEGORY_CONTACTS		"Contacts"
@@ -342,6 +349,12 @@ typedef struct _ICCIDAck {
 	const char *phone_num;
 } ICCIDAck;
 
+typedef struct _ICCIDSet {
+	const char *IMEI;
+	const char *category;
+	const char *ICCID;
+	const char *phone_num;
+} ICCIDSet;
 
 typedef struct _CommonResult {
 	const char *code;

@@ -71,6 +71,8 @@ void ntyJsonCommonExtendResult(C_DEVID devId, const char * code, int id);
 
 void ntyCommonReqAction(ActionParam *pActionParam);
 
+void ntyUserDataReqAction(ActionParam *pActionParam);
+
 void ntyJsonAddEfenceAction(ActionParam *pActionParam);
 
 void ntyJsonDelEfenceAction(ActionParam *pActionParam);
@@ -78,6 +80,8 @@ void ntyJsonDelEfenceAction(ActionParam *pActionParam);
 void ntyJsonRunTimeAction(ActionParam *pActionParam);
 
 void ntyJsonTurnAction(ActionParam *pActionParam);
+
+void ntyJsonICCIDSetAction(ActionParam *pActionParam);
 
 void ntyJsonAddScheduleAction(ActionParam *pActionParam);
 

@@ -708,6 +708,7 @@ int ntyProtoClientUserDataPacketReq(void *_self, U8 *json, U16 length) {
 	length = NTY_PROTO_USERDATA_PACKET_REQ_JSON_CONTENT_IDX+length+sizeof(U32);
 
 	void *pNetwork = ntyNetworkInstance();
+
 	return ntySendFrame(pNetwork, buf, length);
 }
 

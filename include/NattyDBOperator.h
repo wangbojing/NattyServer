@@ -105,6 +105,10 @@
 
 
 #define NTY_DB_SELECT_ICCID					"CALL PROC_SELECT_ICCID('%s')"
+
+#define NTY_DB_SET_ICCID					"CALL PROC_SET_ICCID(%lld, '%s', '%s')"
+
+
 #define NTY_DB_PHNUM_VALUE_SELECT			"CALL PROC_PHNUM_VALUE_SELECT(%lld, '%s')"
 
 //#define NTY_DB_INSERT_TIMETABLE				"CALL PROC_INSERT_TIMETABLE(%lld)"
@@ -293,6 +297,8 @@ int ntyExecuteEfenceInsertHandle(C_DEVID aid, C_DEVID did, int index, int num, U
 int ntyExecuteEfenceDeleteHandle(C_DEVID aid, C_DEVID did, int index);
 
 int ntyExecuteICCIDSelectHandle(C_DEVID did, const char *iccid, char *phonenum);
+
+int ntyExecuteICCIDSetInsertHandle(C_DEVID did, const char *iccid, char *phonenum);
 
 int ntyExecuteRuntimeUpdateHandle(C_DEVID aid, C_DEVID did, int auto_conn, U8 loss_report, U8 light_panel, const char *bell, int target_step);
 
