@@ -49,7 +49,16 @@
 #include <string.h>
 #include <wchar.h>
 
+#if ENABLE_NTY_CONNECTION_POOL
+static nException Exception_frame = {"NattyDBOperator"};
+#endif
+
 void* ntyConnectionPoolInitialize(ConnectionPool *pool) {
+#if ENABLE_NTY_CONNECTION_POOL
+	pool->nPool = malloc(sizeof(nConnPool));
+
+	pool->nPool = ntyConnPoolInitialize(pool->nPool);
+#else
 	pool->url = URL_new(MYSQL_DB_CONN_STRING);
 	pool->nPool = ConnectionPool_new(pool->url);
 
@@ -59,11 +68,16 @@ void* ntyConnectionPoolInitialize(ConnectionPool *pool) {
     ConnectionPool_setReaper(pool->nPool, 1);
 	
 	ConnectionPool_start(pool->nPool);
-
+#endif
 	return pool;
 }
 
 void* ntyConnectionPoolDestory(ConnectionPool *pool) {
+#if ENABLE_NTY_CONNECTION_POOL
+
+	pool->nPool = ntyConnPoolRelease(pool->nPool);
+
+#else
 	ConnectionPool_free(&pool->nPool);
 	ConnectionPool_stop(pool->nPool);
 	URL_free(&pool->url);
@@ -71,7 +85,7 @@ void* ntyConnectionPoolDestory(ConnectionPool *pool) {
 	pool->nPool = NULL;
 	pool->url = NULL;
 	pool = NULL;
-
+#endif
 	return pool;
 }
 
@@ -119,7 +133,8 @@ int ntyConnectionPoolDynamicsSize(void *self) {
 	int size = ConnectionPool_size(pool->nPool);
 	int active = ConnectionPool_active(pool->nPool);
 	int max = ConnectionPool_getMaxConnections(pool->nPool);
-
+	
+#if (ENABLE_NTY_CONNECTION_POOL == 0)
 	if (size > max * CONNECTION_SIZE_THRESHOLD_RATIO) {
 		int n = ConnectionPool_reapConnections(pool->nPool);
 		if (n < max * CONNECTION_SIZE_REAP_RATIO) {
@@ -131,6 +146,7 @@ int ntyConnectionPoolDynamicsSize(void *self) {
 		return 1;
 	}
 #endif	
+#endif
 	ntylog(" size:%d, active:%d, max:%d\n", size, active, max);
 	return 0;
 }
@@ -197,20 +213,23 @@ int ntyConnectionPoolQuery(void *_self, U8 *sql, void ***result, int *length) {
 
 
 Connection_T ntyCheckConnection(void *self, Connection_T con) {
+#if 0
 	ConnectionPool *pool = self;
 	if (pool == NULL) return con;
 	if (con == NULL) {
-#if 0
+
 		int n = ConnectionPool_reapConnections(pool->nPool);
 		Connection_T con = ConnectionPool_getConnection(pool->nPool);
-#else
 		return NULL;
-#endif
+
 	}
+#endif
+
 	return con;
 }
 
 void ntyConnectionClose(Connection_T con) {
+	
 	if (con != NULL) {
 		Connection_close(con);
 	}

@@ -45,9 +45,17 @@
 #ifndef __NATTY_DB_OPERATOR_H__
 #define __NATTY_DB_OPERATOR_H__
 
-#include <zdb.h>
+
+#include "NattyConfig.h"
 #include "NattyAbstractClass.h"
 #include "NattyUserProtocol.h"
+
+
+#if ENABLE_NTY_CONNECTION_POOL
+#include "NattyConnectionPool.h"
+#else
+#include <zdb.h>
+#endif
 
 #define CONNECTION_SIZE_THRESHOLD_RATIO			0.6			
 #define CONNECTION_SIZE_REAP_RATIO				0.1			

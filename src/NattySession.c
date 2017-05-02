@@ -1273,6 +1273,7 @@ int ntySendRecodeJsonPacket(C_DEVID fromId, C_DEVID toId, U8 *json, int length) 
 	int msgId = 0;
 	int ret = ntyExecuteCommonItemMsgInsertHandle(fromId, toId, json, &msgId);
 	if (ret != NTY_RESULT_SUCCESS) {
+		ntylog("ntyExecuteCommonItemMsgInsertHandle --> failed, ret : %d\n", ret);
 		return ret;
 	}
 

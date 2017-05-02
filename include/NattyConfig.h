@@ -68,6 +68,8 @@
 
 #define ENABLE_EV_WATCHER_MODE				1
 
+#define ENABLE_NTY_CONNECTION_POOL			1
+
 #if 1
 
 #define CUSTOM_JG			1
