@@ -1826,7 +1826,7 @@ void ntyJsonWearStatusAction(ActionParam *pActionParam) {
 }
 
 //添加联系人消息发送到管理员
-void ntyBindAgreeAction(char *imei, C_DEVID fromId, C_DEVID toId, char *phonenum, U32 msgId) {
+void ntyBindAgreeAction(char *imei, C_DEVID fromId, C_DEVID proposerId, C_DEVID toId, char *phonenum, U32 msgId) {
 #if 0
 	char bindAgreeAck[64] = {0};
 	memcpy(bindAgreeAck, NATTY_USER_PROTOCOL_BINDAGREE, strlen(NATTY_USER_PROTOCOL_BINDAGREE));
@@ -1852,10 +1852,11 @@ void ntyBindAgreeAction(char *imei, C_DEVID fromId, C_DEVID toId, char *phonenum
 		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
 	}
 #else
-	
+
+	int contactsTempId = NULL;
 	char *pname = NULL;
 	char *pimage = NULL;
-	int ret = ntyQueryPhonebookBindAgreeSelectHandle(toId, phonenum, pname, pimage);
+	int ret = ntyQueryPhonebookBindAgreeSelectHandle(toId, proposerId, phonenum, &contactsTempId, pname, pimage);
 	if (ret == -1) {
 		ntylog(" ntyJsonDelContactsAction --> DB Exception\n");
 		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
@@ -1867,10 +1868,13 @@ void ntyBindAgreeAction(char *imei, C_DEVID fromId, C_DEVID toId, char *phonenum
 		}
 		memset(pAddContactsAck, 0, sizeof(AddContactsAck));
 
+		char contactsId[16] = {0};
+		sprintf(contactsId, "%d", contactsTempId);
 		char add[16] = {0};
 		char category[16] = {0};
 		strcat(add, "Add");
 		strcat(category, "Contacts");
+		pAddContactsAck->results.id = contactsId;
 		pAddContactsAck->results.IMEI = imei;
 		pAddContactsAck->results.category = category;
 		pAddContactsAck->results.action = add;
@@ -1881,7 +1885,8 @@ void ntyBindAgreeAction(char *imei, C_DEVID fromId, C_DEVID toId, char *phonenum
 		char *jsonagree = ntyJsonWriteAddContacts(pAddContactsAck);
 		int ret = ntySendRecodeJsonPacket(fromId, toId, jsonagree, (int)strlen(jsonagree));
 		if (ret < 0) {
-			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
+			ntylog("\n");
+			//ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
 		}
 		ntyJsonFree(jsonagree);
 		free(pAddContactsAck);

@@ -762,7 +762,7 @@ static int ntyQueryVoiceOfflineMsgSelect(void *self, C_DEVID fromId, void *conta
 
 //NTY_DB_SELECT_PHONEBOOK_BINDAGREE
 
-static int ntyQueryPhonebookBindAgreeSelect(void *self, C_DEVID did, char *phonenum, char *pname, char *pimage) {
+static int ntyQueryPhonebookBindAgreeSelect(void *self, C_DEVID did, C_DEVID proposerId, char *phonenum, int *pid, char *pname, char *pimage) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
@@ -777,12 +777,14 @@ static int ntyQueryPhonebookBindAgreeSelect(void *self, C_DEVID did, char *phone
 			
 			ret = -1;
 			
-			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_PHONEBOOK_BINDAGREE, did, phonenum);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_PHONEBOOK_BINDAGREE, did, phonenum, proposerId);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
-					const char *r_name = ResultSet_getString(r, 1);
-					const char *r_image = ResultSet_getString(r, 2);
+					int r_id = ResultSet_getInt(r, 1);
+					const char *r_name = ResultSet_getString(r, 2);
+					const char *r_image = ResultSet_getString(r, 3);
 
+					*pid = r_id;
 					size_t name_len = strlen(r_name);
 					size_t image_len = strlen(r_image);
 					pname = malloc(name_len+1);
@@ -2861,9 +2863,9 @@ int ntyQueryVoiceOfflineMsgSelectHandle(C_DEVID fromId, void *container) {
 	return ntyQueryVoiceOfflineMsgSelect(pool, fromId, container);
 }
 
-int ntyQueryPhonebookBindAgreeSelectHandle(C_DEVID did, char *phonenum, U8 *pname, U8 *pimage) {
+int ntyQueryPhonebookBindAgreeSelectHandle(C_DEVID did, C_DEVID proposerId, char *phonenum, int *pid, U8 *pname, U8 *pimage) {
 	void *pool = ntyConnectionPoolInstance();
-	return ntyQueryPhonebookBindAgreeSelect(pool, did, phonenum, pname, pimage);
+	return ntyQueryPhonebookBindAgreeSelect(pool, did, proposerId, phonenum, pid, pname, pimage);
 }
 
 int ntyQueryCommonMsgSelectHandle(C_DEVID msgId, C_DEVID *senderId, C_DEVID *groupId, char *json) {

@@ -253,7 +253,7 @@
 
 #define NTY_DB_DELETE_COMMON_ITEM_MSG		"CALL PROC_DELETE_COMMON_ITEM_MSG(%d)"
 
-#define NTY_DB_SELECT_PHONEBOOK_BINDAGREE	"CALL PROC_SELECT_PHONEBOOK_BINDAGREE(%lld, '%s')"
+#define NTY_DB_SELECT_PHONEBOOK_BINDAGREE	"CALL PROC_SELECT_PHONEBOOK_BINDAGREE(%lld, '%s', %lld)"
 
 
 
@@ -374,7 +374,7 @@ int ntyQueryAdminGroupInsertHandle(C_DEVID devId, U8 *bname, C_DEVID fromId, U8 
 
 int ntyQueryVoiceOfflineMsgSelectHandle(C_DEVID fromId, void *container);
 
-int ntyQueryPhonebookBindAgreeSelectHandle(C_DEVID did, char *phonenum, U8 *pname, U8 *pimage);
+int ntyQueryPhonebookBindAgreeSelectHandle(C_DEVID did, C_DEVID proposerId, char *phonenum, int *pid, U8 *pname, U8 *pimage);
 
 int ntyExecuteBindConfirmDeleteHandle(int msgId, C_DEVID *id);
 
