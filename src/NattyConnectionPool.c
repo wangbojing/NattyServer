@@ -42,9 +42,9 @@
  */
 
 
-#include "../include/NattyAbstractClass.h"
-#include "../include/NattyConnectionPool.h"
-#include "../include/NattyResult.h"
+#include "NattyAbstractClass.h"
+#include "NattyConnectionPool.h"
+#include "NattyResult.h"
 
 #include <mysql/mysql.h>
 #include <stdio.h>
@@ -61,7 +61,7 @@
 
 #define MAX_SQL_BUFFER_SIZE			1024
 
-#if 1 //debug_server
+#if 0 //debug_server
 
 const char *hostName = "192.168.1.178";
 const char *userName = "juguikeji";
