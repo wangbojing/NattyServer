@@ -581,6 +581,7 @@ int ntySendDataResult(C_DEVID fromId, U8 *json, int length, U16 status) {
 }
 
 int ntySendPushNotify(C_DEVID selfId, U8 *msg) {
+#if 1
 	void *heap = ntyBHeapInstance();
 	NRecord *record = ntyBHeapSelect(heap, selfId);
 	if (record == NULL) return NTY_RESULT_NOEXIST;
@@ -595,6 +596,25 @@ int ntySendPushNotify(C_DEVID selfId, U8 *msg) {
 		return NTY_RESULT_FAILED;
 	}
 	return NTY_RESULT_SUCCESS;
+#else
+
+	VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
+	if (tag == NULL) return NTY_RESULT_ERROR;
+
+	memset(tag, 0, sizeof(VALUE_TYPE));
+	tag->length = strlen(msg);
+
+	tag->toId = selfId;
+	tag->Tag = malloc(tag->length+1);
+	memset(tag->Tag, 0, tag->lengt);
+	memcpy(tag->Tag, msg, tag->length);
+	tag->Type = MSG_TYPE_IOS_PUSH_HANDLE;
+	tag->cb = ntyIOSPushHandle;
+	ntyDaveMqPushMessage(tag);
+
+	return NTY_RESULT_SUCCESS;
+	
+#endif
 }
 
 int ntySendCommonBroadCastItem(C_DEVID selfId, C_DEVID toId, U8 *json, int length, U32 msgId) {
@@ -642,7 +662,7 @@ int ntySendCommonBroadCastIter(void *self, void *arg) {
 	memcpy(&selfId, msg->self, sizeof(C_DEVID));
 
 	ntylog(" toId:%lld, selfId:%lld\n", toId, selfId);
-	if (toId == selfId) return 0;
+	if (toId == selfId) return NTY_RESULT_SUCCESS;
 #if 0
 	void *map = ntyMapInstance();
 	ClientSocket *pClient = ntyMapSearch(map, toId);

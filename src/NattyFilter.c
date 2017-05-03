@@ -592,7 +592,7 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 #endif
 				//ntySendLoginAckResult(pClient->devId, "", 0, 200);
 				ntySendDeviceTimeCheckAck(pClient->devId, 1);
-
+#if 0 //move to OfflineMsge
 				VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
 				if (tag == NULL) return ;
 
@@ -602,6 +602,7 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 				tag->cb = ntyDeviceOfflineMsgReqHandle;
 
 				ntyDaveMqPushMessage(tag);
+#endif 
 #endif
 			} else {
 
@@ -1229,25 +1230,18 @@ void ntyOfflineMsgReqPacketHandleRequest(const void *_self, unsigned char *buffe
 		if (msg == NULL) return ;
 		const Client *client = msg->client;
 
-		/*
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_OFFLINE_MSG_REQ_DEVICEID_IDX);
-		U16 jsonlen = 0;
-		memcpy(&jsonlen, buffer+NTY_PROTO_OFFLINE_MSG_REQ_JSON_LENGTH_IDX, NTY_JSON_COUNT_LENGTH);
-		char *jsonstring = malloc(jsonlen);
-		memset(jsonstring, 0, jsonlen);
-		memcpy(jsonstring, buffer+NTY_PROTO_OFFLINE_MSG_REQ_JSON_CONTENT_IDX, jsonlen);
 
-		ntylog("ntyOfflineMsgReqPacketHandleRequest --> json : %s  %d\n", jsonstring, jsonlen);
+		VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
+		if (tag == NULL) return ;
 
-		JSON_Value *json = ntyMallocJsonValue(jsonstring);
-		if (json == NULL) {
-			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
-			return;
-		}
-		ntyJsonOfflineMsgReqAction(fromId, fromId, json, jsonstring, jsonlen);
-		ntyFreeJsonValue(json);
-		free(jsonstring);
-		*/
+		memset(tag, 0, sizeof(VALUE_TYPE));
+		tag->fromId = fromId;
+		tag->Type = MSG_TYPE_OFFLINE_MSG_REQ_HANDLE;
+		tag->cb = ntyOfflineMsgReqHandle;
+
+		ntyDaveMqPushMessage(tag);
+		
 		ntylog("====================end ntyOfflineMsgReqPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);

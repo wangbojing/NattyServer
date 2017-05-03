@@ -41,7 +41,7 @@
  *
  */
 
-#include "../include/NattyBPlusTree.h"
+#include "NattyBPlusTree.h"
 
 #include "NattySqlHandle.h" 
 #include "NattyAbstractClass.h"
@@ -50,6 +50,8 @@
 #include "NattyMessage.h"
 #include "NattyServAction.h"
 #include "NattyUdpServer.h"
+#include "NattyProtocol.h"
+#include "NattyPush.h"
 
 int ntyReadOfflineVoiceHandle(void *arg);
 
@@ -318,11 +320,21 @@ int ntyReadOfflineVoiceHandle(void *arg) {
 
 	int ret = ntyReadOfflineVoiceMsgAction(fromId);
 	if (ret == NTY_RESULT_NOEXIST) {
+
+		void *heap = ntyBHeapInstance();
+		NRecord *record = ntyBHeapSelect(heap, fromId);
+		if (record == NULL) goto exit;
 		
-		tag->Type = MSG_TYPE_BIND_OFFLINE_PUSH_HANDLE;
-		tag->cb = ntyReadOfflineBindMsgHandle;
-		return ntyDaveMqPushMessage(tag);
+		Client *pClient = (Client *)record->value;
+		if (pClient->deviceType != NTY_PROTO_CLIENT_WATCH) {
+
+			tag->Type = MSG_TYPE_BIND_OFFLINE_PUSH_HANDLE;
+			tag->cb = ntyReadOfflineBindMsgHandle;
+			return ntyDaveMqPushMessage(tag);
+		}
 	}
+	
+exit:
 	free(tag);
 
 	return ret;
@@ -336,8 +348,11 @@ int ntyDeviceOfflineMsgReqHandle(void *arg) {
 
 	int ret = ntyReadDeviceOfflineCommonMsgAction(fromId);
 	if (ret == NTY_RESULT_NOEXIST) {
-		
 		ntylog("ntyDeviceOfflineMsgReqHandle --> no offline message\n");
+		
+		tag->Type = MSG_TYPE_VOICE_OFFLINE_READ_HANDLE;
+		tag->cb = ntyReadOfflineVoiceHandle;
+		return ntyDaveMqPushMessage(tag);
 	}
 	free(tag);
 
@@ -564,5 +579,33 @@ int ntyLocationBroadCastHandle(void *arg) {
 	return NTY_RESULT_SUCCESS;
 }
 
+
+int ntyIOSPushHandle(void *arg) {
+	VALUE_TYPE *tag = (VALUE_TYPE*)arg;
+
+	if (tag == NULL) return NTY_RESULT_ERROR;
+
+	C_DEVID toId = tag->toId;
+	U8 *msg = tag->Tag;
+
+	void *heap = ntyBHeapInstance();
+	NRecord *record = ntyBHeapSelect(heap, toId);
+	if (record == NULL) goto exit;
+	Client *pClient = (Client *)record->value;
+
+	if (pClient->deviceType == NTY_PROTO_CLIENT_IOS) {
+		if (pClient->token != NULL) {
+			ntylog("ntySendPushNotify --> selfId:%lld  token:%s\n", toId, pClient->token);
+			void *pushHandle = ntyPushHandleInstance();
+			ntyPushNotifyHandle(pushHandle, msg, pClient->token);
+		}
+		goto exit;
+	}
+exit:
+	free(msg);
+	free(tag);
+	
+	return NTY_RESULT_SUCCESS;
+}
 
 
