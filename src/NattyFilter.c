@@ -473,6 +473,7 @@ int ntyClientCleanup(ClientSocket *client) { //
 		ret = ntyDelClientHeap(Id);
 		ntylog(" ntyMapDelete --> ret : %d\n", ret);
 #endif
+		ntyOfflineClientHeap(Id);
 	} else {
 		ntylog(" ntyHashDelete ret : %d\n", ret);
 	}
