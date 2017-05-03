@@ -1853,14 +1853,18 @@ void ntyBindAgreeAction(char *imei, C_DEVID fromId, C_DEVID proposerId, C_DEVID 
 	}
 #else
 
-	int contactsTempId = NULL;
+	int contactsTempId = 0;
 	char *pname = NULL;
 	char *pimage = NULL;
+	ntylog("--execute ntyBindAgreeAction action---1----------------\n");
 	int ret = ntyQueryPhonebookBindAgreeSelectHandle(toId, proposerId, phonenum, &contactsTempId, pname, pimage);
+	ntylog("--execute ntyBindAgreeAction action---2----------------\n");
 	if (ret == -1) {
 		ntylog(" ntyJsonDelContactsAction --> DB Exception\n");
 		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
 	} else if (ret >= 0) {
+		ntylog("--execute ntyBindAgreeAction action---2----------------\n");
+		
 		AddContactsAck *pAddContactsAck = malloc(sizeof(AddContactsAck));
 		if (pAddContactsAck == NULL) {
 			ntylog("ntyBindAgreeAction --> malloc AddContactsAck failed\n");
@@ -1868,6 +1872,8 @@ void ntyBindAgreeAction(char *imei, C_DEVID fromId, C_DEVID proposerId, C_DEVID 
 		}
 		memset(pAddContactsAck, 0, sizeof(AddContactsAck));
 
+		ntylog("--execute ntyBindAgreeAction action---3----------------\n");
+		
 		char contactsId[16] = {0};
 		sprintf(contactsId, "%d", contactsTempId);
 		char add[16] = {0};
@@ -1882,14 +1888,17 @@ void ntyBindAgreeAction(char *imei, C_DEVID fromId, C_DEVID proposerId, C_DEVID 
 		pAddContactsAck->results.contacts.name = pname;
 		pAddContactsAck->results.contacts.telphone = phonenum;
 
+		ntylog("--execute ntyBindAgreeAction action---4----------------\n");
+
 		char *jsonagree = ntyJsonWriteAddContacts(pAddContactsAck);
 		int ret = ntySendRecodeJsonPacket(fromId, toId, jsonagree, (int)strlen(jsonagree));
 		if (ret < 0) {
-			ntylog("\n");
+			ntylog(" ntyBindAgreeAction --> SendCommonReq Exception\n");
 			//ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
 		}
 		ntyJsonFree(jsonagree);
 		free(pAddContactsAck);
+		ntylog("--execute ntyBindAgreeAction action---5----------------\n");
 	}
 
 	if (pname != NULL) {

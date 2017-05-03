@@ -780,6 +780,7 @@ static int ntyQueryPhonebookBindAgreeSelect(void *self, C_DEVID did, C_DEVID pro
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_PHONEBOOK_BINDAGREE, did, phonenum, proposerId);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
+					ntylog("--execute ntyQueryPhonebookBindAgreeSelect action---begin----------------\n");
 					int r_id = ResultSet_getInt(r, 1);
 					const char *r_name = ResultSet_getString(r, 2);
 					const char *r_image = ResultSet_getString(r, 3);
@@ -798,7 +799,7 @@ static int ntyQueryPhonebookBindAgreeSelect(void *self, C_DEVID did, C_DEVID pro
 						memset(pimage, 0, image_len+1);
 						memcpy(pimage, r_image, image_len);
 					}
-					
+					ntylog("--execute ntyQueryPhonebookBindAgreeSelect action---end----------------\n");
 					ret = 0;
 				}
 			}
