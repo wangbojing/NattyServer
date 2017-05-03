@@ -453,7 +453,7 @@ int ntyBindParserJsonHandle(void *arg) {
 		
 		return ntyQueryAdminGroupInsertHandle(devId, name, proposer, call, wimage, uimage);
 		
-	} else if (tag->arg == NTY_BIND_ACK_SUCCUESS) {
+	} else if (tag->arg == NTY_BIND_ACK_SUCCESS) {
 		int msgId = 0;
 		//绑定确认添加
 		ntyQueryBindConfirmInsertHandle(admin, devId, name, wimage, proposer, call, uimage, &msgId);
@@ -535,9 +535,9 @@ int ntyBindDeviceCheckStatusReqHandle(void *arg) {
 		ntyDaveMqPushMessage(tag);
 		
 		return NTY_RESULT_SUCCESS;
-	} else if (ret == NTY_BIND_ACK_SUCCUESS){
+	} else if (ret == NTY_BIND_ACK_SUCCESS){
 
-		tag->arg = NTY_BIND_ACK_SUCCUESS;
+		tag->arg = NTY_BIND_ACK_SUCCESS;
 		tag->Type = MSG_TYPE_BIND_SELECT_ADMIN_HANDLE;
 		tag->cb = ntyAdministratorSelectHandle;
 		
