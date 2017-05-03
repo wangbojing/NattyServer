@@ -702,7 +702,7 @@ int ntyHashDelete(void *_self, U32 key) {
 
 #endif
 
-	return NTY_RESULT_ERROR;
+	return NTY_RESULT_SUCCESS;
 }
 
 int ntyHashUpdate(void *_self, U32 key, Payload* load) {
