@@ -774,32 +774,40 @@ static int ntyQueryPhonebookBindAgreeSelect(void *self, C_DEVID did, C_DEVID pro
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			
 			ret = -1;
+			
+			U8 sql[512] = {0};
+			sprintf(sql, NTY_DB_SELECT_PHONEBOOK_BINDAGREE, did, phonenum, proposerId);	
+			ntylog("%s\n", sql);
 			
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_PHONEBOOK_BINDAGREE, did, phonenum, proposerId);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
-					ntylog("--execute ntyQueryPhonebookBindAgreeSelect action---begin----------------\n");
+					
 					int r_id = ResultSet_getInt(r, 1);
 					const char *r_name = ResultSet_getString(r, 2);
 					const char *r_image = ResultSet_getString(r, 3);
-
+					
 					*pid = r_id;
-					size_t name_len = strlen(r_name);
-					size_t image_len = strlen(r_image);
-					pname = malloc(name_len+1);
-					if (pname != NULL) {
-						memset(pname, 0, name_len+1);
-						memcpy(pname, r_name, name_len);
+
+					if (r_name != NULL) {
+						size_t name_len = strlen(r_name);
+						pname = malloc(name_len+1);
+						if (pname != NULL) {
+							memset(pname, 0, name_len+1);
+							memcpy(pname, r_name, name_len);
+						}
+					}
+
+					if (r_image != NULL) {
+						size_t image_len = strlen(r_image);
+						pimage = malloc(image_len+1);
+						if (pimage != NULL) {
+							memset(pimage, 0, image_len+1);
+							memcpy(pimage, r_image, image_len);
+						}
 					}
 					
-					pimage = malloc(image_len+1);
-					if (pimage != NULL) {
-						memset(pimage, 0, image_len+1);
-						memcpy(pimage, r_image, image_len);
-					}
-					ntylog("--execute ntyQueryPhonebookBindAgreeSelect action---end----------------\n");
 					ret = 0;
 				}
 			}
@@ -3137,17 +3145,33 @@ void ntyConnectionPoolDeInit(void) {
 		ntyConnectionPoolRelease(pool);
 	}
 }
-#if 0
-int main( ) {
 
+#if 0
+int main() {
+	/*
 	C_DEVID proposerId = 0x0;
 	int msgId = 17;
 	char phonenum[64] = {0};
-	
-	
 	ntyExecuteDevAppGroupBindInsertHandle(msgId, &proposerId, phonenum);
-
 	ntylog("phonenum: %s, proposerId:%lld\n", phonenum, proposerId);
+	*/
+
+	ntylog("---1--\n");
+	char *phonenum1 = NULL;
+	size_t len = strlen(phonenum1);
+	ntylog("---2- %d-\n", (int)len);
+
+	C_DEVID did = 240207489222799361;
+	C_DEVID proposerId = 11780;
+	char phonenum[64] = {0};
+	strcat(phonenum, "13432992552");
+	int pid = 0;
+	char *pname = NULL;
+	char *pimage = NULL;
+	ntylog(" exec ntyQueryPhonebookBindAgreeSelectHandle begin\n");
+	ntyQueryPhonebookBindAgreeSelectHandle(did, proposerId, phonenum, &pid, pname, pimage);
+	ntylog(" exec ntyQueryPhonebookBindAgreeSelectHandle end\n");
+	
 }
 #endif
 
