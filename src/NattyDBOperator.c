@@ -560,10 +560,10 @@ static int ntyExecuteDevAppGroupBindAndAgreeInsert(void *self, int msgId, C_DEVI
 			ret = -1;
 		} else {
 			U8 sql[512] = {0};
-			sprintf(sql, NTY_DB_INSERT_BIND_AGREE, msgId, phonenum);
+			sprintf(sql, NTY_DB_INSERT_BIND_AGREE, msgId);
 			ntylog("%s\n", sql);
 
-			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_BIND_AGREE, msgId, phonenum);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_BIND_AGREE, msgId);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
 					ret = ResultSet_getInt(r, 1);
@@ -1103,6 +1103,7 @@ static int ntyQueryBindOfflineMsgToAdminSelect(void *self, C_DEVID fromId, void 
 					C_DEVID r_proposer = ResultSet_getLLong(r, 6);
 					const char *r_usercall = ResultSet_getString(r, 7);
 					const char *r_userimage = ResultSet_getString(r, 8);
+					
 					BindOfflineMsgToAdmin *pMsgToAdmin = malloc(sizeof(BindOfflineMsgToAdmin));
 					if (pMsgToAdmin == NULL) {
 						ntylog(" %s --> malloc BindOfflineMsgToAdmin error. \n", __func__);
