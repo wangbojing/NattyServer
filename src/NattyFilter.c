@@ -55,11 +55,12 @@
 #include "NattyHBD.h"
 #include "NattyVector.h"
 #include "NattyJson.h"
-#include "time.h"
+
 #include "NattyServAction.h"
 #include "NattyMessage.h"
 #include "NattyDaveMQ.h"
 #include "NattyUdpServer.h"
+#include "NattyPush.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -609,17 +610,21 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 
 				if (pClient->deviceType == NTY_PROTO_CLIENT_IOS) {
 					U16 tokenLen = *(U16*)(buffer+NTY_PROTO_LOGIN_REQ_JSON_LENGTH_IDX);
+						
 					U8 *token = buffer+NTY_PROTO_LOGIN_REQ_JSON_CONTENT_IDX;
 
-					if (pClient->token == NULL) {
-						pClient->token = malloc(tokenLen + 1);
-					}
+					if (tokenLen == TOKEN_SIZE) {
+					
+						if (pClient->token == NULL) {
+							pClient->token = malloc(tokenLen + 1);
+						}
 
-					if (pClient->token != NULL) {
-						memset(pClient->token, 0, tokenLen + 1);
+						if (pClient->token != NULL) {
+							memset(pClient->token, 0, tokenLen + 1);
 
-						memcpy(pClient->token, token, tokenLen);
-						ntylog(" LOGIN --> %s\n", pClient->token);
+							memcpy(pClient->token, token, tokenLen);
+							ntylog(" LOGIN --> %s\n", pClient->token);
+						}
 					}
 				}
 

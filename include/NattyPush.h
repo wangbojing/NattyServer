@@ -83,7 +83,7 @@
 #define MAX_MESSAGE_PACKET		1024
 
 #define MAX_PAYLOAD_SIZE		256
-#define TOKEN_SIZE				32
+#define TOKEN_SIZE				64
 
 #define NTY_PUSH_MSG_CONTEXT			"全家康 \n 您收到了一条新消息"
 
