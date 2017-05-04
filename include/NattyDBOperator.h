@@ -237,6 +237,8 @@
 
 #define NTY_DB_INSERT_BIND_GROUP			"CALL PROC_INSERT_BIND_GROUP(%d)"
 
+#define NTY_DB_INSERT_BIND_AGREE			"CALL PROC_INSERT_BIND_AGREE(%d, '%s')"
+
 #define NTY_DB_DELETE_BIND_GROUP			"CALL PROC_DELETE_BIND_GROUP(%d)"
 
 #define NTY_DB_SELECT_PHONE_NUMBER			"CALL PROC_SELECT_PHONE_NUMBER(%lld, %lld)"
@@ -367,6 +369,8 @@ int ntyQueryBindConfirmInsertHandle(C_DEVID admin, C_DEVID imei, U8 *name, U8 *w
 int ntyQueryPhoneBookSelectHandle(C_DEVID imei, C_DEVID userId, char *phonenum);
 
 int ntyExecuteDevAppGroupBindInsertHandle(int msgId, C_DEVID *proposerId, U8 *phonenum);
+
+int ntyExecuteDevAppGroupBindAndAgreeInsertHandle(int msgId, C_DEVID *proposerId, U8 *phonenum, int *pid, U8 *pname, U8 *pimage);
 
 int ntyExecuteCommonOfflineMsgDeleteHandle(int msgId, C_DEVID clientId);
 

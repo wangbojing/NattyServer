@@ -546,6 +546,78 @@ static int ntyExecuteDevAppGroupBindInsert(void *self, int msgId, C_DEVID *propo
 	return ret;
 }
 
+//NTY_DB_INSERT_BIND_AGREE
+static int ntyExecuteDevAppGroupBindAndAgreeInsert(void *self, int msgId, C_DEVID *proposerId, U8 *phonenum, int *pid, U8 *pname, U8 *pimage) {
+	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = -1;
+
+	TRY 
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			U8 sql[512] = {0};
+			sprintf(sql, NTY_DB_INSERT_BIND_AGREE, msgId, phonenum);
+			ntylog("%s\n", sql);
+
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_BIND_AGREE, msgId, phonenum);
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					ret = ResultSet_getInt(r, 1);
+					
+					*proposerId = ResultSet_getLLong(r, 2);
+					const char *num = ResultSet_getString(r, 3);
+					ntylog("ntyExecuteDevAppGroupBindAndAgreeInsert --> num:%s, proposerId:%lld\n", num, *proposerId);
+					if (num != NULL) {
+						memcpy(phonenum, num, strlen(num));
+					}
+
+					int r_id = ResultSet_getInt(r, 4);
+					const char *r_name = ResultSet_getString(r, 5);
+					const char *r_image = ResultSet_getString(r, 6);
+					
+					*pid = r_id;
+
+					if (r_name != NULL) {
+						size_t name_len = strlen(r_name);
+						pname = malloc(name_len+1);
+						if (pname != NULL) {
+							memset(pname, 0, name_len+1);
+							memcpy(pname, r_name, name_len);
+						}
+					}
+
+					if (r_image != NULL) {
+						size_t image_len = strlen(r_image);
+						pimage = malloc(image_len+1);
+						if (pimage != NULL) {
+							memset(pimage, 0, image_len+1);
+							memcpy(pimage, r_image, image_len);
+						}
+					}
+				}
+			}
+		}
+	} 
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+
 //NTY_DB_DELETE_BIND_GROUP
 static int ntyExecuteBindConfirmDelete(void *self, int msgId, C_DEVID *id) {
 	ConnectionPool *pool = self;
@@ -2851,11 +2923,15 @@ int ntyExecuteDevAppGroupBindInsertHandle(int msgId, C_DEVID *proposerId, U8 *ph
 	return ntyExecuteDevAppGroupBindInsert(pool, msgId, proposerId, phonenum);
 }
 
+int ntyExecuteDevAppGroupBindAndAgreeInsertHandle(int msgId, C_DEVID *proposerId, U8 *phonenum, int *pid, U8 *pname, U8 *pimage) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteDevAppGroupBindAndAgreeInsert(pool, msgId, proposerId, phonenum, pid, pname, pimage);
+}
+
 int ntyExecuteBindConfirmDeleteHandle(int msgId, C_DEVID *id) {
 	void *pool = ntyConnectionPoolInstance();
 	return ntyExecuteBindConfirmDelete(pool, msgId, id);
 }
-
 
 int ntyExecuteCommonOfflineMsgDeleteHandle(int msgId, C_DEVID clientId) {
 	void *pool = ntyConnectionPoolInstance();

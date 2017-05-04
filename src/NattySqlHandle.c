@@ -170,11 +170,54 @@ int ntyVoiceReqHandle(void *arg) {
 	return 0;
 }
 
+//添加联系人消息发送到管理员
+void ntyBindGroupAgreeToAdmin(C_DEVID adminId, C_DEVID DeviceId, char *phonenum, int contactsTempId, char *pname, char *pimage) {
+	ntylog("--execute ntyBindAgreeAction action---2----------------\n");
+	
+	AddContactsAck *pAddContactsAck = malloc(sizeof(AddContactsAck));
+	if (pAddContactsAck == NULL) {
+		ntylog("ntyBindGroupAgreeToAdmin --> malloc AddContactsAck failed\n");
+		return;
+	}
+	memset(pAddContactsAck, 0, sizeof(AddContactsAck));
+
+	ntylog("--execute ntyBindAgreeAction action---3----------------\n");
+
+	char bufIMEI[50] = {0};
+	sprintf(bufIMEI, "%llx", DeviceId);
+	char contactsId[16] = {0};
+	sprintf(contactsId, "%d", contactsTempId);
+	char add[16] = {0};
+	char category[16] = {0};
+	strcat(add, "Add");
+	strcat(category, "Contacts");
+	pAddContactsAck->results.id = contactsId;
+	pAddContactsAck->results.IMEI = bufIMEI;
+	pAddContactsAck->results.category = category;
+	pAddContactsAck->results.action = add;
+	pAddContactsAck->results.contacts.image = pimage;
+	pAddContactsAck->results.contacts.name = pname;
+	pAddContactsAck->results.contacts.telphone = phonenum;
+
+	ntylog("--execute ntyBindAgreeAction action---4----------------\n");
+
+	C_DEVID fromId = adminId;
+	C_DEVID toId = DeviceId;
+	char *jsonagree = ntyJsonWriteAddContacts(pAddContactsAck);
+	int ret = ntySendRecodeJsonPacket(fromId, toId, jsonagree, (int)strlen(jsonagree));
+	if (ret < 0) {
+		ntylog(" ntyBindGroupAgreeToAdmin --> SendCommonReq Exception\n");
+		//ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
+	}
+	ntyJsonFree(jsonagree);
+	free(pAddContactsAck);
+	ntylog("--execute ntyBindAgreeAction action---5----------------\n");
+}
 
 int ntyBindConfirm(C_DEVID adminId, C_DEVID *ProposerId, C_DEVID DeviceId, U32 msgId, U8 *phonenum) {
 
+#if 0
 	C_DEVID AppId = 0x0;
-
 #if 0
 	int ret = ntyQueryDevAppGroupInsertHandle(AppId, DeviceId);
 #else
@@ -204,7 +247,47 @@ int ntyBindConfirm(C_DEVID adminId, C_DEVID *ProposerId, C_DEVID DeviceId, U32 m
 	}
 	ntylog(" ntyBindConfirmReqPacketHandleRequest --> ntyJsonCommonResult\n");
 	//ntyJsonCommonResult(adminId, NATTY_RESULT_CODE_SUCCESS);
+#endif
 
+	C_DEVID AppId = 0x0;
+
+	int contactsTempId = 0;
+	char *pname = NULL;
+	char *pimage = NULL;
+	int ret = ntyExecuteDevAppGroupBindAndAgreeInsertHandle(msgId, ProposerId, phonenum, &contactsTempId, pname, pimage);
+
+	memcpy(&AppId, ProposerId, sizeof(C_DEVID));
+	if (ret == -1) {
+		ntylog(" ntyBindDevicePacketHandleRequest --> DB Exception\n");
+		ret = 4;
+	} else if (ret == 0) { //Bind Success Update RBTree
+
+		void *heap = ntyBHeapInstance();
+		NRecord *record = ntyBHeapSelect(heap, AppId);
+		if (record != NULL) {
+			Client *aclient = record->value;
+			ASSERT(aclient != NULL);
+			ntyVectorInsert(aclient->friends, &DeviceId, sizeof(C_DEVID));
+		}
+
+		record = ntyBHeapSelect(heap, DeviceId);
+		if (record != NULL) {
+			Client *dclient = record->value;
+			ASSERT(dclient != NULL);
+			ntyVectorInsert(dclient->friends, &AppId, sizeof(C_DEVID));
+		}
+		
+		ntyBindGroupAgreeToAdmin(adminId, DeviceId, phonenum, contactsTempId, pname, pimage);
+	}
+	ntylog(" ntyBindConfirmReqPacketHandleRequest --> ntyJsonCommonResult\n");
+
+	if (pname != NULL) {
+		free(pname);
+	}
+	if (pimage != NULL) {
+		free(pimage);
+	}
+	
 	return ret;
 }
 
@@ -260,7 +343,7 @@ int ntyBindConfirmReqHandle(void *arg) {
 		free(pBindBroadCast);
 
 		//发送管理员同意消息到手表
-		ntyBindAgreeAction(imei, adminId, proposerId, gId, phonenum, msgId);
+		//ntyBindAgreeAction(imei, adminId, proposerId, gId, phonenum, msgId);
 	} else if (flag == 0) {  // REJECT
 
 		char phonenum[64] = {0};
