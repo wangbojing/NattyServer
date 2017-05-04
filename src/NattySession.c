@@ -580,6 +580,28 @@ int ntySendDataResult(C_DEVID fromId, U8 *json, int length, U16 status) {
 	
 }
 
+int ntySendUserDataAck(C_DEVID fromId, U8 *json, int length) {
+	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
+	U16 bLength = length;
+
+	buffer[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
+	buffer[NTY_PROTO_DEVTYPE_IDX] = NTY_PROTO_CLIENT_DEFAULT;
+	buffer[NTY_PROTO_PROTOTYPE_IDX] = PROTO_ACK;
+	buffer[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_DATAPACKET_ACK;
+
+	memcpy(&buffer[NTY_PROTO_USERDATA_PACKET_ACK_JSON_LENGTH_IDX] , &bLength, sizeof(U16));
+	memcpy(&buffer[NTY_PROTO_USERDATA_PACKET_ACK_JSON_CONTENT_IDX], json, length);
+
+	bLength = NTY_PROTO_USERDATA_PACKET_ACK_JSON_CONTENT_IDX + length + sizeof(U32);
+
+	void *map = ntyMapInstance();
+	ClientSocket *client = ntyMapSearch(map, fromId);
+	
+	return ntySendBuffer(client, buffer, bLength);
+	
+}
+
+
 int ntySendPushNotify(C_DEVID selfId, U8 *msg) {
 #if 1
 	void *heap = ntyBHeapInstance();
