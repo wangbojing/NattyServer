@@ -170,14 +170,14 @@ int ntyVoiceReqHandle(void *arg) {
 	return 0;
 }
 
-//添加联系人消息发送到管理员
+//添加联系人消息发送到手表
 void ntyBindAgreeWatch(C_DEVID adminId, C_DEVID DeviceId, char *phonenum, int contactsTempId, char *pname, char *pimage) {
-	AddContactsAck *pAddContactsAck = malloc(sizeof(AddContactsAck));
-	if (pAddContactsAck == NULL) {
-		ntylog("ntyBindAgreeWatch --> malloc AddContactsAck failed\n");
+	DeviceAddContactsAck *pDeviceAddContactsAck = malloc(sizeof(DeviceAddContactsAck));
+	if (pDeviceAddContactsAck == NULL) {
+		ntylog("ntyBindAgreeWatch --> malloc DeviceAddContactsAck failed\n");
 		return;
 	}
-	memset(pAddContactsAck, 0, sizeof(AddContactsAck));
+	memset(pDeviceAddContactsAck, 0, sizeof(DeviceAddContactsAck));
 
 	char bufIMEI[64] = {0};
 	sprintf(bufIMEI, "%llx", DeviceId);
@@ -187,18 +187,18 @@ void ntyBindAgreeWatch(C_DEVID adminId, C_DEVID DeviceId, char *phonenum, int co
 	char category[16] = {0};
 	strcat(add, "Add");
 	strcat(category, "Contacts");
-	pAddContactsAck->results.id = contactsId;
-	pAddContactsAck->results.IMEI = bufIMEI;
-	pAddContactsAck->results.category = category;
-	pAddContactsAck->results.action = add;
-	pAddContactsAck->results.contacts.id = NULL;
-	pAddContactsAck->results.contacts.name = pname;
-	pAddContactsAck->results.contacts.image = pimage;
-	pAddContactsAck->results.contacts.telphone = phonenum;
+	pDeviceAddContactsAck->id = contactsId;
+	pDeviceAddContactsAck->IMEI = bufIMEI;
+	pDeviceAddContactsAck->category = category;
+	pDeviceAddContactsAck->action = add;
+	pDeviceAddContactsAck->contacts.id = contactsId;
+	pDeviceAddContactsAck->contacts.name = pname;
+	pDeviceAddContactsAck->contacts.image = pimage;
+	pDeviceAddContactsAck->contacts.telphone = phonenum;
 
 	C_DEVID fromId = adminId;
 	C_DEVID toId = DeviceId;
-	char *jsonagree = ntyJsonWriteWatchAddContacts(pAddContactsAck);
+	char *jsonagree = ntyJsonWriteDeviceAddContacts(pDeviceAddContactsAck);
 	ntylog(" ntyBindAgreeWatch jsonagree: %s\n", jsonagree);
 	
 	int ret = ntySendRecodeJsonPacket(fromId, toId, jsonagree, (int)strlen(jsonagree));
@@ -207,7 +207,7 @@ void ntyBindAgreeWatch(C_DEVID adminId, C_DEVID DeviceId, char *phonenum, int co
 		//ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
 	}
 	ntyJsonFree(jsonagree);
-	free(pAddContactsAck);
+	free(pDeviceAddContactsAck);
 }
 
 int ntyBindConfirm(C_DEVID adminId, C_DEVID *ProposerId, C_DEVID DeviceId, U32 msgId, U8 *phonenum) {
@@ -503,8 +503,6 @@ int ntyBindParserJsonHandle(void *arg) {
 		ntyFreeJsonValue(json);
 		free(tag);
 
-
-		
 		U32 msgId = 0;
 		U8 phnum[32] = {0};
 		int ret = ntyQueryAdminGroupInsertHandle(devId, name, proposer, call, wimage, uimage, phnum, &msgId);
@@ -515,7 +513,43 @@ int ntyBindParserJsonHandle(void *arg) {
 		}
 
 		//add contacts msg, send to watch
+		DeviceAddContactsAck *pDeviceAddContactsAck = malloc(sizeof(DeviceAddContactsAck));
+		if (pDeviceAddContactsAck == NULL) {
+			ntylog("ntyBindAgreeWatch --> malloc DeviceAddContactsAck failed\n");
+			return;
+		}
+		memset(pDeviceAddContactsAck, 0, sizeof(DeviceAddContactsAck));
+
+		char bufIMEI[64] = {0};
+		sprintf(bufIMEI, "%llx", devId);
+		char contactsId[16] = {0};
+		sprintf(contactsId, "%d", msgId);
+		char add[16] = {0};
+		char category[16] = {0};
+		strcat(add, "Add");
+		strcat(category, "Contacts");
+		pDeviceAddContactsAck->id = contactsId;
+		pDeviceAddContactsAck->IMEI = bufIMEI;
+		pDeviceAddContactsAck->category = category;
+		pDeviceAddContactsAck->action = add;
+		pDeviceAddContactsAck->contacts.id = contactsId;
+		pDeviceAddContactsAck->contacts.name = name;
+		pDeviceAddContactsAck->contacts.image = uimage;
+		pDeviceAddContactsAck->contacts.telphone = call;
+
+		C_DEVID fromId = proposer;
+		C_DEVID toId = devId;
+		char *jsonagree = ntyJsonWriteDeviceAddContacts(pDeviceAddContactsAck);
+		ntylog(" ntyBindAgreeWatch jsonagree: %s\n", jsonagree);
 		
+		ret = ntySendRecodeJsonPacket(fromId, toId, jsonagree, (int)strlen(jsonagree));
+		if (ret < 0) {
+			ntylog(" ntyBindParserJsonHandle --> SendCommonReq Exception\n");
+		}
+		ntyJsonFree(jsonagree);
+		free(pDeviceAddContactsAck);
+
+		return ret;
 	} else if (tag->arg == NTY_BIND_ACK_SUCCESS) {
 		int msgId = 0;
 		//绑定确认添加

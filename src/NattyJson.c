@@ -1133,10 +1133,11 @@ char * ntyJsonWriteDeviceAddContacts(DeviceAddContactsAck *pDeviceAddContactsAck
 	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_ID, pDeviceAddContactsAck->id);
 
 	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_CONTACTS, json_value_init_object());
-	JSON_Object *schedule_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_CONTACTS);
-	json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_NAME, pDeviceAddContactsAck->contacts.name);
-	json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_IMAGE, pDeviceAddContactsAck->contacts.image);
-	json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_TELPHONE, pDeviceAddContactsAck->contacts.telphone);
+	JSON_Object *contacts_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_CONTACTS);
+	json_object_set_string(contacts_obj, NATTY_USER_PROTOCOL_ID, pDeviceAddContactsAck->contacts.id);
+	json_object_set_string(contacts_obj, NATTY_USER_PROTOCOL_NAME, pDeviceAddContactsAck->contacts.name);
+	json_object_set_string(contacts_obj, NATTY_USER_PROTOCOL_IMAGE, pDeviceAddContactsAck->contacts.image);
+	json_object_set_string(contacts_obj, NATTY_USER_PROTOCOL_TELPHONE, pDeviceAddContactsAck->contacts.telphone);
 	
 	char *jsonstring =  json_serialize_to_string(schema);
 	json_value_free(schema);
@@ -1312,6 +1313,7 @@ char * ntyJsonWriteAddContacts(AddContactsAck *pAddContactsAck) {
 	return jsonstring;
 }
 
+/*
 char * ntyJsonWriteWatchAddContacts(AddContactsAck *pAddContactsAck) {
 	if (pAddContactsAck == NULL) {
 		return NULL;
@@ -1336,6 +1338,7 @@ char * ntyJsonWriteWatchAddContacts(AddContactsAck *pAddContactsAck) {
 	return jsonstring;
 
 }
+*/
 
 char * ntyJsonWriteUpdateContacts(UpdateContactsAck *pUpdateContactsAck) {
 	if (pUpdateContactsAck == NULL) {
