@@ -981,11 +981,29 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 		memcpy(jsonstring, buffer+NTY_PROTO_COMMON_REQ_JSON_CONTENT_IDX, jsonlen);
 
 		ntylog("ntyCommonReqPacketHandleRequest --> fromId:%lld, toId:%lld, json : %s  %d\n", fromId, toId, jsonstring, jsonlen);
+
+
+		VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
+		if (tag == NULL) return ;
+
+		memset(tag, 0, sizeof(VALUE_TYPE));
+		tag->fromId = fromId;
+		tag->toId = toId;
+		tag->Tag = jsonstring;
+		tag->length = jsonlen;
+		tag->arg = 0;
 		
+		tag->Type = MSG_TYPE_COMMON_REQ_HANDLE;
+		tag->cb = ntyCommonReqHandle;
+
+		ntyDaveMqPushMessage(tag);
+
+#if 0	//move to MQ	
 		JSON_Value *json = ntyMallocJsonValue(jsonstring);
 		if (json == NULL) { //JSON Error and send Code to FromId Device
 			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
 		} else {
+
 			size_t len_ActionParam = sizeof(ActionParam);
 			ActionParam *pActionParam = malloc(len_ActionParam);
 			if (pActionParam == NULL) {
@@ -1005,10 +1023,11 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 			
 			ntyCommonReqAction(pActionParam);
 			free(pActionParam);
+
 		}
 		free(jsonstring);
 		ntyFreeJsonValue(json);
-		
+#endif		
 		ntylog("====================end ntyCommonReqPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);

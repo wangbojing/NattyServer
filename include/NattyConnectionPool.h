@@ -51,19 +51,69 @@
 #include <mysql/mysql.h>
 
 
-typedef MYSQL nShrimpConn;
-typedef MYSQL_RES nShrimpRes;
-typedef MYSQL_ROW nShrimpRow;
+typedef MYSQL 			nShrimpConn;
+typedef MYSQL_RES 		nShrimpRes;
+typedef MYSQL_ROW 		nShrimpRow;
 
-typedef MYSQL_STMT nShrimpStmt;
-typedef MYSQL_BIND nShrimpBind;
-typedef MYSQL_FIELD nShrimpField;
+typedef MYSQL_STMT 		nShrimpStmt;
+typedef MYSQL_BIND 		nShrimpBind;
+typedef MYSQL_FIELD 	nShrimpField;
 
+typedef pthread_t 		nThread;
+typedef pthread_cond_t	nSem;
+typedef pthread_mutex_t	nMutex;
+typedef pthread_key_t	nThreadKey;
+
+
+
+#if 1 //Code From LIBZDB
+
+#define wrapper(F) do { int status=F; \
+        if (status!=0 && status!=ETIMEDOUT) \
+                ntylog("Thread: %s\n", strerror(status)); \
+        } while (0)
+        
+#define ntyThreadCreate(thread, threadFunc, threadArgs) \
+        wrapper(pthread_create(&thread, NULL, threadFunc, (void*)threadArgs))
+#define ntyThreadSelf() pthread_self()
+#define ntyThreadDetach(thread) wrapper(pthread_detach(thread))
+#define ntyThreadCancel(thread) wrapper(pthread_cancel(thread))
+#define ntyThreadJoin(thread) wrapper(pthread_join(thread, NULL))
+
+
+#define ntySemInit(sem) wrapper(pthread_cond_init(&sem, NULL))
+#define ntySemWait(sem, mutex) wrapper(pthread_cond_wait(&sem, &mutex))
+#define ntySemSignal(sem) wrapper(pthread_cond_signal(&sem))
+#define ntySemBroadcast(sem) wrapper(pthread_cond_broadcast(&sem))
+#define ntySemDestroy(sem) wrapper(pthread_cond_destroy(&sem))
+#define ntySemTimeWait(sem, mutex, time) \
+        wrapper(pthread_cond_timedwait(&sem, &mutex, &time))
+
+
+#define ntyMutexInit(mutex) wrapper(pthread_mutex_init(&mutex, NULL))
+#define ntyMutexDestroy(mutex) wrapper(pthread_mutex_destroy(&mutex))
+#define ntyMutexLock(mutex) wrapper(pthread_mutex_lock(&mutex))
+#define ntyMutexUnlock(mutex) wrapper(pthread_mutex_unlock(&mutex))
+
+#define LOCK(mutex) do { nMutex *_yymutex=&(mutex); \
+        wrapper(pthread_mutex_lock(_yymutex));
+#define END_LOCK wrapper(pthread_mutex_unlock(_yymutex)); } while (0)
+
+#define ntyThreadDataCreate(key) wrapper(pthread_key_create(&(key), NULL))
+#define ntyThreadDataSet(key, value) pthread_setspecific((key), (value))
+#define ntyThreadDataGet(key) pthread_getspecific((key))
+
+#endif
 
 
 #define NTY_DEFAULT_CONNPOOL_MAX		64
 #define NTY_DEFAULT_CONNPOOL_MIN		30
 #define NTY_DEFAULT_CONNPOOL_INC		4
+
+#define NTY_DEFAULT_CONNECTION_TIMEOUT	30
+#define NTY_DEFAULT_HANDLE_TIMEOUT		2
+#define NTY_DEFAULT_REAP_TIMEOUT		1
+
 
 #define NTY_DEFAULT_CONNPOOL_RATIO		0.6
 
@@ -89,6 +139,7 @@ typedef struct NTY_MYSQL_CONN {
 	nShrimpConn *Conn;	
 	nSnailsSet *Snails;
 	nShrimpRow Row;
+	TIMESTAMP accessTime;
 	
 	void *arg;
 	U8 enable;
@@ -102,11 +153,22 @@ typedef struct NTY_MYSQL_CONN {
 
 
 typedef struct NTY_CONNECTION_POOL {
+
+	nThread reaper;
+	nSem alarm;
+	volatile int stopped; //0 stop, 1 run
+	nMutex mutex;
+
+	int connectTimeout;
+	int handleTimeout;
+	int reapInterval;
+	
 	int max_num;
 	int cur_num;
 	int min_num;
 	int active;
 	nShrimp *ConnList;
+	
 } nConnPool, *ConnPool;
 
 typedef struct NTY_EXCEPTION {
@@ -117,6 +179,8 @@ typedef struct NTY_EXCEPTION {
 
 nShrimp *ntyConnPoolGetConnection(nConnPool *Pool);
 void ntyConnPoolRetConnection(nShrimp *shrimp);
+void ntyConnPoolCheckConnection(nShrimp *shrimp);
+
 
 long long ntyResultSetgetLLong(nSnailsSet *snail, int columnIndex);
 const char* ntyResultSetgetString(nSnailsSet *snail, int columnIndex);

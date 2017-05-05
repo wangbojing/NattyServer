@@ -654,17 +654,16 @@ nShrimpConn *ntyShrimpInit(nShrimpConn *c) {
 	return mysql_init(c);
 }
 
-int ntyShrimpPing(nShrimpConn *c) {
-	ASSERT(c);
-	return (mysql_ping(c) == NTY_RESULT_SUCCESS);
-}
-
-
 int ntyShrimpBeginTransaction(nShrimpConn *c) {
 	ASSERT(c);
 	return (NTY_RESULT_SUCCESS == mysql_query(c, "START TRANSACTION;"));
 }
 
+
+int ntyShrimpPing(nShrimpConn *c) {
+	ASSERT(c);
+	return (NTY_RESULT_SUCCESS == mysql_ping(c));
+}
 
 int ntyShrimpCommit(nShrimpConn *c) {
 	ASSERT(c);
@@ -741,6 +740,7 @@ void ntyShrimpDeInit(nShrimpConn *c) {
 	mysql_close(c);
 }
 
+
 void ntyShrimpResRelease(nShrimpRes *res) {
 	mysql_free_result(res);
 }
@@ -778,6 +778,28 @@ static nShrimpStmt *doPrepare(nShrimp *shrimp, const char *sql, int length) {
 	}
 	return stmt;
 }
+
+static int doRetrieve(nConnPool *Pool) {
+	int i = 0;
+	time_t timeout = Time_now();
+
+	for (i = 0;i < Pool->cur_num;i ++) {
+		nShrimp *shrimp = (nShrimp*)(Pool->ConnList+i);
+		if (shrimp->Conn == NULL) continue;
+
+		if (shrimp->enable) { //used
+			if (shrimp->accessTime < (timeout - Pool->handleTimeout)) { //executeQuery not ret
+				ntyConnPoolRetConnection(shrimp);
+			}
+		} else { //not used
+			if (shrimp->accessTime < (timeout - Pool->connectTimeout)) { //
+				
+				ntyConnPoolCheckConnection(shrimp);
+			}
+		}
+	}
+}
+
 
 
 nSnailsSet *ntyShrimpStmtResultSetNew(nSnailsSet *snail) {
@@ -990,6 +1012,75 @@ time_t ntyResultSetgetTimeStamp(nSnailsSet *snail, int columnIndex) {
 	return t;
 }
 
+
+void *ntyRetrieveThreadCb(void *arg) {
+	nConnPool *Pool = arg;
+	if (Pool == NULL) return NULL;
+
+	ntylog("ntyRetrieveThreadCb enter\n");
+
+	struct timespec wait = {0, 0};
+
+	ntyMutexLock(Pool->mutex);
+	while (!Pool->stopped) {
+		wait.tv_sec = Time_now() + Pool->reapInterval;
+
+		ntySemTimeWait(Pool->alarm, Pool->mutex, wait);
+		if (Pool->stopped) break;
+
+		doRetrieve(Pool);
+	}
+	ntyMutexUnlock(Pool->mutex);
+	
+}
+
+void *ntyShrimpNew(nShrimp *shrimp) {
+
+	if (shrimp == NULL) return NULL;
+	
+	shrimp->Conn = ntyMySqlConnInitialize(shrimp->Conn);
+	shrimp->Snails = (nSnailsSet*)malloc(sizeof(nSnailsSet));
+	ASSERT(shrimp->Snails);
+	memset(shrimp->Snails, 0, sizeof(nSnailsSet));
+	
+	shrimp->accessTime = Time_now();
+	
+	shrimp->enable = 0;
+	shrimp->status = 1;
+	
+	shrimp->con_lock = 0;
+	shrimp->arg = NULL;
+
+	return shrimp;
+}
+
+void *ntyShrimpFree(nShrimp *shrimp) {
+
+	if (shrimp == NULL) return NULL;
+
+	ntyMySqlConnRelease(shrimp->Conn);
+
+	if (shrimp->Snails) {
+		free(shrimp->Snails);
+	}
+
+	return shrimp;
+}
+
+void *ntyShrimpClear(nShrimp *shrimp) {
+	if (shrimp->arg) {
+		free(shrimp->arg);
+	}
+	if (shrimp->Snails) {
+		ntyShrimpStmtResultSetDelete(shrimp->Snails);
+
+	}
+	
+	ntyShrimpFree(shrimp);
+
+	return shrimp;
+}
+
 void *ntyConnPoolInitialize(nConnPool *Pool) {
 	int i = 0;
 	
@@ -1005,6 +1096,11 @@ void *ntyConnPoolInitialize(nConnPool *Pool) {
 		Pool->cur_num = NTY_DEFAULT_CONNPOOL_MIN;
 	}
 	Pool->active = 0;
+	Pool->stopped = 0;
+
+	Pool->connectTimeout = NTY_DEFAULT_CONNECTION_TIMEOUT;
+	Pool->handleTimeout = NTY_DEFAULT_HANDLE_TIMEOUT;
+	Pool->reapInterval = NTY_DEFAULT_REAP_TIMEOUT;
 
 	Pool->ConnList = (nMysqlConn*)malloc(Pool->max_num * sizeof(nShrimp));
 	if (Pool->ConnList == NULL) return NULL;
@@ -1014,23 +1110,61 @@ void *ntyConnPoolInitialize(nConnPool *Pool) {
 	for (i = 0;i < Pool->min_num;i ++) {
 		nShrimp *ConnItem = (nMysqlConn*)(Pool->ConnList+i);
 		
-		ConnItem->Conn = ntyMySqlConnInitialize(ConnItem->Conn);
-		ConnItem->Snails = (nSnailsSet*)malloc(sizeof(nSnailsSet));
-		ASSERT(ConnItem->Snails);
-		memset(ConnItem->Snails, 0, sizeof(nSnailsSet));
-		
 		ConnItem->Pool = Pool;
-		
 		ConnItem->index = i;
-		ConnItem->enable = 0;
-		ConnItem->status = 1;
+
+		ntyShrimpNew(ConnItem);
 		
-		ConnItem->con_lock = 0;
-		ConnItem->arg = NULL;
 	}
+	
+#if 1 //startup 
+	pthread_mutex_init(&Pool->mutex, NULL);
+	pthread_cond_init(&Pool->alarm, NULL);
+
+	int rc = pthread_create(&Pool->reaper, NULL, ntyRetrieveThreadCb, Pool);
+	if (rc) {
+		ntylog("ntyConnPoolInitialize --> create RetrieveThreadCb Failed\n");
+	}
+#endif
 
 	return Pool;
 }
+
+
+void *ntyConnPoolRelease(nConnPool *Pool) {
+	int i = 0;
+	
+	for (i = 0;i < Pool->max_num;i ++) {
+		nShrimp *ConnItem = (nShrimp*)(Pool->ConnList+i);
+		if (ConnItem == NULL) break;
+		
+		if (ConnItem->status == 1) {
+			if (0 == cmpxchg(&ConnItem->con_lock, 0, 1, WORD_WIDTH)) {
+
+				if (ConnItem->arg) {
+					free(ConnItem->arg);
+				}
+				if (ConnItem->Snails) {
+					ntyShrimpStmtResultSetDelete(ConnItem->Snails);
+
+				}
+				
+				ntyShrimpFree(ConnItem);
+				
+				ConnItem->enable = 0;
+				ConnItem->index = i;
+				ConnItem->status = 0;
+				
+				ConnItem->con_lock = 0;
+			}
+		}
+	}
+
+	free(Pool->ConnList);
+	
+	return Pool;
+}
+
 
 void ntyConnPoolSetMin(nConnPool *Pool, int min) {
 	Pool->min_num = min;
@@ -1052,37 +1186,6 @@ int ntyConnPoolGetActive(nConnPool *Pool) {
 	return Pool->active;
 }
 
-void *ntyConnPoolRelease(nConnPool *Pool) {
-	int i = 0;
-	
-	for (i = 0;i < Pool->max_num;i ++) {
-		nShrimp *ConnItem = (nShrimp*)(Pool->ConnList+i);
-		if (ConnItem == NULL) break;
-		
-		if (ConnItem->status == 1) {
-			if (0 == cmpxchg(&ConnItem->con_lock, 0, 1, WORD_WIDTH)) {
-				ntyMySqlConnRelease(ConnItem->Conn);
-
-				if (ConnItem->arg) {
-					free(ConnItem->arg);
-				}
-				if (ConnItem->Snails) {
-					ntylog("ntyConnPoolRelease --> ntyShrimpStmtResultSetDelete\n");
-					ntyShrimpStmtResultSetDelete(ConnItem->Snails);
-
-				}
-				
-				ConnItem->enable = 0;
-				ConnItem->index = i;
-				ConnItem->status = 0;
-				
-				ConnItem->con_lock = 0;
-			}
-		}
-	}
-	return Pool;
-}
-
 void ntyConnPoolResize(nConnPool *Pool) {
 
 	int active = Pool->active;
@@ -1098,7 +1201,6 @@ void ntyConnPoolResize(nConnPool *Pool) {
 
 		
 	}
-
 	
 }
 
@@ -1116,6 +1218,8 @@ nShrimp *ntyConnPoolGetConnection(nConnPool *Pool) {
 				ConnItem->enable = 1;
 				Pool->active ++;
 				shrimp = ConnItem;
+
+				ConnItem->accessTime = Time_now();
 				
 				ConnItem->con_lock = 0;
 				break;
@@ -1151,6 +1255,23 @@ void ntyConnPoolRetConnection(nShrimp *shrimp) {
 	}
 }
 
+void ntyConnPoolCheckConnection(nShrimp *shrimp) {
+	if (shrimp == NULL) return ;
+
+	if (0 == cmpxchg(&shrimp->con_lock, 0, 1, WORD_WIDTH)) {
+
+		if (!ntyShrimpPing(shrimp->Conn)) { //connect failed
+
+			shrimp = ntyShrimpClear(shrimp);
+
+			shrimp = ntyShrimpNew(shrimp);
+		}
+
+		shrimp->accessTime = Time_now();
+
+		shrimp->con_lock = 0;
+	}
+}
 
 
 nSnailsSet* ntyConnPoolExecuteQuery(nShrimp *shrimp, const char *format, ...) {

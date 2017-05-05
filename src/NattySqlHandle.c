@@ -661,3 +661,47 @@ exit:
 }
 
 
+int ntyCommonReqHandle(void *arg) {
+
+	
+	VALUE_TYPE *tag = (VALUE_TYPE*)arg;
+	if (tag == NULL) return NTY_RESULT_ERROR;
+
+	U8 *jsonstring = tag->Tag;
+	C_DEVID fromId = tag->fromId;
+	C_DEVID toId = tag->toId;
+	int jsonlen = tag->length;
+
+	JSON_Value *json = ntyMallocJsonValue(jsonstring);
+	if (json == NULL) { //JSON Error and send Code to FromId Device
+		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
+	} else {
+
+		size_t len_ActionParam = sizeof(ActionParam);
+		ActionParam *pActionParam = malloc(len_ActionParam);
+		if (pActionParam == NULL) {
+			ntylog(" %s --> malloc failed ActionParam", __func__);
+			free(jsonstring);
+
+			return ;
+		}
+		memset(pActionParam, 0, len_ActionParam);
+		 
+		pActionParam->fromId = fromId;
+		pActionParam->toId = toId;
+		pActionParam->json = json;
+		pActionParam->jsonstring = jsonstring;
+		pActionParam->jsonlen = jsonlen;
+		pActionParam->index = 0;
+		
+		ntyCommonReqAction(pActionParam);
+		free(pActionParam);
+
+	}
+	free(jsonstring);
+	ntyFreeJsonValue(json);
+
+	free(tag);
+}
+
+
