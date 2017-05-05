@@ -374,7 +374,7 @@ int ntyExecuteDevAppGroupBindAndAgreeInsertHandle(int msgId, C_DEVID *proposerId
 
 int ntyExecuteCommonOfflineMsgDeleteHandle(int msgId, C_DEVID clientId);
 
-int ntyQueryAdminGroupInsertHandle(C_DEVID devId, U8 *bname, C_DEVID fromId, U8 *userCall, U8 *wimage, U8 *uimage);
+int ntyQueryAdminGroupInsertHandle(C_DEVID devId, U8 *bname, C_DEVID fromId, U8 *userCall, U8 *wimage, U8 *uimage, U32 *msgId);
 
 int ntyQueryVoiceOfflineMsgSelectHandle(C_DEVID fromId, void *container);
 

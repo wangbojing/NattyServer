@@ -502,8 +502,18 @@ int ntyBindParserJsonHandle(void *arg) {
 
 		ntyFreeJsonValue(json);
 		free(tag);
+
+
 		
-		return ntyQueryAdminGroupInsertHandle(devId, name, proposer, call, wimage, uimage);
+		U32 msgId = 0;
+		int ret = ntyQueryAdminGroupInsertHandle(devId, name, proposer, call, wimage, uimage, &msgId);
+		if (ret != NTY_RESULT_SUCCESS) {
+			ntylog("ntyBindParserJsonHandle --> ntyQueryAdminGroupInsertHandle failed\n");
+
+			return ret;
+		}
+
+		//add contacts msg, send to watch
 		
 	} else if (tag->arg == NTY_BIND_ACK_SUCCESS) {
 		int msgId = 0;
