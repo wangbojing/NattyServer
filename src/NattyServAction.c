@@ -2125,12 +2125,13 @@ int ntyBindReqAction(ActionParam *pActionParam) {
 		U8 *call = (U8*)pBindReq->bind.userName;
 		U8 *uimage = (U8*)pBindReq->bind.userImage;
 		U32 msgId = 0;
+		U8 phnum[32] = {0};
 
 		ntylog("WatchName:%s, UserName:%s\n", pBindReq->bind.watchName, pBindReq->bind.userName);
 	
 		if (admin == 0 || admin == fromId) { //first bind device
 			//将管理员添加到新创建的群组
-			ret = ntyQueryAdminGroupInsertHandle(devId, name, proposer, call, wimage, uimage, &msgId);
+			ret = ntyQueryAdminGroupInsertHandle(devId, name, proposer, call, wimage, uimage, phnum, &msgId);
 			if (ret == 0) {
 				ntyProtoBindAck(fromId, devId, 5);
 			} else {

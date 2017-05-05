@@ -2863,7 +2863,7 @@ int ntyQueryVoiceMsgSelect(void *self, int index,C_DEVID *senderId, C_DEVID *gId
 }
 
 //PROC_INSERT_ADMIN_GROUP
-int ntyQueryAdminGroupInsert(void *self, C_DEVID devId, U8 *bname, C_DEVID fromId, U8 *userCall, U8 *wimage, U8 *uimage, U32 *msgId) {
+int ntyQueryAdminGroupInsert(void *self, C_DEVID devId, U8 *bname, C_DEVID fromId, U8 *userCall, U8 *wimage, U8 *uimage, U8 *phnum, U32 *msgId) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
@@ -2880,6 +2880,11 @@ int ntyQueryAdminGroupInsert(void *self, C_DEVID devId, U8 *bname, C_DEVID fromI
 				while (ResultSet_next(r)) {
 					ret = ResultSet_getInt(r, 1);	
 					*msgId = ResultSet_getInt(r, 4);
+
+					const char *pnum = ResultSet_getString(r, 3);
+					if (pnum != NULL) {
+						memcpy(phnum, pnum, strlen(pnum));
+					}
 				}
 			}
 		}
@@ -3200,9 +3205,9 @@ int ntyQueryAppOnlineStatusHandle(C_DEVID aid, int *online) {
 	return ntyQueryAppOnlineStatus(pool, aid, online);
 }
 
-int ntyQueryAdminGroupInsertHandle(C_DEVID devId, U8 *bname, C_DEVID fromId, U8 *userCall, U8 *wimage, U8 *uimage, U32 *msgId) {
+int ntyQueryAdminGroupInsertHandle(C_DEVID devId, U8 *bname, C_DEVID fromId, U8 *userCall, U8 *wimage, U8 *uimage, U8 *phnum, U32 *msgId) {
 	void *pool = ntyConnectionPoolInstance();
-	return ntyQueryAdminGroupInsert(pool, devId, bname, fromId, userCall, wimage, uimage, msgId);
+	return ntyQueryAdminGroupInsert(pool, devId, bname, fromId, userCall, wimage, uimage, phnum, msgId);
 }
 
 int ntyQueryBindOfflineMsgToAdminSelectHandle(C_DEVID fromId, void *container) {

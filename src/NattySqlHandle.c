@@ -506,7 +506,8 @@ int ntyBindParserJsonHandle(void *arg) {
 
 		
 		U32 msgId = 0;
-		int ret = ntyQueryAdminGroupInsertHandle(devId, name, proposer, call, wimage, uimage, &msgId);
+		U8 phnum[32] = {0};
+		int ret = ntyQueryAdminGroupInsertHandle(devId, name, proposer, call, wimage, uimage, phnum, &msgId);
 		if (ret != NTY_RESULT_SUCCESS) {
 			ntylog("ntyBindParserJsonHandle --> ntyQueryAdminGroupInsertHandle failed\n");
 
