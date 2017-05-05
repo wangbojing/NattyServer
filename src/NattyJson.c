@@ -1312,6 +1312,30 @@ char * ntyJsonWriteAddContacts(AddContactsAck *pAddContactsAck) {
 	return jsonstring;
 }
 
+char * ntyJsonWriteWatchAddContacts(AddContactsAck *pAddContactsAck) {
+	if (pAddContactsAck == NULL) {
+		return NULL;
+	}
+
+	JSON_Value *schema = json_value_init_object();
+	JSON_Object *schema_obj = json_value_get_object(schema);
+	
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_IMEI, pAddContactsAck->results.IMEI);
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_CATEGORY, pAddContactsAck->results.category);
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_ACTION, pAddContactsAck->results.action);
+	
+	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_CONTACTS, json_value_init_object());
+	JSON_Object *contacts_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_CONTACTS);
+	json_object_set_string(contacts_obj, NATTY_USER_PROTOCOL_ID, pAddContactsAck->results.contacts.id);
+	json_object_set_string(contacts_obj, NATTY_USER_PROTOCOL_NAME, pAddContactsAck->results.contacts.name);
+	json_object_set_string(contacts_obj, NATTY_USER_PROTOCOL_IMAGE, pAddContactsAck->results.contacts.image);
+	json_object_set_string(contacts_obj, NATTY_USER_PROTOCOL_TELPHONE, pAddContactsAck->results.contacts.telphone);
+
+	char *jsonstring =  json_serialize_to_string(schema);
+	json_value_free(schema);
+	return jsonstring;
+
+}
 
 char * ntyJsonWriteUpdateContacts(UpdateContactsAck *pUpdateContactsAck) {
 	if (pUpdateContactsAck == NULL) {

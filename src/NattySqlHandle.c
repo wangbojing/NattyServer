@@ -198,7 +198,7 @@ void ntyBindAgreeWatch(C_DEVID adminId, C_DEVID DeviceId, char *phonenum, int co
 
 	C_DEVID fromId = adminId;
 	C_DEVID toId = DeviceId;
-	char *jsonagree = ntyJsonWriteAddContacts(pAddContactsAck);
+	char *jsonagree = ntyJsonWriteWatchAddContacts(pAddContactsAck);
 	ntylog(" ntyBindAgreeWatch jsonagree: %s\n", jsonagree);
 	
 	int ret = ntySendRecodeJsonPacket(fromId, toId, jsonagree, (int)strlen(jsonagree));
@@ -298,7 +298,7 @@ int ntyBindConfirmReqHandle(void *arg) {
 		pBindBroadCast->result.answer = answer;
 		
 		char *jsonresult = ntyJsonWriteBindBroadCast(pBindBroadCast);
-		ntydbg("ntyBindConfirmReqHandle agree json: ->%s\n",  jsonresult);
+		ntylog("ntyBindConfirmReqHandle agree json: ->%s\n",  jsonresult);
 
 		//保存离线数据到数据库
 		int tempMsgId = 0;
