@@ -370,7 +370,7 @@ int ntyQueryPhoneBookSelectHandle(C_DEVID imei, C_DEVID userId, char *phonenum);
 
 int ntyExecuteDevAppGroupBindInsertHandle(int msgId, C_DEVID *proposerId, U8 *phonenum);
 
-int ntyExecuteDevAppGroupBindAndAgreeInsertHandle(int msgId, C_DEVID *proposerId, U8 *phonenum, int *pid, U8 *pname, U8 *pimage);
+int ntyExecuteDevAppGroupBindAndAgreeInsertHandle(int msgId, C_DEVID *proposerId, char *phonenum, int *pid, char *pname, char *pimage);
 
 int ntyExecuteCommonOfflineMsgDeleteHandle(int msgId, C_DEVID clientId);
 
@@ -380,7 +380,7 @@ int ntyQueryVoiceOfflineMsgSelectHandle(C_DEVID fromId, void *container);
 
 int ntyQueryPhonebookBindAgreeSelectHandle(C_DEVID did, C_DEVID proposerId, char *phonenum, int *pid, U8 *pname, U8 *pimage);
 
-int ntyExecuteBindConfirmDeleteHandle(int msgId, C_DEVID *id);
+int ntyExecuteBindConfirmDeleteHandle(int msgId, char *phonenum, C_DEVID *id);
 
 int ntyQueryBindOfflineMsgToAdminSelectHandle(C_DEVID fromId, void *container);
 

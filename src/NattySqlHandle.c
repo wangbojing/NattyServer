@@ -179,7 +179,7 @@ void ntyBindAgreeWatch(C_DEVID adminId, C_DEVID DeviceId, char *phonenum, int co
 	}
 	memset(pAddContactsAck, 0, sizeof(AddContactsAck));
 
-	char bufIMEI[50] = {0};
+	char bufIMEI[64] = {0};
 	sprintf(bufIMEI, "%llx", DeviceId);
 	char contactsId[16] = {0};
 	sprintf(contactsId, "%d", contactsTempId);
@@ -191,13 +191,16 @@ void ntyBindAgreeWatch(C_DEVID adminId, C_DEVID DeviceId, char *phonenum, int co
 	pAddContactsAck->results.IMEI = bufIMEI;
 	pAddContactsAck->results.category = category;
 	pAddContactsAck->results.action = add;
-	pAddContactsAck->results.contacts.image = pimage;
+	pAddContactsAck->results.contacts.id = NULL;
 	pAddContactsAck->results.contacts.name = pname;
+	pAddContactsAck->results.contacts.image = pimage;
 	pAddContactsAck->results.contacts.telphone = phonenum;
 
 	C_DEVID fromId = adminId;
 	C_DEVID toId = DeviceId;
 	char *jsonagree = ntyJsonWriteAddContacts(pAddContactsAck);
+	ntylog(" ntyBindAgreeWatch jsonagree: %s\n", jsonagree);
+	
 	int ret = ntySendRecodeJsonPacket(fromId, toId, jsonagree, (int)strlen(jsonagree));
 	if (ret < 0) {
 		ntylog(" ntyBindAgreeWatch --> SendCommonReq Exception\n");
@@ -210,16 +213,26 @@ void ntyBindAgreeWatch(C_DEVID adminId, C_DEVID DeviceId, char *phonenum, int co
 int ntyBindConfirm(C_DEVID adminId, C_DEVID *ProposerId, C_DEVID DeviceId, U32 msgId, U8 *phonenum) {
 	C_DEVID AppId = 0x0;
 
+	int result = 0;
 	int contactsTempId = 0;
-	char *pname = NULL;
-	char *pimage = NULL;
+	char pname[128] = {0};
+	char pimage[512] = {0};
+	
+#if 1
 	int ret = ntyExecuteDevAppGroupBindAndAgreeInsertHandle(msgId, ProposerId, phonenum, &contactsTempId, pname, pimage);
+#else
+	int ret = ntyExecuteDevAppGroupBindInsertHandle(msgId, ProposerId, phonenum);
+#endif
 
 	memcpy(&AppId, ProposerId, sizeof(C_DEVID));
 	if (ret == -1) {
 		ntylog(" ntyBindConfirm --> DB Exception\n");
+	} else if (ret == -2) {
+		ntylog(" ntyBindConfirm Cann't find %d msgid.\n", msgId);
+	} else if (ret == -3) {
+		ntylog(" ntyBindConfirm --> DB ROLLBACK\n");
 	} else if (ret == 0) { //Bind Success Update RBTree
-
+		
 		void *heap = ntyBHeapInstance();
 		NRecord *record = ntyBHeapSelect(heap, AppId);
 		if (record != NULL) {
@@ -238,19 +251,14 @@ int ntyBindConfirm(C_DEVID adminId, C_DEVID *ProposerId, C_DEVID DeviceId, U32 m
 		ntyBindAgreeWatch(adminId, DeviceId, phonenum, contactsTempId, pname, pimage);
 	}
 	ntylog(" ntyBindConfirm --> ntyJsonCommonResult\n");
-
-	if (pname != NULL) {
-		free(pname);
-	}
-	if (pimage != NULL) {
-		free(pimage);
-	}
 	
 	return ret;
 }
 
 
 int ntyBindConfirmReqHandle(void *arg) {
+	ntylog("------------------- ntyBindConfirmReqHandle  begin--------------------------\n");
+	
 	if (arg == NULL) return NTY_RESULT_ERROR;
 
 	VALUE_TYPE *tag = arg;
@@ -290,7 +298,7 @@ int ntyBindConfirmReqHandle(void *arg) {
 		pBindBroadCast->result.answer = answer;
 		
 		char *jsonresult = ntyJsonWriteBindBroadCast(pBindBroadCast);
-		ntydbg("ntyJsonBroadCastRecvResult->%s\n",  jsonresult);
+		ntydbg("ntyBindConfirmReqHandle agree json: ->%s\n",  jsonresult);
 
 		//保存离线数据到数据库
 		int tempMsgId = 0;
@@ -300,15 +308,17 @@ int ntyBindConfirmReqHandle(void *arg) {
 		ntyJsonFree(jsonresult);
 		free(pBindBroadCast);
 
+#if 0
 		//发送管理员同意消息到手表
-		//ntyBindAgreeAction(imei, adminId, proposerId, gId, phonenum, msgId);
+		ntyBindAgreeAction(imei, adminId, proposerId, gId, phonenum, msgId);
+#endif
 	} else if (flag == 0) {  // REJECT
 
 		char phonenum[64] = {0};
 #if 0
 		int ret = ntyBindConfirm(adminId, &proposerId, gId, msgId, phonenum); 
 #else
-		int ret = ntyExecuteBindConfirmDeleteHandle(msgId, &proposerId);
+		int ret = ntyExecuteBindConfirmDeleteHandle(msgId, phonenum, &proposerId);
 		ntydbg("ntyJsonBroadCastRecvResult->%lld\n", proposerId);
 #endif
 		BindBroadCast *pBindBroadCast = malloc(sizeof(BindBroadCast));
@@ -335,6 +345,7 @@ int ntyBindConfirmReqHandle(void *arg) {
 	
 	free(tag);
 	
+	ntylog("------------------- ntyBindConfirmReqHandle  end--------------------------\n");
 	return 0;
 }
 

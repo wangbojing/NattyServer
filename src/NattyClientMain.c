@@ -179,10 +179,10 @@ void ntyBindConfirmResult(DEVID fromId, U8 *json, int length) {
 
 
 
-DEVID g_devid = 0x355637052329596;
+DEVID g_devid = 0x355637053837001;
 
 int main() {
-	DEVID AppId = 13579;
+	DEVID AppId = 10833;
 	DEVID aid = 0;
 	
 	int n = 0, length, i, result = 0;
@@ -208,8 +208,8 @@ int main() {
 	ntySetUserDataAckResult(ntyUserDataAck);
 	
 	//ntySetDevId(did);
-	//ntySetDevId(AppId);
-	ntySetDevId(g_devid);
+	ntySetDevId(AppId);
+	//ntySetDevId(g_devid);
 	
 	
 	ntyStartupClient(&result);
@@ -386,12 +386,12 @@ int main() {
 		//sleep(30);
 
 
-		//char *json_bindreq = "{\"IMEI\":\"355637052788450\",\"Category\":\"BindConfirmReq\",\"Answer\":\"Agree\",\"MsgId\":\"13453\"}";
-		//C_DEVID proposerId = 0;
-		//C_DEVID devId = 0; 
-		//U32 msgId = 0;
-		//ntyBindConfirmReqClient(proposerId, devId, msgId, json_bindreq, strlen(json_bindreq));
-
+		char *json_bindreq = "{\"IMEI\":\"355637053837001\",\"Category\":\"BindConfirmReq\",\"Answer\":\"Agree\",\"MsgId\":\"2\"}";
+		long long proposerId = 10833;
+		long long devId = 0x355637053837001; 
+		U32 msgId = 2;
+		ntyBindConfirmReqClient(proposerId, devId, msgId, json_bindreq, strlen(json_bindreq));
+		
 		
 		//char *json_bindreq = " {\"IMEI\":\"355637050957620\",\"Category\":\"BindReq\",\"BindReq\":{\"WatchName\":\"nihs\",\"WatchImage\":\"http:\\/\\/picture.quanjiakan.com:9080\\/quanjiakan\\/resources\\/device\\/20170408162703_4ezfc34wzqi5d3kcxqju.png\",\"UserName\":\"%E7%88%B7%E7%88%B7\",\"UserImage\":\"3\"}}";
 		//int length = strlen(json_bindreq);
