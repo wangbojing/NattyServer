@@ -1384,6 +1384,23 @@ char * ntyJsonWriteDelContacts(DelContactsAck *pDelContactsAck) {
 	return jsonstring;
 }
 
+char * ntyJsonWriteDeviceDelContacts(DeviceDelContactsAck *pDeviceDelContactsAck) {
+	if (pDeviceDelContactsAck == NULL) {
+		return NULL;
+	}
+
+	JSON_Value *schema = json_value_init_object();
+	JSON_Object *schema_obj = json_value_get_object(schema);
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_IMEI, pDeviceDelContactsAck->IMEI);
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_CATEGORY, pDeviceDelContactsAck->category);
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_ACTION, pDeviceDelContactsAck->action);
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_ID, pDeviceDelContactsAck->id);
+	
+	char *jsonstring =  json_serialize_to_string(schema);
+	json_value_free(schema);
+	return jsonstring;
+}
+
 char * ntyJsonWriteContacts(ContactsAck *pContactsAck) {
 	if (pContactsAck == NULL) {
 		return NULL;

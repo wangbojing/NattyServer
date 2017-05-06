@@ -878,7 +878,7 @@ static const ProtocolFilter ntyICCIDReqFilter = {
 void ntyVoiceReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_VOICE_REQ) {
-		ntylog("====================end ntyVoiceReqPacketHandleRequest action ==========================\n");
+		ntylog("====================begin ntyVoiceReqPacketHandleRequest action ==========================\n");
 
 		const MessagePacket *msg = (const MessagePacket*)obj;
 		if (msg == NULL) return ;
@@ -1325,15 +1325,16 @@ void ntyUnBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer
 		C_DEVID AppId = *(C_DEVID*)(buffer+NTY_PROTO_UNBIND_APPID_IDX);
 		C_DEVID DeviceId = *(C_DEVID*)(buffer+NTY_PROTO_UNBIND_DEVICEID_IDX);
 
+		
+		int contactsTempId = 0;
 #if ENABLE_CONNECTION_POOL
 #if 0
 		int ret = ntyExecuteDevAppRelationDeleteHandle(AppId, DeviceId);
 #else
-		int ret = ntyExecuteDevAppGroupDeleteHandle(AppId, DeviceId);
+		int ret = ntyExecuteDevAppGroupDeleteHandle(AppId, DeviceId, &contactsTempId);
 #endif
 		if (ret == -1) {
 			ntylog(" ntyUnBindDevicePacketHandleRequest --> DB Exception\n");
-			ret = 4;
 		} else if (ret == 0) {
 #if 0
 			void *pRBTree = ntyRBTreeInstance();
@@ -1375,6 +1376,37 @@ void ntyUnBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer
 
 				ntylog("ntyVectorDelete DeviceId:%lld ret : %d\n", DeviceId, ret);
 			}
+
+
+			DeviceDelContactsAck *pDeviceDelContactsAck = malloc(sizeof(DeviceDelContactsAck));
+			if (pDeviceDelContactsAck == NULL) { 
+				return;
+			}
+			memset(pDeviceDelContactsAck, 0, sizeof(DeviceDelContactsAck));
+
+			char bufIMEI[64] = {0};
+			sprintf(bufIMEI, "%llx", DeviceId);
+			char contactsId[16] = {0};
+			sprintf(contactsId, "%d", contactsTempId);
+			char del[16] = {0};
+			char category[16] = {0};
+			strcat(del, "Delete");
+			strcat(category, "Contacts");
+			pDeviceDelContactsAck->msg = contactsId;
+			pDeviceDelContactsAck->IMEI = bufIMEI;
+			pDeviceDelContactsAck->category = category;
+			pDeviceDelContactsAck->action = del;
+			pDeviceDelContactsAck->id = contactsId;
+
+			char *jsonresult = ntyJsonWriteDeviceDelContacts(pDeviceDelContactsAck);
+			ntylog(" ntyUnBindDevicePacketHandleRequest json unbind: %s\n", jsonresult);
+			int ret = ntySendRecodeJsonPacket(AppId, DeviceId, jsonresult, (int)strlen(jsonresult));
+			if (ret < 0) {
+				ntylog(" ntyUnBindDevicePacketHandleRequest --> SendCommonReq Exception\n");
+			}
+
+			ntyJsonFree(jsonresult);
+			free(pDeviceDelContactsAck);
 #endif		
 			ret = NTY_RESULT_SUCCESS;
 		}

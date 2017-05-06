@@ -194,6 +194,8 @@ char * ntyJsonWriteUpdateContacts(UpdateContactsAck *pUpdateContactsAck);
 
 char * ntyJsonWriteDelContacts(DelContactsAck *pDelContactsAck);
 
+char * ntyJsonWriteDeviceDelContacts(DeviceDelContactsAck *pDeviceDelContactsAck);
+
 char * ntyJsonWriteContacts(ContactsAck *pContactsAck);
 
 char * ntyJsonWriteBindConfirmPush(BindConfirmPush *pBindConfirmPush);

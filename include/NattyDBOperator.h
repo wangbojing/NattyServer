@@ -281,7 +281,7 @@ int ntyQueryWatchIDListSelectHandle(C_DEVID aid, void *tree);
 int ntyQueryDevAppRelationInsertHandle(C_DEVID aid, U8 *imei);
 int ntyExecuteDevAppRelationDeleteHandle(C_DEVID aid, C_DEVID did);
 int ntyQueryDevAppGroupInsertHandle(C_DEVID aid, C_DEVID did);
-int ntyExecuteDevAppGroupDeleteHandle(C_DEVID aid, C_DEVID did);
+int ntyExecuteDevAppGroupDeleteHandle(C_DEVID aid, C_DEVID did, int *pid);
 int ntyExecuteLocationInsertHandle(C_DEVID did, U8 *lng, U8 *lat, U8 type, U8 *info);
 int ntyExecuteLocationNewInsertHandle( C_DEVID did, U8 type, const char *lnglat, const char *info, const char *desc);
 int ntyExecuteStepInsertHandle(C_DEVID did, int value);

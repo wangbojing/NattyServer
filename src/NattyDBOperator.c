@@ -1238,7 +1238,7 @@ static int ntyQueryBindOfflineMsgToProposerSelect(void *self, C_DEVID fromId, vo
 
 
 //NTY_DB_DEV_APP_DELETE_FORMAT
-static int ntyExecuteDevAppGroupDelete(void *self, C_DEVID aid, C_DEVID did) {
+static int ntyExecuteDevAppGroupDelete(void *self, C_DEVID aid, C_DEVID did, int *pid) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
@@ -1250,7 +1250,16 @@ static int ntyExecuteDevAppGroupDelete(void *self, C_DEVID aid, C_DEVID did) {
 		if (con == NULL) {
 			ret = -1;
 		} else {
+#if 0
 			Connection_execute(con, NTY_DB_DELETE_GROUP, did, aid);
+#endif
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_DELETE_GROUP, did, aid);
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					*pid = ResultSet_getInt(r, 1);
+					ret = 0;
+				}
+			}
 		}
 	} 
 	CATCH(SQLException) 
@@ -2994,9 +3003,9 @@ int ntyQueryAdminSelectHandle(C_DEVID did, C_DEVID *appid) {
 	return ntyQueryAdminSelect(pool, did, appid);
 }
 
-int ntyExecuteDevAppGroupDeleteHandle(C_DEVID aid, C_DEVID did) {
+int ntyExecuteDevAppGroupDeleteHandle(C_DEVID aid, C_DEVID did, int *pid) {
 	void *pool = ntyConnectionPoolInstance();
-	return ntyExecuteDevAppGroupDelete(pool, aid, did);
+	return ntyExecuteDevAppGroupDelete(pool, aid, did, pid);
 }
 
 int ntyExecuteLocationInsertHandle(C_DEVID did, U8 *lng, U8 *lat, U8 type, U8 *info) {

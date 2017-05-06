@@ -533,9 +533,9 @@ int ntyBindParserJsonHandle(void *arg) {
 		pDeviceAddContactsAck->category = category;
 		pDeviceAddContactsAck->action = add;
 		pDeviceAddContactsAck->contacts.id = contactsId;
-		pDeviceAddContactsAck->contacts.name = name;
+		pDeviceAddContactsAck->contacts.name = call;
 		pDeviceAddContactsAck->contacts.image = uimage;
-		pDeviceAddContactsAck->contacts.telphone = call;
+		pDeviceAddContactsAck->contacts.telphone = phnum;
 
 		C_DEVID fromId = proposer;
 		C_DEVID toId = devId;

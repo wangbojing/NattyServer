@@ -649,7 +649,7 @@ typedef struct _DelContactsReq {
 	const char *category;
 	const char *action;
 	const char *id;
-} DelContactsReq, DelContactsResults;
+} DelContactsReq, DelContactsResults, DeviceDelContactsAck;
 
 typedef struct _UpdateContactsReq {
 	const char *msg;
