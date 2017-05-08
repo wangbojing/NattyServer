@@ -1352,6 +1352,8 @@ void ntyUnBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer
 				}
 			}
 #else
+			int retTemp = 0;
+
 			//void *map = ntyMapInstance();
 			void *heap = ntyBHeapInstance();
 			NRecord *record = ntyBHeapSelect(heap, AppId);
@@ -1361,9 +1363,9 @@ void ntyUnBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer
 
 				ntylog("ntyUnBindDevicePacketHandleRequest -> record != NULL AppId\n");
 
-				ret = ntyVectorDelete(aclient->friends, &DeviceId);
+				retTemp = ntyVectorDelete(aclient->friends, &DeviceId);
 
-				ntylog("ntyVectorDelete AppId:%lld ret : %d\n", AppId, ret);
+				ntylog("ntyVectorDelete AppId:%lld ret : %d\n", AppId, retTemp);
 			}
 
 			record = ntyBHeapSelect(heap, DeviceId);
@@ -1372,9 +1374,9 @@ void ntyUnBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer
 				ASSERT(dclient != NULL);
 				ntylog("ntyUnBindDevicePacketHandleRequest -> record != NULL DeviceId\n");
 				
-				ret = ntyVectorDelete(dclient->friends, &AppId);
+				retTemp = ntyVectorDelete(dclient->friends, &AppId);
 
-				ntylog("ntyVectorDelete DeviceId:%lld ret : %d\n", DeviceId, ret);
+				ntylog("ntyVectorDelete DeviceId:%lld ret : %d\n", DeviceId, retTemp);
 			}
 
 
@@ -1400,8 +1402,8 @@ void ntyUnBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer
 
 			char *jsonresult = ntyJsonWriteDeviceDelContacts(pDeviceDelContactsAck);
 			ntylog(" ntyUnBindDevicePacketHandleRequest json unbind: %s\n", jsonresult);
-			int ret = ntySendRecodeJsonPacket(AppId, DeviceId, jsonresult, (int)strlen(jsonresult));
-			if (ret < 0) {
+			retTemp = ntySendRecodeJsonPacket(AppId, DeviceId, jsonresult, (int)strlen(jsonresult));
+			if (retTemp < 0) {
 				ntylog(" ntyUnBindDevicePacketHandleRequest --> SendCommonReq Exception\n");
 			}
 
