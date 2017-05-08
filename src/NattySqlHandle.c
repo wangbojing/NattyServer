@@ -679,6 +679,7 @@ int ntyLocationBroadCastHandle(void *arg) {
 
 int ntyIOSPushHandle(void *arg) {
 	VALUE_TYPE *tag = (VALUE_TYPE*)arg;
+	ntylog("ntyIOSPushHandle --> begin");
 
 	if (tag == NULL) return NTY_RESULT_ERROR;
 
@@ -699,7 +700,9 @@ int ntyIOSPushHandle(void *arg) {
 		goto exit;
 	}
 exit:
-	free(msg);
+	if (msg != NULL) {
+		free(msg);
+	}
 	free(tag);
 	
 	return NTY_RESULT_SUCCESS;

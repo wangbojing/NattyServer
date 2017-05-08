@@ -613,23 +613,32 @@ int ntySendPushNotify(C_DEVID selfId, U8 *msg) {
 		if (pClient->token != NULL) {
 			ntylog("ntySendPushNotify --> selfId:%lld  token:%s\n", selfId, pClient->token);
 			void *pushHandle = ntyPushHandleInstance();
-			ntyPushNotifyHandle(pushHandle, msg, pClient->token);
+			return ntyPushNotifyHandle(pushHandle, msg, pClient->token);
 		}
-		return NTY_RESULT_FAILED;
 	}
-	return NTY_RESULT_SUCCESS;
+	return NTY_RESULT_FAILED;//NTY_RESULT_FAILED
 #else
 
 	VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
 	if (tag == NULL) return NTY_RESULT_ERROR;
 
 	memset(tag, 0, sizeof(VALUE_TYPE));
-	tag->length = strlen(msg);
+	ntylog("ntySendPushNotify --> begin");
+
+	if (msg != NULL) {
+		
+		tag->length = strlen(msg);
+		tag->Tag = malloc(tag->length+1);
+		memset(tag->Tag, 0, tag->length+1);
+		memcpy(tag->Tag, msg, tag->length);
+		
+	} else {
+	
+		tag->length = 0;
+		tag->Tag = NULL;
+	}
 
 	tag->toId = selfId;
-	tag->Tag = malloc(tag->length+1);
-	memset(tag->Tag, 0, tag->lengt);
-	memcpy(tag->Tag, msg, tag->length);
 	tag->Type = MSG_TYPE_IOS_PUSH_HANDLE;
 	tag->cb = ntyIOSPushHandle;
 	ntyDaveMqPushMessage(tag);
