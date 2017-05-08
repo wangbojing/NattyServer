@@ -613,7 +613,7 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 						
 					U8 *token = buffer+NTY_PROTO_LOGIN_REQ_JSON_CONTENT_IDX;
 
-					if (tokenLen == TOKEN_SIZE) {
+					if (tokenLen == TOKEN_SIZE*2) {
 					
 						if (pClient->token == NULL) {
 							pClient->token = malloc(tokenLen + 1);

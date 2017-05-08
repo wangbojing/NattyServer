@@ -73,17 +73,17 @@
 #define APPLE_HOST_NAME					"gateway.sandbox.push.apple.com"
 #define APPLE_HOST_PORT					2195
 
-#define APPLE_CLIENT_PEM_NAME			"./crt/ck.pem"
+#define APPLE_CLIENT_PEM_NAME			"/home/crt/ck_development.pem"
 #define APPLE_CLIENT_PEM_KEY			"123456"
 #define APPLE_CLIENT_PEM_PWD			"123456"
 
-#define APPLE_SERVER_PEM_NAME			"./crt/entrust_2048_ca.pem"
+#define APPLE_SERVER_PEM_NAME			"/home/crt/entrust_2048_ca.pem"
 
 
 #define MAX_MESSAGE_PACKET		1024
 
 #define MAX_PAYLOAD_SIZE		256
-#define TOKEN_SIZE				64
+#define TOKEN_SIZE				32
 
 #define NTY_PUSH_MSG_CONTEXT			"全家康 \n 您收到了一条新消息"
 
