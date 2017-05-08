@@ -171,7 +171,7 @@ int ntyVoiceReqHandle(void *arg) {
 }
 
 //添加联系人消息发送到手表
-void ntyBindAgreeWatch(C_DEVID adminId, C_DEVID DeviceId, char *phonenum, int contactsTempId, char *pname, char *pimage) {
+void ntyBindAgreeWatchStep(C_DEVID adminId, C_DEVID DeviceId, char *phonenum, int contactsTempId, char *pname, char *pimage) {
 	DeviceAddContactsAck *pDeviceAddContactsAck = malloc(sizeof(DeviceAddContactsAck));
 	if (pDeviceAddContactsAck == NULL) {
 		ntylog("ntyBindAgreeWatch --> malloc DeviceAddContactsAck failed\n");
@@ -210,18 +210,25 @@ void ntyBindAgreeWatch(C_DEVID adminId, C_DEVID DeviceId, char *phonenum, int co
 	free(pDeviceAddContactsAck);
 }
 
-int ntyBindConfirm(C_DEVID adminId, C_DEVID *ProposerId, C_DEVID DeviceId, U32 msgId, U8 *phonenum) {
+/*
+ * 
+ * adminId [in] 管理员Id
+ * ProposerId [out] 申请者Id
+ * DeviceId [in] 设备IMEI
+ * msgId [in] TB_BIND_CONFIRM Id
+ * phonenum [out] 申请者电话号码
+ * pid [out] TB_PHONEBOOK Id
+ * pname [out] TB_GROUP G_NAME
+ * pimage [out] TB_GROUP G_DEVIMAGE
+ */
+int ntyBindConfirmStep(C_DEVID adminId, C_DEVID *ProposerId, C_DEVID DeviceId, U32 msgId, U8 *phonenum, int *pid, char *pname, char *pimage) {
 	C_DEVID AppId = 0x0;
 
 	int result = 0;
-	int contactsTempId = 0;
-	char pname[128] = {0};
-	char pimage[512] = {0};
-	
-#if 1
+#if 0
 	int ret = ntyExecuteDevAppGroupBindAndAgreeInsertHandle(msgId, ProposerId, phonenum, &contactsTempId, pname, pimage);
 #else
-	int ret = ntyExecuteDevAppGroupBindInsertHandle(msgId, ProposerId, phonenum);
+	int ret = ntyExecuteDevAppGroupBindInsertHandle(msgId, ProposerId, phonenum, pid, pname, pimage);
 #endif
 
 	memcpy(&AppId, ProposerId, sizeof(C_DEVID));
@@ -247,8 +254,6 @@ int ntyBindConfirm(C_DEVID adminId, C_DEVID *ProposerId, C_DEVID DeviceId, U32 m
 			ASSERT(dclient != NULL);
 			ntyVectorInsert(dclient->friends, &AppId, sizeof(C_DEVID));
 		}
-		
-		ntyBindAgreeWatch(adminId, DeviceId, phonenum, contactsTempId, pname, pimage);
 	}
 	ntylog(" ntyBindConfirm --> ntyJsonCommonResult\n");
 	
@@ -283,12 +288,18 @@ int ntyBindConfirmReqHandle(void *arg) {
 	ntylog(" ntyBindConfirmReqHandle flag:%d, proposerId:%lld\n", flag, proposerId);
 	if (flag == 1) { // AGREE
 		char phonenum[64] = {0};
-		int ret = ntyBindConfirm(adminId, &proposerId, gId, msgId, phonenum); 
+		int contactsTempId = 0;
+		char pname[128] = {0};
+		char pimage[512] = {0};
+		int ret = ntyBindConfirmStep(adminId, &proposerId, gId, msgId, phonenum, &contactsTempId, pname, pimage); 
 #if 0
 		//select phone 
 		ntyQueryPhoneBookSelectHandle(gId, proposerId, phonenum);
 		ntydbg("ntyBindConfirmReqHandle->flag:%d, phnum:%s\n", flag, phonenum);
 #endif
+		//发送添加联系人到手表
+		ntyBindAgreeWatchStep(adminId, gId, phonenum, contactsTempId, pname, pimage);
+
 		BindBroadCast *pBindBroadCast = malloc(sizeof(BindBroadCast));
 		memcpy(answer, NATTY_USER_PROTOCOL_AGREE, strlen(NATTY_USER_PROTOCOL_AGREE));
 		
@@ -304,7 +315,7 @@ int ntyBindConfirmReqHandle(void *arg) {
 		int tempMsgId = 0;
 		ret = ntyExecuteCommonMsgInsertHandle(adminId, gId, jsonresult, &tempMsgId);
 		
-		ntyJsonBroadCastRecvResult(adminId, gId, (U8*)jsonresult, msgId);
+		ntyJsonBroadCastRecvResult(adminId, gId, (U8*)jsonresult, tempMsgId);
 		ntyJsonFree(jsonresult);
 		free(pBindBroadCast);
 

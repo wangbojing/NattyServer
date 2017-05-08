@@ -502,7 +502,7 @@ static int ntyQueryDevAppGroupCheckSelect(void *self, C_DEVID aid, C_DEVID imei)
 
 
 //NTY_DB_INSERT_BIND_GROUP
-static int ntyExecuteDevAppGroupBindInsert(void *self, int msgId, C_DEVID *proposerId, U8 *phonenum) {
+static int ntyExecuteDevAppGroupBindInsert(void *self, int msgId, C_DEVID *proposerId, U8 *phonenum, int *pid, char *pname, char *pimage) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
@@ -525,6 +525,22 @@ static int ntyExecuteDevAppGroupBindInsert(void *self, int msgId, C_DEVID *propo
 					ntylog("ntyExecuteDevAppGroupBindInsert --> num:%s, proposerId:%lld\n", num, *proposerId);
 					if (num != NULL) {
 						memcpy(phonenum, num, strlen(num));
+					}
+
+					*pid = ResultSet_getInt(r, 4);
+
+					const char *r_name = ResultSet_getString(r, 5);
+					if (r_name != NULL) {
+						size_t name_len = strlen(r_name);
+						memcpy(pname, r_name, name_len);
+						ntylog("ntyExecuteDevAppGroupBindAndAgreeInsert --> r_name:%s\n", pname);
+					}
+
+					const char *r_image = ResultSet_getString(r, 6);
+					if (r_image != NULL) {
+						size_t image_len = strlen(r_image);
+						memcpy(pimage, r_image, image_len);
+						ntylog("ntyExecuteDevAppGroupBindAndAgreeInsert --> r_image:%s\n", pimage);
 					}
 					
 				}
@@ -1290,7 +1306,7 @@ static int ntyExecuteLocationInsert(void *self, C_DEVID did, U8 *lng, U8 *lat, U
 		if (con == NULL) {			
 			ret = -1;		
 		} else {
-			U8 sql[256];
+			U8 sql[256] = {0};
 			Connection_execute(con, NTY_DB_NAMES_UTF8_SET_FORMAT);			
 			sprintf(sql, NTY_DB_LOCATION_INSERT_FORMAT, did, lng, lat, type, info);			
 			ntylog("%s", sql);			
@@ -1671,6 +1687,10 @@ int ntyExecuteEfenceDelete(void *self, C_DEVID aid, C_DEVID did, int index) {
 			ret = -1;
 		} else {
 			ntylog("ntyExecuteEfenceDelete --> execute\n");
+
+			U8 sql[512] = {0};		
+			sprintf(sql, NTY_DB_DELETE_EFENCE, did, index);
+			ntylog("%s", sql);
 			Connection_execute(con, NTY_DB_DELETE_EFENCE, did, index);
 		}
 	} 
@@ -2948,9 +2968,9 @@ int ntyQueryDevAppGroupCheckSelectHandle(C_DEVID aid, C_DEVID did) {
 	return ntyQueryDevAppGroupCheckSelect(pool, aid, did);
 }
 
-int ntyExecuteDevAppGroupBindInsertHandle(int msgId, C_DEVID *proposerId, U8 *phonenum) {
+int ntyExecuteDevAppGroupBindInsertHandle(int msgId, C_DEVID *proposerId, U8 *phonenum, int *pid, char *pname, char *pimage) {
 	void *pool = ntyConnectionPoolInstance();
-	return ntyExecuteDevAppGroupBindInsert(pool, msgId, proposerId, phonenum);
+	return ntyExecuteDevAppGroupBindInsert(pool, msgId, proposerId, phonenum, pid, pname, pimage);
 }
 
 int ntyExecuteDevAppGroupBindAndAgreeInsertHandle(int msgId, C_DEVID *proposerId, char *phonenum, int *pid, char *pname, char *pimage) {

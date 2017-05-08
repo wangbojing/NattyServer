@@ -368,7 +368,7 @@ int ntyQueryBindConfirmInsertHandle(C_DEVID admin, C_DEVID imei, U8 *name, U8 *w
 
 int ntyQueryPhoneBookSelectHandle(C_DEVID imei, C_DEVID userId, char *phonenum);
 
-int ntyExecuteDevAppGroupBindInsertHandle(int msgId, C_DEVID *proposerId, U8 *phonenum);
+int ntyExecuteDevAppGroupBindInsertHandle(int msgId, C_DEVID *proposerId, U8 *phonenum, int *pid, char *pname, char *pimage);
 
 int ntyExecuteDevAppGroupBindAndAgreeInsertHandle(int msgId, C_DEVID *proposerId, char *phonenum, int *pid, char *pname, char *pimage);
 
