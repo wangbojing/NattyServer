@@ -58,7 +58,7 @@
 #define NATTY_HEARTBEAT_RATIO			6/5
 #define NATTY_HEARTBEAT_THRESHOLD		(NATTY_HEARTBEAT_DURATION*NATTY_HEARTBEAT_RATIO)
 
-#define NATTY_DURATION_EVENT			10
+#define NATTY_DURATION_EVENT			60
 
 #if 0
 void ntyHeartBeatDetectTraversal(void *mainloop);

@@ -159,6 +159,8 @@ int ntyCheckOnlineAlarmNotify(NITIMER_ID id, void *arg, int len) {
 static int ntyHeartBeatDetectItem(void *client, C_DEVID clientId) {
 	TIMESTAMP stamp = 0;
 	
+	ntylog("ntyHeartBeatDetectItem --> clientId:%lld\n", clientId);
+	
 	BPTreeHeap *heap = ntyBHeapInstance();
 	NRecord *record = ntyBHeapSelect(heap, clientId);
 	
