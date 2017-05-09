@@ -159,6 +159,7 @@ int ntyJsonLocationWIFIAction(ActionParam *pActionParam) {
 	if (pWIFIReq == NULL) {
 		return NTY_RESULT_ERROR;
 	}
+	memset(pWIFIReq, 0, sizeof(WIFIReq));
 	
 	ntyJsonWIFI(pActionParam->json, pWIFIReq);
 	C_DEVID fromId = pActionParam->fromId;
@@ -182,7 +183,7 @@ int ntyJsonLocationWIFIAction(ActionParam *pActionParam) {
 	U8 wifibuf[1024] = {0};
 	sprintf(wifibuf, "%s/position?accesstype=1&imei=%s&macs=%s&output=json&key=%s", 
 		HTTP_GAODE_BASE_URL, pWIFIReq->IMEI, macs, HTTP_GAODE_KEY);
-	ntydbg(" wifibuf --> %s\n", wifibuf);
+	ntylog(" wifibuf --> %s\n", wifibuf);
 	int length = strlen(wifibuf);
 
 #if 1 //Push to MessageQueue
@@ -239,7 +240,7 @@ int ntyJsonLocationWIFIAction(ActionParam *pActionParam) {
  *
  */
 int ntyJsonLocationLabAction(ActionParam *pActionParam) {
-	ntydbg(" ntyJsonLocationLabAction begin --> \n");
+	ntylog(" ntyJsonLocationLabAction begin --> \n");
 	if (pActionParam == NULL) {
 		return NTY_RESULT_FAILED;
 	}
@@ -270,7 +271,7 @@ int ntyJsonLocationLabAction(ActionParam *pActionParam) {
 	U8 labbuf[500] = {0};
 	sprintf(labbuf, "%s/position?accesstype=0&imei=%s&cdma=0&bts=%s&nearbts=%s&output=json&key=%s", 
 		HTTP_GAODE_BASE_URL, pLABReq->IMEI, pLABReq->lab.bts, nearbts, HTTP_GAODE_KEY);
-	ntydbg(" labbuf --> %s\n", labbuf);
+	ntylog(" labbuf --> %s\n", labbuf);
 	int length = strlen(labbuf);
 
 	MessageTag *pMessageTag = malloc(sizeof(MessageTag));

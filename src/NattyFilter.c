@@ -1741,6 +1741,7 @@ void ntyLocationAsyncReqPacketHandleRequest(const void *_self, unsigned char *bu
 		memset(jsonstring, 0, jsonlen+1);
 		memcpy(jsonstring, buffer+NTY_PROTO_LOCATION_ASYNC_REQ_JSON_CONTENT_IDX, jsonlen);
 
+		ntylog(" ntyLocationAsyncReqPacketHandleRequest --> json: %s, %d\n", jsonstring, jsonlen);
 		C_DEVID deviceId = *(C_DEVID*)(buffer+NTY_PROTO_LOCATION_ASYNC_REQ_DEVID_IDX);
 
 		JSON_Value *json = ntyMallocJsonValue(jsonstring);
