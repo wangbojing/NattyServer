@@ -62,6 +62,9 @@ void ntyCopyString(char **dest, const char *src, size_t size) {
 	if (*dest != NULL) {
 		memset(*dest, 0, size+1);
 		memcpy(*dest, src, size);
+	} else {
+		ntylog(" %s --> malloc failed dest\n", __func__);
+		*dest = NULL;
 	}
 }
 

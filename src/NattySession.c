@@ -581,7 +581,12 @@ int ntySendDataResult(C_DEVID fromId, U8 *json, int length, U16 status) {
 }
 
 int ntySendUserDataAck(C_DEVID fromId, U8 *json, int length) {
+#if 0
 	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
+#else
+	U8 buffer[NTY_DATA_PACKET_LENGTH*2] = {0};
+#endif
+
 	U16 bLength = length;
 
 	buffer[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;

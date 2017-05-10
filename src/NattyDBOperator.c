@@ -733,18 +733,6 @@ static int ntyQueryCommonOfflineMsgSelect(void *self, C_DEVID deviceId, void *co
 		if (con == NULL) {
 			ret = -1;
 		} else {
-			
-
-			/*
-			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_COMMON_OFFLINE_MSG, deviceId);
-			while (ResultSet_next(r)) {
-				int id = ResultSet_getInt(r, 1);
-				//ntylog(" ntyQueryCommonOfflineMsgSelect : %lld\n", id);
-				ntyVectorInsert(container, &id, sizeof(int));
-			}
-			*/
-			ret = -1;
-			
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_COMMON_OFFLINE_MSG, deviceId);
 
 			if (r != NULL) {
@@ -753,29 +741,34 @@ static int ntyQueryCommonOfflineMsgSelect(void *self, C_DEVID deviceId, void *co
 					C_DEVID r_senderId = ResultSet_getLLong(r, 2);
 					C_DEVID r_groupId = ResultSet_getLLong(r, 3);
 					const char *r_details = ResultSet_getString(r, 4);
-					size_t details_len = strlen(r_details);
+					
 					
 					CommonOfflineMsg *pCommonOfflineMsg = malloc(sizeof(CommonOfflineMsg));
 					if (pCommonOfflineMsg == NULL) {
 						ntylog(" %s --> malloc failed CommonOfflineMsg. \n", __func__);
 						break;
 					}
-					
 					memset(pCommonOfflineMsg, 0, sizeof(CommonOfflineMsg));
 					
 					pCommonOfflineMsg->msgId = msgId;
 					pCommonOfflineMsg->senderId = r_senderId;
 					pCommonOfflineMsg->groupId = r_groupId;
 
+					if (r_details != NULL) {
+						size_t details_len = strlen(r_details);
+						ntyCopyString(&pCommonOfflineMsg->details, r_details, details_len);
+					}
+
+					/*
 					pCommonOfflineMsg->details = malloc(details_len+1);
 					if (pCommonOfflineMsg->details == NULL) {
 						ntylog(" %s --> malloc failed CommonOfflineMsg->details\n", __func__);
 						free(pCommonOfflineMsg);
 						break;
 					}
-					
 					memset(pCommonOfflineMsg->details, 0, details_len+1);
 					memcpy(pCommonOfflineMsg->details, r_details, details_len);
+					*/
 					
 					ntyVectorInsert(container, pCommonOfflineMsg, sizeof(CommonOfflineMsg));
 					ret = 0;
@@ -822,8 +815,7 @@ static int ntyQueryVoiceOfflineMsgSelect(void *self, C_DEVID fromId, void *conta
 					C_DEVID r_groupId = ResultSet_getLLong(r, 3);
 					const char *r_details = ResultSet_getString(r, 4);
 					long timeStamp = ResultSet_getTimestamp(r, 5);
-					size_t details_len = strlen(r_details);
-					
+
 					nOfflineMsg *pOfflineMsg = malloc(sizeof(nOfflineMsg));
 					if (pOfflineMsg == NULL) {
 						ntylog(" %s --> malloc nOfflineMsg.details error. \n", __func__);
@@ -835,11 +827,19 @@ static int ntyQueryVoiceOfflineMsgSelect(void *self, C_DEVID fromId, void *conta
 					pOfflineMsg->senderId = r_senderId;
 					pOfflineMsg->groupId = r_groupId;
 					pOfflineMsg->timeStamp = timeStamp;
+
+					if (r_details != NULL) {
+						size_t details_len = strlen(r_details);
+						ntyCopyString(&pOfflineMsg->details, r_details, details_len);
+					}
+
+					/*
 					pOfflineMsg->details = malloc(details_len+1);
 					if (pOfflineMsg->details != NULL) {
 						memset(pOfflineMsg->details, 0, details_len+1);
 						memcpy(pOfflineMsg->details, r_details, details_len);
 					}
+					*/
 					
 					ntyVectorInsert(container, pOfflineMsg, sizeof(CommonOfflineMsg));
 					ret = 0;
@@ -895,20 +895,30 @@ static int ntyQueryPhonebookBindAgreeSelect(void *self, C_DEVID did, C_DEVID pro
 
 					if (r_name != NULL) {
 						size_t name_len = strlen(r_name);
+						ntyCopyString(&pname, r_name, name_len);
+						
+						/*
+						size_t name_len = strlen(r_name);
 						pname = malloc(name_len+1);
 						if (pname != NULL) {
 							memset(pname, 0, name_len+1);
 							memcpy(pname, r_name, name_len);
 						}
+						*/
 					}
 
 					if (r_image != NULL) {
+						size_t image_len = strlen(r_image);
+						ntyCopyString(&pimage, r_image, image_len);
+
+						/*
 						size_t image_len = strlen(r_image);
 						pimage = malloc(image_len+1);
 						if (pimage != NULL) {
 							memset(pimage, 0, image_len+1);
 							memcpy(pimage, r_image, image_len);
 						}
+						*/
 					}
 					
 					ret = 0;
@@ -1147,11 +1157,24 @@ static int ntyQueryBindOfflineMsgToAdminSelect(void *self, C_DEVID fromId, void 
 					pMsgToAdmin->admin = r_admin;
 					pMsgToAdmin->proposer = r_proposer;
 
-					size_t watchname_len = strlen(r_watchname);
-					size_t watchimage_len = strlen(r_watchimage);
-					size_t usercall_len = strlen(r_usercall);
-					size_t userimage_len = strlen(r_userimage);
+					if (r_watchname != NULL) {
+						size_t watchname_len = strlen(r_watchname);
+						ntyCopyString(&pMsgToAdmin->watchName, r_watchname, watchname_len);
+					}
+					if (r_watchimage != NULL) {
+						size_t watchimage_len = strlen(r_watchimage);
+						ntyCopyString(&pMsgToAdmin->watchImage, r_watchimage, watchimage_len);
+					}
+					if (r_usercall != NULL) {
+						size_t usercall_len = strlen(r_usercall);
+						ntyCopyString(&pMsgToAdmin->userName, r_usercall, usercall_len);
+					}
+					if (r_userimage != NULL) {
+						size_t userimage_len = strlen(r_userimage);
+						ntyCopyString(&pMsgToAdmin->userImage, r_userimage, userimage_len);
+					}
 
+					/*
 					pMsgToAdmin->watchName = malloc(watchname_len+1);
 					if (pMsgToAdmin->watchName != NULL) {
 						memset(pMsgToAdmin->watchName, 0, watchname_len+1);
@@ -1173,8 +1196,9 @@ static int ntyQueryBindOfflineMsgToAdminSelect(void *self, C_DEVID fromId, void 
 						memset(pMsgToAdmin->userImage, 0, userimage_len+1);
 						memcpy(pMsgToAdmin->userImage, r_userimage, userimage_len);
 					}
+					*/
 						
-					ntyVectorAdd(container, pMsgToAdmin, sizeof(BindOfflineMsgToAdmin));	
+					ntyVectorInsert(container, pMsgToAdmin, sizeof(BindOfflineMsgToAdmin));	
 					ret = 0;
 				}
 			}
@@ -1510,8 +1534,9 @@ int ntyQueryPhNumSelect(void *self, C_DEVID did, U8 *iccid, U8 *phnum) {
 					const char *u8pNum = ResultSet_getString(r, 1);
 					int len = strlen(u8pNum);
 					ntylog(" ntyQueryPhNumSelect --> len:%d\n", len);
-					if (len < 20)
+					if (len < 20) {
 						memcpy(phnum, u8pNum, len);
+					}
 				}
 			}
 			//strcpy(phnum, u8PhNum);
@@ -3252,17 +3277,24 @@ int ntyExecuteClientSelectSchedule(void *self, C_DEVID aid, C_DEVID did, void *c
 					const char *r_time = ResultSet_getString(r, 4);
 					const char *r_details = ResultSet_getString(r, 6);
 
-					size_t len_id = strlen(r_id);
-					size_t len_daily = strlen(r_daily);
-					size_t len_time = strlen(r_time);
-					size_t len_details = strlen(r_details);
+					if (r_id != NULL) {
+						size_t len_id = strlen(r_id);
+						ntyCopyString(&objScheduleSelectItem->id, r_id, len_id);
+					}
+					if (r_daily != NULL) {
+						size_t len_daily = strlen(r_daily);
+						ntyCopyString(&objScheduleSelectItem->daily, r_daily, len_daily);
+					}
+					if (r_time != NULL) {
+						size_t len_time = strlen(r_time);
+						ntyCopyString(&objScheduleSelectItem->time, r_time, len_time);
+					}
+					if (r_details != NULL) {
+						size_t len_details = strlen(r_details);
+						ntyCopyString(&objScheduleSelectItem->details, r_details, len_details);
+					}
 
-					ntyCopyString(&objScheduleSelectItem->id, r_id, len_id);
-					ntyCopyString(&objScheduleSelectItem->daily, r_daily, len_daily);
-					ntyCopyString(&objScheduleSelectItem->time, r_time, len_time);
-					ntyCopyString(&objScheduleSelectItem->details, r_details, len_details);
-
-					ntyVectorAdd(container, objScheduleSelectItem, sizeof(ScheduleSelectItem));	
+					ntyVectorInsert(container, objScheduleSelectItem, sizeof(ScheduleSelectItem));	
 				}
 			}	
 			ret = 0;
@@ -3322,21 +3354,32 @@ int ntyExecuteClientSelectContacts(void *self,C_DEVID aid, C_DEVID did, void *co
 					const char *r_Admin = ResultSet_getString(r, 7);
 					const char *r_App = ResultSet_getString(r, 8);
 
-					size_t len_id = strlen(r_Id);
-					size_t len_name = strlen(r_Name);
-					size_t len_image = strlen(r_Image);
-					size_t len_tel = strlen(r_Tel);
-					size_t len_admin = strlen(r_Admin);
-					size_t len_app = strlen(r_App);
-
-					ntyCopyString(&objClientContactsAckItem->Id, r_Id, len_id);
-					ntyCopyString(&objClientContactsAckItem->Name, r_Name, len_name);
-					ntyCopyString(&objClientContactsAckItem->Image, r_Image, len_image);
-					ntyCopyString(&objClientContactsAckItem->Tel, r_Tel, len_tel);
-					ntyCopyString(&objClientContactsAckItem->Admin, r_Admin, len_admin);
-					ntyCopyString(&objClientContactsAckItem->App, r_App, len_app);
+					if (r_Id != NULL) {
+						size_t len_id = strlen(r_Id);
+						ntyCopyString(&objClientContactsAckItem->Id, r_Id, len_id);
+					}
+					if (r_Name != NULL) {
+						size_t len_name = strlen(r_Name);
+						ntyCopyString(&objClientContactsAckItem->Name, r_Name, len_name);
+					}
+					if (r_Image != NULL) {
+						size_t len_image = strlen(r_Image);
+						ntyCopyString(&objClientContactsAckItem->Image, r_Image, len_image);
+					}
+					if (r_Tel != NULL) {
+						size_t len_tel = strlen(r_Tel);
+						ntyCopyString(&objClientContactsAckItem->Tel, r_Tel, len_tel);
+					}
+					if (r_Admin != NULL) {
+						size_t len_admin = strlen(r_Admin);
+						ntyCopyString(&objClientContactsAckItem->Admin, r_Admin, len_admin);
+					}
+					if (r_App != NULL) {
+						size_t len_app = strlen(r_App);
+						ntyCopyString(&objClientContactsAckItem->App, r_App, len_app);
+					}
 					
-					ntyVectorAdd(container, objClientContactsAckItem, sizeof(BindOfflineMsgToAdmin));	
+					ntyVectorInsert(container, objClientContactsAckItem, sizeof(BindOfflineMsgToAdmin));	
 				}
 			}
 			ret = 0;
@@ -3393,15 +3436,20 @@ int ntyExecuteClientSelectTurn(void *self,C_DEVID aid, C_DEVID did, void *contai
 					const char *r_On = ResultSet_getString(r, 4);
 					const char *r_Off = ResultSet_getString(r, 5);
 
-					size_t len_Status = strlen(r_Status);
-					size_t len_On = strlen(r_On);
-					size_t len_Off = strlen(r_Off);
+					if (r_Status != NULL) {
+						size_t len_Status = strlen(r_Status);
+						ntyCopyString(&objClientTurnAckItem->Status, r_Status, len_Status);
+					}
+					if (r_On != NULL) {
+						size_t len_On = strlen(r_On);
+						ntyCopyString(&objClientTurnAckItem->On, r_On, len_On);
+					}
+					if (r_Off != NULL) {
+						size_t len_Off = strlen(r_Off);
+						ntyCopyString(&objClientTurnAckItem->Off, r_Off, len_Off);
+					}
 
-					ntyCopyString(&objClientTurnAckItem->Status, r_Status, len_Status);
-					ntyCopyString(&objClientTurnAckItem->On, r_On, len_On);
-					ntyCopyString(&objClientTurnAckItem->Off, r_Off, len_Off);
-					
-					ntyVectorAdd(container, objClientTurnAckItem, sizeof(ClientTurnAckItem));	
+					ntyVectorInsert(container, objClientTurnAckItem, sizeof(ClientTurnAckItem));	
 				}							
 			}
 			ret = 0;
@@ -3461,19 +3509,28 @@ int ntyExecuteClientSelectRunTime( void *self, C_DEVID aid, C_DEVID did, void *c
 					const char *r_WatchBell = ResultSet_getString(r, 6);
 					const char *r_TagetStep = ResultSet_getString(r, 7);
 
-					size_t len_autoConnection = strlen(r_AutoConnection);
-					size_t len_lossReport = strlen(r_LossReport);
-					size_t len_lightPanel = strlen(r_LightPanel);
-					size_t len_watchBell = strlen(r_WatchBell);
-					size_t len_tagetStep = strlen(r_TagetStep);
+					if (r_AutoConnection != NULL) {
+						size_t len_autoConnection = strlen(r_AutoConnection);
+						ntyCopyString(&objClientRunTimeAckItem->AutoConnection, r_AutoConnection, len_autoConnection);
+					}
+					if (r_LossReport != NULL) {
+						size_t len_lossReport = strlen(r_LossReport);
+						ntyCopyString(&objClientRunTimeAckItem->LossReport, r_LossReport, len_lossReport);
+					}
+					if (r_LightPanel != NULL) {
+						size_t len_lightPanel = strlen(r_LightPanel);
+						ntyCopyString(&objClientRunTimeAckItem->LightPanel, r_LightPanel, len_lightPanel);
+					}
+					if (r_WatchBell != NULL) {
+						size_t len_watchBell = strlen(r_WatchBell);
+						ntyCopyString(&objClientRunTimeAckItem->WatchBell, r_WatchBell, len_watchBell);
+					}
+					if (r_TagetStep != NULL) {
+						size_t len_tagetStep = strlen(r_TagetStep);
+						ntyCopyString(&objClientRunTimeAckItem->TagetStep, r_TagetStep, len_tagetStep);
+					}
 
-					ntyCopyString(&objClientRunTimeAckItem->AutoConnection, r_AutoConnection, len_autoConnection);
-					ntyCopyString(&objClientRunTimeAckItem->LossReport, r_LossReport, len_lossReport);
-					ntyCopyString(&objClientRunTimeAckItem->LightPanel, r_LightPanel, len_lightPanel);
-					ntyCopyString(&objClientRunTimeAckItem->WatchBell, r_WatchBell, len_watchBell);
-					ntyCopyString(&objClientRunTimeAckItem->TagetStep, r_TagetStep, len_tagetStep);
-
-					ntyVectorAdd(container, objClientRunTimeAckItem, sizeof(ClientRunTimeAckItem));	
+					ntyVectorInsert(container, objClientRunTimeAckItem, sizeof(ClientRunTimeAckItem));	
 				}
 			}
 			ret = 0;
@@ -3532,19 +3589,28 @@ int ntyExecuteClientSelectTimeTables( void *self, C_DEVID aid, C_DEVID did, void
 					const char *r_AfternoonTurn = ResultSet_getString(r, 6);
 					const char *r_Daily = ResultSet_getString(r, 7);
 
-					size_t len_Morning = strlen(r_Morning);
-					size_t len_MorningTurn = strlen(r_MorningTurn);
-					size_t len_Afternoon = strlen(r_Afternoon);
-					size_t len_AfternoonTurn = strlen(r_AfternoonTurn);
-					size_t len_Daily = strlen(r_Daily);
+					if (r_Morning != NULL) {
+						size_t len_Morning = strlen(r_Morning);
+						ntyCopyString(&objClientTimeTablesAckItem->Morning, r_Morning, len_Morning);
+					}
+					if (r_MorningTurn != NULL) {
+						size_t len_MorningTurn = strlen(r_MorningTurn);
+						ntyCopyString(&objClientTimeTablesAckItem->MorningTurn, r_MorningTurn, len_MorningTurn);
+					}
+					if (r_Afternoon != NULL) {
+						size_t len_Afternoon = strlen(r_Afternoon);
+						ntyCopyString(&objClientTimeTablesAckItem->Afternoon, r_Afternoon, len_Afternoon);
+					}
+					if (r_AfternoonTurn != NULL) {
+						size_t len_AfternoonTurn = strlen(r_AfternoonTurn);
+						ntyCopyString(&objClientTimeTablesAckItem->AfternoonTurn, r_AfternoonTurn, len_AfternoonTurn);
+					}
+					if (r_Daily != NULL) {
+						size_t len_Daily = strlen(r_Daily);
+						ntyCopyString(&objClientTimeTablesAckItem->Daily, r_Daily, len_Daily);
+					}
 
-					ntyCopyString(&objClientTimeTablesAckItem->Morning, r_Morning, len_Morning);
-					ntyCopyString(&objClientTimeTablesAckItem->MorningTurn, r_MorningTurn, len_MorningTurn);
-					ntyCopyString(&objClientTimeTablesAckItem->Afternoon, r_Afternoon, len_Afternoon);
-					ntyCopyString(&objClientTimeTablesAckItem->AfternoonTurn, r_AfternoonTurn, len_AfternoonTurn);
-					ntyCopyString(&objClientTimeTablesAckItem->Daily, r_Daily, len_Daily);
-
-					ntyVectorAdd(container, objClientTimeTablesAckItem, sizeof(ClientTimeTablesAckItem));	
+					ntyVectorInsert(container, objClientTimeTablesAckItem, sizeof(ClientTimeTablesAckItem));	
 				}
 			}
 			ret = 0;
@@ -3603,14 +3669,17 @@ int ntyExecuteClientSelectLocation( void *self, C_DEVID aid, C_DEVID did, void *
 					const char *r_Radius = ResultSet_getString(r, 4);
 					const char *r_Location = ResultSet_getString(r, 5);
 
-					size_t len_Radius = strlen(r_Radius);
-					size_t len_Location = strlen(r_Location);
-
 					pClientLocationAckResults->Type = r_Type;
-					ntyCopyString(&pClientLocationAckResults->Radius, r_Radius, len_Radius);
-					ntyCopyString(&pClientLocationAckResults->Location, r_Location, len_Location);
+					if (r_Radius != NULL) {
+						size_t len_Radius = strlen(r_Radius);
+						ntyCopyString(&pClientLocationAckResults->Radius, r_Radius, len_Radius);
+					}
+					if (r_Location != NULL) {
+						size_t len_Location = strlen(r_Location);
+						ntyCopyString(&pClientLocationAckResults->Location, r_Location, len_Location);
+					}
 
-					ntyVectorAdd(container, pClientLocationAckResults, sizeof(ClientLocationAckResults));
+					ntyVectorInsert(container, pClientLocationAckResults, sizeof(ClientLocationAckResults));
 				}
 			}
 			ret = 0;
@@ -3668,15 +3737,20 @@ int ntyExecuteClientSelectEfence( void *self, C_DEVID aid, C_DEVID did, void *co
 					const char *r_Num = ResultSet_getString(r, 4);
 					const char *r_Points = ResultSet_getString(r, 5);
 
-					size_t len_Index = strlen(r_Index);
-					size_t len_Num = strlen(r_Num);
-					size_t len_Points = strlen(r_Points);
+					if (r_Index != NULL) {
+						size_t len_Index = strlen(r_Index);
+						ntyCopyString(&objClientEfenceListItem->index, r_Index, len_Index);
+					}
+					if (r_Num != NULL) {
+						size_t len_Num = strlen(r_Num);
+						ntyCopyString(&objClientEfenceListItem->num, r_Num, len_Num);
+					}
+					if (r_Points != NULL) {
+						size_t len_Points = strlen(r_Points);
+						ntyCopyString(&objClientEfenceListItem->points, r_Points, len_Points);
+					}
 
-					ntyCopyString(&objClientEfenceListItem->index, r_Index, len_Index);
-					ntyCopyString(&objClientEfenceListItem->num, r_Num, len_Num);
-					ntyCopyString(&objClientEfenceListItem->points, r_Points, len_Points);
-
-					ntyVectorAdd(container, objClientEfenceListItem, sizeof(ClientEfenceListItem));
+					ntyVectorInsert(container, objClientEfenceListItem, sizeof(ClientEfenceListItem));
 				}
 			}
 			ret = 0;
