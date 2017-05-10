@@ -2009,6 +2009,9 @@ void ntyUserDataPacketReqHandleRequest(const void *_self, unsigned char *buffer,
 			}else if( (nVal=strcmp(ptrclientSelectReq->Category,NATTY_USER_PROTOCOL_LOCATION)) == 0 ){
 				ntylog("receive user data  ptrclientSelectReq->Category:Location,process\n");
 				ntyClientSelectLocationReqAction( clientActionParamVal, ptrclientSelectReq );
+			}else if( (nVal=strcmp(ptrclientSelectReq->Category,NATTY_USER_PROTOCOL_URL)) == 0 ){
+				ntylog("receive user data  ptrclientSelectReq->Category:URL,process\n");
+				ntyClientSelectURLReqAction( clientActionParamVal, ptrclientSelectReq );
 			}else{
 			}
 		} else {

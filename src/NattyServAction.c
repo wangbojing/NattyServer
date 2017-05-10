@@ -2772,7 +2772,8 @@ int ntyClientSelectLocationReqAction( ClientActionParam *pClientActionParam,Clie
 		ClientLocationAck *pClientLocationAck = (ClientLocationAck*)malloc( sizeof(ClientLocationAck) );
 		if ( pClientLocationAck == NULL ) {
 			ntylog("ntyClientSelectLocationReqAction --> malloc failed ClientLocationAck\n");
-			return -2;
+			ret = -2;
+			goto exit_ack;
 		}
 		memset( pClientLocationAck, 0, sizeof(ClientLocationAck) );	
 		pClientLocationAck->IMEI = pClientSelectReq->IMEI;
@@ -2782,7 +2783,7 @@ int ntyClientSelectLocationReqAction( ClientActionParam *pClientActionParam,Clie
 		if ( pClientLocationAckResults == NULL ){
 			ntylog("ntyClientSelectLocationReqAction --> malloc failed ClientRunTimeAckItem\n");
 			ret = -3;
-			goto exit_ack;
+			goto exit_item;
 		}
 		memset(pClientLocationAckResults, 0, sizeof(pClientLocationAckResults));	
 		pClientLocationAck->results = pClientLocationAckResults; //copy pointer
@@ -2890,6 +2891,54 @@ exit_ack:
 
 	return ret;
 }
+
+
+
+/*************************************************************************************************
+** Function: ntyClientSelectURLReqAction 
+** Description: client select contacts request,use client id to search from the DB,
+**               and then compose the results to a json object,send to the client that is sender.
+** Input: ClientActionParam *clientActionParamVal,ClientSelectReq *ptrclientSelectReq
+** Output: 
+** Return: int 0:succes -1 -2 -3 -4:error
+** Author:luop
+** Date: 2017-05-10
+** Others:
+*************************************************************************************************/
+int ntyClientSelectURLReqAction( ClientActionParam *pClientActionParam,ClientSelectReq *pClientSelectReq )
+{
+	ntydbg( "ntyClientSelectURLReqAction fromId:%lld toId:%lld json:%s\n", pClientActionParam->fromId, pClientActionParam->toId,pClientActionParam->jsonString );
+
+	if ( pClientActionParam == NULL ) return -1;
+	C_DEVID fromId = pClientActionParam->fromId;
+	C_DEVID toId = pClientActionParam->toId;
+	
+	ClientURLAck *pClientURLAck = (ClientURLAck*)malloc( sizeof(ClientURLAck) );
+	if ( pClientURLAck == NULL ) {
+		ntylog("ntyClientSelectURLReqAction --> malloc failed ClientURLAck\n");
+		return -2;
+	}
+	memset( pClientURLAck, 0, sizeof(ClientURLAck) );	
+	pClientURLAck->IMEI = pClientSelectReq->IMEI;
+	pClientURLAck->Category = pClientSelectReq->Category;
+
+	char url_qrcode[128] = {0};
+	strcat(url_qrcode, HTTP_QRCODE_URL);
+	pClientURLAck->objClientURLAckItem.QRCode = url_qrcode;
+	
+	char *jsonResult = ntyClientURLAckJsonCompose( pClientURLAck );
+	ntylog( "*****send to client %lld, ntyClientLocationAckJsonCompose json:%s\n", fromId, jsonResult);
+	int nRet = ntySendUserDataAck( fromId, (U8*)jsonResult, strlen(jsonResult) );
+	ntylog( "******send after. the result:%d\n", nRet );
+	ntyJsonFree( jsonResult );
+
+	free( pClientURLAck );
+	pClientURLAck = NULL;
+
+	return 0;
+}
+
+
 
 //end
 

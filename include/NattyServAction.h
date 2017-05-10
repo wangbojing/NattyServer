@@ -158,6 +158,7 @@ int ntyClientSelectRunTimeReqAction( ClientActionParam *pClientActionParam,Clien
 int ntyClientSelectTimeTablesReqAction( ClientActionParam *pClientActionParam,ClientSelectReq *pClientSelectReq );
 int ntyClientSelectLocationReqAction( ClientActionParam *pClientActionParam,ClientSelectReq *pClientSelectReq );
 int ntyClientSelectEfenceReqAction( ClientActionParam *pClientActionParam,ClientSelectReq *pClientSelectReq );
+int ntyClientSelectURLReqAction( ClientActionParam *pClientActionParam,ClientSelectReq *pClientSelectReq );
 
 #endif // __NATTY_SERVACTION_H__
 

@@ -1227,10 +1227,11 @@ static size_t ntyHttpQJKWeatherHandleResult(void* buffer, size_t size, size_t nm
 		flag = -1;
 		goto exit;
 	}
-	ntylog("ntyHttpQJKWeatherHandleResult jsonresult --> %s\n", jsonresult);
+	
 	int ret = ntySendWeatherPushResult(pMessageTag->fromId, jsonresult, strlen(jsonresult));
-	if (ret >= 0) {
-		ntydbg("ntySendWeatherBroadCastResult ok\n");
+	ntylog("ntyHttpQJKWeatherHandleResult --> ret:%d, json:%s\n", ret, jsonresult);
+	if (ret < 0) {
+		ntydbg("ntySendWeatherBroadCastResult ntySendWeatherPushResult failed\n");
 	}
 
 exit:

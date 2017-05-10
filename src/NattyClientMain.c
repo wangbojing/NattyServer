@@ -370,6 +370,8 @@ int main() {
 		//char *json_userdata = "{\"IMEI\":\"355637052329596\",\"Category\":\"ICCID\",\"Action\":\"Set\",\"ICCID\":\"1642510065118\",\"PhoneNum\":\"15889650380\"}";
 		//ntyUserDataReqClient(json_userdata, strlen(json_userdata));
 		//sleep(30);
+
+/*
 		char *json_common = "{\"IMEI\":\"352315052834187\",\"Category\":\"Schedule\",\"Action\":\"Select\"}";
 		char *json_contacts = "{\"IMEI\":\"352315052834187\",\"Category\":\"Contacts\",\"Action\":\"Select\"}";
 		char *json_turn = "{\"IMEI\":\"352315052834187\",\"Category\":\"Turn\",\"Action\":\"Select\"}";
@@ -397,6 +399,11 @@ int main() {
 		sleep(5);
 		ntydbg("send msg:%s\n",json_efence);
 		ntyUserDataReqClient(json_location,strlen(json_location));
+*/
+
+		char *json_url = "{\"IMEI\":\"352315052834187\",\"Category\":\"URL\",\"Action\":\"Select\"}";
+		ntydbg("send msg:%s\n",json_url);
+		ntyUserDataReqClient(json_url,strlen(json_url));
 		
 
 		//char *json_location = "{\"IMEI\":\"355637052788650\",\"Category\":\"LAB\",\"LAB\":{\"Bts\":\"460,01,40977,2205409,-65\",\"Nearbts\":[{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"},{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"},{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"}]}}";

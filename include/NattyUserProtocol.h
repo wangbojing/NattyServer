@@ -955,6 +955,16 @@ typedef struct _ClientEfenceAck{
 }ClientEfenceAck;
 
 
+typedef struct _ClientURLAckItem{
+	const char *QRCode;
+}ClientURLAckItem;
+
+typedef struct _ClientURLAck{
+	const char *IMEI;
+	const char *Category;
+	ClientURLAckItem objClientURLAckItem;
+}ClientURLAck;
+
 
 //add end
 

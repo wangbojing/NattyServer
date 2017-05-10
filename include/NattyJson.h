@@ -115,6 +115,7 @@ char *ntyClientRunTimeAckJsonCompose( ClientRunTimeAck *pClientRunTimeAck );
 char *ntyClientTimeTablesAckJsonCompose( ClientTimeTablesAck *pClientTimeTablesAck );
 char *ntyClientLocationAckJsonCompose( ClientLocationAck *pClientLocationAck );
 char *ntyClientEfenceAckJsonCompose( ClientEfenceAck *pClientEfenceAck );
+char *ntyClientURLAckJsonCompose( ClientURLAck *pClientURLAck );
 
 //end
 

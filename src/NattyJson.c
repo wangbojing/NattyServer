@@ -1824,6 +1824,27 @@ char *ntyClientLocationAckJsonCompose( ClientLocationAck *pClientLocationAck ){
 	return jsonstring;
 }
 
+char *ntyClientURLAckJsonCompose( ClientURLAck *pClientURLAck ){
+	if ( pClientURLAck == NULL ) {
+		return NULL;
+	}
+
+	JSON_Value *schema = json_value_init_object();
+	JSON_Object *schema_obj = json_value_get_object(schema);
+	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object());
+	JSON_Object *results_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULTS);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_IMEI, pClientURLAck->IMEI);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_CATEGORY, pClientURLAck->Category);
+
+	json_object_set_value(results_obj, NATTY_USER_PROTOCOL_URL, json_value_init_object());
+	JSON_Object *url_obj = json_object_get_object(results_obj, NATTY_USER_PROTOCOL_URL);
+	json_object_set_string(url_obj, NATTY_USER_PROTOCOL_QRCODE, pClientURLAck->objClientURLAckItem.QRCode);
+	
+	char *jsonstring =  json_serialize_to_string( schema );
+	json_value_free( schema );
+	return jsonstring;
+}
+
 char *ntyClientEfenceAckJsonCompose( ClientEfenceAck *pClientEfenceAck ){
 	if (pClientEfenceAck == NULL) {
 		return NULL;
