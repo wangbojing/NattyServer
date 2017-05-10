@@ -472,8 +472,6 @@ void ntyCommonReqAction(ActionParam *pActionParam) {
 				ntyJsonDelScheduleAction(pActionParam);
 			} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_UPDATE) == 0) {
 				ntyJsonUpdateScheduleAction(pActionParam);
-			} else if (strcmp(action, NATTY_USER_PROTOCOL_CATEGORY_SCHEDULE) == 0) {
-				ntyJsonSelectScheduleAction(pActionParam);
 			} else {
 				ntylog("Can't find action with: %s\n", action);
 			}
@@ -1282,82 +1280,6 @@ void ntyJsonUpdateScheduleAction(ActionParam *pActionParam) {
 	
 exit:
 	free(pUpdateScheduleReq);
-}
-
-
-void ntyJsonSelectScheduleAction(ActionParam *pActionParam) {
-	if (pActionParam == NULL) return ;
-	
-	CommonReq *pCommonReq = (CommonReq*)malloc(sizeof(CommonReq));
-	if (pCommonReq == NULL) {
-		ntylog("ntyJsonSelectScheduleAction --> malloc failed CommonReq\n");
-		return ;
-	}
-	memset(pCommonReq, 0, sizeof(CommonReq));
-	
-	ntyJsonCommon(pActionParam->json, pCommonReq);
-
-	C_DEVID fromId = pActionParam->fromId;
-	C_DEVID toId = pActionParam->toId;
-
-	ScheduleAck *pScheduleAck = (ScheduleAck*)malloc(sizeof(ScheduleAck));
-	if (pCommonReq == NULL) {
-		ntylog("ntyJsonSelectScheduleAction --> malloc failed ScheduleAck\n");
-		free(pCommonReq);
-		return ;
-	}
-	memset(pScheduleAck, 0, sizeof(ScheduleAck));
-	
-	pScheduleAck->results.IMEI = pCommonReq->IMEI;
-	pScheduleAck->results.category = pCommonReq->category;
-
-	size_t size = 50;
-	ScheduleItem *pSchedule = malloc(sizeof(ScheduleItem)*size);
-	if (pSchedule == NULL) {
-		ntylog("ntyJsonSelectScheduleAction --> malloc failed ScheduleItem\n");
-		free(pCommonReq);
-		free(pScheduleAck);
-		return ;
-	}
-	memset(pSchedule, 0, sizeof(ScheduleItem));
-	
-	pScheduleAck->results.pSchedule = pSchedule;
-
-	int ret = ntySendRecodeJsonPacket(fromId, toId, pActionParam->jsonstring, pActionParam->jsonlen);
-	if (ret < 0) {
-		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
-		goto exit;
-	}
-	
-	ret = ntyExecuteScheduleSelectHandle(fromId, toId, pScheduleAck, size);
-	if (ret == -1) {
-		ntylog(" ntyJsonSelectScheduleAction --> DB Exception\n");
-		ret = 4;
-	} else if (ret >= 0) {
-		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
-
-		char msgs[20] = {0};
-		sprintf(msgs, "%d", pActionParam->index);
-		pScheduleAck->results.msg = msgs;
-			
-		char *jsonresult = ntyJsonWriteSchedule(pScheduleAck);
-		ret = ntySaveCommonMsgData(
-			pActionParam->fromId,
-			pActionParam->toId,
-			jsonresult,
-			&pActionParam->index);
-		if (ret >= 0) {
-			ntyJsonBroadCastRecvResult(fromId, toId, (U8*)jsonresult, pActionParam->index);
-		} else {
-			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_SAVE_OFFLINE);
-		}
-		ntyJsonFree(jsonresult);
-		free(pScheduleAck);
-	}
-	
-exit:
-	free(pSchedule);
-	free(pCommonReq);
 }
 
 
@@ -2309,6 +2231,7 @@ int ntyReadOfflineVoiceMsgIter(void *self, void *arg) {
 	C_DEVID toId = *(C_DEVID*)arg;
 
 	ntySendVoiceBroadCastItem(senderId, toId, NULL, 0, msgId);
+	return 0;
 }
 
 
@@ -2387,41 +2310,588 @@ int ntyReadOfflineBindMsgToAdminAction(C_DEVID devId) {
 }
 
 
-/**
- *	发送管理员确认或拒绝离线消息.
- *	Send administrator to confirm or reject offline messages.
- */
-int ntyReadOfflineBindMsgToProposerIter(void *self, void *arg) {
-	BindOfflineMsgToProposer *pMsgToProposer = (BindOfflineMsgToProposer*)self;
-	char *proposerMsg = ntyJsonWriteBindOfflineMsgToProposer(pMsgToProposer);
-	if (proposerMsg==NULL) {
-		return -1;
-	}
 
-	return -1;
+
+//add by luoyb.add begin
+/*************************************************************************************************
+** Function: ntyClientSelectScheduleReqAction 
+** Description: client select schedule request,use client id to search from the DB,
+**               and then compose the results to a json object,send to the client that is sender.
+** Input: ClientActionParam *clientActionParamVal,ClientSelectReq *ptrclientSelectReq
+** Output: 
+** Return: int 0:succes -1 -2 -3:error
+** Author:luoyb
+** Date: 2017-04-28
+** Others:
+*************************************************************************************************/
+int ntyClientSelectScheduleReqIter(void *self, void *arg) {
+	ScheduleItem *ptrScheduleItem = (ScheduleItem*)self;
+	ScheduleAck *ptrScheduleAck = (ScheduleAck*)arg;
+
+	if (ptrScheduleAck->results.index < ptrScheduleAck->results.size) {
+		ptrScheduleAck->results.pSchedule[ptrScheduleAck->results.index] = *ptrScheduleItem;
+		ptrScheduleAck->results.index = ptrScheduleAck->results.index + 1;
+	}
+	
+	return 0;
 }
 
 
-int ntyReadOfflineBindMsgToProposerAction(C_DEVID devId) {
+int ntyClientSelectScheduleReqAction( ClientActionParam *clientActionParamVal,ClientSelectReq *ptrclientSelectReq ){
+	ntydbg( "ntyClientSelectScheduleReqAction fromId:%lld toId:%lld json:%s\n", clientActionParamVal->fromId, clientActionParamVal->toId,clientActionParamVal->jsonString );
+
+	if ( clientActionParamVal == NULL ) return -1;
+
+	C_DEVID fromId = clientActionParamVal->fromId;
+	C_DEVID toId = clientActionParamVal->toId;
+	
+	
 	NVector *container = ntyVectorCreator();
 	if (NULL == container) return NTY_RESULT_FAILED;
 	
-	int ret = ntyQueryBindOfflineMsgToProposerSelectHandle(devId);
-	if (ret == NTY_RESULT_SUCCESS) {
-		ntyVectorIter(container, ntyReadOfflineBindMsgToProposerIter, &devId);
-	} 
-	
-	if (ret != NTY_RESULT_BUSY) {
-		if (container->num == 0) { //count == 0
-			ret = NTY_RESULT_NOEXIST;
-		} else {
-			ret = NTY_RESULT_SUCCESS;
+	int ret = ntyExecuteClientSelectScheduleHandle(fromId, toId, container);
+	if ( ret == -1 || ret == -2 ) {
+		ntylog(" ntyClientSelectScheduleReqAction --> DB Exception\n");
+	} else if (ret == NTY_RESULT_SUCCESS) {
+		ScheduleAck *ptrScheduleAck = (ScheduleAck*)malloc( sizeof(ScheduleAck));
+		if ( ptrScheduleAck == NULL ) {
+			ntylog("ntyClientSelectScheduleReqAction --> malloc failed ScheduleAck\n");
+			ret = -3;
+			goto exit_ack;
 		}
-	} 
+		memset(ptrScheduleAck, 0, sizeof(ScheduleAck));
+
+		//copy json data struct ptrclientSelectReq to stuct ptrScheduleAck.
+		ptrScheduleAck->results.IMEI = ptrclientSelectReq->IMEI;
+		ptrScheduleAck->results.category = ptrclientSelectReq->Category;
+		char num[32] = {0};
+		sprintf(num, "%d", container->num);
+		ptrScheduleAck->results.num = num;
+		ptrScheduleAck->results.size = container->num;
+		ptrScheduleAck->results.index = 0;
+
+		ScheduleItem *ptrScheduleItem = (ScheduleItem*)malloc(sizeof(ScheduleItem)*container->num);
+		if ( ptrScheduleItem == NULL ){
+			ntylog("ntyClientSelectScheduleReqAction --> malloc failed ScheduleItem\n");
+			ret = -4;
+			goto exit_item;
+		}
+		memset( ptrScheduleItem, 0, sizeof(ScheduleItem)*container->num);	
+		ptrScheduleAck->results.pSchedule = ptrScheduleItem; //copy pointer
+
+		ntyVectorIter(container, ntyClientSelectScheduleReqIter, ptrScheduleAck);
+
+		char *jsonResult = ntyJsonWriteSchedule(ptrScheduleAck);
+		int nRet = ntySendUserDataAck(fromId, (U8*)jsonResult, strlen(jsonResult));
+		ntylog( "*****send to client %lld, %d, ntyJsonWriteSchedule json:%s\n", fromId, nRet, jsonResult);
+		ntyJsonFree(jsonResult);
+		
+		free(ptrScheduleItem);
+		ptrScheduleItem = NULL;
+exit_item:
+		free(ptrScheduleAck);
+		ptrScheduleAck = NULL;
+	}
 	
+exit_ack:
 	ntyVectorDestory(container);
+	
 	return ret;
 }
+
+
+
+
+
+/*************************************************************************************************
+** Function: ntyClientSeleteContactsReqAction 
+** Description: client select contacts request,use client id to search from the DB,
+**               and then compose the results to a json object,send to the client that is sender.
+** Input: ClientActionParam *clientActionParamVal,ClientSelectReq *ptrclientSelectReq
+** Output: 
+** Return: int 0:succes -1 -2 -3 -4:error
+** Author:luoyb
+** Date: 2017-04-28
+** Others:
+*************************************************************************************************/
+
+int ntyClientSelectContactsReqIter(void *self, void *arg) {
+	ClientContactsAckItem *pClientContactsAckItem = (ClientContactsAckItem*)self;
+	ClientContactsAck *pClientContactsAck = (ClientContactsAck*)arg;
+
+	if (pClientContactsAck->index < pClientContactsAck->size) {
+		pClientContactsAck->objClientContactsAckItem[pClientContactsAck->index] = *pClientContactsAckItem;
+		pClientContactsAck->index = pClientContactsAck->index + 1;
+	}
+
+	return 0;
+}
+
+int ntyClientSelectContactsReqAction( ClientActionParam *pClientActionParam,ClientSelectReq *pClientSelectReq )
+{
+	ntydbg( "ntyClientSeleteContactsReqAction fromId:%lld toId:%lld json:%s\n", pClientActionParam->fromId, pClientActionParam->toId,pClientActionParam->jsonString );
+
+	if ( pClientActionParam == NULL ) return -1;
+
+	C_DEVID fromId = pClientActionParam->fromId;
+	C_DEVID toId = pClientActionParam->toId;
+	
+	NVector *container = ntyVectorCreator();
+	if (NULL == container) return NTY_RESULT_FAILED;
+	
+	int ret = ntyExecuteClientSelectContactsHandle(fromId, toId, container);
+	if ( ret == -1 || ret == -2 ) {
+		ntylog(" ntyExecuteClientSelectContactsHandle --> DB Exception\n");
+	} else if (ret == NTY_RESULT_SUCCESS) {
+		ClientContactsAck *pClientContactsAck = (ClientContactsAck*)malloc(sizeof(ClientContactsAck));
+		if ( pClientContactsAck == NULL ) {
+			ntylog("ntyClientSeleteContactsReqAction --> malloc failed ClientContactsAck\n");
+			ret = -2;
+			goto exit_ack;
+		}
+		memset(pClientContactsAck, 0, sizeof(ClientContactsAck));
+		pClientContactsAck->IMEI = pClientSelectReq->IMEI;
+		pClientContactsAck->Category = pClientSelectReq->Category;
+		char num[32] = {0};
+		sprintf(num, "%d", container->num);
+		pClientContactsAck->Num = num;
+		pClientContactsAck->size = container->num;
+		pClientContactsAck->index = 0;
+
+		ClientContactsAckItem *pClientContactsAckItem = (ClientContactsAckItem*)malloc(sizeof(ClientContactsAckItem)*container->num);
+		if (pClientContactsAckItem == NULL){
+			ntylog("ntyClientSelectContactsReqAction --> malloc failed ClientContactsAckItem\n");
+			ret = -3;
+			goto exit_item;
+		}
+		memset(pClientContactsAckItem, 0, sizeof(ClientContactsAckItem)*container->num);	
+		pClientContactsAck->objClientContactsAckItem = pClientContactsAckItem; //copy pointer
+
+		ntyVectorIter(container, ntyClientSelectContactsReqIter, pClientContactsAck);
+
+		char *jsonResult = ntyClientContactsAckJsonCompose(pClientContactsAck);
+		ntylog("*****send before.send to client %lld, ntyClientContactsAckJsonCompose json: %d, %s\n", fromId, (int)strlen(jsonResult), jsonResult);
+		int nRet = ntySendUserDataAck(fromId, (U8*)jsonResult, strlen(jsonResult));
+		ntylog("*****send after. the result:%d\n", nRet);
+		ntyJsonFree(jsonResult);
+
+		free(pClientContactsAckItem);
+		pClientContactsAckItem = NULL;
+		
+exit_item:
+		free(pClientContactsAck);
+		pClientContactsAck = NULL;
+	}
+
+exit_ack:
+	ntyVectorDestory(container);
+
+	return ret;		
+}
+
+
+
+
+
+/*************************************************************************************************
+** Function: ntyClientSelectTurnReqAction 
+** Description: client select contacts request,use client id to search from the DB,
+**               and then compose the results to a json object,send to the client that is sender.
+** Input: ClientActionParam *clientActionParamVal,ClientSelectReq *ptrclientSelectReq
+** Output: 
+** Return: int 0:succes -1 -2 -3 -4:error
+** Author:luoyb
+** Date: 2017-05-2
+** Others:
+*************************************************************************************************/
+
+int ntyClientSelectTurnReqIter(void *self, void *arg) {
+	ClientTurnAckItem *pClientTurnAckItem = (ClientTurnAckItem*)self;
+	ClientTurnAck *pClientTurnAck = (ClientTurnAck*)arg;
+	memcpy(pClientTurnAck->objClientTurnAckItem, pClientTurnAckItem, sizeof(ClientTurnAckItem));
+
+	return 0;
+}
+
+int ntyClientSelectTurnReqAction( ClientActionParam *pClientActionParam,ClientSelectReq *pClientSelectReq )
+{
+	ntydbg( "ntyClientSelectTurnReqAction fromId:%lld toId:%lld json:%s\n", pClientActionParam->fromId, pClientActionParam->toId,pClientActionParam->jsonString );
+
+	if ( pClientActionParam == NULL ) return -1;
+	C_DEVID fromId = pClientActionParam->fromId;
+	C_DEVID toId = pClientActionParam->toId;
+	
+	NVector *container = ntyVectorCreator();
+	if (NULL == container) return NTY_RESULT_FAILED;
+	
+	int ret = ntyExecuteClientSelectTurnHandle(fromId, toId, container);
+	if ( ret == -1 || ret == -2 ) {
+		ntylog(" ntyClientSelectTurnReqAction --> DB Exception\n");
+	} else if (ret == NTY_RESULT_SUCCESS) {
+		ClientTurnAck *pClientTurnAck = (ClientTurnAck*)malloc( sizeof(ClientTurnAck) );
+		if ( pClientTurnAck == NULL ) {
+			ntylog("ntyClientSelectTurnReqAction --> malloc failed ClientTurnAck\n");
+			ret = -2;
+			goto exit_ack;
+		}	
+		memset(pClientTurnAck, 0, sizeof(ClientTurnAck));
+		pClientTurnAck->IMEI = pClientSelectReq->IMEI;
+		pClientTurnAck->Category = pClientSelectReq->Category;
+
+		ClientTurnAckItem *pClientTurnAckItem = (ClientTurnAckItem*)malloc(sizeof(ClientTurnAckItem));
+		if ( pClientTurnAckItem == NULL ){
+			ntylog("ntyClientSelectTurnReqAction --> malloc failed ClientTurnAckItem\n");
+			ret = -3;
+			goto exit_item;
+		}
+		memset( pClientTurnAckItem, 0, sizeof(ClientTurnAckItem));
+		pClientTurnAck->objClientTurnAckItem = pClientTurnAckItem; //copy pointer
+
+		ntyVectorIter(container, ntyClientSelectTurnReqIter, pClientTurnAck);
+
+		char *jsonResult = ntyClientTurnAckJsonCompose(pClientTurnAck);
+		ntylog( "*****send to client %lld, ntyClientTurnAckJsonCompose json:%s\n", fromId,jsonResult );
+		int nRet = ntySendUserDataAck( fromId, (U8*)jsonResult, strlen(jsonResult) );
+		ntylog( "*****send after. the result:%d\n", nRet );
+		ntyJsonFree( jsonResult );
+
+		free( pClientTurnAckItem );
+		pClientTurnAckItem = NULL;
+		
+exit_item:
+		free( pClientTurnAck );
+		pClientTurnAck = NULL;
+	}
+	
+exit_ack:
+	ntyVectorDestory(container);
+
+	return ret;	
+}
+
+
+
+
+/*************************************************************************************************
+** Function: ntyClientSelectRunTimeReqAction 
+** Description: client select contacts request,use client id to search from the DB,
+**               and then compose the results to a json object,send to the client that is sender.
+** Input: ClientActionParam *clientActionParamVal,ClientSelectReq *ptrclientSelectReq
+** Output: 
+** Return: int 0:succes -1 -2 -3 -4:error
+** Author:luoyb
+** Date: 2017-05-2
+** Others:
+*************************************************************************************************/
+
+int ntyClientSelectRunTimeReqIter(void *self, void *arg) {
+	ClientRunTimeAckItem *pClientRunTimeAckItem = (ClientRunTimeAckItem*)self;
+	ClientRunTimeAck *pClientRunTimeAck = (ClientRunTimeAck*)arg;
+	memcpy(pClientRunTimeAck->objClientRunTimeAckItem, pClientRunTimeAckItem, sizeof(ClientRunTimeAckItem));
+	
+	return 0;
+}
+
+int ntyClientSelectRunTimeReqAction( ClientActionParam *pClientActionParam,ClientSelectReq *pClientSelectReq )
+{
+	ntydbg( "ntyClientSelectRunTimeReqAction fromId:%lld toId:%lld json:%s\n", pClientActionParam->fromId, pClientActionParam->toId,pClientActionParam->jsonString );
+	
+	if ( pClientActionParam == NULL ) return -1;
+	C_DEVID fromId = pClientActionParam->fromId;
+	C_DEVID toId = pClientActionParam->toId;
+	
+	NVector *container = ntyVectorCreator();
+	if (NULL == container) return NTY_RESULT_FAILED;
+	
+	int ret = ntyExecuteClientSelectRunTimeHandle(fromId, toId, container);
+	if ( ret == -1 || ret == -2 ) {
+		ntylog(" ntyClientSelectTurnReqAction --> DB Exception\n");
+	} else if (ret == NTY_RESULT_SUCCESS) {
+		ClientRunTimeAck *pClientRunTimeAck = (ClientRunTimeAck*)malloc( sizeof(ClientRunTimeAck) );
+		if ( pClientRunTimeAck == NULL ) {
+			ntylog("ntyClientSelectRunTimeReqAction --> malloc failed ClientRunTimeAck\n");
+			ret = -2;
+			goto exit_item;
+		}
+		memset( pClientRunTimeAck, 0, sizeof(ClientRunTimeAck) );
+		pClientRunTimeAck->IMEI = pClientSelectReq->IMEI;
+		pClientRunTimeAck->Category = pClientSelectReq->Category;
+
+		ClientRunTimeAckItem *pClientRunTimeAckItem = (ClientRunTimeAckItem*)malloc(sizeof(ClientRunTimeAckItem));
+		if ( pClientRunTimeAckItem == NULL ){
+			ntylog("ntyClientSelectRunTimeReqAction --> malloc failed ClientRunTimeAckItem\n");
+			ret = -3;
+			goto exit_ack;
+		}
+		memset(pClientRunTimeAckItem, 0, sizeof(ClientRunTimeAckItem));	
+		pClientRunTimeAck->objClientRunTimeAckItem = pClientRunTimeAckItem; //copy pointer
+
+		ntyVectorIter(container, ntyClientSelectRunTimeReqIter, pClientRunTimeAck);
+
+		char *jsonResult = ntyClientRunTimeAckJsonCompose( pClientRunTimeAck );
+		ntylog( "*****send to client %lld, ntyClientRunTimeAckJsonCompose json:%s\n", fromId,jsonResult );
+		int nRet = ntySendUserDataAck( fromId, (U8*)jsonResult, strlen(jsonResult) );
+		ntylog( "*****send after. the result:%d\n", nRet );
+		ntyJsonFree( jsonResult );
+
+		free( pClientRunTimeAckItem );
+		pClientRunTimeAckItem = NULL;
+		
+exit_item:
+		free( pClientRunTimeAck );
+		pClientRunTimeAck = NULL;
+	}
+
+exit_ack:
+	ntyVectorDestory(container);
+
+	return ret;	
+}
+
+
+
+
+/*************************************************************************************************
+** Function: ntyClientSelectTimeTablesReqAction 
+** Description: client select contacts request,use client id to search from the DB,
+**               and then compose the results to a json object,send to the client that is sender.
+** Input: ClientActionParam *clientActionParamVal,ClientSelectReq *ptrclientSelectReq
+** Output: 
+** Return: int 0:succes -1 -2 -3 -4:error
+** Author:luoyb
+** Date: 2017-05-2
+** Others:
+*************************************************************************************************/
+
+int ntyClientSelectTimeTablesReqIter(void *self, void *arg) {
+	ClientTimeTablesAckItem *pClientTimeTablesAckItem = (ClientTimeTablesAckItem*)self;
+	ClientTimeTablesAck *pClientTimeTablesAck = (ClientTimeTablesAck*)arg;
+
+	if (pClientTimeTablesAck->index < pClientTimeTablesAck->size) {
+		pClientTimeTablesAck->objClientTimeTablesAckItem[pClientTimeTablesAck->index] = *pClientTimeTablesAckItem;
+		pClientTimeTablesAck->index = pClientTimeTablesAck->index + 1;
+	}
+
+	return 0;
+}
+
+int ntyClientSelectTimeTablesReqAction( ClientActionParam *pClientActionParam,ClientSelectReq *pClientSelectReq )
+{
+	ntydbg( "ntyClientSelectTimeTablesReqAction fromId:%lld toId:%lld json:%s\n", pClientActionParam->fromId, pClientActionParam->toId,pClientActionParam->jsonString );
+
+	if ( pClientActionParam == NULL ) return -1;
+	C_DEVID fromId = pClientActionParam->fromId;
+	C_DEVID toId = pClientActionParam->toId;
+	
+	NVector *container = ntyVectorCreator();
+	if (NULL == container) return NTY_RESULT_FAILED;
+	
+	int ret = ntyExecuteClientSelectTimeTablesHandle(fromId, toId, container);
+	if ( ret == -1 || ret == -2 ) {
+		ntylog(" ntyClientSelectTurnReqAction --> DB Exception\n");
+	} else if (ret == NTY_RESULT_SUCCESS) {
+		ClientTimeTablesAck *pClientTimeTablesAck = (ClientTimeTablesAck*)malloc( sizeof(ClientTimeTablesAck) );
+		if ( pClientTimeTablesAck == NULL ) {
+			ntylog("ntyClientSelectTimeTablesReqAction --> malloc failed ClientTimeTablesAck\n");
+			goto exit_ack;
+		}	
+		memset( pClientTimeTablesAck, 0, sizeof(ClientTimeTablesAck) );	
+		pClientTimeTablesAck->IMEI = pClientSelectReq->IMEI;
+		pClientTimeTablesAck->Category = pClientSelectReq->Category;
+		pClientTimeTablesAck->size = container->num;
+		pClientTimeTablesAck->index = 0;
+
+		ClientTimeTablesAckItem *pClientTimeTablesAckItem = (ClientTimeTablesAckItem*)malloc(sizeof(ClientTimeTablesAckItem)*container->num);
+		if ( pClientTimeTablesAckItem == NULL ){
+			ntylog("ntyClientSelectTimeTablesReqAction --> malloc failed ClientTimeTablesAckItem\n");
+			ret = -3;
+			goto exit_item;
+		}
+		memset(pClientTimeTablesAckItem, 0, sizeof(ClientTimeTablesAckItem)*container->num);	
+		pClientTimeTablesAck->objClientTimeTablesAckItem = pClientTimeTablesAckItem; //copy pointer
+
+		ntyVectorIter(container, ntyClientSelectTimeTablesReqIter, pClientTimeTablesAck);
+
+		char *jsonResult = ntyClientTimeTablesAckJsonCompose( pClientTimeTablesAck );
+		ntylog( "*****send to client %lld, ntyClientTimeTablesAckJsonCompose json:%s\n", fromId,jsonResult );
+		int nRet = ntySendUserDataAck( fromId, (U8*)jsonResult, strlen(jsonResult) );
+		ntylog( "*****send after. the result:%d\n", nRet );
+		ntyJsonFree( jsonResult );
+
+		free( pClientTimeTablesAckItem );
+		pClientTimeTablesAckItem = NULL;
+		
+exit_item:
+		free( pClientTimeTablesAck );
+		pClientTimeTablesAck = NULL;
+	}
+
+exit_ack:
+	ntyVectorDestory(container);
+
+	return ret;	
+}
+
+
+
+/*************************************************************************************************
+** Function: ntyClientSelectLocationReqAction 
+** Description: client select contacts request,use client id to search from the DB,
+**               and then compose the results to a json object,send to the client that is sender.
+** Input: ClientActionParam *clientActionParamVal,ClientSelectReq *ptrclientSelectReq
+** Output: 
+** Return: int 0:succes -1 -2 -3 -4:error
+** Author:luoyb
+** Date: 2017-05-2
+** Others:
+*************************************************************************************************/
+
+int ntyClientSelectLocationReqIter(void *self, void *arg) {
+	ClientLocationAckResults *pClientLocationAckResults = (ClientLocationAckResults*)self;
+	ClientLocationAck *pClientLocationAck = (ClientLocationAck*)arg;
+	memcpy(pClientLocationAck->results, pClientLocationAckResults, sizeof(ClientLocationAckResults));
+
+	return 0;
+}
+
+int ntyClientSelectLocationReqAction( ClientActionParam *pClientActionParam,ClientSelectReq *pClientSelectReq )
+{
+	ntydbg( "ntyClientSelectLocationReqAction fromId:%lld toId:%lld json:%s\n", pClientActionParam->fromId, pClientActionParam->toId,pClientActionParam->jsonString );
+
+	if ( pClientActionParam == NULL ) return -1;
+	C_DEVID fromId = pClientActionParam->fromId;
+	C_DEVID toId = pClientActionParam->toId;
+	
+	NVector *container = ntyVectorCreator();
+	if (NULL == container) return NTY_RESULT_FAILED;
+	
+	int ret = ntyExecuteClientSelectLocationHandle(fromId, toId, container);
+	if ( ret == -1 || ret == -2 ) {
+		ntylog(" ntyClientSelectLocationReqAction --> DB Exception\n");
+	} else if (ret == NTY_RESULT_SUCCESS) {
+		ClientLocationAck *pClientLocationAck = (ClientLocationAck*)malloc( sizeof(ClientLocationAck) );
+		if ( pClientLocationAck == NULL ) {
+			ntylog("ntyClientSelectLocationReqAction --> malloc failed ClientLocationAck\n");
+			return -2;
+		}
+		memset( pClientLocationAck, 0, sizeof(ClientLocationAck) );	
+		pClientLocationAck->IMEI = pClientSelectReq->IMEI;
+		pClientLocationAck->Category = pClientSelectReq->Category;
+		
+		ClientLocationAckResults *pClientLocationAckResults = (ClientLocationAckResults*)malloc(sizeof(ClientLocationAckResults));
+		if ( pClientLocationAckResults == NULL ){
+			ntylog("ntyClientSelectLocationReqAction --> malloc failed ClientRunTimeAckItem\n");
+			ret = -3;
+			goto exit_ack;
+		}
+		memset(pClientLocationAckResults, 0, sizeof(pClientLocationAckResults));	
+		pClientLocationAck->results = pClientLocationAckResults; //copy pointer
+
+		ntyVectorIter(container, ntyClientSelectLocationReqIter, pClientLocationAck);
+
+		char *jsonResult = ntyClientLocationAckJsonCompose( pClientLocationAck );
+		ntylog( "*****send to client %lld, ntyClientLocationAckJsonCompose json:%s\n", fromId,jsonResult );
+		int nRet = ntySendUserDataAck( fromId, (U8*)jsonResult, strlen(jsonResult) );
+		ntylog( "******send after. the result:%d\n", nRet );
+		ntyJsonFree( jsonResult );
+
+		free( pClientLocationAckResults );
+		pClientLocationAckResults = NULL;
+		
+exit_item:
+		free( pClientLocationAck );
+		pClientLocationAck = NULL;
+	}
+
+exit_ack:
+	ntyVectorDestory(container);
+
+	return ret;
+}
+
+/*************************************************************************************************
+** Function: ntyClientSelectEfenceReqAction 
+** Description: client select contacts request,use client id to search from the DB,
+**               and then compose the results to a json object,send to the client that is sender.
+** Input: ClientActionParam *clientActionParamVal,ClientSelectReq *ptrclientSelectReq
+** Output: 
+** Return: int 0:succes -1 -2 -3 -4:error
+** Author:luoyb
+** Date: 2017-05-2
+** Others:
+*************************************************************************************************/
+
+int ntyClientSelectEfenceReqIter(void *self, void *arg) {
+	ClientEfenceListItem *pClientEfenceListItem = (ClientEfenceListItem*)self;
+	ClientEfenceAck *pClientEfenceAck = (ClientEfenceAck*)arg;
+
+	if (pClientEfenceAck->results.index < pClientEfenceAck->results.efencelist_size) {
+		pClientEfenceAck->results.pClientEfenceListItem[pClientEfenceAck->results.index] = *pClientEfenceListItem;
+		pClientEfenceAck->results.index = pClientEfenceAck->results.index + 1;
+	}
+
+	return 0;
+}
+
+int ntyClientSelectEfenceReqAction( ClientActionParam *pClientActionParam,ClientSelectReq *pClientSelectReq )
+{
+	ntylog( "ntyClientSelectEfenceReqAction fromId:%lld toId:%lld json:%s\n", pClientActionParam->fromId, pClientActionParam->toId,pClientActionParam->jsonString );
+	if ( pClientActionParam == NULL ) return -1;
+
+	C_DEVID fromId = pClientActionParam->fromId;
+	C_DEVID toId = pClientActionParam->toId;
+	
+	NVector *container = ntyVectorCreator();
+	if (NULL == container) return NTY_RESULT_FAILED;
+	
+	int ret = ntyExecuteClientSelectEfenceHandle(fromId, toId, container);
+	if ( ret == -1 || ret == -2 ) {
+		ntylog(" ntyExecuteClientSelectContactsHandle --> DB Exception\n");
+	} else if (ret == NTY_RESULT_SUCCESS) {
+		ClientEfenceAck *pClientEfenceAck = (ClientEfenceAck*)malloc( sizeof(ClientEfenceAck) );
+		if ( pClientEfenceAck == NULL ) {
+			ntylog("ntyClientSelectEfenceReqAction --> malloc failed ClientEfenceAck\n");
+			ret = -2;
+			goto exit_item;
+		}	
+		memset( pClientEfenceAck, 0, sizeof(ClientEfenceAck) );	
+
+		pClientEfenceAck->results.IMEI = pClientSelectReq->IMEI;
+		pClientEfenceAck->results.category = pClientSelectReq->Category;
+		pClientEfenceAck->results.efencelist_size = container->num;
+		pClientEfenceAck->results.index = 0;
+
+		ClientEfenceListItem *pClientEfenceListItem = (ClientEfenceListItem*)malloc(sizeof(ClientEfenceListItem)*container->num);
+		if ( pClientEfenceListItem == NULL ){
+			ntylog("ntyClientSelectEfenceReqAction --> malloc failed ClientContactsAckItem\n");
+			ret = -3;
+			goto exit_ack;
+		}
+		memset( pClientEfenceListItem, 0, sizeof(pClientEfenceListItem)*container->num);	
+		pClientEfenceAck->results.pClientEfenceListItem = pClientEfenceListItem; //copy pointer
+
+		ntyVectorIter(container, ntyClientSelectEfenceReqIter, pClientEfenceAck);
+
+		char *jsonResult = ntyClientEfenceAckJsonCompose( pClientEfenceAck );
+		ntylog( "*****send to client %lld, ntyClientSelectEfenceReqAction json:%s\n", fromId,jsonResult );
+		int nRet = ntySendUserDataAck( fromId, (U8*)jsonResult, strlen(jsonResult) );
+		ntylog( "******send after. the result:%d\n", nRet );
+		ntyJsonFree( jsonResult );
+
+		free(pClientEfenceListItem);
+		pClientEfenceListItem = NULL;
+exit_item:
+		free( pClientEfenceAck);
+		pClientEfenceAck = NULL;
+	}
+
+exit_ack:
+	ntyVectorDestory(container);
+
+	return ret;
+}
+
+//end
 
 
 

@@ -79,6 +79,7 @@
 #define NATTY_USER_PROTOCOL_CATEGORY_ICCID			"ICCID"
 
 
+#define NATTY_USER_PROTOCOL_ACTION_SELECT			"Select"
 
 
 
@@ -128,6 +129,7 @@
 #define NATTY_USER_PROTOCOL_HEARTREPORT		"HeartReport"
 
 #define NATTY_USER_PROTOCOL_EFENCE			"Efence"
+#define NATTY_USER_PROTOCOL_EFENCELIST		"EfenceList"
 #define NATTY_USER_PROTOCOL_NUM 			"Num"
 #define NATTY_USER_PROTOCOL_POINTS			"Points"
 
@@ -518,6 +520,15 @@ typedef struct _ScheduleItem {
 	const char *status;
 } ScheduleItem;
 
+
+typedef struct _ScheduleSelectItem {
+	 char *id;
+	 char *daily;
+	 char *time;
+	 char *details;
+	 char *status;
+} ScheduleSelectItem;
+
 typedef struct _AddScheduleReq {
 	const char *msg;
 	const char *IMEI;
@@ -564,8 +575,9 @@ typedef struct _ScheduleResults {
 	const char *msg;
 	const char *IMEI;
 	const char *category;
-	const char *num;
+	char *num;
 	size_t size;
+	size_t index;
 	ScheduleItem *pSchedule;
 } ScheduleResults;
 
@@ -844,6 +856,107 @@ typedef struct _HeartReport {
 } HeartReport;
 
 
+// add by luoyb add begin
+//client user send select request
+typedef struct _ClientSelectReq{
+	const char *IMEI;
+	const char *Category;
+	const char *Action;
+}ClientSelectReq;
+
+typedef struct _ClientContactsAckItem{
+	 char *Admin;
+	 char *App;
+	 char *Id;
+	 char *Image;
+	 char *Name;
+	 char *Tel;
+}ClientContactsAckItem;
+typedef struct _ClientContactsAck{
+	const char *IMEI;
+	const char *Category;	
+	char *Num;
+	size_t size;
+	size_t index;
+	ClientContactsAckItem *objClientContactsAckItem;
+}ClientContactsAck;
+
+typedef struct _ClientTurnAckItem{
+	 char *Status;
+	 char *On;
+	 char *Off;
+}ClientTurnAckItem;
+typedef struct _ClientTurnAck{
+	const char *IMEI;
+	const char *Category;
+	ClientTurnAckItem *objClientTurnAckItem;
+}ClientTurnAck;
+
+typedef struct _ClientRunTimeAckItem{
+	 char *AutoConnection;
+	 char *LossReport;
+	 char *LightPanel;
+	 char *WatchBell;
+	 char *TagetStep;
+}ClientRunTimeAckItem;
+typedef struct _ClientRunTimeAck{
+	const char *IMEI;
+	const char *Category;	
+	ClientRunTimeAckItem *objClientRunTimeAckItem;
+}ClientRunTimeAck;
+
+typedef struct _ClientTimeTablesAckItem{
+	 char *Daily;
+	 char *Morning;
+	 char *MorningTurn;
+	 char *Afternoon;
+	 char *AfternoonTurn;
+}ClientTimeTablesAckItem;
+typedef struct _ClientTimeTablesAck{
+	const char *IMEI;
+	const char *Category;
+	size_t size;
+	size_t index;
+	ClientTimeTablesAckItem *objClientTimeTablesAckItem;
+}ClientTimeTablesAck;
+
+typedef struct _ClientLocationAckResults{
+	 int Type;
+	 char *Radius;
+	 char *Location;
+}ClientLocationAckResults;
+
+typedef struct _ClientLocationAck{
+	const char *IMEI;
+	const char *Category;
+	ClientLocationAckResults *results;
+}ClientLocationAck;
+
+
+
+
+
+typedef struct _ClientEfenceListItem{
+	 char *index;
+	 char *num;
+	 char *points;
+}ClientEfenceListItem;
+
+typedef struct _ClientEfenceResult{
+	const char *IMEI;
+	const char *category;	
+	size_t efencelist_size;
+	size_t index;
+	ClientEfenceListItem *pClientEfenceListItem;
+}ClientEfenceResults;
+
+typedef struct _ClientEfenceAck{
+	ClientEfenceResults results;
+}ClientEfenceAck;
+
+
+
+//add end
 
 #endif
 

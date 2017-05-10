@@ -179,10 +179,13 @@ void ntyBindConfirmResult(DEVID fromId, U8 *json, int length) {
 
 
 
-DEVID g_devid = 0x355637053837001;
+//DEVID g_devid = 0x352315052834187;
+//DEVID g_devid = 0x355637050066828;
+//DEVID g_devid = 0x355637052238805;
+DEVID g_devid = 0x355637053172771;
 
 int main() {
-	DEVID AppId = 10833;
+	DEVID AppId = 13579;
 	DEVID aid = 0;
 	
 	int n = 0, length, i, result = 0;
@@ -208,8 +211,8 @@ int main() {
 	ntySetUserDataAckResult(ntyUserDataAck);
 	
 	//ntySetDevId(did);
-	ntySetDevId(AppId);
-	//ntySetDevId(g_devid);
+	//ntySetDevId(AppId);
+	ntySetDevId(g_devid);
 	
 	
 	ntyStartupClient(&result);
@@ -364,9 +367,37 @@ int main() {
 		//ntyCommonReqClient(g_devid,json_common,strlen(json_common));
 		//sleep(30);
 
-		char *json_userdata = "{\"IMEI\":\"355637052329596\",\"Category\":\"ICCID\",\"Action\":\"Set\",\"ICCID\":\"1642510065118\",\"PhoneNum\":\"15889650380\"}";
-		ntyUserDataReqClient(json_userdata, strlen(json_userdata));
-		sleep(30);
+		//char *json_userdata = "{\"IMEI\":\"355637052329596\",\"Category\":\"ICCID\",\"Action\":\"Set\",\"ICCID\":\"1642510065118\",\"PhoneNum\":\"15889650380\"}";
+		//ntyUserDataReqClient(json_userdata, strlen(json_userdata));
+		//sleep(30);
+		char *json_common = "{\"IMEI\":\"352315052834187\",\"Category\":\"Schedule\",\"Action\":\"Select\"}";
+		char *json_contacts = "{\"IMEI\":\"352315052834187\",\"Category\":\"Contacts\",\"Action\":\"Select\"}";
+		char *json_turn = "{\"IMEI\":\"352315052834187\",\"Category\":\"Turn\",\"Action\":\"Select\"}";
+		char *json_runtime = "{\"IMEI\":\"352315052834187\",\"Category\":\"RunTime\",\"Action\":\"Select\"}";
+		char *json_timetables = "{\"IMEI\":\"352315052834187\",\"Category\":\"TimeTables\",\"Action\":\"Select\"}";
+		char *json_efence = "{\"IMEI\":\"352315052834187\",\"Category\":\"Efence\",\"Action\":\"Select\"}";
+		char *json_location = "{\"IMEI\":\"352315052834187\",\"Category\":\"Location\",\"Action\":\"Select\"}";
+		ntydbg("send msg:%s\n",json_common);
+		ntyUserDataReqClient(json_common,strlen(json_common));
+		sleep(5);
+		ntydbg("send msg:%s\n",json_contacts);
+		ntyUserDataReqClient(json_contacts,strlen(json_contacts));
+		sleep(5);
+		ntydbg("send msg:%s\n",json_turn);
+		ntyUserDataReqClient(json_turn,strlen(json_turn));
+		sleep(5);
+		ntydbg("send msg:%s\n",json_runtime);
+		ntyUserDataReqClient(json_runtime,strlen(json_runtime));
+		sleep(5);
+		ntydbg("send msg:%s\n",json_timetables);
+		ntyUserDataReqClient(json_timetables,strlen(json_timetables));	
+		sleep(5);
+		ntydbg("send msg:%s\n",json_efence);
+		ntyUserDataReqClient(json_efence,strlen(json_efence));
+		sleep(5);
+		ntydbg("send msg:%s\n",json_efence);
+		ntyUserDataReqClient(json_location,strlen(json_location));
+		
 
 		//char *json_location = "{\"IMEI\":\"355637052788650\",\"Category\":\"LAB\",\"LAB\":{\"Bts\":\"460,01,40977,2205409,-65\",\"Nearbts\":[{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"},{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"},{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"}]}}";
 		//char *json_location = "{\"IMEI\":\"135790246811220\",\"Category\":\"WIFI\",\"WIFI\":[{\"SSID\":\"TP-LINK_42ED\",\"MAC\":\"F4:83:CD:3A:42:ED\",\"V\":\"-37\"},{\"SSID\":\"EXT\",\"MAC\":\"04:95:E6:22:DA:48\",\"V\":\"-52\"}]}";
@@ -385,13 +416,13 @@ int main() {
 		//ntyCommonReqClient(g_devid,json_bindreq,strlen(json_bindreq));
 		//sleep(30);
 
-
+		/*
 		char *json_bindreq = "{\"IMEI\":\"355637053837001\",\"Category\":\"BindConfirmReq\",\"Answer\":\"Agree\",\"MsgId\":\"2\"}";
 		long long proposerId = 10833;
 		long long devId = 0x355637053837001; 
 		U32 msgId = 2;
 		ntyBindConfirmReqClient(proposerId, devId, msgId, json_bindreq, strlen(json_bindreq));
-		
+		*/
 		
 		//char *json_bindreq = " {\"IMEI\":\"355637050957620\",\"Category\":\"BindReq\",\"BindReq\":{\"WatchName\":\"nihs\",\"WatchImage\":\"http:\\/\\/picture.quanjiakan.com:9080\\/quanjiakan\\/resources\\/device\\/20170408162703_4ezfc34wzqi5d3kcxqju.png\",\"UserName\":\"%E7%88%B7%E7%88%B7\",\"UserImage\":\"3\"}}";
 		//int length = strlen(json_bindreq);

@@ -336,7 +336,21 @@ int ntyExecuteScheduleDeleteHandle(C_DEVID aid, C_DEVID did, int scheduleId);
 
 int ntyExecuteScheduleUpdateHandle(C_DEVID aid, C_DEVID did, int scheduleId, const char *daily, const char *time, int status, const char *details);
 
-int ntyExecuteScheduleSelectHandle(C_DEVID aid, C_DEVID did, ScheduleAck *pScheduleAck, size_t size);
+int ntyExecuteClientSelectScheduleHandle(C_DEVID aid, C_DEVID did, void *container);
+int ntyExecuteClientSelectSchedule(void *self, C_DEVID aid, C_DEVID did, void *container);
+int ntyExecuteClientSelectContactsHandle(C_DEVID aid, C_DEVID did, void *container);
+int ntyExecuteClientSelectContacts(void *self,C_DEVID aid, C_DEVID did, void *container);
+int ntyExecuteClientSelectTurnHandle(C_DEVID aid, C_DEVID did, void *container);
+int ntyExecuteClientSelectTurn(void *self,C_DEVID aid, C_DEVID did, void *container);
+int ntyExecuteClientSelectRunTimeHandle(C_DEVID aid, C_DEVID did, void *container);
+int ntyExecuteClientSelectRunTime( void *self, C_DEVID aid, C_DEVID did, void *container);
+int ntyExecuteClientSelectTimeTablesHandle(C_DEVID aid, C_DEVID did, void *container);
+int ntyExecuteClientSelectTimeTables( void *self, C_DEVID aid, C_DEVID did, void *container);
+int ntyExecuteClientSelectLocationHandle(C_DEVID aid, C_DEVID did, void *container);
+int ntyExecuteClientSelectLocation( void *self, C_DEVID aid, C_DEVID did, void *container);
+int ntyExecuteClientSelectEfenceHandle(C_DEVID aid, C_DEVID did, void *container);
+int ntyExecuteClientSelectEfence( void *self, C_DEVID aid, C_DEVID did, void *container);
+
 
 int ntyExecuteTimeTablesUpdateHandle(C_DEVID aid, C_DEVID did, const char *morning, U8 morning_turn, const char *afternoon,  U8 afternoon_turn, const char *daily, int *result);
 

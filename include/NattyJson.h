@@ -56,6 +56,9 @@
 #define HTTP_GAODE_BASE_URL		"http://apilocate.amap.com"
 
 
+void ntyCopyString(char **dest, const char *src, size_t size);
+
+
 void ntyJsonSetLocationType(const char *locationType, int *u8LocationType);
 void ntyJsonGetLocationType(const int u8LocationType, char* locationType);
 
@@ -102,6 +105,18 @@ void ntyJsonWeatherRelease(WeatherReq *pWeatherReq);
 void ntyJsonICCID(JSON_Value *json, ICCIDReq *pICCIDReq);
 
 void ntyJsonCommon(JSON_Value *json, CommonReq *pCommonReq);
+
+//add by luoby. ntyClientReqJsonParse
+
+int ntyClientReqJsonParse( JSON_Value *json, ClientSelectReq *pclientSelectReq );
+char *ntyClientContactsAckJsonCompose( ClientContactsAck *pClientContactsAck );
+char *ntyClientTurnAckJsonCompose( ClientTurnAck *pClientTurnAck );
+char *ntyClientRunTimeAckJsonCompose( ClientRunTimeAck *pClientRunTimeAck );
+char *ntyClientTimeTablesAckJsonCompose( ClientTimeTablesAck *pClientTimeTablesAck );
+char *ntyClientLocationAckJsonCompose( ClientLocationAck *pClientLocationAck );
+char *ntyClientEfenceAckJsonCompose( ClientEfenceAck *pClientEfenceAck );
+
+//end
 
 void ntyJsonCommonExtend(JSON_Value *json, CommonReqExtend *pCommonReqExtend);
 

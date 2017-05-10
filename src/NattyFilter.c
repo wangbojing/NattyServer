@@ -1952,11 +1952,71 @@ void ntyUserDataPacketReqHandleRequest(const void *_self, unsigned char *buffer,
 		JSON_Value *json = ntyMallocJsonValue(jsonstring);
 		if (json == NULL) { //JSON Error and send Code to FromId Device
 			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
+			free(jsonstring);
+			return;
+		}
+
+		const char *app_action = ntyJsonAction(json);
+		if (app_action == NULL) {
+			ntylog("Can't find action, because action is null\n");
+			free(jsonstring);
+			return;
+		}
+		if (strcmp(app_action, NATTY_USER_PROTOCOL_ACTION_SELECT) == 0) {
+			//add by luoyb. parse json and search from DB,and send back. add begin 
+			//JSON_Value *jsonObj = ntyMallocJsonValue( jsonstring ); //json to json Object
+			ClientActionParam *clientActionParamVal = (ClientActionParam*)malloc(sizeof(ClientActionParam));
+			if ( clientActionParamVal == NULL ){
+				ntylog(" %s --> malloc failed clientActionParamVal", __func__);
+				ntyFreeJsonValue(json);
+				free(jsonstring);
+				return;
+			}
+			memset( clientActionParamVal, 0, sizeof(clientActionParamVal) );		
+			clientActionParamVal->fromId = fromId;
+			clientActionParamVal->toId = fromId;
+			clientActionParamVal->jsonString = jsonstring;
+			clientActionParamVal->jsonObj = json;
+
+			ClientSelectReq *ptrclientSelectReq = (ClientSelectReq*)malloc(sizeof(ClientSelectReq));
+			if ( ptrclientSelectReq == NULL ) {
+				ntylog("ntyClientSeleteScheduleReqAction --> malloc failed ClientSelectReq\n");
+				return ;
+			}
+			memset( ptrclientSelectReq, 0, sizeof(ClientSelectReq) );
+			//parse json object from sender to save to struct object ptrclientSelectReq
+			ntyClientReqJsonParse( clientActionParamVal->jsonObj, ptrclientSelectReq ); 
+			
+			int nVal = 0;
+			if( (nVal=strcmp(ptrclientSelectReq->Category,NATTY_USER_PROTOCOL_SCHEDULE)) == 0 ){
+				ntylog("receive user data  ptrclientSelectReq->Category:Schedule,process\n");
+				ntyClientSelectScheduleReqAction( clientActionParamVal, ptrclientSelectReq );
+			}else if( (nVal=strcmp(ptrclientSelectReq->Category,NATTY_USER_PROTOCOL_CONTACTS)) == 0 ){
+				ntylog("receive user data  ptrclientSelectReq->Category:Contacts,process\n");
+				ntyClientSelectContactsReqAction( clientActionParamVal, ptrclientSelectReq );
+			}else if( (nVal=strcmp(ptrclientSelectReq->Category,NATTY_USER_PROTOCOL_EFENCE)) == 0 ){
+				ntylog("receive user data  ptrclientSelectReq->Category:Efence,process\n");
+				ntyClientSelectEfenceReqAction( clientActionParamVal, ptrclientSelectReq );
+			}else if( (nVal=strcmp(ptrclientSelectReq->Category,NATTY_USER_PROTOCOL_TURN)) == 0 ){
+				ntylog("receive user data  ptrclientSelectReq->Category:Turn,process\n");
+				ntyClientSelectTurnReqAction( clientActionParamVal, ptrclientSelectReq );
+			}else if( (nVal=strcmp(ptrclientSelectReq->Category,NATTY_USER_PROTOCOL_RUNTIME)) == 0 ){
+				ntylog("receive user data  ptrclientSelectReq->Category:RunTime,process\n");
+				ntyClientSelectRunTimeReqAction( clientActionParamVal, ptrclientSelectReq );
+			}else if( (nVal=strcmp(ptrclientSelectReq->Category,NATTY_USER_PROTOCOL_TIMETABLES)) == 0 ){
+				ntylog("receive user data  ptrclientSelectReq->Category:TimeTables,process\n");
+				ntyClientSelectTimeTablesReqAction( clientActionParamVal, ptrclientSelectReq );
+			}else if( (nVal=strcmp(ptrclientSelectReq->Category,NATTY_USER_PROTOCOL_LOCATION)) == 0 ){
+				ntylog("receive user data  ptrclientSelectReq->Category:Location,process\n");
+				ntyClientSelectLocationReqAction( clientActionParamVal, ptrclientSelectReq );
+			}else{
+			}
 		} else {
 			size_t len_ActionParam = sizeof(ActionParam);
 			ActionParam *pActionParam = malloc(len_ActionParam);
 			if (pActionParam == NULL) {
 				ntylog(" %s --> malloc failed ActionParam", __func__);
+				ntyFreeJsonValue(json);
 				free(jsonstring);
 				return;
 			}
@@ -1972,8 +2032,9 @@ void ntyUserDataPacketReqHandleRequest(const void *_self, unsigned char *buffer,
 			ntyUserDataReqAction(pActionParam);
 			free(pActionParam);
 		}
-		free(jsonstring);
+	//and end
 		ntyFreeJsonValue(json);
+		free(jsonstring);
 
 		ntylog("====================end ntyUserDataPacketReqHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {

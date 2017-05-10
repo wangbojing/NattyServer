@@ -543,6 +543,7 @@ static int ntyExecuteDevAppGroupBindInsert(void *self, int msgId, C_DEVID *propo
 						ntylog("ntyExecuteDevAppGroupBindAndAgreeInsert --> r_image:%s\n", pimage);
 					}
 					
+					ntylog("ntyExecuteDevAppGroupBindInsert --> ret:%d, proposerId:%lld, pid:%d\n", ret, *proposerId, *pid);
 				}
 			}
 		}
@@ -2264,60 +2265,6 @@ int ntyExecuteScheduleUpdate(void *self, C_DEVID aid, C_DEVID did, int scheduleI
 	return ret;
 }
 
-
-//NTY_DB_SELECT_SCHEDULE
-int ntyExecuteScheduleSelect(void *self, C_DEVID aid, C_DEVID did, ScheduleAck *pScheduleAck, size_t size) {
-	ConnectionPool *pool = self;
-	if (pool == NULL) return NTY_RESULT_BUSY;
-	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
-	U8 u8PhNum[20] = {0};
-
-	TRY
-	{
-		con = ntyCheckConnection(self, con);
-		if (con == NULL) {
-			ret = -1;
-		} else {
-			ntylog(" ntyExecuteScheduleSelect --> executeQuery\n");
-			
-			if (pScheduleAck != NULL && pScheduleAck->results.pSchedule != NULL) {
-				size_t i = 0;
-				ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_SCHEDULE, did);
-				if (r != NULL) {
-					while (ResultSet_next(r)) {
-						pScheduleAck->results.size = i;
-						if (i>=size) {
-							break;
-						}
-						pScheduleAck->results.pSchedule[i].id = ResultSet_getString(r, 1);
-						pScheduleAck->results.pSchedule[i].daily  = ResultSet_getString(r, 3);
-						pScheduleAck->results.pSchedule[i].time = ResultSet_getString(r, 4);
-						pScheduleAck->results.pSchedule[i].details = ResultSet_getString(r, 5);
-						i++;
-
-						ret = 0;
-					}
-				}
-			}
-		}
-	} 
-	CATCH(SQLException) 
-	{
-		ntylog(" SQLException --> %s\n", Exception_frame.message);
-		ret = -1;
-	}
-	FINALLY
-	{
-		ntylog(" %s --> Connection_close\n", __func__);
-		ntyConnectionClose(con);
-	}
-	END_TRY;
-
-	return ret;
-}
-
-
 //NTY_DB_UPDATE_TIMETABLE
 int ntyExecuteTimeTablesUpdate(void *self, C_DEVID aid, C_DEVID did, const char *morning, U8 morning_turn, const char *afternoon,  U8 afternoon_turn, const char *daily, int *result) {
 	ConnectionPool *pool = self;
@@ -3152,11 +3099,6 @@ int ntyExecuteScheduleUpdateHandle(C_DEVID aid, C_DEVID did, int scheduleId, con
 	return ntyExecuteScheduleUpdate(pool, aid, did, scheduleId, daily, time, status, details);
 }
 
-int ntyExecuteScheduleSelectHandle(C_DEVID aid, C_DEVID did, ScheduleAck *pScheduleAck, size_t size) {
-	void *pool = ntyConnectionPoolInstance();
-	return ntyExecuteScheduleSelect(pool, aid, did, pScheduleAck, size);
-}
-
 int ntyExecuteTimeTablesUpdateHandle(C_DEVID aid, C_DEVID did, const char *morning, U8 morning_turn, const char *afternoon,  U8 afternoon_turn, const char *daily, int *result) {
 	void *pool = ntyConnectionPoolInstance();
 	return ntyExecuteTimeTablesUpdate(pool, aid, did, morning, morning_turn, afternoon, afternoon_turn, daily, result);
@@ -3271,6 +3213,493 @@ void ntyConnectionPoolDeInit(void) {
 		ntyConnectionPoolRelease(pool);
 	}
 }
+
+int ntyExecuteClientSelectScheduleHandle(C_DEVID aid, C_DEVID did, void *container) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteClientSelectSchedule( pool, aid, did, container);
+}
+
+int ntyExecuteClientSelectSchedule(void *self, C_DEVID aid, C_DEVID did, void *container) {
+	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = -1;
+	U8 u8PhNum[32] = {0};
+
+	TRY
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ntylog("ntyExecuteClientSelectSchedule --> database connection pool is NULL\n");
+			ret = -1;
+		} else {
+			U8 sql[256] = {0};		
+			sprintf(sql, NTY_DB_SELECT_SCHEDULE, did);
+			ntylog("ntyExecuteClientSelectSchedule -> sql: %s\n", sql);
+
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_SCHEDULE, did);
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					ScheduleSelectItem *objScheduleSelectItem = malloc(sizeof(ScheduleSelectItem));
+					if (objScheduleSelectItem == NULL) {
+						ntylog(" %s --> malloc objScheduleSelectItem error. \n", __func__);
+						break;
+					}
+					memset(objScheduleSelectItem, 0, sizeof(ScheduleSelectItem));
+
+					const char *r_id = ResultSet_getString(r, 1);
+					const char *r_daily = ResultSet_getString(r, 3);
+					const char *r_time = ResultSet_getString(r, 4);
+					const char *r_details = ResultSet_getString(r, 6);
+
+					size_t len_id = strlen(r_id);
+					size_t len_daily = strlen(r_daily);
+					size_t len_time = strlen(r_time);
+					size_t len_details = strlen(r_details);
+
+					ntyCopyString(&objScheduleSelectItem->id, r_id, len_id);
+					ntyCopyString(&objScheduleSelectItem->daily, r_daily, len_daily);
+					ntyCopyString(&objScheduleSelectItem->time, r_time, len_time);
+					ntyCopyString(&objScheduleSelectItem->details, r_details, len_details);
+
+					ntyVectorAdd(container, objScheduleSelectItem, sizeof(ScheduleSelectItem));	
+				}
+			}	
+			ret = 0;
+		}
+	} 
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -2;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+int ntyExecuteClientSelectContactsHandle(C_DEVID aid, C_DEVID did, void *container) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteClientSelectContacts( pool, aid, did, container);
+}
+
+int ntyExecuteClientSelectContacts(void *self,C_DEVID aid, C_DEVID did, void *container) {
+	ConnectionPool *pool = self;
+	if ( pool == NULL ) return NTY_RESULT_BUSY;
+	Connection_T conn = ConnectionPool_getConnection( pool->nPool );
+	int ret = -1;
+
+	TRY
+	{
+		conn = ntyCheckConnection( self, conn );
+		if ( conn == NULL ) {
+			ntylog( "ntyExecuteClientSelectContacts database connection pool is NULL\n" );
+			ret = -1;
+		} else {
+			U8 sql[256] = {0};		
+			sprintf(sql, NTY_DB_SELECT_PHONEBOOK, did);
+			ntylog("ntyExecuteClientSelectContacts -> sql: %s\n", sql);
+
+			ResultSet_T r = Connection_executeQuery( conn, NTY_DB_SELECT_PHONEBOOK, did );
+			if ( r != NULL ) {
+				while ( ResultSet_next(r) ) {
+					ClientContactsAckItem *objClientContactsAckItem = malloc(sizeof(ClientContactsAckItem));
+					if (objClientContactsAckItem == NULL) {
+						ntylog(" %s --> malloc objClientContactsAckItem error. \n", __func__);
+						break;
+					}
+					memset(objClientContactsAckItem, 0, sizeof(ClientContactsAckItem));
+
+					const char *r_Id = ResultSet_getString(r, 1);
+					const char *r_Name = ResultSet_getString(r, 3);
+					const char *r_Image = ResultSet_getString(r, 4);
+					const char *r_Tel = ResultSet_getString(r, 6);
+					const char *r_Admin = ResultSet_getString(r, 7);
+					const char *r_App = ResultSet_getString(r, 8);
+
+					size_t len_id = strlen(r_Id);
+					size_t len_name = strlen(r_Name);
+					size_t len_image = strlen(r_Image);
+					size_t len_tel = strlen(r_Tel);
+					size_t len_admin = strlen(r_Admin);
+					size_t len_app = strlen(r_App);
+
+					ntyCopyString(&objClientContactsAckItem->Id, r_Id, len_id);
+					ntyCopyString(&objClientContactsAckItem->Name, r_Name, len_name);
+					ntyCopyString(&objClientContactsAckItem->Image, r_Image, len_image);
+					ntyCopyString(&objClientContactsAckItem->Tel, r_Tel, len_tel);
+					ntyCopyString(&objClientContactsAckItem->Admin, r_Admin, len_admin);
+					ntyCopyString(&objClientContactsAckItem->App, r_App, len_app);
+					
+					ntyVectorAdd(container, objClientContactsAckItem, sizeof(BindOfflineMsgToAdmin));	
+				}
+			}
+			ret = 0;
+		}
+	} 
+	CATCH( SQLException ) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -2;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(conn);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+int ntyExecuteClientSelectTurnHandle(C_DEVID aid, C_DEVID did, void *container) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteClientSelectTurn( pool, aid, did, container);
+}
+
+int ntyExecuteClientSelectTurn(void *self,C_DEVID aid, C_DEVID did, void *container) {
+	ConnectionPool *pool = self;
+	if ( pool == NULL ) return NTY_RESULT_BUSY;
+	Connection_T conn = ConnectionPool_getConnection( pool->nPool );
+	int ret = -1;
+	
+	TRY
+	{
+		conn = ntyCheckConnection( self, conn );
+		if ( conn == NULL ) {
+			ntylog( "ntyExecuteClientSelectTurn database connection pool is NULL\n" );
+			ret = -1;
+		} else {
+			U8 sql[256] = {0};		
+			sprintf(sql, NTY_DB_SELECT_SETUP, did);
+			ntylog("ntyExecuteClientSelectTurn -> sql: %s\n", sql);
+			
+			ResultSet_T r = Connection_executeQuery( conn, NTY_DB_SELECT_SETUP, did );
+			if ( r != NULL ) {
+				while ( ResultSet_next(r) ) {
+					ClientTurnAckItem *objClientTurnAckItem = malloc(sizeof(ClientTurnAckItem));
+					if (objClientTurnAckItem == NULL) {
+						ntylog(" %s --> malloc objClientTurnAckItem error. \n", __func__);
+						break;
+					}
+					memset(objClientTurnAckItem, 0, sizeof(ClientTurnAckItem));
+
+					const char *r_Status = ResultSet_getString(r, 3);
+					const char *r_On = ResultSet_getString(r, 4);
+					const char *r_Off = ResultSet_getString(r, 5);
+
+					size_t len_Status = strlen(r_Status);
+					size_t len_On = strlen(r_On);
+					size_t len_Off = strlen(r_Off);
+
+					ntyCopyString(&objClientTurnAckItem->Status, r_Status, len_Status);
+					ntyCopyString(&objClientTurnAckItem->On, r_On, len_On);
+					ntyCopyString(&objClientTurnAckItem->Off, r_Off, len_Off);
+					
+					ntyVectorAdd(container, objClientTurnAckItem, sizeof(ClientTurnAckItem));	
+				}							
+			}
+			ret = 0;
+		}
+	} 
+	CATCH( SQLException ) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -2;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(conn);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+
+int ntyExecuteClientSelectRunTimeHandle(C_DEVID aid, C_DEVID did, void *container) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteClientSelectRunTime( pool, aid, did, container);
+}
+
+int ntyExecuteClientSelectRunTime( void *self, C_DEVID aid, C_DEVID did, void *container) {
+	ConnectionPool *pool = self;
+	if ( pool == NULL ) return NTY_RESULT_BUSY;
+	Connection_T conn = ConnectionPool_getConnection( pool->nPool );
+	int ret = -1;
+	
+	TRY
+	{
+		conn = ntyCheckConnection( self, conn );
+		if ( conn == NULL ) {
+			ntylog( "ntyExecuteClientSelectRunTime database connection pool is NULL\n" );
+			ret = -1;
+		} else {
+			U8 sql[256] = {0};		
+			sprintf(sql, NTY_DB_SELECT_RUNTIME, did);
+			ntylog("ntyExecuteClientSelectRunTime -> sql: %s\n", sql);
+
+			ResultSet_T r = Connection_executeQuery( conn, NTY_DB_SELECT_RUNTIME, did );
+			if ( r != NULL ) {
+				while ( ResultSet_next(r) ) {	
+					ClientRunTimeAckItem *objClientRunTimeAckItem = malloc(sizeof(ClientRunTimeAckItem));
+					if (objClientRunTimeAckItem == NULL) {
+						ntylog(" %s --> malloc objClientRunTimeAckItem error. \n", __func__);
+						break;
+					}
+					memset(objClientRunTimeAckItem, 0, sizeof(ClientRunTimeAckItem));
+
+					const char *r_AutoConnection = ResultSet_getString(r, 3);
+					const char *r_LossReport = ResultSet_getString(r, 4);
+					const char *r_LightPanel = ResultSet_getString(r, 5);
+					const char *r_WatchBell = ResultSet_getString(r, 6);
+					const char *r_TagetStep = ResultSet_getString(r, 7);
+
+					size_t len_autoConnection = strlen(r_AutoConnection);
+					size_t len_lossReport = strlen(r_LossReport);
+					size_t len_lightPanel = strlen(r_LightPanel);
+					size_t len_watchBell = strlen(r_WatchBell);
+					size_t len_tagetStep = strlen(r_TagetStep);
+
+					ntyCopyString(&objClientRunTimeAckItem->AutoConnection, r_AutoConnection, len_autoConnection);
+					ntyCopyString(&objClientRunTimeAckItem->LossReport, r_LossReport, len_lossReport);
+					ntyCopyString(&objClientRunTimeAckItem->LightPanel, r_LightPanel, len_lightPanel);
+					ntyCopyString(&objClientRunTimeAckItem->WatchBell, r_WatchBell, len_watchBell);
+					ntyCopyString(&objClientRunTimeAckItem->TagetStep, r_TagetStep, len_tagetStep);
+
+					ntyVectorAdd(container, objClientRunTimeAckItem, sizeof(ClientRunTimeAckItem));	
+				}
+			}
+			ret = 0;
+		}
+	} 
+	CATCH( SQLException ) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -2;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(conn);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+int ntyExecuteClientSelectTimeTablesHandle(C_DEVID aid, C_DEVID did, void *container) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteClientSelectTimeTables( pool, aid, did, container);
+}
+
+int ntyExecuteClientSelectTimeTables( void *self, C_DEVID aid, C_DEVID did, void *container) {
+	ConnectionPool *pool = self;
+	if ( pool == NULL ) return NTY_RESULT_BUSY;
+	Connection_T conn = ConnectionPool_getConnection( pool->nPool );
+	int ret = -1;
+
+	TRY
+	{
+		conn = ntyCheckConnection( self, conn );
+		if ( conn == NULL ) {
+			ntylog( "ntyExecuteClientSelectTimeTables database connection pool is NULL\n" );
+			ret = -1;
+		} else {
+			U8 sql[256] = {0};		
+			sprintf(sql, NTY_DB_SELECT_TIMETABLE, did);
+			ntylog("ntyExecuteClientSelectTimeTables -> sql: %s\n", sql);
+			
+			ResultSet_T r = Connection_executeQuery( conn, NTY_DB_SELECT_TIMETABLE, did );
+			if ( r != NULL ) {
+				while ( ResultSet_next(r) ) {
+					ClientTimeTablesAckItem *objClientTimeTablesAckItem = malloc(sizeof(ClientTimeTablesAckItem));
+					if (objClientTimeTablesAckItem == NULL) {
+						ntylog(" %s --> malloc objClientTimeTablesAckItem error. \n", __func__);
+						break;
+					}
+					memset(objClientTimeTablesAckItem, 0, sizeof(ClientTimeTablesAckItem));
+
+					const char *r_Morning = ResultSet_getString(r, 3);
+					const char *r_MorningTurn = ResultSet_getString(r, 4);
+					const char *r_Afternoon = ResultSet_getString(r, 5);
+					const char *r_AfternoonTurn = ResultSet_getString(r, 6);
+					const char *r_Daily = ResultSet_getString(r, 7);
+
+					size_t len_Morning = strlen(r_Morning);
+					size_t len_MorningTurn = strlen(r_MorningTurn);
+					size_t len_Afternoon = strlen(r_Afternoon);
+					size_t len_AfternoonTurn = strlen(r_AfternoonTurn);
+					size_t len_Daily = strlen(r_Daily);
+
+					ntyCopyString(&objClientTimeTablesAckItem->Morning, r_Morning, len_Morning);
+					ntyCopyString(&objClientTimeTablesAckItem->MorningTurn, r_MorningTurn, len_MorningTurn);
+					ntyCopyString(&objClientTimeTablesAckItem->Afternoon, r_Afternoon, len_Afternoon);
+					ntyCopyString(&objClientTimeTablesAckItem->AfternoonTurn, r_AfternoonTurn, len_AfternoonTurn);
+					ntyCopyString(&objClientTimeTablesAckItem->Daily, r_Daily, len_Daily);
+
+					ntyVectorAdd(container, objClientTimeTablesAckItem, sizeof(ClientTimeTablesAckItem));	
+				}
+			}
+			ret = 0;
+		}
+	} 
+	CATCH( SQLException ) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -2;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(conn);
+	}
+	END_TRY;
+
+	return ret;
+
+}
+
+
+int ntyExecuteClientSelectLocationHandle(C_DEVID aid, C_DEVID did, void *container) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteClientSelectLocation( pool, aid, did, container);
+}
+
+int ntyExecuteClientSelectLocation( void *self, C_DEVID aid, C_DEVID did, void *container) {
+	ConnectionPool *pool = self;
+	if ( pool == NULL ) return NTY_RESULT_BUSY;
+	Connection_T conn = ConnectionPool_getConnection( pool->nPool );
+	int ret = -1;
+
+	TRY
+	{
+		conn = ntyCheckConnection( self, conn );
+		if ( conn == NULL ) {
+			ntylog( "ntyExecuteClientSelectLocation database connection pool is NULL\n" );
+			ret = -1;
+		} else {
+			U8 sql[256] = {0};		
+			sprintf(sql, NTY_DB_SELECT_LOCATION, did);
+			ntylog("ntyExecuteClientSelectLocation -> sql: %s\n", sql);	
+	
+			ResultSet_T r = Connection_executeQuery( conn, NTY_DB_SELECT_LOCATION, did );
+			if ( r != NULL ) {
+				while ( ResultSet_next(r) ) {
+					ClientLocationAckResults *pClientLocationAckResults = malloc(sizeof(ClientLocationAckResults));
+					if (pClientLocationAckResults == NULL) {
+						ntylog(" %s --> malloc faild ClientLocationAckResults. \n", __func__);
+						break;
+					}
+					memset(pClientLocationAckResults, 0, sizeof(ClientLocationAckResults));
+
+					int r_Type = ResultSet_getInt(r, 3);
+					const char *r_Radius = ResultSet_getString(r, 4);
+					const char *r_Location = ResultSet_getString(r, 5);
+
+					size_t len_Radius = strlen(r_Radius);
+					size_t len_Location = strlen(r_Location);
+
+					pClientLocationAckResults->Type = r_Type;
+					ntyCopyString(&pClientLocationAckResults->Radius, r_Radius, len_Radius);
+					ntyCopyString(&pClientLocationAckResults->Location, r_Location, len_Location);
+
+					ntyVectorAdd(container, pClientLocationAckResults, sizeof(ClientLocationAckResults));
+				}
+			}
+			ret = 0;
+		}
+	} 
+	CATCH( SQLException ) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -2;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(conn);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+
+int ntyExecuteClientSelectEfenceHandle(C_DEVID aid, C_DEVID did, void *container) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteClientSelectEfence( pool, aid, did, container);
+}
+
+int ntyExecuteClientSelectEfence( void *self, C_DEVID aid, C_DEVID did, void *container) {
+	ConnectionPool *pool = self;
+	if ( pool == NULL ) return NTY_RESULT_BUSY;
+	Connection_T conn = ConnectionPool_getConnection( pool->nPool );
+	int ret = -1;
+	
+	TRY
+	{
+		conn = ntyCheckConnection( self, conn );
+		if ( conn == NULL ) {
+			ntylog( "ntyExecuteClientSelectEfence database connection pool is NULL\n" );
+			ret = -1;
+		} else {
+			U8 sql[256] = {0};		
+			sprintf(sql, NTY_DB_SELECT_EFENCE, did);
+			ntylog("ntyExecuteClientSelectEfence -> sql: %s\n", sql);
+			
+			ResultSet_T r = Connection_executeQuery( conn, NTY_DB_SELECT_EFENCE, did );
+			if ( r != NULL ) {
+				while ( ResultSet_next(r) ) {
+					ClientEfenceListItem *objClientEfenceListItem = malloc(sizeof(ClientEfenceListItem));
+					if (objClientEfenceListItem == NULL) {
+						ntylog(" %s --> malloc objClientEfenceListItem error. \n", __func__);
+						break;
+					}
+					memset(objClientEfenceListItem, 0, sizeof(ClientEfenceListItem));
+					
+					const char *r_Index = ResultSet_getString(r, 3);
+					const char *r_Num = ResultSet_getString(r, 4);
+					const char *r_Points = ResultSet_getString(r, 5);
+
+					size_t len_Index = strlen(r_Index);
+					size_t len_Num = strlen(r_Num);
+					size_t len_Points = strlen(r_Points);
+
+					ntyCopyString(&objClientEfenceListItem->index, r_Index, len_Index);
+					ntyCopyString(&objClientEfenceListItem->num, r_Num, len_Num);
+					ntyCopyString(&objClientEfenceListItem->points, r_Points, len_Points);
+
+					ntyVectorAdd(container, objClientEfenceListItem, sizeof(ClientEfenceListItem));
+				}
+			}
+			ret = 0;
+		}
+	} 
+	CATCH( SQLException ) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -2;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(conn);
+	}
+	END_TRY;
+
+	return ret;
+}
+//end 
+
+
+
 
 #if 0
 int main() {

@@ -57,6 +57,14 @@ typedef struct _ActionParam {
 	U16 jsonlen;
 	int index;
 } ActionParam;
+//add by luoyb 2017-04-27
+typedef struct _ClientActionParam{
+	C_DEVID fromId;
+	C_DEVID toId;
+	char *jsonString;
+	JSON_Value *jsonObj;	
+}ClientActionParam;
+
 
 
 void ntyJsonRecvResult(C_DEVID devId, char *jsonresult);
@@ -89,7 +97,9 @@ void ntyJsonDelScheduleAction(ActionParam *pActionParam);
 
 void ntyJsonUpdateScheduleAction(ActionParam *pActionParam);
 
+#if 0
 void ntyJsonSelectScheduleAction(ActionParam *pActionParam);
+#endif
 
 void ntyJsonTimeTablesAction(ActionParam *pActionParam);
 
@@ -139,8 +149,15 @@ int ntyReadOfflineVoiceMsgAction(C_DEVID devId);
 
 int ntyReadOfflineBindMsgToAdminAction(C_DEVID devId);
 
-int ntyReadOfflineBindMsgToProposerAction(C_DEVID devId);
 
+//add by luoyb
+int ntyClientSelectScheduleReqAction( ClientActionParam *clientActionParamVal,ClientSelectReq *ptrclientSelectReq );
+int ntyClientSelectContactsReqAction( ClientActionParam *pClientActionParam,ClientSelectReq *pClientSelectReq );
+int ntyClientSelectTurnReqAction( ClientActionParam *pClientActionParam,ClientSelectReq *pClientSelectReq );
+int ntyClientSelectRunTimeReqAction( ClientActionParam *pClientActionParam,ClientSelectReq *pClientSelectReq );
+int ntyClientSelectTimeTablesReqAction( ClientActionParam *pClientActionParam,ClientSelectReq *pClientSelectReq );
+int ntyClientSelectLocationReqAction( ClientActionParam *pClientActionParam,ClientSelectReq *pClientSelectReq );
+int ntyClientSelectEfenceReqAction( ClientActionParam *pClientActionParam,ClientSelectReq *pClientSelectReq );
 
 #endif // __NATTY_SERVACTION_H__
 
