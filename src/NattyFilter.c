@@ -1892,23 +1892,16 @@ void ntyRoutePacketHandleRequest(const void *_self, unsigned char *buffer, int l
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_DATA_ROUTE_DEVID_IDX);
 		C_DEVID toId = *(C_DEVID*)(buffer+NTY_PROTO_DATA_ROUTE_RECVID_IDX);
 
-		ntylog("ntyRoutePacketHandleRequest --> fromId:%lld, toId:%lld\n", fromId, toId);
+		U16 jsonLen = *(U16*)(buffer+NTY_PROTO_DATA_ROUTE_JSON_LENGTH_IDX);
+		ntylog("ntyRoutePacketHandleRequest --> fromId:%lld, toId:%lld, length:%d, jsonLen:%d\n", fromId, toId, length, jsonLen);
 		
 		int len = ntySendDataRoute(toId, (U8*)buffer, length);
-		if (len>=0) {
+		if (len >= 0) {
 			ntylog("ntySendDataRoute success \n");
-			if (1){//client->deviceType == NTY_PROTO_CLIENT_WATCH) {
-				ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
-			} else {
-
-			}
+			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
 		} else {
 			ntylog("ntySendDataRoute no exist \n");
-			if (1){//client->deviceType == NTY_PROTO_CLIENT_WATCH) {
-				ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
-			} else {
-			
-			}
+			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
 		}
 		ntylog("====================end ntyRoutePacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
