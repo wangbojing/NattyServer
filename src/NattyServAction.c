@@ -1732,18 +1732,18 @@ void ntyJsonWearStatusAction(ActionParam *pActionParam) {
 	C_DEVID toId = pActionParam->toId;
 
 	U32 msg = 0;
-	int ret = ntyExecuteCommonMsgInsertHandle(fromId, toId, pActionParam->jsonstring, &msg);
-	if (ret == -1) {
-		ntylog(" ntyJsonSOSReportAction --> DB Exception\n");
-		ret = 4;
-	} else if (ret >= 0) {
-		ret = ntyJsonBroadCastRecvResult(fromId, toId, pActionParam->jsonstring, msg);
+	//int ret = ntyExecuteCommonMsgInsertHandle(fromId, toId, pActionParam->jsonstring, &msg);
+	//if (ret == -1) {
+	//	ntylog(" ntyJsonSOSReportAction --> DB Exception\n");
+	//	ret = 4;
+	//} else if (ret >= 0) {
+		int ret = ntyJsonBroadCastRecvResult(fromId, toId, pActionParam->jsonstring, msg);
 		if (ret >= 0) {
 			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
 		} else {
 			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
 		}
-	}
+	//}
 }
 
 //添加联系人消息发送到管理员

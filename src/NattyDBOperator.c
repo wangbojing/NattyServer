@@ -3275,7 +3275,7 @@ int ntyExecuteClientSelectSchedule(void *self, C_DEVID aid, C_DEVID did, void *c
 					const char *r_id = ResultSet_getString(r, 1);
 					const char *r_daily = ResultSet_getString(r, 3);
 					const char *r_time = ResultSet_getString(r, 4);
-					const char *r_details = ResultSet_getString(r, 6);
+					const char *r_details = ResultSet_getString(r, 5);
 
 					if (r_id != NULL) {
 						size_t len_id = strlen(r_id);
