@@ -269,7 +269,7 @@ void ntyJsonLAB(JSON_Value *json, LABReq *pLABReq) {
 	if (pNearbts == NULL) {
 		ntylog("ntyJsonLAB --> malloc failed\n");
 
-		pNearbts->size = 0;
+		pLABReq->size = 0;
 		return ;
 	}
 	memset(pNearbts, 0, pLABReq->size*sizeof(Nearbts));
