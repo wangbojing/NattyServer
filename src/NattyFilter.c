@@ -1750,13 +1750,13 @@ void ntyLocationAsyncReqPacketHandleRequest(const void *_self, unsigned char *bu
 		if (json == NULL) {
 			ntyJsonCommonResult(deviceId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
 		} else {
-			size_t len_ActionParam = sizeof(ActionParam);
-			ActionParam *pActionParam = malloc(len_ActionParam);
+			//size_t len_ActionParam = sizeof(ActionParam);
+			ActionParam *pActionParam = malloc(sizeof(ActionParam));
 			if (pActionParam == NULL) {
 				ntylog(" %s --> malloc failed ActionParam. \n", __func__);
 				goto exit;
 			}
-			memset(pActionParam, 0, len_ActionParam);
+			memset(pActionParam, 0, sizeof(ActionParam));
 
 			pActionParam->fromId = client->devId;
 			pActionParam->toId = deviceId;

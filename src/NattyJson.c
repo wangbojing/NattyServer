@@ -217,12 +217,20 @@ void ntyJsonWIFI(JSON_Value *json, WIFIReq *pWIFIReq) {
 	JSON_Object *root_object = json_value_get_object(json);
 	pWIFIReq->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
 	pWIFIReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
-	//ntydbg("IMEI:%s   Category:%s\n", pWIFIReq->IMEI, pWIFIReq->category);
+	ntylog("IMEI:%s   Category:%s\n", pWIFIReq->IMEI, pWIFIReq->category);
 	
 	JSON_Object *wifi_object = NULL;
 	JSON_Array *wifi_array = json_object_get_array(root_object, NATTY_USER_PROTOCOL_WIFI);
 	pWIFIReq->size = json_array_get_count(wifi_array);
 	WIFIItem *pWIFI = malloc(sizeof(WIFIItem)*pWIFIReq->size);
+	if (pWIFI == NULL) {
+		ntylog("ntyJsonWIFI --> malloc failed\n");
+
+		pWIFIReq->size = 0;
+		return ;
+	}
+	memset(pWIFI, 0, pWIFIReq->size*sizeof(WIFIItem));
+	
 	pWIFIReq->pWIFI = pWIFI;
 
 	size_t i;
@@ -231,7 +239,7 @@ void ntyJsonWIFI(JSON_Value *json, WIFIReq *pWIFIReq) {
 		pWIFI[i].SSID = json_object_get_string(wifi_object, NATTY_USER_PROTOCOL_SSID);
 		pWIFI[i].MAC = json_object_get_string(wifi_object, NATTY_USER_PROTOCOL_MAC);
 		pWIFI[i].V = json_object_get_string(wifi_object, NATTY_USER_PROTOCOL_V);
-		//ntydbg("SSID:%s   MAC:%s   V:%s\n", pWIFI[i].SSID, pWIFI[i].MAC, pWIFI[i].V);
+		ntylog("SSID:%s   MAC:%s   V:%s\n", pWIFI[i].SSID, pWIFI[i].MAC, pWIFI[i].V);
 	}
 }
 
@@ -258,6 +266,14 @@ void ntyJsonLAB(JSON_Value *json, LABReq *pLABReq) {
 	JSON_Array *nearbts_array = json_object_get_array(lab_object, NATTY_USER_PROTOCOL_NEARBTS);
 	pLABReq->size = json_array_get_count(nearbts_array);
 	Nearbts *pNearbts = malloc(sizeof(Nearbts)*pLABReq->size);
+	if (pNearbts == NULL) {
+		ntylog("ntyJsonLAB --> malloc failed\n");
+
+		pNearbts->size = 0;
+		return ;
+	}
+	memset(pNearbts, 0, pLABReq->size*sizeof(Nearbts));
+	
 	pLABReq->lab.pNearbts = pNearbts;
 	size_t i;
 	for (i = 0; i < pLABReq->size; i++) {
