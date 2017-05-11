@@ -74,6 +74,8 @@
 #define APPLE_HOST_PORT					2195
 
 #define APPLE_CLIENT_PEM_NAME			"/home/crt/ck_development.pem"
+#define APPLE_CLIENT_PEM_NAME_PUBLISH	"/home/crt/ck_production.pem"
+
 #define APPLE_CLIENT_PEM_KEY			"123456"
 #define APPLE_CLIENT_PEM_PWD			"123456"
 
@@ -91,6 +93,7 @@
 typedef struct _Push_Context {
 	const void *_;
 	SSL_CTX *ctx;
+	SSL_CTX *pctx;
 	struct sockaddr_in addr;
 #if 0
 	SSL *ssl;
@@ -101,11 +104,11 @@ typedef struct _Push_Handle {
 	size_t size;
 	void* (*ctor)(void *_self, va_list *params);
 	void* (*dtor)(void *_self);
-	int (*push)(void *_self, U8 *msg, const U8 *token);
+	int (*push)(void *_self, U8 *msg, const U8 *token, U8 mode);
 } nPushHandle;
 
 void *ntyPushHandleInstance(void);
-int ntyPushNotifyHandle(void *self, U8 *msg, const U8 *token);
+int ntyPushNotifyHandle(void *self, U8 *msg, const U8 *token, U8 mode);
 
 
 

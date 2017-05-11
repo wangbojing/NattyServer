@@ -618,9 +618,16 @@ int ntySendPushNotify(C_DEVID selfId, U8 *msg) {
 		if (pClient->token != NULL) {
 			ntylog("ntySendPushNotify --> selfId:%lld  token:%s\n", selfId, pClient->token);
 			void *pushHandle = ntyPushHandleInstance();
-			return ntyPushNotifyHandle(pushHandle, msg, pClient->token);
+			return ntyPushNotifyHandle(pushHandle, msg, pClient->token, 0);
+		}
+	} else if (pClient->deviceType == NTY_PROTO_CLIENT_IOS_PUBLISH) {
+		if (pClient->token != NULL) {
+			ntylog("ntySendPushNotify Publish --> selfId:%lld  token:%s\n", selfId, pClient->token);
+			void *pushHandle = ntyPushHandleInstance();
+			return ntyPushNotifyHandle(pushHandle, msg, pClient->token, 1);
 		}
 	}
+	
 	return NTY_RESULT_FAILED;//NTY_RESULT_FAILED
 #else
 
@@ -961,7 +968,8 @@ int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int lengt
 		if (pClient == NULL) return NTY_RESULT_FAILED;
 
 		if (pClient->deviceType == NTY_PROTO_CLIENT_ANDROID 
-			|| pClient->deviceType == NTY_PROTO_CLIENT_IOS) {
+			|| pClient->deviceType == NTY_PROTO_CLIENT_IOS
+			|| pClient->deviceType == NTY_PROTO_CLIENT_IOS_PUBLISH) {
 			ntySendVoiceBroadCastItem(fromId, gId, json, length, index);
 		}
 
@@ -996,7 +1004,8 @@ int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int lengt
 		if (pClient == NULL) return NTY_RESULT_NOEXIST;
 		
 		if (pClient->deviceType == NTY_PROTO_CLIENT_ANDROID 
-			|| pClient->deviceType == NTY_PROTO_CLIENT_IOS) {
+			|| pClient->deviceType == NTY_PROTO_CLIENT_IOS
+			|| pClient->deviceType == NTY_PROTO_CLIENT_IOS_PUBLISH) {
 			ntySendVoiceBroadCastItem(fromId, gId, json, length, index);
 		}
 	}
@@ -1010,7 +1019,8 @@ int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int lengt
 
 	void *group = NULL;
 	if (pClient->deviceType == NTY_PROTO_CLIENT_ANDROID 
-		|| pClient->deviceType == NTY_PROTO_CLIENT_IOS) {
+		|| pClient->deviceType == NTY_PROTO_CLIENT_IOS
+		|| pClient->deviceType == NTY_PROTO_CLIENT_IOS_PUBLISH) {
 		group = ntyVectorCreator();
 
 		if(-1 == ntyQueryAppIDListSelectHandle(gId, group)) {
@@ -1048,7 +1058,8 @@ int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int lengt
 	//if fromId is AppId, need to send gId self
 	//else don't do that
 	if (pClient->deviceType == NTY_PROTO_CLIENT_ANDROID 
-		|| pClient->deviceType == NTY_PROTO_CLIENT_IOS) {
+		|| pClient->deviceType == NTY_PROTO_CLIENT_IOS
+		|| pClient->deviceType == NTY_PROTO_CLIENT_IOS_PUBLISH) {
 		ntySendVoiceBroadCastItem(fromId, gId, json, length, index);
 	}
 

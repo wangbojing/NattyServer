@@ -342,7 +342,8 @@ Client* ntyAddClientHeap(const void * obj, int *result) {
 			ntylog("ntyAddClientHeap --> friend addr:%llx\n", (C_DEVID)pClient->friends);
 #if ENABLE_CONNECTION_POOL
 			if (pClient->deviceType == NTY_PROTO_CLIENT_ANDROID 
-				|| pClient->deviceType == NTY_PROTO_CLIENT_IOS) { //App
+				|| pClient->deviceType == NTY_PROTO_CLIENT_IOS 
+				|| pClient->deviceType == NTY_PROTO_CLIENT_IOS_PUBLISH) { //App
 				if(-1 == ntyQueryWatchIDListSelectHandle(pClient->devId, pClient->friends)) {
 					ntylog(" ntyQueryWatchIDListSelectHandle Failed \n");
 					
@@ -479,6 +480,7 @@ int ntyClientCleanup(ClientSocket *client) { //
 		ntylog(" ntyHashDelete ret : %d\n", ret);
 	}
 
+	return ret;
 }
 
 
@@ -608,7 +610,7 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 #endif
 			} else {
 
-				if (pClient->deviceType == NTY_PROTO_CLIENT_IOS) {
+				if (pClient->deviceType == NTY_PROTO_CLIENT_IOS || pClient->deviceType == NTY_PROTO_CLIENT_IOS_PUBLISH) {
 					U16 tokenLen = *(U16*)(buffer+NTY_PROTO_LOGIN_REQ_JSON_LENGTH_IDX);
 						
 					U8 *token = buffer+NTY_PROTO_LOGIN_REQ_JSON_CONTENT_IDX;
@@ -1894,14 +1896,14 @@ void ntyRoutePacketHandleRequest(const void *_self, unsigned char *buffer, int l
 		
 		int len = ntySendDataRoute(toId, (U8*)buffer, length);
 		if (len>=0) {
-			ntydbg("ntySendDataRoute success \n");
+			ntylog("ntySendDataRoute success \n");
 			if (1){//client->deviceType == NTY_PROTO_CLIENT_WATCH) {
 				ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
 			} else {
 
 			}
 		} else {
-			ntydbg("ntySendDataRoute no exist \n");
+			ntylog("ntySendDataRoute no exist \n");
 			if (1){//client->deviceType == NTY_PROTO_CLIENT_WATCH) {
 				ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
 			} else {

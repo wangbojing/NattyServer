@@ -53,8 +53,9 @@
 #define NTY_PROTO_CLIENT_WATCH			'D'
 #define NTY_PROTO_CLIENT_ANDROID		'A'
 #define NTY_PROTO_CLIENT_IOS			'I'
+#define NTY_PROTO_CLIENT_IOS_PUBLISH	'P'		
 #define NTY_PROTO_CLIENT_WEB			'W'
-#define NTY_PROTO_CLIENT_PC				'P'
+#define NTY_PROTO_CLIENT_PC				'C'
 #define NTY_PROTO_SERVER				'S'
 #define NTY_PROTO_CLIENT_DEFAULT		0x0 //server
 

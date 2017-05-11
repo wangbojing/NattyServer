@@ -524,6 +524,8 @@ void* ntyPushContextCtor(void *self, va_list *params) {
 	pCtx->ctx = ntyContextInitialize(APPLE_CLIENT_PEM_NAME, APPLE_CLIENT_PEM_NAME, APPLE_CLIENT_PEM_PWD, APPLE_SERVER_PEM_NAME);
 	memset(&pCtx->addr, 0, sizeof(pCtx->addr));
 
+	pCtx->pctx = ntyContextInitialize(APPLE_CLIENT_PEM_NAME_PUBLISH, APPLE_CLIENT_PEM_NAME_PUBLISH, APPLE_CLIENT_PEM_PWD, APPLE_SERVER_PEM_NAME);
+
 	return pCtx;
 }
 
@@ -535,17 +537,28 @@ void* ntyPushContextDtor(void *self) {
 		if (pCtx->ctx != NULL) {
 			SSL_CTX_free(pCtx->ctx);
 		}
+
+		if (pCtx->pctx != NULL) {
+			SSL_CTX_free(pCtx->pctx);
+		}
 	}
 
 	return NULL;
 }
 
-static SSL* ntyPushSSLConnect(void *self, int sockfd) {
+static SSL* ntyPushSSLConnect(void *self, int sockfd, U8 mode) {
 	nPushContext *pCtx = self;
 	if (pCtx == NULL) return NULL;
 	if (pCtx->ctx == NULL) return NULL;
+	if (pCtx->pctx == NULL) return NULL;
+
+	SSL *ssl = NULL;
+	if (mode) { //production
+		ssl = SSL_new(pCtx->pctx);
+	} else { //development
+		ssl = SSL_new(pCtx->ctx);
+	}
 	
-	SSL *ssl = SSL_new(pCtx->ctx);
 	BIO *bio = BIO_new_socket(sockfd, BIO_NOCLOSE);
 
 	SSL_set_bio(ssl, bio, bio);
@@ -608,7 +621,7 @@ static int ntyVerifyConnection(SSL *ssl, const char *peername) {
 }
 
 
-int ntyPushNotify(void *self, U8 *msg, const U8 *token) {
+int ntyPushNotify(void *self, U8 *msg, const U8 *token, U8 mode) {
 	nPushContext *pCtx = self;
 	if (pCtx == NULL) return NTY_RESULT_FAILED;
 
@@ -619,7 +632,7 @@ int ntyPushNotify(void *self, U8 *msg, const U8 *token) {
 		return NTY_RESULT_FAILED;
 	}
 
-	SSL *ssl = ntyPushSSLConnect(pCtx, sockfd);
+	SSL *ssl = ntyPushSSLConnect(pCtx, sockfd, mode);
 	if (ssl == NULL) {
 		ntylog("ssl connect failed: %s\n", ERR_reason_error_string(ERR_get_error())); 
 		ntyCloseSocket(sockfd);
@@ -685,11 +698,15 @@ void *ntyPushHandleInstance(void) {
 	return pPushHandle;
 }
 
-int ntyPushNotifyHandle(void *self, U8 *msg, const U8 *token) {
+/*
+ * mode : 	1 -> product
+ * 			0 -> development
+ */
+int ntyPushNotifyHandle(void *self, U8 *msg, const U8 *token, U8 mode) {
 
 	nPushHandle * const *pHandle = self;
 	if (self && (*pHandle) && (*pHandle)->push) {
-		return (*pHandle)->push(self, msg, token);
+		return (*pHandle)->push(self, msg, token, mode);
 	}
 	
 	return NTY_RESULT_ERROR;
