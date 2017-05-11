@@ -507,6 +507,13 @@ int ntyOfflineClientHeap(C_DEVID clientId) {
 		ntyExecuteChangeDeviceOnlineStatusHandle(pClient->devId, 0);
 	}
 	
+	if (pClient->deviceType == NTY_PROTO_CLIENT_IOS || pClient->deviceType == NTY_PROTO_CLIENT_IOS_PUBLISH) {
+		if (pClient->token != NULL) {
+			free(pClient->token);
+			pClient->token = NULL;
+		}
+	}
+	
 	return NTY_RESULT_SUCCESS;
 }
 
