@@ -68,6 +68,9 @@ int ntyDeviceOfflineMsgReqHandle(void *arg);
 
 int ntyCommonReqHandle(void *arg);
 
+int ntyIOSPushHandle(void *arg);
+
+
 
 #endif
 
