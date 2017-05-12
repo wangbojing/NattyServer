@@ -105,7 +105,8 @@ void ntyJsonCommonResult(C_DEVID devId, const char * code) {
 		return ;
 	}
 	memset(pCommonAck, 0, sizeof(CommonAck));
-	
+
+	ntylog("ntyJsonCommonResult --> ntyCommonResultMessage \n");
 	pCommonAck->result.code = code;
 	pCommonAck->result.message = ntyCommonResultMessage(pCommonAck->result.code);
 
