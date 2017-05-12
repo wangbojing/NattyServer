@@ -53,6 +53,9 @@
 #include "NattyVector.h"
 #include "NattyResult.h"
 
+#include "NattyDaveMQ.h"
+#include "NattySqlHandle.h"
+
 #undef offsetof
 #define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
 
@@ -608,7 +611,7 @@ int ntySendUserDataAck(C_DEVID fromId, U8 *json, int length) {
 
 
 int ntySendPushNotify(C_DEVID selfId, U8 *msg) {
-#if 1
+#if 0
 	void *heap = ntyBHeapInstance();
 	NRecord *record = ntyBHeapSelect(heap, selfId);
 	if (record == NULL) return NTY_RESULT_NOEXIST;
