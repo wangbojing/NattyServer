@@ -506,16 +506,19 @@ int ntyOfflineClientHeap(C_DEVID clientId) {
 	if (pClient->deviceType == NTY_PROTO_CLIENT_WATCH) {
 		ntyExecuteChangeDeviceOnlineStatusHandle(pClient->devId, 0);
 	}
-	
+#if 0	
 	if (pClient->deviceType == NTY_PROTO_CLIENT_IOS || pClient->deviceType == NTY_PROTO_CLIENT_IOS_PUBLISH) {
 		if (pClient->token != NULL) {
 			free(pClient->token);
 			pClient->token = NULL;
 		}
 	}
-	
+#endif	
 	return NTY_RESULT_SUCCESS;
 }
+
+
+
 
 int ntyOnlineClientHeap(C_DEVID clientId) {
 	BPTreeHeap *heap = ntyBHeapInstance();
@@ -545,6 +548,41 @@ int ntyOnlineClientHeap(C_DEVID clientId) {
 
 	return NTY_RESULT_SUCCESS;
 }
+
+
+int ntyLogoutOfflineClientHeap(C_DEVID clientId) {
+	BPTreeHeap *heap = ntyBHeapInstance();
+	//ASSERT(heap != NULL);
+	NRecord *record = ntyBHeapSelect(heap, clientId);
+
+	if (record == NULL) {
+		ntylog("Error OfflineClientHeap is not Exist %lld\n", clientId);
+		ntyPrintTree(heap->root);
+		return NTY_RESULT_NOEXIST;
+	}
+
+	Client* pClient = (Client*)record->value;
+	if (pClient == NULL) {
+		ntylog("Error OfflineClientHeap record->value == NULL %lld\n", clientId);
+		ntyPrintTree(heap->root);
+		return NTY_RESULT_NOEXIST;
+	}
+
+	pClient->online = 0;
+	if (pClient->deviceType == NTY_PROTO_CLIENT_WATCH) {
+		ntyExecuteChangeDeviceOnlineStatusHandle(pClient->devId, 0);
+	}
+
+	if (pClient->deviceType == NTY_PROTO_CLIENT_IOS || pClient->deviceType == NTY_PROTO_CLIENT_IOS_PUBLISH) {
+		if (pClient->token != NULL) {
+			free(pClient->token);
+			pClient->token = NULL;
+		}
+	}
+	
+	return NTY_RESULT_SUCCESS;
+}
+
 
 //int ntyUpdateClientInfo()
 
@@ -745,9 +783,9 @@ void ntyLogoutPacketHandleRequest(const void *_self, U8 *buffer, int length, con
 		if (msg == NULL) return ;
 		const Client *client = msg->client;
 #if 0 //offline
-		ntyDelClientHeap(client->devId);
-#else
 		ntyOfflineClientHeap(client->devId);
+#else
+		ntyLogoutOfflineClientHeap(client->devId);
 #endif
 		ntylog("====================end ntyLogoutPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
