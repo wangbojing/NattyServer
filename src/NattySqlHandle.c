@@ -690,20 +690,18 @@ int ntyLocationBroadCastHandle(void *arg) {
 
 int ntyIOSPushHandle(void *arg) {
 	VALUE_TYPE *tag = (VALUE_TYPE*)arg;
-	ntylog("ntyIOSPushHandle --> begin");
+	ntylog("ntyIOSPushHandle --> begin\n");
 
 	if (tag == NULL) return NTY_RESULT_ERROR;
 
 	C_DEVID toId = tag->toId;
 	U8 *msg = tag->Tag;
 
-	ntylog("ntyIOSPushHandle --> toId : %lld\n", toId);
 	void *heap = ntyBHeapInstance();
 	NRecord *record = ntyBHeapSelect(heap, toId);
 	if (record == NULL) goto exit;
 	Client *pClient = (Client *)record->value;
 
-	ntylog("ntyIOSPushHandle --> deviceType : %c", pClient->deviceType);
 	if (pClient->deviceType == NTY_PROTO_CLIENT_IOS) {
 		if (pClient->token != NULL) {
 			ntylog("ntySendPushNotify --> selfId:%lld  token:%s\n", toId, pClient->token);
