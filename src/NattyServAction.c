@@ -342,7 +342,7 @@ int ntyJsonWeatherAction(ActionParam *pActionParam) {
 	U8 weatherbuf[500] = {0};
 	sprintf(weatherbuf, "%s/position?accesstype=0&imei=%s&cdma=0&bts=%s&output=json&key=%s", 
 		HTTP_GAODE_BASE_URL, pWeatherLocationReq->IMEI, pWeatherLocationReq->bts, HTTP_GAODE_KEY);
-	ntydbg(" weatherbuf --> %s\n", weatherbuf);
+	ntylog(" weatherbuf --> %s\n", weatherbuf);
 	int length = strlen(weatherbuf);
 
 	MessageTag *pMessageTag = malloc(sizeof(MessageTag));

@@ -290,8 +290,10 @@ static void ntyDaveMqHandleMTKQuickLocation(Job *job) {
 
 static void ntyDaveMqHandleCallback(Job *job) {
 	VALUE_TYPE *tag = (VALUE_TYPE*)job->user_data;
-	
-	tag->cb(tag); //callback
+
+	if (tag->cb != NULL) {
+		tag->cb(tag); //callback
+	}
 	
 	ntyFree(job);
 } 
@@ -321,6 +323,10 @@ int ntyDaveMqPushMessage(MESSAGE_TYPE type, C_DEVID fromId, C_DEVID toId, U8 *da
 static void ntyDaveMqPullMessage(void *arg) {
 	VALUE_TYPE *tag = arg;
 	ntylog(" ntyDaveMqPullMessage --> start \n");
+	if (tag == NULL) {
+		ntylog("ntyDaveMqPullMessage --> Param Error\n");
+		return ;
+	}
 	void *worker = ntyDaveMqWorkerInstance();
 	Job *job = (Job*)malloc(sizeof(Job));
 	if (job == NULL) {
