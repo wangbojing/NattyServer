@@ -48,7 +48,7 @@
 //#include <stdio.h>
 
 #include "NattyAbstractClass.h"
-
+#include "NattyResult.h"
 
 
 #if 0
@@ -1906,6 +1906,36 @@ char *ntyClientEfenceAckJsonCompose( ClientEfenceAck *pClientEfenceAck ){
 	return jsonstring;
 }
 
+
+const U8 *u8CategoryToken[] = {
+	NATTY_USER_PROTOCOL_CATEGORY_EFENCE,
+	NATTY_USER_PROTOCOL_CATEGORY_RUNTIME,
+	NATTY_USER_PROTOCOL_CATEGORY_TURN,
+	NATTY_USER_PROTOCOL_CATEGORY_SCHEDULE,
+	NATTY_USER_PROTOCOL_CATEGORY_TIMETABLES,
+	NATTY_USER_PROTOCOL_CATEGORY_CONTACTS,
+	NATTY_USER_PROTOCOL_SOSREPORT,
+	NATTY_USER_PROTOCOL_LOCATIONREPORT,
+	NATTY_USER_PROTOCOL_STEPSREPORT,
+	NATTY_USER_PROTOCOL_EFENCEREPORT,
+	NATTY_USER_PROTOCOL_WEARSTATUS,
+}; 
+
+int ntyCommonJsonCategory(U8 *json, int length) {
+	int i = 0;
+	U32 matches[128] = {0};
+
+	for (i = NTY_CATEGORY_START;i < NTY_CATEGORY_END;i ++) {
+		int plen = strlen(u8CategoryToken[i]);
+		
+		int ret = ntyKMP(json, length, u8CategoryToken[i], plen, matches);
+		if (ret > 0) {
+			return i;
+		}
+	}
+
+	return NTY_RESULT_FAILED;
+}
 
 /*
 

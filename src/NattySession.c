@@ -668,7 +668,7 @@ int ntySendCommonBroadCastItem(C_DEVID selfId, C_DEVID toId, U8 *json, int lengt
 	void *map = ntyMapInstance();
 	ClientSocket *pClient = ntyMapSearch(map, toId);
 
-#if 1
+#if 0
 	if (pClient == NULL) {
 		return ntySendPushNotify(toId, NULL);
 	}
