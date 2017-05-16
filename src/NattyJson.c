@@ -1921,7 +1921,7 @@ const U8 *u8CategoryToken[] = {
 	NATTY_USER_PROTOCOL_WEARSTATUS,
 }; 
 
-int ntyCommonJsonCategory(U8 *json, int length) {
+int ntyCommonJsonCategory(char *json, int length) {
 	int i = 0;
 	U32 matches[128] = {0};
 

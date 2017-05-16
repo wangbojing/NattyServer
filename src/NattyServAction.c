@@ -2624,7 +2624,7 @@ int ntyClientSelectRunTimeReqAction( ClientActionParam *pClientActionParam,Clien
 		if ( pClientRunTimeAck == NULL ) {
 			ntylog("ntyClientSelectRunTimeReqAction --> malloc failed ClientRunTimeAck\n");
 			ret = -2;
-			goto exit_item;
+			goto exit_ack;
 		}
 		memset( pClientRunTimeAck, 0, sizeof(ClientRunTimeAck) );
 		pClientRunTimeAck->IMEI = pClientSelectReq->IMEI;
@@ -2634,7 +2634,7 @@ int ntyClientSelectRunTimeReqAction( ClientActionParam *pClientActionParam,Clien
 		if ( pClientRunTimeAckItem == NULL ){
 			ntylog("ntyClientSelectRunTimeReqAction --> malloc failed ClientRunTimeAckItem\n");
 			ret = -3;
-			goto exit_ack;
+			goto exit_item;
 		}
 		memset(pClientRunTimeAckItem, 0, sizeof(ClientRunTimeAckItem));	
 		pClientRunTimeAck->objClientRunTimeAckItem = pClientRunTimeAckItem; //copy pointer
@@ -2866,7 +2866,7 @@ int ntyClientSelectEfenceReqAction( ClientActionParam *pClientActionParam,Client
 		if ( pClientEfenceAck == NULL ) {
 			ntylog("ntyClientSelectEfenceReqAction --> malloc failed ClientEfenceAck\n");
 			ret = -2;
-			goto exit_item;
+			goto exit_ack;
 		}	
 		memset( pClientEfenceAck, 0, sizeof(ClientEfenceAck) );	
 
@@ -2879,7 +2879,7 @@ int ntyClientSelectEfenceReqAction( ClientActionParam *pClientActionParam,Client
 		if ( pClientEfenceListItem == NULL ){
 			ntylog("ntyClientSelectEfenceReqAction --> malloc failed ClientContactsAckItem\n");
 			ret = -3;
-			goto exit_ack;
+			goto exit_item;
 		}
 		memset( pClientEfenceListItem, 0, sizeof(pClientEfenceListItem)*container->num);	
 		pClientEfenceAck->results.pClientEfenceListItem = pClientEfenceListItem; //copy pointer

@@ -73,7 +73,7 @@ typedef enum {
 	NTY_CATEGORY_END = NTY_CATEGORY_WEARSTATUS
 } EN_CATEGORY;
 
-int ntyCommonJsonCategory(U8 *json, int length);
+int ntyCommonJsonCategory(char *json, int length);
 
 void ntyCopyString(char **dest, const char *src, size_t size);
 
