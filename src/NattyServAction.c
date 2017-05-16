@@ -267,8 +267,9 @@ int ntyJsonLocationLabAction(ActionParam *pActionParam) {
 	ntyJsonLAB(pActionParam->json, pLABReq);
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;
-	
-	U8 nearbts[200] = {0};
+
+	ntylog("-----------ntyJsonLocationLabAction nearbts----------- \n");
+	U8 nearbts[PACKET_BUFFER_SIZE] = {0};
 	size_t i;
 	for (i=0; i<pLABReq->size; i++) {
 		strcat(nearbts, pLABReq->lab.pNearbts[i].cell);
@@ -280,8 +281,9 @@ int ntyJsonLocationLabAction(ActionParam *pActionParam) {
 	if (nearbts_len!=0) {
 		nearbts[nearbts_len-1] = '\0';
 	}
-	
-	U8 labbuf[500] = {0};
+
+	ntylog("-----------ntyJsonLocationLabAction labbuf----------- \n");
+	U8 labbuf[PACKET_BUFFER_SIZE] = {0};
 	sprintf(labbuf, "%s/position?accesstype=0&imei=%s&cdma=0&bts=%s&nearbts=%s&output=json&key=%s", 
 		HTTP_GAODE_BASE_URL, pLABReq->IMEI, pLABReq->lab.bts, nearbts, HTTP_GAODE_KEY);
 	ntylog(" labbuf --> %s\n", labbuf);
@@ -2396,7 +2398,7 @@ int ntyClientSelectScheduleReqAction( ClientActionParam *clientActionParamVal,Cl
 
 		char *jsonResult = ntyJsonWriteSchedule(ptrScheduleAck);
 		int nRet = ntySendUserDataAck(fromId, (U8*)jsonResult, strlen(jsonResult));
-		ntylog( "*****send to client %lld, %d, ntyJsonWriteSchedule json:%s\n", fromId, nRet, jsonResult);
+		ntylog( "-----send to client %lld, %d, ntyJsonWriteSchedule json:%s\n", fromId, nRet, jsonResult);
 		ntyJsonFree(jsonResult);
 		
 		free(ptrScheduleItem);
@@ -2483,9 +2485,9 @@ int ntyClientSelectContactsReqAction( ClientActionParam *pClientActionParam,Clie
 		ntyVectorIter(container, ntyClientSelectContactsReqIter, pClientContactsAck);
 
 		char *jsonResult = ntyClientContactsAckJsonCompose(pClientContactsAck);
-		ntylog("*****send before.send to client %lld, ntyClientContactsAckJsonCompose json: %d, %s\n", fromId, (int)strlen(jsonResult), jsonResult);
+		ntylog("-----send before.send to client %lld, ntyClientContactsAckJsonCompose json: %d, %s\n", fromId, (int)strlen(jsonResult), jsonResult);
 		int nRet = ntySendUserDataAck(fromId, (U8*)jsonResult, strlen(jsonResult));
-		ntylog("*****send after. the result:%d\n", nRet);
+		ntylog("-----send after. the result:%d\n", nRet);
 		ntyJsonFree(jsonResult);
 
 		free(pClientContactsAckItem);
@@ -2563,9 +2565,9 @@ int ntyClientSelectTurnReqAction( ClientActionParam *pClientActionParam,ClientSe
 		ntyVectorIter(container, ntyClientSelectTurnReqIter, pClientTurnAck);
 
 		char *jsonResult = ntyClientTurnAckJsonCompose(pClientTurnAck);
-		ntylog( "*****send to client %lld, ntyClientTurnAckJsonCompose json:%s\n", fromId,jsonResult );
+		ntylog( "-----send to client %lld, ntyClientTurnAckJsonCompose json:%s\n", fromId,jsonResult );
 		int nRet = ntySendUserDataAck( fromId, (U8*)jsonResult, strlen(jsonResult) );
-		ntylog( "*****send after. the result:%d\n", nRet );
+		ntylog( "-----send after. the result:%d\n", nRet );
 		ntyJsonFree( jsonResult );
 
 		free( pClientTurnAckItem );
@@ -2642,9 +2644,9 @@ int ntyClientSelectRunTimeReqAction( ClientActionParam *pClientActionParam,Clien
 		ntyVectorIter(container, ntyClientSelectRunTimeReqIter, pClientRunTimeAck);
 
 		char *jsonResult = ntyClientRunTimeAckJsonCompose( pClientRunTimeAck );
-		ntylog( "*****send to client %lld, ntyClientRunTimeAckJsonCompose json:%s\n", fromId,jsonResult );
+		ntylog( "-----send to client %lld, ntyClientRunTimeAckJsonCompose json:%s\n", fromId,jsonResult );
 		int nRet = ntySendUserDataAck( fromId, (U8*)jsonResult, strlen(jsonResult) );
-		ntylog( "*****send after. the result:%d\n", nRet );
+		ntylog( "-----send after. the result:%d\n", nRet );
 		ntyJsonFree( jsonResult );
 
 		free( pClientRunTimeAckItem );
@@ -2726,9 +2728,9 @@ int ntyClientSelectTimeTablesReqAction( ClientActionParam *pClientActionParam,Cl
 		ntyVectorIter(container, ntyClientSelectTimeTablesReqIter, pClientTimeTablesAck);
 
 		char *jsonResult = ntyClientTimeTablesAckJsonCompose( pClientTimeTablesAck );
-		ntylog( "*****send to client %lld, ntyClientTimeTablesAckJsonCompose json:%s\n", fromId,jsonResult );
+		ntylog( "-----send to client %lld, ntyClientTimeTablesAckJsonCompose json:%s\n", fromId,jsonResult );
 		int nRet = ntySendUserDataAck( fromId, (U8*)jsonResult, strlen(jsonResult) );
-		ntylog( "*****send after. the result:%d\n", nRet );
+		ntylog( "-----send after. the result:%d\n", nRet );
 		ntyJsonFree( jsonResult );
 
 		free( pClientTimeTablesAckItem );
@@ -2804,9 +2806,9 @@ int ntyClientSelectLocationReqAction( ClientActionParam *pClientActionParam,Clie
 		ntyVectorIter(container, ntyClientSelectLocationReqIter, pClientLocationAck);
 
 		char *jsonResult = ntyClientLocationAckJsonCompose( pClientLocationAck );
-		ntylog( "*****send to client %lld, ntyClientLocationAckJsonCompose json:%s\n", fromId,jsonResult );
+		ntylog( "-----send to client %lld, ntyClientLocationAckJsonCompose json:%s\n", fromId,jsonResult );
 		int nRet = ntySendUserDataAck( fromId, (U8*)jsonResult, strlen(jsonResult) );
-		ntylog( "******send after. the result:%d\n", nRet );
+		ntylog( "-----send after. the result:%d\n", nRet );
 		ntyJsonFree( jsonResult );
 
 		free( pClientLocationAckResults );
@@ -2887,9 +2889,9 @@ int ntyClientSelectEfenceReqAction( ClientActionParam *pClientActionParam,Client
 		ntyVectorIter(container, ntyClientSelectEfenceReqIter, pClientEfenceAck);
 
 		char *jsonResult = ntyClientEfenceAckJsonCompose( pClientEfenceAck );
-		ntylog( "*****send to client %lld, ntyClientSelectEfenceReqAction json:%s\n", fromId,jsonResult );
+		ntylog( "-----send to client %lld, ntyClientSelectEfenceReqAction json:%s\n", fromId,jsonResult );
 		int nRet = ntySendUserDataAck( fromId, (U8*)jsonResult, strlen(jsonResult) );
-		ntylog( "******send after. the result:%d\n", nRet );
+		ntylog( "-----send after. the result:%d\n", nRet );
 		ntyJsonFree( jsonResult );
 
 		free(pClientEfenceListItem);
@@ -2940,9 +2942,9 @@ int ntyClientSelectURLReqAction( ClientActionParam *pClientActionParam,ClientSel
 	pClientURLAck->objClientURLAckItem.QRCode = url_qrcode;
 	
 	char *jsonResult = ntyClientURLAckJsonCompose( pClientURLAck );
-	ntylog( "*****send to client %lld, ntyClientLocationAckJsonCompose json:%s\n", fromId, jsonResult);
+	ntylog( "-----send to client %lld, ntyClientLocationAckJsonCompose json:%s\n", fromId, jsonResult);
 	int nRet = ntySendUserDataAck( fromId, (U8*)jsonResult, strlen(jsonResult) );
-	ntylog( "******send after. the result:%d\n", nRet );
+	ntylog( "-----send after. the result:%d\n", nRet );
 	ntyJsonFree( jsonResult );
 
 	free( pClientURLAck );

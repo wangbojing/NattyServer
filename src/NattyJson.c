@@ -280,7 +280,7 @@ void ntyJsonLAB(JSON_Value *json, LABReq *pLABReq) {
 		nearbts_object = json_array_get_object(nearbts_array, i);
 		pNearbts[i].cell = json_object_get_string(nearbts_object, NATTY_USER_PROTOCOL_CELL);
 		pNearbts[i].signal = json_object_get_string(nearbts_object, NATTY_USER_PROTOCOL_SIGNAL);
-		//ntydbg("cell:%s   signal:%s\n", pNearbts[i].cell, pNearbts[i].signal);
+		ntylog("cell:%s   signal:%s\n", pNearbts[i].cell, pNearbts[i].signal);
 	}
 }
 
