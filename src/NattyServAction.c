@@ -108,7 +108,13 @@ void ntyJsonCommonResult(C_DEVID devId, const char * code) {
 
 	ntylog("ntyJsonCommonResult --> ntyCommonResultMessage \n");
 	pCommonAck->result.code = code;
+#if 0
 	pCommonAck->result.message = ntyCommonResultMessage(pCommonAck->result.code);
+#else
+	char message[128] = {0};
+	ntyCommonResultMessage(pCommonAck->result.code, message);
+	pCommonAck->result.message = message;
+#endif
 
 	char *jsonresult = ntyJsonWriteCommon(pCommonAck);
 	ntylog("ntyJsonCommonResult %s -> %lld, %s  %d\n", code, devId, jsonresult, (int)strlen(jsonresult));
@@ -136,7 +142,13 @@ void ntyJsonCommonExtendResult(C_DEVID devId, const char * code, int id) {
 	pCommonExtendAck->id = ids;
 	sprintf(ids, "%d", id);
 	pCommonExtendAck->result.code = code;
+#if 0
 	pCommonExtendAck->result.message = ntyCommonResultMessage(pCommonExtendAck->result.code);
+#else
+	char message[128] = {0};
+	ntyCommonResultMessage(pCommonExtendAck->result.code, message);
+	pCommonExtendAck->result.message = message;
+#endif
 	
 	char *jsonresult = ntyJsonWriteCommonExtend(pCommonExtendAck);
 	ntylog("ntyJsonCommonExtendResult %s -> %d %lld, %s  %d\n", code, id, devId, jsonresult, (int)strlen(jsonresult));

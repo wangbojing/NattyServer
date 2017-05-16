@@ -43,7 +43,9 @@
 
 
 #include "NattyMessage.h"
+#include <string.h>
 
+#if 0
 const char* ntyCommonResultMessage(const char *code) {
 	char *message = NULL;
 	if (code != NULL) {
@@ -70,8 +72,35 @@ const char* ntyCommonResultMessage(const char *code) {
 
 	return message;
 }
+#else 
+void ntyCommonResultMessage(const char *code, char *message) {
+	if (code == NULL || message == NULL) {
+		return;
+	}
+	if (strcmp(code, NATTY_RESULT_CODE_SUCCESS) == 0) {
+		strcat(message, "Success");			//成功
+	} else if (strcmp(code, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE) == 0) {
+		strcat(message, "Device not online");	//设备不在线
+	} else if (strcmp(code, NATTY_RESULT_CODE_ERR_JSON_FORMAT) == 0) {
+		strcat(message, "JSON format error");	//JSON格式错误
+	} else if (strcmp(code, NATTY_RESULT_CODE_ERR_JSON_CONVERT) == 0) {
+		strcat(message, "JSON convert error");	//JSON转换错误
+	} else if (strcmp(code, NATTY_RESULT_CODE_ERR_JSON_DATA) == 0) {
+		strcat(message, "JSON data error");	//JSON数据错误
+	} else if (strcmp(code, NATTY_RESULT_CODE_ERR_ICCID_NOTPHONENUM) == 0) {
+		strcat(message, "ICCID not band phone number error");	//JSON转换错误
+	} else if (strcmp(code, NATTY_RESULT_CODE_ERR_DB_SAVE_OFFLINE) == 0) {
+		strcat(message, "Cannot save offline data");
+	} else if (strcmp(code, NATTY_RESULT_CODE_ERR_DB_SAVE_REPEATE_DATA) == 0) {
+		strcat(message, "Save Repeate data");
+	} else if (strcmp(code, NATTY_RESULT_CODE_BUSY) == 0) {
+		strcat(message, "Server be Busy");
+	} else {
+		strcat(message, "");
+	}
+}
 
-
+#endif
 
 
 

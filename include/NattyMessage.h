@@ -73,8 +73,11 @@
 #define NATTY_RESULT_CODE_ERR_BROADCAST				"10014"		//¹ã²¥Êý¾Ý
 
 
-
+#if 0
 const char* ntyCommonResultMessage(const char *code);
+#else
+void ntyCommonResultMessage(const char *code, char *message);
+#endif
 
 
 #endif
