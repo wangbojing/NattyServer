@@ -797,6 +797,9 @@ char * ntyJsonWriteCommon(CommonAck *pCommonAck) {
 	
 	char *jsonstring =  json_serialize_to_string(schema);
 	json_value_free(schema);
+
+	ntylog("ntyJsonWriteCommon --> %s\n", jsonstring);
+	
 	return jsonstring;
 }
 

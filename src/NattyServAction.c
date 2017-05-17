@@ -116,6 +116,8 @@ void ntyJsonCommonResult(C_DEVID devId, const char * code) {
 	pCommonAck->result.message = message;
 #endif
 
+	ntylog("ntyJsonCommonResult --> ntyJsonWriteCommon : %s\n", message);
+
 	char *jsonresult = ntyJsonWriteCommon(pCommonAck);
 	ntylog("ntyJsonCommonResult %s -> %lld, %s  %d\n", code, devId, jsonresult, (int)strlen(jsonresult));
 	
