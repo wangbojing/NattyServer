@@ -634,6 +634,17 @@ int ntySendPushNotify(C_DEVID selfId, U8 *msg) {
 	return NTY_RESULT_FAILED;//NTY_RESULT_FAILED
 #else
 
+	void *heap = ntyBHeapInstance();
+	NRecord *record = ntyBHeapSelect(heap, selfId);
+	if (record == NULL) return NTY_RESULT_NOEXIST;
+	Client *pClient = (Client *)record->value;
+
+	if (pClient->deviceType != NTY_PROTO_CLIENT_IOS && pClient->deviceType != NTY_PROTO_CLIENT_IOS_PUBLISH) {
+		
+		return ;
+	}
+
+	
 	VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
 	if (tag == NULL) return NTY_RESULT_ERROR;
 
@@ -883,10 +894,12 @@ int ntySendVoiceBroadCastItem(C_DEVID fromId, C_DEVID toId, U8 *json, int length
 
 	void *map = ntyMapInstance();
 	ClientSocket *client = ntyMapSearch(map, toId);
-#if 1
+#if 0
 	if (client == NULL) {
 		return ntySendPushNotify(toId, NULL);
 	}
+#else
+	ntySendPushNotify(toId, NTY_PUSH_VOICE_MSG_CONTEXT);
 #endif
 
 	return ntySendBuffer(client, buffer, length);
@@ -1430,8 +1443,9 @@ int ntySendBigPacket(U8 *buffer, int length, C_DEVID fromId, C_DEVID gId, C_DEVI
 		ntylog(" index : %d", i );
 		ntylog(" pktLength:%d, Count:%d, ret:%d, selfIdx:%d\n",
 			pktLength+NTY_VOICEREQ_EXTEND_LENGTH, Count, ret, NTY_PROTO_VOICEREQ_SELFID_IDX);
-
+#if 0
 		usleep(20 * 1000); //Window Send
+#endif
 	}
 
 	return 0;
@@ -1519,10 +1533,12 @@ int ntySendBindConfirmPushResult(C_DEVID proposerId, C_DEVID adminId, U8 *json, 
 	void *map = ntyMapInstance();
 	ClientSocket *client = ntyMapSearch(map, adminId);
 	
-#if 1 //
+#if 0 //
 	if (client == NULL) {
 		return ntySendPushNotify(adminId, NULL);
 	}
+#else
+	ntySendPushNotify(adminId, NTY_PUSH_BINDCONFIRM_MSG_CONTEXT);
 #endif
 	
 

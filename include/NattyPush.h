@@ -88,6 +88,12 @@
 #define TOKEN_SIZE				32
 
 #define NTY_PUSH_MSG_CONTEXT			"全家康 \n 您收到了一条新消息"
+#define NTY_PUSH_VOICE_MSG_CONTEXT			"全家康 \n 您收到了一条语音消息"
+#define NTY_PUSH_EFENCE_MSG_CONTEXT			"全家康 \n 您收到了一条电子围栏设置消息"
+#define NTY_PUSH_SOSREPORT_MSG_CONTEXT			"全家康 \n 您收到了一条SOS消息"
+#define NTY_PUSH_EFENCEREPORT_MSG_CONTEXT			"全家康 \n 您收到了电子围栏越界消息"
+#define NTY_PUSH_BINDCONFIRM_MSG_CONTEXT			"全家康 \n 您收到了申请确认消息"
+
 
 
 typedef struct _Push_Context {
