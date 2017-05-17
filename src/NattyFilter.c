@@ -1810,6 +1810,7 @@ void ntyLocationAsyncReqPacketHandleRequest(const void *_self, unsigned char *bu
 			pActionParam->jsonlen = jsonlen;
 			pActionParam->index = 0;
 			const char *category = ntyJsonAppCategory(json);
+			ntylog("ntyLocationAsyncReqPacketHandleRequest --> category:%s\n", category);
 			if (strcmp(category, NATTY_USER_PROTOCOL_WIFI) == 0) {
 				ntyJsonLocationWIFIAction(pActionParam);
 			} else if (strcmp(category, NATTY_USER_PROTOCOL_LAB) == 0) {

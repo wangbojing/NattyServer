@@ -175,11 +175,14 @@ int ntyJsonLocationWIFIAction(ActionParam *pActionParam) {
 		return NTY_RESULT_ERROR;
 	}
 	memset(pWIFIReq, 0, sizeof(WIFIReq));
+
+	ntylog("ntyJsonLocationWIFIAction --> ntyJsonWIFI\n");
 	
 	ntyJsonWIFI(pActionParam->json, pWIFIReq);
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;
-	
+
+	ntylog("ntyJsonLocationWIFIAction --> macs\n");
 	U8 macs[1024] = {0};
 	size_t i;
 	for (i=0; i<pWIFIReq->size; i++) {
