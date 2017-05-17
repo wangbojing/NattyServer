@@ -47,6 +47,10 @@
 #include "../include/NattyAbstractClass.h"
 
 
+static int ntyPushTcpConnect(void *self);
+static SSL* ntyPushSSLConnect(void *self, int sockfd, U8 mode);
+
+
 int ntyDeviceToken2Binary(const char *sz, const int len, unsigned char *const binary, const int size) {
 	int i, val;
 	const char *pin;
@@ -526,6 +530,36 @@ void* ntyPushContextCtor(void *self, va_list *params) {
 
 	pCtx->pctx = ntyContextInitialize(APPLE_CLIENT_PEM_NAME_PUBLISH, APPLE_CLIENT_PEM_NAME_PUBLISH, APPLE_CLIENT_PEM_PWD, APPLE_SERVER_PEM_NAME);
 
+	
+	pCtx->d_sockfd = ntyPushTcpConnect(pCtx);
+	if (pCtx->d_sockfd < 0) {
+		ntylog("failed to connect to host %s\n", strerror(errno));
+		return pCtx;
+	}
+
+	pCtx->d_ssl = ntyPushSSLConnect(pCtx, pCtx->d_sockfd, 0);
+	if (pCtx->d_ssl == NULL) {
+		ntylog("ssl connect failed: %s\n", ERR_reason_error_string(ERR_get_error())); 
+		ntyCloseSocket(pCtx->d_sockfd);
+
+		return pCtx;
+	}
+
+
+	pCtx->p_sockfd = ntyPushTcpConnect(pCtx);
+	if (pCtx->p_sockfd < 0) {
+		ntylog("failed to connect to host %s\n", strerror(errno));
+		return pCtx;
+	}
+	
+	pCtx->p_ssl = ntyPushSSLConnect(pCtx, pCtx->p_sockfd, 1);
+	if (pCtx->p_ssl == NULL) {
+		ntylog("ssl connect failed: %s\n", ERR_reason_error_string(ERR_get_error())); 
+		ntyCloseSocket(pCtx->p_sockfd);
+
+		return pCtx;
+	}
+
 	return pCtx;
 }
 
@@ -541,9 +575,16 @@ void* ntyPushContextDtor(void *self) {
 		if (pCtx->pctx != NULL) {
 			SSL_CTX_free(pCtx->pctx);
 		}
-	}
 
-	return NULL;
+		
+		SSL_shutdown(pCtx->d_ssl);
+		ntyCloseSocket(pCtx->d_sockfd);
+
+		SSL_shutdown(pCtx->p_ssl);
+		ntyCloseSocket(pCtx->p_sockfd);
+	}
+	
+	return pCtx;
 }
 
 static SSL* ntyPushSSLConnect(void *self, int sockfd, U8 mode) {
@@ -626,12 +667,20 @@ int ntyPushNotify(void *self, U8 *msg, const U8 *token, U8 mode) {
 	if (pCtx == NULL) return NTY_RESULT_FAILED;
 
 	ntylog("ntyPushNotify ..\n");
+#if 1
+	SSL *ssl = NULL;
+	if (mode) {
+		ssl = pCtx->p_ssl;
+	} else {
+		ssl = pCtx->d_ssl;
+	}
+#else
 	int sockfd = ntyPushTcpConnect(pCtx);
 	if (sockfd < 0) {
 		ntylog("failed to connect to host %s\n", strerror(errno));
 		return NTY_RESULT_FAILED;
 	}
-
+	
 	SSL *ssl = ntyPushSSLConnect(pCtx, sockfd, mode);
 	if (ssl == NULL) {
 		ntylog("ssl connect failed: %s\n", ERR_reason_error_string(ERR_get_error())); 
@@ -639,13 +688,13 @@ int ntyPushNotify(void *self, U8 *msg, const U8 *token, U8 mode) {
 
 		return NTY_RESULT_FAILED;
 	}
-	
+#endif
 	ntylog("ntyVerifyConnection\n");
 	int ret = ntyVerifyConnection(ssl, APPLE_HOST_NAME);
 	if (ret != NTY_RESULT_SUCCESS) {
 		ntylog("Verify failed\n");
-		SSL_shutdown(ssl);
-		ntyCloseSocket(sockfd);
+		//SSL_shutdown(ssl);
+		//ntyCloseSocket(sockfd);
 
 		return NTY_RESULT_FAILED;
 	}
@@ -666,9 +715,6 @@ int ntyPushNotify(void *self, U8 *msg, const U8 *token, U8 mode) {
 		ntylog("send successfully\n");
 	}
 
-
-	SSL_shutdown(ssl);
-	ntyCloseSocket(sockfd);
 
 	ntylog("ntyPushNotify Exit\n");
 
@@ -717,20 +763,20 @@ int main(void) {
 	void *pushHandle = ntyPushHandleInstance();
 
 	char *msg = "abcd";
-	const char *token = "015bafdb5a846a08cbae1d78959a461d6b9c4e46f6a18dc36b4e9a191487bc0d";
+	const char *token = "a0c7aa17d80c27e1c98482483655d9cd7036dadca57fc5d4a693321997813707";
 
 	//ec49a6b5bcad57279a0fe08f8aeab941
 	//015bafdb5a846a08cbae1d78959a461d 6b9c4e46f6a18dc36b4e9a191487bc0d
 	//015bafdb5a846a08cbae1d78959a461d
 
-	int ret = ntyPushNotifyHandle(pushHandle, msg, token);
+	int ret = ntyPushNotifyHandle(pushHandle, msg, token, 0);
 
 	getchar();
 
 	int i = 0;
 
 	for (i = 0;i < 10;i ++) {
-		ntyPushNotifyHandle(pushHandle, NULL, token);
+		ntyPushNotifyHandle(pushHandle, NULL, token, 0);
 	}
 
 	getchar();

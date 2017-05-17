@@ -95,9 +95,13 @@ typedef struct _Push_Context {
 	SSL_CTX *ctx;
 	SSL_CTX *pctx;
 	struct sockaddr_in addr;
-#if 0
-	SSL *ssl;
-#endif
+
+	int d_sockfd;
+	int p_sockfd;
+
+	SSL *d_ssl;
+	SSL *p_ssl;
+
 } nPushContext;
 
 typedef struct _Push_Handle {
