@@ -628,6 +628,7 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 		Client *pClient = ntyAddClientHeap(client, &ret);
 		if (pClient != NULL) {
 			//ntySendFriendsTreeIpAddr(pClient, 1);
+			pClient->deviceType = client->deviceType; //Client from Android switch IOS 
 
 			if (pClient->deviceType == NTY_PROTO_CLIENT_WATCH) {
 #if 0
