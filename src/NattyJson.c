@@ -1605,35 +1605,25 @@ int ntyClientReqJsonParse( JSON_Value *json, ClientSelectReq *pclientSelectReq )
 	return 0;
 }
 
-char *ntyClientContactsAckJsonCompose( ClientContactsAck *pClientContactsAck ) {
-	if ( pClientContactsAck == NULL ) {
+int ntyClientContactsAckJsonCompose( ClientContactsAck *pClientContactsAck, unsigned char *buffer) {
+	if ( pClientContactsAck == NULL || buffer == NULL ) {
 		return NULL;
 	}
 
-	ntylog("ntyClientContactsAckJsonCompose --> enter\n");
-
 	JSON_Value *schema = json_value_init_object();
 	JSON_Object *schema_obj = json_value_get_object( schema );
-
-	ntylog("ntyClientContactsAckJsonCompose --> NATTY_USER_PROTOCOL_RESULTS\n");
 	
 	json_object_set_value( schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object() );
 	JSON_Object *results_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULTS );
-
-	ntylog("ntyClientContactsAckJsonCompose --> NATTY_USER_PROTOCOL_IMEI\n");
 	
 	json_object_set_string( results_obj, NATTY_USER_PROTOCOL_IMEI, pClientContactsAck->IMEI );
 	json_object_set_string( results_obj, NATTY_USER_PROTOCOL_NUM, pClientContactsAck->Num );
 	json_object_set_string( results_obj, NATTY_USER_PROTOCOL_CATEGORY, pClientContactsAck->Category );
 
-	ntylog("ntyClientContactsAckJsonCompose --> NATTY_USER_PROTOCOL_CONTACTS\n");
 	json_object_set_value( results_obj, NATTY_USER_PROTOCOL_CONTACTS, json_value_init_array() );
 	JSON_Array *contacts_arr = json_object_get_array( results_obj, NATTY_USER_PROTOCOL_CONTACTS );
 	
-	size_t i;
-
-	ntylog("ntyClientContactsAckJsonCompose --> Num %s, size:%d\n", pClientContactsAck->Num, pClientContactsAck->size);
-	//int iNum = atoi( pClientContactsAck->Num);
+	int i;
 	for ( i = 0; i < pClientContactsAck->size; i++ ) {
 		json_array_append_value( contacts_arr, json_value_init_object() );
 		JSON_Object *contacts_obj = json_array_get_object( contacts_arr, i );
@@ -1648,12 +1638,27 @@ char *ntyClientContactsAckJsonCompose( ClientContactsAck *pClientContactsAck ) {
 	ntylog("ntyClientContactsAckJsonCompose --> NATTY_USER_PROTOCOL_TELPHONE\n");
 
 	char *jsonstring =  json_serialize_to_string( schema );
-	ntylog("ntyClientContactsAckJsonCompose --> json_serialize_to_string\n");
+	if (jsonstring == NULL) { 
+		json_value_free( schema );
+		return NTY_RESULT_ERROR;
+	}
+		
+	int jsonLength = strlen(jsonstring);
+	if (jsonLength > PACKET_BUFFER_SIZE-1) { 
+		
+		json_value_free( schema );
+		ntyJsonFree(jsonstring);
+		
+		return NTY_RESULT_FAILED;
+	}
 	
+	memcpy(buffer, jsonstring, jsonLength);
+	
+	ntylog("ntyClientContactsAckJsonCompose --> end:%s\n", buffer);
 	json_value_free( schema );
+	ntyJsonFree(jsonstring);
 
-	ntylog("ntyClientContactsAckJsonCompose --> end\n");
-	return jsonstring;
+	return NTY_RESULT_SUCCESS;
 }
 
 char *ntyClientTurnAckJsonCompose( ClientTurnAck *pClientTurnAck ) {

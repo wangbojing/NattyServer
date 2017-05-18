@@ -2490,16 +2490,31 @@ int ntyClientSelectContactsReqAction( ClientActionParam *pClientActionParam,Clie
 		memset(pClientContactsAckItem, 0, sizeof(ClientContactsAckItem)*container->num);	
 		pClientContactsAck->objClientContactsAckItem = pClientContactsAckItem; //copy pointer
 
-		ntylog("ntyClientSelectContactsReqAction --> pClientContactsAckItem\n");
+		ntylog("ntyClientSelectContactsReqAction --> pClientContactsAckItem : %d\n", container->num);
 
 		ntyVectorIterator(container, ntyClientSelectContactsReqIter, pClientContactsAck);
 
 		ntylog("ntyClientSelectContactsReqAction --> ntyClientContactsAckJsonCompose\n");
+		
+#if 0	//Update By WangBoJing	
 		char *jsonResult = ntyClientContactsAckJsonCompose(pClientContactsAck);
 		ntylog("-----send before.send to client %lld, ntyClientContactsAckJsonCompose json: %d, %s\n", fromId, (int)strlen(jsonResult), jsonResult);
 		int nRet = ntySendUserDataAck(fromId, (U8*)jsonResult, strlen(jsonResult));
 		ntylog("-----send after. the result:%d\n", nRet);
 		ntyJsonFree(jsonResult);
+#else
+		U8 buffer[PACKET_BUFFER_SIZE] = {0};
+		ret = ntyClientContactsAckJsonCompose(pClientContactsAck, buffer);
+		if (ret != NTY_RESULT_SUCCESS) {
+			free(pClientContactsAckItem);
+			pClientContactsAckItem = NULL;
+
+			goto exit_item;
+		}
+
+		int nRet = ntySendUserDataAck(fromId, buffer, strlen(buffer));
+		ntylog("-----send after. the result:%d\n", nRet);
+#endif
 
 		free(pClientContactsAckItem);
 		pClientContactsAckItem = NULL;
