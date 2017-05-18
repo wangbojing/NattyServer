@@ -2503,7 +2503,7 @@ int ntyClientSelectContactsReqAction( ClientActionParam *pClientActionParam,Clie
 		ntylog("-----send after. the result:%d\n", nRet);
 		ntyJsonFree(jsonResult);
 #else
-		U8 buffer[1024] = {0};
+		U8 buffer[NTY_PACKET_BUFFER_SIZE] = {0};
 		ret = ntyClientContactsAckJsonCompose(pClientContactsAck, buffer);
 		if (ret != NTY_RESULT_SUCCESS) {
 			free(pClientContactsAckItem);

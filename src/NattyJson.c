@@ -1644,7 +1644,7 @@ int ntyClientContactsAckJsonCompose( ClientContactsAck *pClientContactsAck, unsi
 	}
 		
 	int jsonLength = strlen(jsonstring);
-	if (jsonLength > PACKET_BUFFER_SIZE-1) { 
+	if (jsonLength > NTY_PACKET_BUFFER_SIZE-1) { 
 		
 		json_value_free( schema );
 		ntyJsonFree(jsonstring);
