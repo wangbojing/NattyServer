@@ -128,7 +128,7 @@ void ntyJsonCommon(JSON_Value *json, CommonReq *pCommonReq);
 //add by luoby. ntyClientReqJsonParse
 
 int ntyClientReqJsonParse( JSON_Value *json, ClientSelectReq *pclientSelectReq );
-char *ntyClientContactsAckJsonCompose( ClientContactsAck *pClientContactsAck );
+int ntyClientContactsAckJsonCompose( ClientContactsAck *pClientContactsAck, unsigned char *buffer);
 char *ntyClientTurnAckJsonCompose( ClientTurnAck *pClientTurnAck );
 char *ntyClientRunTimeAckJsonCompose( ClientRunTimeAck *pClientRunTimeAck );
 char *ntyClientTimeTablesAckJsonCompose( ClientTimeTablesAck *pClientTimeTablesAck );
