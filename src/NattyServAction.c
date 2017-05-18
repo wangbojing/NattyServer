@@ -2449,7 +2449,7 @@ int ntyClientSelectContactsReqIter(void *self, void *arg) {
 
 int ntyClientSelectContactsReqAction( ClientActionParam *pClientActionParam,ClientSelectReq *pClientSelectReq )
 {
-	ntydbg( "ntyClientSeleteContactsReqAction fromId:%lld toId:%lld json:%s\n", pClientActionParam->fromId, pClientActionParam->toId,pClientActionParam->jsonString );
+	ntylog( "ntyClientSeleteContactsReqAction fromId:%lld toId:%lld json:%s\n", pClientActionParam->fromId, pClientActionParam->toId,pClientActionParam->jsonString );
 
 	if ( pClientActionParam == NULL ) return -1;
 
@@ -2470,6 +2470,9 @@ int ntyClientSelectContactsReqAction( ClientActionParam *pClientActionParam,Clie
 			goto exit_ack;
 		}
 		memset(pClientContactsAck, 0, sizeof(ClientContactsAck));
+
+		ntylog("ntyClientSelectContactsReqAction --> ClientContactsAck\n");
+		
 		pClientContactsAck->IMEI = pClientSelectReq->IMEI;
 		pClientContactsAck->Category = pClientSelectReq->Category;
 		char num[32] = {0};
@@ -2477,7 +2480,7 @@ int ntyClientSelectContactsReqAction( ClientActionParam *pClientActionParam,Clie
 		pClientContactsAck->Num = num;
 		pClientContactsAck->size = container->num;
 		pClientContactsAck->index = 0;
-
+		
 		ClientContactsAckItem *pClientContactsAckItem = (ClientContactsAckItem*)malloc(sizeof(ClientContactsAckItem)*container->num);
 		if (pClientContactsAckItem == NULL){
 			ntylog("ntyClientSelectContactsReqAction --> malloc failed ClientContactsAckItem\n");
@@ -2487,8 +2490,11 @@ int ntyClientSelectContactsReqAction( ClientActionParam *pClientActionParam,Clie
 		memset(pClientContactsAckItem, 0, sizeof(ClientContactsAckItem)*container->num);	
 		pClientContactsAck->objClientContactsAckItem = pClientContactsAckItem; //copy pointer
 
-		ntyVectorIter(container, ntyClientSelectContactsReqIter, pClientContactsAck);
+		ntylog("ntyClientSelectContactsReqAction --> pClientContactsAckItem\n");
 
+		ntyVectorIterator(container, ntyClientSelectContactsReqIter, pClientContactsAck);
+
+		ntylog("ntyClientSelectContactsReqAction --> ntyClientContactsAckJsonCompose\n");
 		char *jsonResult = ntyClientContactsAckJsonCompose(pClientContactsAck);
 		ntylog("-----send before.send to client %lld, ntyClientContactsAckJsonCompose json: %d, %s\n", fromId, (int)strlen(jsonResult), jsonResult);
 		int nRet = ntySendUserDataAck(fromId, (U8*)jsonResult, strlen(jsonResult));
