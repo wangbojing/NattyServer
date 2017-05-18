@@ -129,12 +129,14 @@ void ntyJsonCommon(JSON_Value *json, CommonReq *pCommonReq);
 
 int ntyClientReqJsonParse( JSON_Value *json, ClientSelectReq *pclientSelectReq );
 int ntyClientContactsAckJsonCompose( ClientContactsAck *pClientContactsAck, unsigned char *buffer);
-char *ntyClientTurnAckJsonCompose( ClientTurnAck *pClientTurnAck );
-char *ntyClientRunTimeAckJsonCompose( ClientRunTimeAck *pClientRunTimeAck );
+int ntyClientTurnAckJsonCompose( ClientTurnAck *pClientTurnAck, unsigned char *buffer);
+
+int ntyClientRunTimeAckJsonCompose( ClientRunTimeAck *pClientRunTimeAck, unsigned char *buffer );
 char *ntyClientTimeTablesAckJsonCompose( ClientTimeTablesAck *pClientTimeTablesAck );
-char *ntyClientLocationAckJsonCompose( ClientLocationAck *pClientLocationAck );
+int ntyClientLocationAckJsonCompose( ClientLocationAck *pClientLocationAck, unsigned char *buffer );
+
 char *ntyClientEfenceAckJsonCompose( ClientEfenceAck *pClientEfenceAck );
-char *ntyClientURLAckJsonCompose( ClientURLAck *pClientURLAck );
+int ntyClientURLAckJsonCompose( ClientURLAck *pClientURLAck , unsigned char *buffer);
 
 //end
 
@@ -215,7 +217,7 @@ char * ntyJsonWriteDelSchedule(DelScheduleAck *pDelScheduleAck);
 
 char * ntyJsonWriteUpdateSchedule(UpdateScheduleAck *pUpdateScheduleAck);
 
-char * ntyJsonWriteSchedule(ScheduleAck *pScheduleAck);
+int ntyJsonWriteSchedule(ScheduleAck *pScheduleAck, unsigned char *buffer);
 
 char * ntyJsonWriteTimeTables(TimeTablesAck *pTimeTablesAck);
 

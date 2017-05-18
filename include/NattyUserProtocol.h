@@ -56,7 +56,7 @@
 #define HTTP_GAODE_KEY			"fb44f91d1a1df4d4b6356f43183a329f"
 #define HTTP_WEATHER_KEY		"0pyd8z7jouficcil"
 
-#define NTY_PACKET_BUFFER_SIZE		1024
+#define NTY_PACKET_BUFFER_SIZE		992 //32 pkthdr, pkttail
 
 
 #define NATTY_USER_PROTOCOL_IMEI					"IMEI"
