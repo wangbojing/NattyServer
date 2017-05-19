@@ -2709,7 +2709,18 @@ int ntyClientSelectRunTimeReqAction( ClientActionParam *pClientActionParam,Clien
 		ntylog( "-----send after. the result:%d\n", nRet );
 		ntyJsonFree( jsonResult );
 #else
-		
+		U8 buffer[NTY_PACKET_BUFFER_SIZE] = {0};
+
+		ret = ntyClientRunTimeAckJsonCompose(pClientRunTimeAck, buffer);
+		if (ret < NTY_RESULT_SUCCESS) {
+			free( pClientRunTimeAckItem );
+			pClientRunTimeAckItem = NULL;
+
+			goto exit_item;
+		}
+
+		int nRet = ntySendUserDataAck( fromId, buffer, ret);
+		ntylog( "-----send after. the result:%d\n", nRet );
 #endif
 		free( pClientRunTimeAckItem );
 		pClientRunTimeAckItem = NULL;
@@ -2788,13 +2799,26 @@ int ntyClientSelectTimeTablesReqAction( ClientActionParam *pClientActionParam,Cl
 		pClientTimeTablesAck->objClientTimeTablesAckItem = pClientTimeTablesAckItem; //copy pointer
 
 		ntyVectorIter(container, ntyClientSelectTimeTablesReqIter, pClientTimeTablesAck);
-
+#if 0
 		char *jsonResult = ntyClientTimeTablesAckJsonCompose( pClientTimeTablesAck );
 		ntylog( "-----send to client %lld, ntyClientTimeTablesAckJsonCompose json:%s\n", fromId,jsonResult );
 		int nRet = ntySendUserDataAck( fromId, (U8*)jsonResult, strlen(jsonResult) );
 		ntylog( "-----send after. the result:%d\n", nRet );
 		ntyJsonFree( jsonResult );
+#else
+		U8 buffer[NTY_PACKET_BUFFER_SIZE] = {0};
+		ret = ntyClientTimeTablesAckJsonCompose(pClientTimeTablesAck, buffer);
+		if (ret < NTY_RESULT_SUCCESS) {
+			free( pClientTimeTablesAckItem );
+			pClientTimeTablesAckItem = NULL;
 
+			goto exit_item;
+		}
+
+		int nRet = ntySendUserDataAck( fromId, buffer, ret );
+
+		ntylog( "-----send after. the result:%d\n", nRet );
+#endif
 		free( pClientTimeTablesAckItem );
 		pClientTimeTablesAckItem = NULL;
 		

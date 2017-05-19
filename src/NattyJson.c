@@ -1776,9 +1776,9 @@ int ntyClientRunTimeAckJsonCompose( ClientRunTimeAck *pClientRunTimeAck, unsigne
 	return jsonLength;
 }
 
-char *ntyClientTimeTablesAckJsonCompose( ClientTimeTablesAck *pClientTimeTablesAck ){
-	if (pClientTimeTablesAck == NULL) {
-		return NULL;
+int ntyClientTimeTablesAckJsonCompose( ClientTimeTablesAck *pClientTimeTablesAck, unsigned char *buffer ) {
+	if (pClientTimeTablesAck == NULL || buffer == NULL) {
+		return NTY_RESULT_ERROR;
 	}
 
 	JSON_Value *schema = json_value_init_object();
@@ -1827,10 +1827,32 @@ char *ntyClientTimeTablesAckJsonCompose( ClientTimeTablesAck *pClientTimeTablesA
 		json_object_set_string(afternoon_obj, NATTY_USER_PROTOCOL_STARTTIME, AftTimeLeft);
 		json_object_set_string(afternoon_obj, NATTY_USER_PROTOCOL_ENDTIME, AftTimeRight);
 	}
-
+#if 0
 	char *jsonstring =  json_serialize_to_string(schema);
 	json_value_free(schema);
-	return jsonstring;
+#else
+	char *jsonstring =  json_serialize_to_string( schema );
+	if (jsonstring == NULL) {
+		json_value_free( schema );
+		return NTY_RESULT_ERROR;
+	}
+	
+	int jsonLength = strlen(jsonstring);
+	if (jsonLength > NTY_PACKET_BUFFER_SIZE-1) {
+		json_value_free( schema );
+		ntyJsonFree(jsonstring);
+
+		return NTY_RESULT_ERROR;
+	}
+
+	memcpy(buffer, jsonstring, jsonLength);
+	
+	json_value_free( schema );
+	ntyJsonFree(jsonstring);
+	
+#endif
+	
+	return jsonLength;
 }
 
 /*

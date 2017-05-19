@@ -132,7 +132,7 @@ int ntyClientContactsAckJsonCompose( ClientContactsAck *pClientContactsAck, unsi
 int ntyClientTurnAckJsonCompose( ClientTurnAck *pClientTurnAck, unsigned char *buffer);
 
 int ntyClientRunTimeAckJsonCompose( ClientRunTimeAck *pClientRunTimeAck, unsigned char *buffer );
-char *ntyClientTimeTablesAckJsonCompose( ClientTimeTablesAck *pClientTimeTablesAck );
+int ntyClientTimeTablesAckJsonCompose( ClientTimeTablesAck *pClientTimeTablesAck, unsigned char *buffer );
 int ntyClientLocationAckJsonCompose( ClientLocationAck *pClientLocationAck, unsigned char *buffer );
 
 char *ntyClientEfenceAckJsonCompose( ClientEfenceAck *pClientEfenceAck );
