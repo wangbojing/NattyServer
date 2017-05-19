@@ -1948,8 +1948,10 @@ int ntyVoiceReqAction(C_DEVID fromId, U32 msgId) {
 	long stamp = 0;
 	
 	int ret = ntyQueryVoiceMsgSelectHandle(msgId, &senderId, &gId, filename, &stamp);
-	if (ret == NTY_RESULT_FAILED) {
+	if (ret == NTY_RESULT_FAILED) {		
 		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_NOEXIST);
+
+		//delete msgId
 		return ret;
 	}
 	int filename_len = (int)strlen(filename);
@@ -1970,6 +1972,10 @@ int ntyVoiceReqAction(C_DEVID fromId, U32 msgId) {
 	ntylog(" ntyVoiceReqAction --> size:%d\n", size);
 	if (size == -1) {
 		free(pData);
+		
+		int ret = ntyExecuteVoiceOfflineMsgDeleteHandle(msgId, fromId);
+		ntylog("ntyVoiceReqAction --> ntyExecuteVoiceOfflineMsgDeleteHandle ret : %d\n", ret);
+		
 		return NTY_RESULT_FAILED;
 	}
 	ret = ntySendVoiceBufferResult(pData, size, senderId, gId, fromId, msgId);

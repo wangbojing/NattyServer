@@ -675,6 +675,7 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 						}
 					}
 				}
+#if 0 //Update By WangBoJing 
 
 				VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
 				if (tag == NULL) return ;
@@ -685,7 +686,9 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 				tag->cb = ntyOfflineMsgReqHandle;
 
 				ntyDaveMqPushMessage(tag);
-				
+#else
+				ntySendLoginAckResult(pClient->devId, "", 0, 200);
+#endif
 			}
 		} else {	
 //			ASSERT(0);
@@ -1304,6 +1307,7 @@ void ntyOfflineMsgReqPacketHandleRequest(const void *_self, unsigned char *buffe
 		const Client *client = msg->client;
 
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_OFFLINE_MSG_REQ_DEVICEID_IDX);
+		ntylog("ntyOfflineMsgReqPacketHandleRequest --> fromId : %lld\n", fromId);
 
 		VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
 		if (tag == NULL) return ;
