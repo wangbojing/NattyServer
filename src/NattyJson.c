@@ -1790,7 +1790,8 @@ int ntyClientTimeTablesAckJsonCompose( ClientTimeTablesAck *pClientTimeTablesAck
 
 	json_object_set_value(results_obj, NATTY_USER_PROTOCOL_TIMETABLES, json_value_init_array());
 	JSON_Array *timetables_arr = json_object_get_array(results_obj, NATTY_USER_PROTOCOL_TIMETABLES);
-	
+
+#if 0
 	size_t i;
 	for (i = 0; i < pClientTimeTablesAck->size; i++) {
 		json_array_append_value(timetables_arr, json_value_init_object());
@@ -1827,6 +1828,48 @@ int ntyClientTimeTablesAckJsonCompose( ClientTimeTablesAck *pClientTimeTablesAck
 		json_object_set_string(afternoon_obj, NATTY_USER_PROTOCOL_STARTTIME, AftTimeLeft);
 		json_object_set_string(afternoon_obj, NATTY_USER_PROTOCOL_ENDTIME, AftTimeRight);
 	}
+#else
+	size_t i;
+	for (i = 0; i < pClientTimeTablesAck->size; i++) {
+		json_array_append_value(timetables_arr, json_value_init_object());
+		JSON_Object *timetables_obj = json_array_get_object(timetables_arr, i);
+		json_object_set_string(timetables_obj, NATTY_USER_PROTOCOL_DAILY, pClientTimeTablesAck->objClientTimeTablesAckItem[i].Daily);
+		
+		char morTimeLeft[32] = {0};
+		char morTimeRight[32] = {0};
+		char aftTimeLeft[32] = {0};
+		char aftTimeRight[32] = {0};
+
+		char *bufTmp = NULL;
+		char *morning = pClientTimeTablesAck->objClientTimeTablesAckItem[i].Morning;
+		char *afternoon = pClientTimeTablesAck->objClientTimeTablesAckItem[i].Afternoon;
+		if( morning != NULL ){
+			bufTmp = strstr(morning, "|");
+			memcpy( morTimeLeft, morning, bufTmp-morning );
+			//strcpy( morTimeRight, bufTmp+1,  );
+			strcat(morTimeRight, bufTmp+1);
+		}
+		if( afternoon != NULL ){
+			bufTmp = strstr(afternoon, "|");
+			memcpy( aftTimeLeft, afternoon, bufTmp-afternoon );
+			//strcpy( aftTimeRight, bufTmp+1,  strlen());
+			strcat(aftTimeRight, bufTmp+1);
+		}
+		
+		json_object_set_value(timetables_obj, NATTY_USER_PROTOCOL_MORNING, json_value_init_object());
+		JSON_Object *morning_obj = json_object_get_object(timetables_obj, NATTY_USER_PROTOCOL_MORNING);
+		json_object_set_string(morning_obj, NATTY_USER_PROTOCOL_STATUS, pClientTimeTablesAck->objClientTimeTablesAckItem[i].MorningTurn);
+		json_object_set_string(morning_obj, NATTY_USER_PROTOCOL_STARTTIME, morTimeLeft);
+		json_object_set_string(morning_obj, NATTY_USER_PROTOCOL_ENDTIME, morTimeRight);
+
+		json_object_set_value(timetables_obj, NATTY_USER_PROTOCOL_AFTERNOON, json_value_init_object());
+		JSON_Object *afternoon_obj = json_object_get_object(timetables_obj, NATTY_USER_PROTOCOL_AFTERNOON);
+		json_object_set_string(afternoon_obj, NATTY_USER_PROTOCOL_STATUS, pClientTimeTablesAck->objClientTimeTablesAckItem[i].AfternoonTurn);
+		json_object_set_string(afternoon_obj, NATTY_USER_PROTOCOL_STARTTIME, aftTimeLeft);
+		json_object_set_string(afternoon_obj, NATTY_USER_PROTOCOL_ENDTIME, aftTimeRight);
+	}
+
+#endif
 #if 0
 	char *jsonstring =  json_serialize_to_string(schema);
 	json_value_free(schema);

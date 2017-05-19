@@ -2018,7 +2018,7 @@ void ntyUserDataPacketReqHandleRequest(const void *_self, unsigned char *buffer,
 				free(jsonstring);
 				return;
 			}
-			memset( clientActionParamVal, 0, sizeof(clientActionParamVal) );		
+			memset( clientActionParamVal, 0, sizeof(ClientActionParam) );		
 			clientActionParamVal->fromId = fromId;
 			clientActionParamVal->toId = fromId;
 			clientActionParamVal->jsonString = jsonstring;

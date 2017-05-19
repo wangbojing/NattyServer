@@ -796,7 +796,6 @@ void ntyJsonICCIDAction(ActionParam *pActionParam) {
 	pICCIDAck->IMEI = pICCIDReq->IMEI;
 	if (ret == -1) {
 		ntylog(" ntyJsonICCIDAction --> DB Exception\n");
-		memset(phonenum, 0, sizeof(phonenum));
 		strcat(phonenum, "0");
 		pICCIDAck->phone_num = phonenum;
 		char *jsonstringICCID = ntyJsonWriteICCID(pICCIDAck);
@@ -983,32 +982,32 @@ void ntyJsonTurnAction(ActionParam *pActionParam) {
 		status = atoi(pTurnReq->turn.status);
 	}
 
-	char *turn_on = malloc(50);
+	char *turn_on = malloc(64);
 	if (turn_on == NULL) {
 		ntylog("ntyJsonTurnAction --> malloc failed turn_on \n");
 		free(pTurnReq);
 		return ;
 	}
-	memset(turn_on, 0, 50);
+	memset(turn_on, 0, 64);
 	int check_on = checkStringIsAllTimeChar(pTurnReq->turn.on.time);
 	if (check_on != 1) {
 		strcat(turn_on, "09:00:00");
 	} else {
-		memcpy(turn_on, pTurnReq->turn.on.time, sizeof(pTurnReq->turn.on.time));
+		strcat(turn_on, pTurnReq->turn.on.time);
 	}
-	char *turn_off = malloc(50);
+	char *turn_off = malloc(64);
 	if (turn_off == NULL) {
 		free(pTurnReq);
 		free(turn_off);
 		ntylog("ntyJsonTurnAction --> malloc failed turn_off \n");
 		return ;
 	}
-	memset(turn_off, 0, 50);
+	memset(turn_off, 0, 64);
 	int check_off = checkStringIsAllTimeChar(pTurnReq->turn.off.time);
 	if (check_off != 1) {
 		strcat(turn_off, "18:00:00");
 	} else {
-		memcpy(turn_off, pTurnReq->turn.off.time, sizeof(pTurnReq->turn.off.time));
+		strcat(turn_off, pTurnReq->turn.off.time);
 	}
 	int ret = ntySendRecodeJsonPacket(fromId, toId, pActionParam->jsonstring, pActionParam->jsonlen);
 	if (ret<0) {
@@ -2886,7 +2885,7 @@ int ntyClientSelectLocationReqAction( ClientActionParam *pClientActionParam,Clie
 			ret = -3;
 			goto exit_item;
 		}
-		memset(pClientLocationAckResults, 0, sizeof(pClientLocationAckResults));	
+		memset(pClientLocationAckResults, 0, sizeof(ClientLocationAckResults));	
 		pClientLocationAck->results = pClientLocationAckResults; //copy pointer
 
 		ntyVectorIterator(container, ntyClientSelectLocationReqIter, pClientLocationAck);
@@ -2982,7 +2981,7 @@ int ntyClientSelectEfenceReqAction( ClientActionParam *pClientActionParam,Client
 			ret = -3;
 			goto exit_item;
 		}
-		memset( pClientEfenceListItem, 0, sizeof(pClientEfenceListItem)*container->num);	
+		memset( pClientEfenceListItem, 0, sizeof(ClientEfenceListItem)*container->num);	
 		pClientEfenceAck->results.pClientEfenceListItem = pClientEfenceListItem; //copy pointer
 
 		ntyVectorIter(container, ntyClientSelectEfenceReqIter, pClientEfenceAck);
