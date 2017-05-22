@@ -71,6 +71,7 @@
 #define NATTY_RESULT_CODE_ERR_BIND_REPEATE_DATA		"10012"		//UserId与DeviceId已经绑定过
 #define NATTY_RESULT_CODE_ERR_NOACTIVATE			"10013"		//设备没有激活
 #define NATTY_RESULT_CODE_ERR_BROADCAST				"10014"		//广播数据
+#define NATTY_RESULT_CODE_ERR_EFENCE_POINTS			"10015"		//电子围栏数据点数未在合理范围
 
 
 #if 0

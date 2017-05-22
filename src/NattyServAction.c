@@ -635,6 +635,13 @@ void ntyJsonAddEfenceAction(ActionParam *pActionParam) {
 		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
 		goto exit;
 	}
+
+	//电子围栏点数验证
+	if (pAddEfenceReq->efence.size < 2 || pAddEfenceReq->efence.size > 6) {
+		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_EFENCE_POINTS);
+		goto exit;
+	}
+	
 	int id = 0;
 	ret = ntyExecuteEfenceInsertHandle(fromId, toId, index, pAddEfenceReq->efence.size, points, runtime, &id);
 	if (ret == -1) {
