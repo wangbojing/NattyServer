@@ -695,7 +695,7 @@ int ntyIOSPushHandle(void *arg) {
 	if (tag == NULL) return NTY_RESULT_ERROR;
 
 	C_DEVID gId = tag->gId;
-	U32 type = tag->Type;
+	U32 type = tag->arg;
 	
 	C_DEVID toId = tag->toId;
 	U8 *msg = tag->Tag;
