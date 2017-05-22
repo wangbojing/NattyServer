@@ -675,7 +675,7 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 						}
 					}
 				}
-#if 0 //Update By WangBoJing 
+#if 1 //Update By WangBoJing 
 
 				VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
 				if (tag == NULL) return ;
@@ -686,7 +686,7 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 				tag->cb = ntyOfflineMsgReqHandle;
 
 				ntyDaveMqPushMessage(tag);
-#else
+
 				ntySendLoginAckResult(pClient->devId, "", 0, 200);
 #endif
 			}
