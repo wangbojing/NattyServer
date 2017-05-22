@@ -2155,6 +2155,7 @@ int ntyReadDeviceOfflineCommonMsgIter(void *self, void *arg) {
 	int ret = ntySendCommonBroadCastItem(
 		pCommonOfflineMsg->senderId, 
 		fromId, 
+		pCommonOfflineMsg->groupId,
 		json, 
 		strlen(json), 
 		pCommonOfflineMsg->msgId);
@@ -2214,6 +2215,7 @@ int ntyReadOfflineCommonMsgIter(void *self, void *arg) {
 	int ret = ntySendCommonBroadCastItem(
 		pCommonOfflineMsg->senderId, 
 		fromId, 
+		pCommonOfflineMsg->groupId,
 		json, 
 		strlen(json), 
 		pCommonOfflineMsg->msgId);
@@ -2262,7 +2264,7 @@ int ntyReadOfflineVoiceMsgIter(void *self, void *arg) {
 	U32 msgId = pOfflineMsg->msgId;
 	C_DEVID toId = *(C_DEVID*)arg;
 
-	ntySendVoiceBroadCastItem(senderId, toId, NULL, 0, msgId);
+	ntySendVoiceBroadCastItem(senderId, toId, gId, NULL, 0, msgId);
 	return 0;
 }
 

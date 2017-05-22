@@ -694,6 +694,9 @@ int ntyIOSPushHandle(void *arg) {
 
 	if (tag == NULL) return NTY_RESULT_ERROR;
 
+	C_DEVID gId = tag->gId;
+	U32 type = tag->Type;
+	
 	C_DEVID toId = tag->toId;
 	U8 *msg = tag->Tag;
 
@@ -706,14 +709,14 @@ int ntyIOSPushHandle(void *arg) {
 		if (pClient->token != NULL) {
 			ntylog("ntySendPushNotify --> selfId:%lld  token:%s\n", toId, pClient->token);
 			void *pushHandle = ntyPushHandleInstance();
-			ntyPushNotifyHandle(pushHandle, msg, pClient->token, 0);
+			ntyPushNotifyHandle(pushHandle, gId, type, msg, pClient->token, 0);
 		}
 		goto exit;
 	} else if (pClient->deviceType == NTY_PROTO_CLIENT_IOS_PUBLISH) {
 		if (pClient->token != NULL) {
 			ntylog("ntySendPushNotify --> selfId:%lld  token:%s\n", toId, pClient->token);
 			void *pushHandle = ntyPushHandleInstance();
-			ntyPushNotifyHandle(pushHandle, msg, pClient->token, 1);
+			ntyPushNotifyHandle(pushHandle, gId, type, msg, pClient->token, 1);
 		}
 		goto exit;
 	}

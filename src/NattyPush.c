@@ -41,6 +41,8 @@
  *
  */
 
+#include <pthread.h>
+#include <poll.h>
 
 #include "../include/NattyResult.h"
 #include "../include/NattyPush.h"
@@ -49,6 +51,11 @@
 
 static int ntyPushTcpConnect(void *self);
 static SSL* ntyPushSSLConnect(void *self, int sockfd, U8 mode);
+
+void *ntyPushHandleInstance(void);
+void *ntyPushHandleRelease(void);
+void *ntyPushHandleGetInstance(void);
+
 
 
 int ntyDeviceToken2Binary(const char *sz, const int len, unsigned char *const binary, const int size) {
@@ -410,7 +417,7 @@ static int ntyJsonEscape(char *str) {
 
 
 // {"aps":{"alert" : "You got your emails.","badge" : 9,"sound" : "default"}}
-int ntyBuildPayload(char *buffer, int *plen, char *msg, int badage, const char *sound) {
+int ntyBuildPayload(C_DEVID gId, U32 type, char *buffer, int *plen, char *msg, int badage, const char *sound) {
 	int n;
 	
 	char buf[2048];
@@ -425,6 +432,8 @@ int ntyBuildPayload(char *buffer, int *plen, char *msg, int badage, const char *
 		n = n + sprintf(str+n, "%s", buf);
 	}
 	n = n + sprintf(str+n, "%s%d", "\",\"badge\":", badage);
+	n = n + sprintf(str+n, ",\"deviceId\":\"%llx\"", gId);
+	n = n + sprintf(str+n, ",\"type\":\"%d\"", type);
 
 	if (sound) {
 		n = n + sprintf(str+n, "%s", ",\"sound\":\"");
@@ -450,11 +459,13 @@ int ntyBuildPayload(char *buffer, int *plen, char *msg, int badage, const char *
 	}
 	*plen = n;
 
+	ntylog("ntyBuildPayload -> %s\n", buffer);
+
 	return *plen;
 }
 
 
-int ntyBuildPacket(char* buf, int buflen, unsigned int messageid, unsigned int expiry, 
+int ntyBuildPacket(C_DEVID gId, U32 type, char* buf, int buflen, unsigned int messageid, unsigned int expiry, 
 					const char* tokenbinary, char* msg, int badage, const char * sound) {
 	
 	if (buflen < 1 + 4 + 4 + 2 + TOKEN_SIZE + 2 + MAX_PAYLOAD_SIZE) return NTY_RESULT_FAILED;
@@ -477,11 +488,11 @@ int ntyBuildPacket(char* buf, int buflen, unsigned int messageid, unsigned int e
 	pdata += TOKEN_SIZE;
 	int payloadlen = MAX_PAYLOAD_SIZE;
 
-	if (ntyBuildPayload(pdata+2, &payloadlen, msg, badage, sound) < 0) {
+	if (ntyBuildPayload(gId, type, pdata+2, &payloadlen, msg, badage, sound) < 0) {
 		msg[strlen(msg)-(payloadlen-MAX_PAYLOAD_SIZE)] = '\0';
 		payloadlen = MAX_PAYLOAD_SIZE;
 
-		if (ntyBuildPayload(pdata + 2, &payloadlen, msg, badage, sound) <= 0) {
+		if (ntyBuildPayload(gId, type, pdata + 2, &payloadlen, msg, badage, sound) <= 0) {
 			return NTY_RESULT_FAILED;
 		}
 	}
@@ -491,7 +502,7 @@ int ntyBuildPacket(char* buf, int buflen, unsigned int messageid, unsigned int e
     return 1 + 4 + 4 + 2 + TOKEN_SIZE + 2 + payloadlen;
 }
 
-int ntySendMessage(SSL *ssl, const char* token, uint32_t id, uint32_t expire, 
+int ntySendMessage(C_DEVID gId, U32 type, SSL *ssl, const char* token, uint32_t id, uint32_t expire, 
 	char* msg, int badage, const char* sound) {
 	
 	int i, n;
@@ -510,7 +521,7 @@ int ntySendMessage(SSL *ssl, const char* token, uint32_t id, uint32_t expire,
 	ntylog("\n");
 #endif
 
-	buflen = ntyBuildPacket(buf, buflen, id, expire, (const char *)binary, msg, badage, sound);
+	buflen = ntyBuildPacket(gId, type, buf, buflen, id, expire, (const char *)binary, msg, badage, sound);
 	if (buflen <= 0) {
 		return NTY_RESULT_FAILED;
 	}
@@ -518,6 +529,55 @@ int ntySendMessage(SSL *ssl, const char* token, uint32_t id, uint32_t expire,
 	return SSL_write(ssl, buf, buflen);
 	
 }
+
+int exiting = 0;
+
+static void *ntyPushRecvCallback(void *arg) {
+	nPushContext *pCtx = (nPushContext*)arg;
+	if (pCtx == NULL) return NULL;
+
+	int ret = 0;
+	struct pollfd fds[NTY_PUSH_CLIENT_COUNT] = {0};
+	
+	fds[NTY_PUSH_CLIENT_DEVELOPMENT].fd = pCtx->d_sockfd;
+	fds[NTY_PUSH_CLIENT_DEVELOPMENT].events = POLLIN;
+
+	fds[NTY_PUSH_CLIENT_PRODUCTION].fd = pCtx->p_sockfd;
+	fds[NTY_PUSH_CLIENT_PRODUCTION].events = POLLIN;
+
+	while (1) {
+		if (exiting) { 
+			
+			break;
+		}
+		ret = poll(fds, 1, 5);
+		if (ret) {
+			if (fds[NTY_PUSH_CLIENT_DEVELOPMENT].events & POLLIN) {
+				U8 buffer[1024] = {0};
+				int rLen = read(fds[NTY_PUSH_CLIENT_DEVELOPMENT].fd, buffer, 1024);
+				if (rLen <= 0) {
+					ntylog("ntyPushRecvCallback --> development disconnect\n");
+					
+					ntyPushHandleRelease();
+				} else {
+					ntylog("ntyPushRecvCallback --> development: %s\n", buffer);
+				}
+			}
+
+			if (fds[NTY_PUSH_CLIENT_PRODUCTION].events & POLLIN) {
+				U8 buffer[1024] = {0};
+				int rLen = read(fds[NTY_PUSH_CLIENT_PRODUCTION].fd, buffer, 1024);
+				if (rLen <= 0) {
+					ntylog("ntyPushRecvCallback --> production disconnect\n");
+					
+					ntyPushHandleRelease();
+				} else {
+					ntylog("ntyPushRecvCallback --> production: %s\n", buffer);
+				}
+			}
+		}
+	}
+} 
 
 
 void* ntyPushContextCtor(void *self, va_list *params) {
@@ -559,6 +619,14 @@ void* ntyPushContextCtor(void *self, va_list *params) {
 
 		return pCtx;
 	}
+
+#if 1 //setup recv thread
+	pthread_t recvThreadId;
+	int err = pthread_create(&recvThreadId, NULL, ntyPushRecvCallback, pCtx);				
+	if (err != 0) { 				
+		ntylog(" can't create thread:%s\n", strerror(err)); 
+	}
+#endif
 
 	return pCtx;
 }
@@ -662,7 +730,7 @@ static int ntyVerifyConnection(SSL *ssl, const char *peername) {
 }
 
 
-int ntyPushNotify(void *self, U8 *msg, const U8 *token, U8 mode) {
+int ntyPushNotify(void *self, C_DEVID gId, U32 type, U8 *msg, const U8 *token, U8 mode) {
 	nPushContext *pCtx = self;
 	if (pCtx == NULL) return NTY_RESULT_FAILED;
 
@@ -693,8 +761,10 @@ int ntyPushNotify(void *self, U8 *msg, const U8 *token, U8 mode) {
 	int ret = ntyVerifyConnection(ssl, APPLE_HOST_NAME);
 	if (ret != NTY_RESULT_SUCCESS) {
 		ntylog("Verify failed\n");
-		//SSL_shutdown(ssl);
-		//ntyCloseSocket(sockfd);
+		
+#if 1 
+		ntyPushHandleRelease();
+#endif
 
 		return NTY_RESULT_FAILED;
 	}
@@ -708,9 +778,12 @@ int ntyPushNotify(void *self, U8 *msg, const U8 *token, U8 mode) {
 	}
 
 	ntylog("msg : %s\n", msg);
-	ret = ntySendMessage(ssl, token, msgid++, expire, msg, 1, "default");
+	ret = ntySendMessage(gId, type, ssl, token, msgid++, expire, msg, 1, "default");
 	if (ret <= 0) {
 		ntylog("send failed: %s\n", ERR_reason_error_string(ERR_get_error()));
+#if 1 
+		ntyPushHandleRelease();
+#endif
 	} else {
 		ntylog("send successfully\n");
 	}
@@ -739,8 +812,23 @@ void *ntyPushHandleInstance(void) {
 		if ((unsigned long)NULL != cmpxchg((void*)(&pPushHandle), (unsigned long)NULL, (unsigned long)pPush, WORD_WIDTH)) {
 			Delete(pPush);
 		}
+		exiting = 0;
 	}
 
+	return pPushHandle;
+}
+
+void *ntyPushHandleGetInstance(void) {
+	return pPushHandle;
+}
+
+void *ntyPushHandleRelease(void) {
+	if (pPushHandle == NULL) return NULL;
+	
+	Delete(pPushHandle);
+	pPushHandle = NULL;
+	exiting = 1;
+	
 	return pPushHandle;
 }
 
@@ -748,11 +836,11 @@ void *ntyPushHandleInstance(void) {
  * mode : 	1 -> product
  * 			0 -> development
  */
-int ntyPushNotifyHandle(void *self, U8 *msg, const U8 *token, U8 mode) {
+int ntyPushNotifyHandle(void *self, C_DEVID gId, U32 type, U8 *msg, const U8 *token, U8 mode) {
 
 	nPushHandle * const *pHandle = self;
 	if (self && (*pHandle) && (*pHandle)->push) {
-		return (*pHandle)->push(self, msg, token, mode);
+		return (*pHandle)->push(self, gId, type, msg, token, mode);
 	}
 	
 	return NTY_RESULT_ERROR;
@@ -764,19 +852,21 @@ int main(void) {
 
 	char *msg = "abcd";
 	const char *token = "a0c7aa17d80c27e1c98482483655d9cd7036dadca57fc5d4a693321997813707";
+	C_DEVID devId = 0x355637053172771;
+	U32 type = 1;
 
 	//ec49a6b5bcad57279a0fe08f8aeab941
 	//015bafdb5a846a08cbae1d78959a461d 6b9c4e46f6a18dc36b4e9a191487bc0d
 	//015bafdb5a846a08cbae1d78959a461d
 
-	int ret = ntyPushNotifyHandle(pushHandle, msg, token, 0);
+	int ret = ntyPushNotifyHandle(pushHandle, devId, type, NULL, token, 0);
 
 	getchar();
 
 	int i = 0;
 
 	for (i = 0;i < 10;i ++) {
-		ntyPushNotifyHandle(pushHandle, NULL, token, 0);
+		ntyPushNotifyHandle(pushHandle, devId, type, NULL, token, 0);
 	}
 
 	getchar();

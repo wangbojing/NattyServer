@@ -95,7 +95,6 @@
 #define NTY_PUSH_BINDCONFIRM_MSG_CONTEXT			"全家康 \n 您收到了申请确认消息"
 
 
-
 typedef struct _Push_Context {
 	const void *_;
 	SSL_CTX *ctx;
@@ -114,11 +113,18 @@ typedef struct _Push_Handle {
 	size_t size;
 	void* (*ctor)(void *_self, va_list *params);
 	void* (*dtor)(void *_self);
-	int (*push)(void *_self, U8 *msg, const U8 *token, U8 mode);
+	int (*push)(void *_self, C_DEVID gId, U32 type, U8 *msg, const U8 *token, U8 mode);
 } nPushHandle;
 
+
+typedef enum {
+	NTY_PUSH_CLIENT_DEVELOPMENT = 0,
+	NTY_PUSH_CLIENT_PRODUCTION = 1,
+	NTY_PUSH_CLIENT_COUNT = 2,
+} NTY_PUSH_TYPE;
+
 void *ntyPushHandleInstance(void);
-int ntyPushNotifyHandle(void *self, U8 *msg, const U8 *token, U8 mode);
+int ntyPushNotifyHandle(void *self, C_DEVID gId, U32 type, U8 *msg, const U8 *token, U8 mode) ;
 
 
 
