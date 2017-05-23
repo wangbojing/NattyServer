@@ -44,9 +44,9 @@
 #include <pthread.h>
 #include <poll.h>
 
-#include "../include/NattyResult.h"
-#include "../include/NattyPush.h"
-#include "../include/NattyAbstractClass.h"
+#include "NattyResult.h"
+#include "NattyPush.h"
+#include "NattyAbstractClass.h"
 
 
 static int ntyPushTcpConnect(void *self);

@@ -48,7 +48,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "../include/parson.h"
+
+#include "parson.h"
 #include "NattyUserProtocol.h"
 
 

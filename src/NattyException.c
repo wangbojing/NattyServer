@@ -43,7 +43,7 @@
 
 
 #include <stdio.h>
-#include "../include/NattyException.h"
+#include "NattyException.h"
 
 
 

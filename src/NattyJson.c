@@ -2124,6 +2124,20 @@ int ntyCommonJsonCategory(char *json, int length) {
 	return NTY_RESULT_FAILED;
 }
 
+#if 0
+
+// gcc -o NattyJson NattyJson.c NattyUtils.c NattyAbstractClass.c  ../json/parson.c NattyLetter.c  -I ../include/
+
+int main() {
+	U8 *json = "{\"Results\":{\"IMEI\":\"355637052567252\",\"Category\": \"SOSReport\",\"SOSReport\": {\"Type\":\"WIFI\",\"Radius\":\"25\",\"Location\":\"113.2409709,23.1322597\"}}}";
+	int length = strlen(json);
+
+	int ret = ntyCommonJsonCategory(json, length);
+
+}
+
+#endif
+
 /*
 
 char *ntyClientEfenceAckJsonCompose( ClientEfenceAck *pClientEfenceAck ){
