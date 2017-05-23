@@ -1367,7 +1367,7 @@ static const ProtocolFilter ntyOfflineMsgAckFilter = {
 
 void ntyUnBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	
-	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_UNBIND_REQ) {
+	if (buffer[NTY_PROTO_VERSION_IDX] == NTY_PROTO_VERSION_A && buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_UNBIND_REQ) {
 		ntylog("====================begin ntyUnBindDevicePacketHandleRequest action ==========================\n");
 
 		const MessagePacket *msg = (const MessagePacket*)obj;
@@ -1600,7 +1600,7 @@ static const ProtocolFilter ntyBindConfirmReqPacketFilter = {
 
 void ntyBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
 	
-	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_BIND_REQ) {
+	if (buffer[NTY_PROTO_VERSION_IDX] == NTY_PROTO_VERSION_A && buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_BIND_REQ) {
 		ntylog("====================begin ntyBindDevicePacketHandleRequest action ==========================\n");
 
 		const MessagePacket *msg = (const MessagePacket*)obj;
@@ -1698,6 +1698,68 @@ static const ProtocolFilter ntyBindDeviceFilter = {
 	ntyPacketGetSuccessor,
 	ntyBindDevicePacketHandleRequest,
 };
+
+void ntyBindDevicePacketHandleVersionBRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
+	
+	if (buffer[NTY_PROTO_VERSION_IDX] == NTY_PROTO_VERSION_B && buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_BIND_REQ) {
+		ntylog("====================begin ntyBindDevicePacketHandleRequest_VersionB action ==========================\n");
+
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if (msg == NULL) return ;
+		const Client *client = msg->client;
+		
+		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_APPID_IDX);
+		C_DEVID toId =  *(C_DEVID*)(buffer+NTY_PROTO_BIND_DEVICEID_IDX);
+		
+
+		ntyProtoBindAck(fromId, toId, 5);
+	
+		ntylog("====================end ntyBindDevicePacketHandleRequest_VersionB action ==========================\n");
+	} else if (ntyPacketGetSuccessor(_self) != NULL) {
+		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
+		(*succ)->handleRequest(succ, buffer, length, obj);
+	} else {
+		ntylog("Can't deal with: %d\n", buffer[NTY_PROTO_MSGTYPE_IDX]);
+	}
+
+}
+
+static const ProtocolFilter ntyBindDeviceVersionBFilter = {
+	sizeof(Packet),
+	ntyPacketCtor,
+	ntyPacketDtor,
+	ntyPacketSetSuccessor,
+	ntyPacketGetSuccessor,
+	ntyBindDevicePacketHandleVersionBRequest,
+};
+
+
+void ntyUnBindDevicePacketHandleVersionBRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
+	
+	if (buffer[NTY_PROTO_VERSION_IDX] == NTY_PROTO_VERSION_B && buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_UNBIND_REQ) {
+		ntylog("====================begin ntyUnBindDevicePacketHandleRequest_VersionB action ==========================\n");
+	
+		
+		ntylog("====================end ntyUnBindDevicePacketHandleRequest_VersionB action ==========================\n");
+	} else if (ntyPacketGetSuccessor(_self) != NULL) {
+		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
+		(*succ)->handleRequest(succ, buffer, length, obj);
+	} else {
+		ntylog("Can't deal with: %d\n", buffer[NTY_PROTO_MSGTYPE_IDX]);
+	}
+
+}
+
+
+static const ProtocolFilter ntyUnBindDeviceVersionBFilter = {
+	sizeof(Packet),
+	ntyPacketCtor,
+	ntyPacketDtor,
+	ntyPacketSetSuccessor,
+	ntyPacketGetSuccessor,
+	ntyUnBindDevicePacketHandleVersionBRequest,
+};
+
 
 
 void ntyMulticastReqPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
@@ -2163,6 +2225,10 @@ const void *pNtyWeatherAsyncReqFilter = &ntyWeatherAsyncReqFilter;
 
 const void *pNtyUserDataPacketReqFilter = &ntyUserDataPacketReqFilter;
 
+const void *pNtyBindDeviceVersionBFilter = &ntyBindDeviceVersionBFilter;
+const void *pNtyUnBindDeviceVersionBFilter = &ntyUnBindDeviceVersionBFilter;
+
+
 //ntyVoiceReqPacketHandleRequest
 
 void* ntyProtocolFilterInit(void) {
@@ -2198,6 +2264,9 @@ void* ntyProtocolFilterInit(void) {
 	void *pWeatherAsyncReqFilter = New(pNtyWeatherAsyncReqFilter);
 
 	void *pUserDataPacketReqFilter = New(pNtyUserDataPacketReqFilter);
+	
+	void *pBindDeviceVersionBFilter = New(pNtyBindDeviceVersionBFilter);
+	void *pUnBindDeviceVersionBFilter = New(pNtyUnBindDeviceVersionBFilter);
 
 	ntySetSuccessor(pLoginFilter, pHeartBeatFilter);
 	ntySetSuccessor(pHeartBeatFilter, pLogoutFilter);
@@ -2229,7 +2298,10 @@ void* ntyProtocolFilterInit(void) {
 	ntySetSuccessor(pLocationAsyncReqFilter, pWeatherAsyncReqFilter);
 	ntySetSuccessor(pWeatherAsyncReqFilter, pUserDataPacketReqFilter);
 
-	ntySetSuccessor(pUserDataPacketReqFilter, NULL);
+	ntySetSuccessor(pUserDataPacketReqFilter, pBindDeviceVersionBFilter);
+	
+	ntySetSuccessor(pBindDeviceVersionBFilter, pUnBindDeviceVersionBFilter);
+	ntySetSuccessor(pUnBindDeviceVersionBFilter, NULL);
 
 	
 	/*
