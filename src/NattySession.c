@@ -680,7 +680,11 @@ int ntySendPushNotify(C_DEVID selfId, C_DEVID gId, U8 *msg, U32 type) {
 }
 
 int ntyClassifyCategoryPushNotify(C_DEVID selfId, C_DEVID gId, U8 *json, int length) {
+	if (json == NULL) return NTY_RESULT_ERROR;
+	
 	int category = ntyCommonJsonCategory(json, length);
+	ntylog("ntyClassifyCategoryPushNotify --> category:%d, json:%s\n", category, json);
+	
 	if (category == NTY_CATEGORY_SOSREPORT) {
 		return ntySendPushNotify(selfId, gId, NTY_PUSH_SOSREPORT_MSG_CONTEXT, category);
 	} else if (category == NTY_CATEGORY_EFENCEREPORT) {
