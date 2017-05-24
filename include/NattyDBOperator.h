@@ -179,6 +179,8 @@
 #define NTY_DB_UPDATE_DEVICE_ACTIVATE		"CALL PROC_UPDATE_DEVICE_ACTIVATE(%lld)"
 //CLEAR 带返回结果 
 #define NTY_DB_UPDATE_DEVICE_CLEAR			"CALL PROC_UPDATE_DEVICE_CLEAR(%lld)"
+//reset
+#define NTY_DB_UPDATE_DEVICE_RESET			"CALL PROC_UPDATE_DEVICE_RESET(%lld)"
 
 
 #define NTY_DB_INSERT_LOCATION 				"CALL PROC_INSERT_LOCATION(%lld, %d, '%s', '%s', '%s')"
@@ -409,6 +411,10 @@ int ntyConnectionPoolInit(void);
 void ntyConnectionPoolDeInit(void);
 
 
+int ntyExecuteResetHandle( C_DEVID aid, C_DEVID did );
+int ntyExecuteReset( void *self, C_DEVID aid, C_DEVID did );
+int ntyExecuteRestoreHandle( C_DEVID aid, C_DEVID did );
+int ntyExecuteRestore( void *self, C_DEVID aid, C_DEVID did );
 
 
 

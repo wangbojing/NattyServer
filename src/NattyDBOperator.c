@@ -3770,6 +3770,84 @@ int ntyExecuteClientSelectEfence( void *self, C_DEVID aid, C_DEVID did, void *co
 
 	return ret;
 }
+
+int ntyExecuteResetHandle( C_DEVID aid, C_DEVID did ){
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteReset( pool, aid, did );
+
+}
+
+int ntyExecuteReset( void *self, C_DEVID aid, C_DEVID did ){
+	ConnectionPool *pool = self;
+	if ( pool == NULL ) return NTY_RESULT_BUSY;
+	Connection_T conn = ConnectionPool_getConnection( pool->nPool );
+	int ret = 0;
+
+	TRY
+	{
+		conn = ntyCheckConnection( self, conn );
+		if ( conn == NULL ) {
+			ret = -1;
+		} else {	
+			ntylog(" ntyExecuteReset --> before Connection_execute:CALL PROC_UPDATE_DEVICE_RESET(lld)\n ");
+			Connection_executeQuery( conn, NTY_DB_UPDATE_DEVICE_RESET, did );
+			ntylog(" ntyExecuteReset --> after Connection_execute:CALL PROC_UPDATE_DEVICE_RESET(lld)\n ");
+		}
+	} 
+	CATCH( SQLException ) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog( " %s --> Connection_close\n", __func__ );
+		ntyConnectionClose( conn );
+	}
+	END_TRY;
+
+	return ret;
+}
+
+int ntyExecuteRestoreHandle( C_DEVID aid, C_DEVID did ){
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteRestore( pool, aid, did );
+}
+int ntyExecuteRestore( void *self, C_DEVID aid, C_DEVID did ){
+	ConnectionPool *pool = self;
+	if ( pool == NULL ) return NTY_RESULT_BUSY;
+	Connection_T conn = ConnectionPool_getConnection( pool->nPool);
+	int ret = 0;
+
+	TRY
+	{
+		conn = ntyCheckConnection( self, conn );
+		if ( conn == NULL ) {
+			ret = -1;
+		} else {	
+			ntylog( "ntyExecuteRestore --> before Connection_execute:CALL PROC_UPDATE_DEVICE_CLEAR(%lld)\n ",did );
+			Connection_executeQuery( conn, NTY_DB_UPDATE_DEVICE_CLEAR, did );
+			ntylog( "ntyExecuteRestore --> after Connection_execute:CALL PROC_UPDATE_DEVICE_CLEAR(%lld)\n ",did );
+		}
+	} 
+	CATCH( SQLException ) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog( " %s --> Connection_close\n", __func__ );
+		ntyConnectionClose( conn );
+	}
+	END_TRY;
+
+	return ret;
+
+}
+
+
+
 //end 
 
 

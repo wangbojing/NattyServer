@@ -512,7 +512,13 @@ void ntyCommonReqAction(ActionParam *pActionParam) {
 			} else {
 				ntylog("Can't find action with: %s\n", action);
 			}
-		} else {
+		} else if ( strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_RESET) == 0 ){
+			ntylog( "********** Reset common ***********\n" );
+			ntyJsonResetAction( pActionParam );	
+		}else if ( strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_RESTORE) == 0 ){
+			ntylog( "********** Restore common ***********\n" );
+			ntyJsonRestoreAction( pActionParam );		
+		}else {
 			ntylog("Can't find app category with: %s\n", app_category);
 		}
 	}else {
@@ -1072,6 +1078,73 @@ exit:
 	}
 	return ;
 }
+
+int ntyJsonResetAction( ActionParam *pActionParam ){
+	int nRet = 0;
+	if ( pActionParam == NULL) return -1;
+
+	C_DEVID fromId = pActionParam->fromId;
+	C_DEVID toId = pActionParam->toId;
+	ntylog( " ********ntyJsonResetAction --> fromId:%lld, toId:%lld\n", fromId, toId );
+	nRet = ntyExecuteResetHandle( fromId, toId );
+	if ( nRet == -1 ){
+		ntylog(" ntyJsonResetAction --> DB Exception\n");
+	}else if ( nRet == 0 ){
+		ntyJsonCommonResult( fromId, NATTY_RESULT_CODE_SUCCESS );
+	}else{} 
+
+	return nRet;
+}
+
+int ntyJsonRestoreAction( ActionParam *pActionParam ){
+	int nRet = 0;
+	if ( pActionParam == NULL) return -1;
+
+	C_DEVID fromId = pActionParam->fromId;
+	C_DEVID toId = pActionParam->toId;  //deviceId
+	ntylog( " ********ntyJsonRestoreAction --> fromId:%lld, toId:%lld\n", fromId, toId );
+
+	//delete b+tree, deviceId to the list of AppId
+	void *heap = ntyBHeapInstance();
+	NRecord *record = ntyBHeapSelect( heap, toId );
+	if ( record != NULL ) {
+		Client *aclient = (Client *)record->value;
+		if( aclient != NULL ){
+			ntyVectorIterator( aclient->friends, ntyAppIdToDeviceIdDelete, &toId );
+					
+			ntylog( "*********ntyJsonRestoreAction destroy vector of client->friends before\n" );
+			ntyVectorDestory( aclient->friends );
+			ntylog("*********ntyJsonRestoreAction destroy vector of client->friends after\n" );	
+		}
+	}
+	
+	nRet = ntyExecuteRestoreHandle( fromId, toId );
+	if ( nRet == -1 ){
+		ntylog(" ntyJsonRestoreAction --> DB Exception\n");
+	}else if ( nRet == 0 ){
+		ntyJsonCommonResult( fromId, NATTY_RESULT_CODE_SUCCESS );
+	}else{} 
+
+	return nRet;
+}
+
+int ntyAppIdToDeviceIdDelete( void *self, void *arg ){
+	C_DEVID appId = 0;
+	memcpy( &appId, self, sizeof(C_DEVID) );
+	
+	void *heap = ntyBHeapInstance();
+	NRecord *record = ntyBHeapSelect( heap, appId );
+	if ( record != NULL ) {
+		Client *aclient = (Client *)record->value;
+		if( aclient != NULL ){
+			//arg:deviceId
+			ntylog( "***********ntyAppIdToDeviceIdDelete before appId:%lld,deviceId:%lld\n",appId, atoll(arg) );
+			ntyVectorDelete( aclient->friends, arg );
+		}
+	}
+	return 0;
+}
+
 
 void ntyJsonAddScheduleAction(ActionParam *pActionParam) {
 	if (pActionParam == NULL) return ;
