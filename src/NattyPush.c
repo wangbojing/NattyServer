@@ -745,6 +745,8 @@ static int ntyPushTcpConnect(void *self) {
 }
 
 static int ntyVerifyConnection(SSL *ssl, const char *peername) {
+	if (ssl == NULL || peername == NULL) return NTY_RESULT_ERROR;
+	
 	int result = SSL_get_verify_result(ssl);
 	if (result != X509_V_OK) {
 		fprintf(stderr, "WARNING ! ssl verify failed:%d\n", result);

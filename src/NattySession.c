@@ -679,18 +679,18 @@ int ntySendPushNotify(C_DEVID selfId, C_DEVID gId, U8 *msg, U32 type) {
 #endif
 }
 
-int ntyClassifyCategoryPushNotify(C_DEVID selfId, C_DEVID gId, U8 *json, int length) {
+int ntyClassifyCategoryPushNotify(C_DEVID toId, C_DEVID gId, U8 *json, int length) {
 	if (json == NULL) return NTY_RESULT_ERROR;
 	
 	int category = ntyCommonJsonCategory(json, length);
 	ntylog("ntyClassifyCategoryPushNotify --> category:%d, json:%s\n", category, json);
 	
 	if (category == NTY_CATEGORY_SOSREPORT) {
-		return ntySendPushNotify(selfId, gId, NTY_PUSH_SOSREPORT_MSG_CONTEXT, category);
+		return ntySendPushNotify(toId, gId, NTY_PUSH_SOSREPORT_MSG_CONTEXT, category);
 	} else if (category == NTY_CATEGORY_EFENCEREPORT) {
-		return ntySendPushNotify(selfId, gId, NTY_PUSH_EFENCEREPORT_MSG_CONTEXT, category);
+		return ntySendPushNotify(toId, gId, NTY_PUSH_EFENCEREPORT_MSG_CONTEXT, category);
 	} else if (category == NTY_CATEGORY_WEARSTATUS) {
-		return ntySendPushNotify(selfId, gId, NTY_PUSH_MSG_CONTEXT, category);
+		return ntySendPushNotify(toId, gId, NTY_PUSH_MSG_CONTEXT, category);
 	}
 }
 
@@ -704,7 +704,7 @@ int ntySendCommonBroadCastItem(C_DEVID selfId, C_DEVID toId, C_DEVID gId, U8 *js
 		return ntySendPushNotify(toId, NULL);
 	}
 #else
-	ntyClassifyCategoryPushNotify(selfId, gId, json, length);
+	ntyClassifyCategoryPushNotify(toId, gId, json, length);
 #endif
 
 	buffer[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
