@@ -99,8 +99,9 @@ typedef struct _Push_Context {
 	const void *_;
 	SSL_CTX *ctx;
 	SSL_CTX *pctx;
+#if 0
 	struct sockaddr_in addr;
-
+#endif
 	int d_sockfd;
 	int p_sockfd;
 

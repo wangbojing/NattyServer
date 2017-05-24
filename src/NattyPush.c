@@ -531,6 +531,9 @@ int ntySendMessage(C_DEVID gId, U32 type, SSL *ssl, const char* token, uint32_t 
 }
 
 int exiting = 0;
+struct sockaddr_in addr = {0};
+
+
 
 static void *ntyPushRecvCallback(void *arg) {
 	nPushContext *pCtx = (nPushContext*)arg;
@@ -586,8 +589,9 @@ void* ntyPushContextCtor(void *self, va_list *params) {
 	ntyOpensslInitialize();
 
 	pCtx->ctx = ntyContextInitialize(APPLE_CLIENT_PEM_NAME, APPLE_CLIENT_PEM_NAME, APPLE_CLIENT_PEM_PWD, APPLE_SERVER_PEM_NAME);
+#if 0
 	memset(&pCtx->addr, 0, sizeof(pCtx->addr));
-
+#endif
 	pCtx->pctx = ntyContextInitialize(APPLE_CLIENT_PEM_NAME_PUBLISH, APPLE_CLIENT_PEM_NAME_PUBLISH, APPLE_CLIENT_PEM_PWD, APPLE_SERVER_PEM_NAME);
 
 	
@@ -681,7 +685,7 @@ static int ntyPushTcpConnect(void *self) {
 	nPushContext *pCtx = self;
 	
 	struct hostent *hp;
-
+#if 0
 	if (*(unsigned char*)(&pCtx->addr.sin_addr.s_addr) == 0x0) {
 		ntylog("gethostbyname : %s\n", APPLE_HOST_NAME);
 		
@@ -707,6 +711,35 @@ static int ntyPushTcpConnect(void *self) {
 	if (ret != 0) {
 		return NTY_RESULT_FAILED;
 	}
+#else
+
+	if (*(unsigned char*)(&addr.sin_addr.s_addr) == 0x0) {
+		ntylog("gethostbyname : %s\n", APPLE_HOST_NAME);
+		
+		if (!(hp = gethostbyname(APPLE_HOST_NAME))) {
+			return NTY_RESULT_FAILED;
+		}
+
+		memset(&addr, 0, sizeof(addr));
+		addr.sin_addr = *(struct in_addr*)hp->h_addr_list[0];
+		addr.sin_family = AF_INET;
+		addr.sin_port = htons(APPLE_HOST_PORT);
+
+		char *p = inet_ntoa(addr.sin_addr);
+		ntylog("address : %s\n", p);
+	}
+	
+	int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (sock < 0) {
+		return NTY_RESULT_FAILED;
+	}
+	
+	int ret = connect(sock, (struct sockaddr*)&addr, sizeof(addr));
+	if (ret != 0) {
+		return NTY_RESULT_FAILED;
+	}
+
+#endif
 	ntylog("Connect Success\n");
 	return sock;
 }
@@ -847,6 +880,9 @@ int ntyPushNotifyHandle(void *self, C_DEVID gId, U32 type, U8 *msg, const U8 *to
 }
 
 #if 0
+
+//gcc -o NattyPush NattyPush.c NattyAbstractClass.c -lssl -lcrypto -lpthread -I ../include/
+
 int main(void) {
 	void *pushHandle = ntyPushHandleInstance();
 
