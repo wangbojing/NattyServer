@@ -648,12 +648,19 @@ void* ntyPushContextDtor(void *self) {
 			SSL_CTX_free(pCtx->pctx);
 		}
 
-		
-		SSL_shutdown(pCtx->d_ssl);
-		ntyCloseSocket(pCtx->d_sockfd);
+		if (pCtx->d_ssl != NULL) {
+			SSL_shutdown(pCtx->d_ssl);
+		}
+		if (pCtx->d_sockfd >= 0) {
+			ntyCloseSocket(pCtx->d_sockfd);
+		}
 
-		SSL_shutdown(pCtx->p_ssl);
-		ntyCloseSocket(pCtx->p_sockfd);
+		if (pCtx->p_ssl != NULL) {
+			SSL_shutdown(pCtx->p_ssl);
+		}
+		if (pCtx->p_sockfd >= 0) {
+			ntyCloseSocket(pCtx->p_sockfd);
+		}
 	}
 	
 	return pCtx;
