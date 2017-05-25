@@ -1081,16 +1081,23 @@ exit:
 
 int ntyJsonResetAction( ActionParam *pActionParam ){
 	int nRet = 0;
+	int ret = 0;
 	if ( pActionParam == NULL) return NTY_RESULT_ERROR;
 
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;
-	ntylog( " ********ntyJsonResetAction --> fromId:%lld, toId:%lld\n", fromId, toId );
+	ntylog( " ********ntyJsonResetAction --> fromId:%lld, toId:%lld, json:%s\n", fromId, toId, pActionParam->jsonstring );
 	nRet = ntyExecuteResetHandle( fromId, toId );
 	if ( nRet == -1 ){
 		ntylog(" ntyJsonResetAction --> DB Exception\n");
 	}else if ( nRet == 0 ){
-		ntyJsonCommonResult( fromId, NATTY_RESULT_CODE_SUCCESS );
+		//first send to deviceId,then send to fromId(appId,webId)
+		ret = ntySendRecodeJsonPacket( fromId, toId, (U8*)pActionParam->jsonstring, strlen(pActionParam->jsonstring) );
+		if ( ret < 0 ){
+			ntyJsonCommonResult( fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE );
+		}else{
+			ntyJsonCommonResult( fromId, NATTY_RESULT_CODE_SUCCESS );
+		}
 	}else{} 
 
 	return nRet;
@@ -1098,11 +1105,12 @@ int ntyJsonResetAction( ActionParam *pActionParam ){
 
 int ntyJsonRestoreAction( ActionParam *pActionParam ){
 	int nRet = 0;
+	int ret = 0;
 	if ( pActionParam == NULL) return NTY_RESULT_ERROR;
 
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;  //deviceId
-	ntylog( " ********ntyJsonRestoreAction --> fromId:%lld, toId:%lld\n", fromId, toId );
+	ntylog( " ********ntyJsonRestoreAction --> fromId:%lld, toId:%lld, json:%s\n", fromId, toId, pActionParam->jsonstring );
 
 	//delete b+tree, deviceId to the list of AppId
 	void *heap = ntyBHeapInstance();
@@ -1110,8 +1118,7 @@ int ntyJsonRestoreAction( ActionParam *pActionParam ){
 	if ( record != NULL ) {
 		Client *aclient = (Client *)record->value;
 		if( aclient != NULL ){
-			ntyVectorIterator( aclient->friends, ntyAppIdToDeviceIdDeleteCb, &toId );
-					
+			ntyVectorIterator( aclient->friends, ntyAppIdToDeviceIdDeleteCb, &toId );				
 			ntylog( "*********ntyJsonRestoreAction destroy vector of client->friends before\n" );
 			ntyVectorDestory( aclient->friends );
 			ntylog("*********ntyJsonRestoreAction destroy vector of client->friends after\n" );	
@@ -1122,7 +1129,13 @@ int ntyJsonRestoreAction( ActionParam *pActionParam ){
 	if ( nRet == -1 ){
 		ntylog(" ntyJsonRestoreAction --> DB Exception\n");
 	}else if ( nRet == 0 ){
-		ntyJsonCommonResult( fromId, NATTY_RESULT_CODE_SUCCESS );
+		//first send to deviceId,then send to fromId(appId,webId)
+		ret = ntySendRecodeJsonPacket( fromId, toId, (U8*)pActionParam->jsonstring, strlen(pActionParam->jsonstring) );
+		if ( ret < 0 ){
+			ntyJsonCommonResult( fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE );
+		}else{
+			ntyJsonCommonResult( fromId, NATTY_RESULT_CODE_SUCCESS );
+		}
 	}else{} 
 
 	return nRet;
