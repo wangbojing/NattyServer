@@ -523,6 +523,28 @@ int ntyBindParserJsonHandle(void *arg) {
 			return ret;
 		}
 
+#if 1 //Update By WangBoJing Bind Add
+
+		void *heap = ntyBHeapInstance();
+		NRecord *record = ntyBHeapSelect(heap, proposer);
+		if (record != NULL) {
+			Client *aclient = record->value;
+			if (aclient != NULL) {
+				ntyVectorInsert(aclient->friends, &devId, sizeof(C_DEVID));
+			}
+		}
+
+		record = ntyBHeapSelect(heap, devId);
+		if (record != NULL) {
+			Client *dclient = record->value;
+			if (dclient != NULL) {
+				ntyVectorInsert(dclient->friends, &proposer, sizeof(C_DEVID));
+			}
+		}
+	
+#endif
+
+
 		//add contacts msg, send to watch
 		DeviceAddContactsAck *pDeviceAddContactsAck = malloc(sizeof(DeviceAddContactsAck));
 		if (pDeviceAddContactsAck == NULL) {
