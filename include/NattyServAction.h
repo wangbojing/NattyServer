@@ -161,7 +161,7 @@ int ntyClientSelectEfenceReqAction( ClientActionParam *pClientActionParam,Client
 int ntyClientSelectURLReqAction( ClientActionParam *pClientActionParam,ClientSelectReq *pClientSelectReq );
 int ntyJsonResetAction( ActionParam *pActionParam );
 int ntyJsonRestoreAction( ActionParam *pActionParam );
-int ntyAppIdToDeviceIdDelete( void *self, void *arg );
+int ntyAppIdToDeviceIdDeleteCb( void *self, void *arg );
 
 #endif // __NATTY_SERVACTION_H__
 

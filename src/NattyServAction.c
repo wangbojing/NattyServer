@@ -1081,7 +1081,7 @@ exit:
 
 int ntyJsonResetAction( ActionParam *pActionParam ){
 	int nRet = 0;
-	if ( pActionParam == NULL) return -1;
+	if ( pActionParam == NULL) return NTY_RESULT_ERROR;
 
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;
@@ -1098,7 +1098,7 @@ int ntyJsonResetAction( ActionParam *pActionParam ){
 
 int ntyJsonRestoreAction( ActionParam *pActionParam ){
 	int nRet = 0;
-	if ( pActionParam == NULL) return -1;
+	if ( pActionParam == NULL) return NTY_RESULT_ERROR;
 
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;  //deviceId
@@ -1110,7 +1110,7 @@ int ntyJsonRestoreAction( ActionParam *pActionParam ){
 	if ( record != NULL ) {
 		Client *aclient = (Client *)record->value;
 		if( aclient != NULL ){
-			ntyVectorIterator( aclient->friends, ntyAppIdToDeviceIdDelete, &toId );
+			ntyVectorIterator( aclient->friends, ntyAppIdToDeviceIdDeleteCb, &toId );
 					
 			ntylog( "*********ntyJsonRestoreAction destroy vector of client->friends before\n" );
 			ntyVectorDestory( aclient->friends );
@@ -1128,7 +1128,7 @@ int ntyJsonRestoreAction( ActionParam *pActionParam ){
 	return nRet;
 }
 
-int ntyAppIdToDeviceIdDelete( void *self, void *arg ){
+int ntyAppIdToDeviceIdDeleteCb( void *self, void *arg ){
 	C_DEVID appId = 0;
 	memcpy( &appId, self, sizeof(C_DEVID) );
 	
