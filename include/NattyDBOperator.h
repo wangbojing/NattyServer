@@ -145,6 +145,8 @@
 #define NTY_DB_UPDATE_RUNTIME_BELL			"CALL PROC_UPDATE_RUNTIME_BELL(%lld, '%s')"
 
 #define NTY_DB_UPDATE_RUNTIME_TARGETSTEP	"CALL PROC_UPDATE_RUNTIME_TARGETSTEP(%lld, %d)"
+#define NTY_DB_UPDATE_RUNTIME_MODEL			"CALL PROC_UPDATE_RUNTIME_MODEL(%lld, %d)"
+
 
 #define NTY_DB_SELECT_RUNTIME				"CALL PROC_SELECT_RUNTIME(%lld)"
 
@@ -323,6 +325,11 @@ int ntyExecuteRuntimeLightPanelUpdateHandle(C_DEVID aid, C_DEVID did, U8 runtime
 int ntyExecuteRuntimeBellUpdateHandle(C_DEVID aid, C_DEVID did, const char *runtime_param);
 
 int ntyExecuteRuntimeTargetStepUpdateHandle(C_DEVID aid, C_DEVID did, int runtime_param);
+
+int ntyExecuteRuntimeModelUpdateHandle(C_DEVID aid, C_DEVID did, int runtime_param);
+int ntyExecuteRuntimeModelUpdate( void *self, C_DEVID aid, C_DEVID did, int runtime_param );
+
+
 
 int ntyExecuteTurnUpdateHandle(C_DEVID aid, C_DEVID did, U8 status, const char *ontime, const char *offtime);
 

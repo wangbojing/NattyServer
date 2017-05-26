@@ -517,13 +517,15 @@ void ntyJsonRuntime(JSON_Value *json, RunTimeReq *pRunTimeReq) {
 	pRunTimeReq->runtime.light_panel = json_object_get_string(runtime_object, NATTY_USER_PROTOCOL_LIGHTPANEL);
 	pRunTimeReq->runtime.watch_bell = json_object_get_string(runtime_object, NATTY_USER_PROTOCOL_WATCHBELL);
 	pRunTimeReq->runtime.taget_step = json_object_get_string(runtime_object, NATTY_USER_PROTOCOL_TAGETSTEP);
+	pRunTimeReq->runtime.model = json_object_get_string(runtime_object, NATTY_USER_PROTOCOL_MODEL);
 	
-	ntydbg("AutoConnection:%s  LossReport:%s  LightPanel:%s  WatchBell:%s  TagetStep:%s\n",
+	ntydbg("AutoConnection:%s  LossReport:%s  LightPanel:%s  WatchBell:%s  TagetStep:%s Model:%s\n",
 		pRunTimeReq->runtime.auto_connection,
 		pRunTimeReq->runtime.loss_report,
 		pRunTimeReq->runtime.light_panel,
 		pRunTimeReq->runtime.watch_bell,
-		pRunTimeReq->runtime.taget_step);
+		pRunTimeReq->runtime.taget_step,
+		pRunTimeReq->runtime.model);
 }
 
 void ntyJsonTurn(JSON_Value *json, TurnReq *pTurnReq) {

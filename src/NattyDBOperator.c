@@ -2035,6 +2035,41 @@ int ntyExecuteRuntimeTargetStepUpdate(void *self, C_DEVID aid, C_DEVID did, int 
 	return ret;
 }
 
+//NTY_DB_UPDATE_RUNTIME_MODEL
+int ntyExecuteRuntimeModelUpdate( void *self, C_DEVID aid, C_DEVID did, int runtime_param ) {
+	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_ERROR;
+	Connection_T con = ConnectionPool_getConnection( pool->nPool );
+	int ret = 0;
+	U8 u8PhNum[20] = {0};
+
+	TRY 
+	{
+		con = ntyCheckConnection( self, con );
+		if ( con == NULL ) {
+			ret = -1;
+		} else {
+			
+			ntylog(" ntyExecuteRuntimeModelUpdate -->  before Connection_execute\n");
+			Connection_execute( con, NTY_DB_UPDATE_RUNTIME_MODEL, did, runtime_param );
+			ntylog(" ntyExecuteRuntimeModelUpdate -->  after Connection_execute\n");
+		}
+	} 
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
 
 //NTY_DB_UPDATE_TURN
 int ntyExecuteTurnUpdate(void *self, C_DEVID aid, C_DEVID did, U8 status, const char *ontime, const char *offtime) {
@@ -3088,6 +3123,12 @@ int ntyExecuteRuntimeTargetStepUpdateHandle(C_DEVID aid, C_DEVID did, int runtim
 	void *pool = ntyConnectionPoolInstance();
 	return ntyExecuteRuntimeTargetStepUpdate(pool, aid, did, runtime_param);
 }
+
+int ntyExecuteRuntimeModelUpdateHandle(C_DEVID aid, C_DEVID did, int runtime_param) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteRuntimeModelUpdate(pool, aid, did, runtime_param);
+}
+
 
 int ntyExecuteTurnUpdateHandle(C_DEVID aid, C_DEVID did, U8 status, const char *ontime, const char *offtime) {
 	void *pool = ntyConnectionPoolInstance();

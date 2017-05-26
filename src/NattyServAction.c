@@ -935,6 +935,18 @@ void ntyJsonRunTimeAction(ActionParam *pActionParam) {
 		}
 	}
 
+	if ( pRunTimeReq->runtime.model != NULL ) {
+		size_t len_model = strlen( pRunTimeReq->runtime.model );
+		if ( len_model != 0 ) {
+			int lenModel = atoi( pRunTimeReq->runtime.model );
+			ret = ntyExecuteRuntimeModelUpdateHandle( fromId, toId, lenModel );
+			if ( ret == -1 ) {
+				ntylog(" ntyJsonRunTimeAction:model --> DB Exception\n");
+				goto exit;
+			}
+		}
+	}	
+
 	if (ret == -1) {
 		ntylog(" ntyJsonRunTimeAction --> DB Exception\n");
 		ret = 4;

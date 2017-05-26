@@ -144,6 +144,8 @@
 #define NATTY_USER_PROTOCOL_LIGHTPANEL 		"LightPanel"
 #define NATTY_USER_PROTOCOL_WATCHBELL 		"WatchBell"
 #define NATTY_USER_PROTOCOL_TAGETSTEP 		"TagetStep"
+#define NATTY_USER_PROTOCOL_MODEL 			"Model"
+
 
 #define NATTY_USER_PROTOCOL_TURN 			"Turn"
 #define NATTY_USER_PROTOCOL_ON 				"On"
@@ -481,6 +483,7 @@ typedef struct _RunTimeItem {
 	const char *light_panel;
 	const char *watch_bell;
 	const char *taget_step;
+	const char *model;
 } RunTimeItem;
 typedef struct _RunTimeReq {
 	const char *msg;
