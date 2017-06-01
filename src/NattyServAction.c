@@ -1132,8 +1132,9 @@ int ntyJsonRestoreAction( ActionParam *pActionParam ){
 		if( aclient != NULL ){
 			ntyVectorIterator( aclient->friends, ntyAppIdToDeviceIdDeleteCb, &toId );				
 			ntylog( "*********ntyJsonRestoreAction destroy vector of client->friends before\n" );
-			ntyVectorDestory( aclient->friends );
+			aclient->friends = ntyVectorDestory( aclient->friends );
 			ntylog("*********ntyJsonRestoreAction destroy vector of client->friends after\n" );	
+
 		}
 	}
 	
