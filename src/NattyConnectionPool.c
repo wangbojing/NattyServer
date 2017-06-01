@@ -944,6 +944,8 @@ nSnailsSet *ntyShrimpExecuteQuery(nShrimp *shrimp, const char *sql, int length) 
 	if (shrimp->error) {
 		ntylog("ntyShrimpExecuteQuery --> ntyShrimpStmtExecute error : %s\n", ntyShrimpStmtError(shrimp->Snails->Stmt));
 		ntyShrimpStmtClose(shrimp->Snails->Stmt);
+
+		return NULL;
 	}
 
 #endif
