@@ -417,7 +417,7 @@ static int ntyJsonEscape(char *str) {
 
 
 // {"aps":{"alert" : "You got your emails.","badge" : 9,"sound" : "default"}}
-int ntyBuildPayload(C_DEVID gId, U32 type, char *buffer, int *plen, char *msg, int badage, const char *sound) {
+int ntyBuildPayload(C_DEVID gId, U32 type, U32 counter, char *buffer, int *plen, char *msg, int badage, const char *sound) {
 	int n;
 	
 	char buf[2048];
@@ -434,6 +434,7 @@ int ntyBuildPayload(C_DEVID gId, U32 type, char *buffer, int *plen, char *msg, i
 	n = n + sprintf(str+n, "%s%d", "\",\"badge\":", badage);
 	n = n + sprintf(str+n, ",\"deviceId\":\"%llx\"", gId);
 	n = n + sprintf(str+n, ",\"type\":\"%d\"", type);
+	n = n + sprintf(str+n, ",\"count\":\"%d\"", counter);
 
 	if (sound) {
 		n = n + sprintf(str+n, "%s", ",\"sound\":\"");
@@ -465,7 +466,7 @@ int ntyBuildPayload(C_DEVID gId, U32 type, char *buffer, int *plen, char *msg, i
 }
 
 
-int ntyBuildPacket(C_DEVID gId, U32 type, char* buf, int buflen, unsigned int messageid, unsigned int expiry, 
+int ntyBuildPacket(C_DEVID gId, U32 type, U32 counter, char* buf, int buflen, unsigned int messageid, unsigned int expiry, 
 					const char* tokenbinary, char* msg, int badage, const char * sound) {
 	
 	if (buflen < 1 + 4 + 4 + 2 + TOKEN_SIZE + 2 + MAX_PAYLOAD_SIZE) return NTY_RESULT_FAILED;
@@ -488,11 +489,11 @@ int ntyBuildPacket(C_DEVID gId, U32 type, char* buf, int buflen, unsigned int me
 	pdata += TOKEN_SIZE;
 	int payloadlen = MAX_PAYLOAD_SIZE;
 
-	if (ntyBuildPayload(gId, type, pdata+2, &payloadlen, msg, badage, sound) < 0) {
+	if (ntyBuildPayload(gId, type, counter, pdata+2, &payloadlen, msg, badage, sound) < 0) {
 		msg[strlen(msg)-(payloadlen-MAX_PAYLOAD_SIZE)] = '\0';
 		payloadlen = MAX_PAYLOAD_SIZE;
 
-		if (ntyBuildPayload(gId, type, pdata + 2, &payloadlen, msg, badage, sound) <= 0) {
+		if (ntyBuildPayload(gId, type, counter, pdata + 2, &payloadlen, msg, badage, sound) <= 0) {
 			return NTY_RESULT_FAILED;
 		}
 	}
@@ -502,7 +503,7 @@ int ntyBuildPacket(C_DEVID gId, U32 type, char* buf, int buflen, unsigned int me
     return 1 + 4 + 4 + 2 + TOKEN_SIZE + 2 + payloadlen;
 }
 
-int ntySendMessage(C_DEVID gId, U32 type, SSL *ssl, const char* token, uint32_t id, uint32_t expire, 
+int ntySendMessage(C_DEVID gId, U32 type, U32 counter, SSL *ssl, const char* token, uint32_t id, uint32_t expire, 
 	char* msg, int badage, const char* sound) {
 	
 	int i, n;
@@ -521,7 +522,7 @@ int ntySendMessage(C_DEVID gId, U32 type, SSL *ssl, const char* token, uint32_t 
 	ntylog("\n");
 #endif
 
-	buflen = ntyBuildPacket(gId, type, buf, buflen, id, expire, (const char *)binary, msg, badage, sound);
+	buflen = ntyBuildPacket(gId, type, counter, buf, buflen, id, expire, (const char *)binary, msg, badage, sound);
 	if (buflen <= 0) {
 		return NTY_RESULT_FAILED;
 	}
@@ -772,7 +773,7 @@ static int ntyVerifyConnection(SSL *ssl, const char *peername) {
 }
 
 
-int ntyPushNotify(void *self, C_DEVID gId, U32 type, U8 *msg, const U8 *token, U8 mode) {
+int ntyPushNotify(void *self, C_DEVID gId, U32 type, U32 counter, U8 *msg, const U8 *token, U8 mode) {
 	nPushContext *pCtx = self;
 	if (pCtx == NULL) return NTY_RESULT_FAILED;
 
@@ -820,7 +821,7 @@ int ntyPushNotify(void *self, C_DEVID gId, U32 type, U8 *msg, const U8 *token, U
 	}
 
 	ntylog("msg : %s\n", msg);
-	ret = ntySendMessage(gId, type, ssl, token, msgid++, expire, msg, 1, "default");
+	ret = ntySendMessage(gId, type, counter, ssl, token, msgid++, expire, msg, 1, "default");
 	if (ret <= 0) {
 		ntylog("send failed: %s\n", ERR_reason_error_string(ERR_get_error()));
 #if 1 
@@ -878,11 +879,11 @@ void *ntyPushHandleRelease(void) {
  * mode : 	1 -> product
  * 			0 -> development
  */
-int ntyPushNotifyHandle(void *self, C_DEVID gId, U32 type, U8 *msg, const U8 *token, U8 mode) {
+int ntyPushNotifyHandle(void *self, C_DEVID gId, U32 type, U32 counter, U8 *msg, const U8 *token, U8 mode) {
 
 	nPushHandle * const *pHandle = self;
 	if (self && (*pHandle) && (*pHandle)->push) {
-		return (*pHandle)->push(self, gId, type, msg, token, mode);
+		return (*pHandle)->push(self, gId, type, counter, msg, token, mode);
 	}
 	
 	return NTY_RESULT_ERROR;

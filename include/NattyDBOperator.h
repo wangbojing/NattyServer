@@ -261,6 +261,7 @@
 
 #define NTY_DB_SELECT_PHONEBOOK_BINDAGREE	"CALL PROC_SELECT_PHONEBOOK_BINDAGREE(%lld, '%s', %lld)"
 
+#define NTY_DB_SELECT_OFFLINEMSG_COUNTER		"CALL PROC_SELECT_OFFLINEMSG_COUNTER(%lld)"
 
 
 typedef struct _CONN_POOL {
@@ -412,6 +413,8 @@ int ntyQueryBindOfflineMsgToProposerSelectHandle(C_DEVID fromId, void *container
 int ntyExecuteCommonMsgToProposerInsertHandle(C_DEVID sid, C_DEVID gid, const char *detatils, int *msg);
 
 int ntyExecuteChangeDeviceOnlineStatusHandle(C_DEVID did, int status);
+
+int ntyQueryOfflineMsgCounterSelectHandle(C_DEVID aid, U32 *counter);
 
 
 int ntyConnectionPoolInit(void);

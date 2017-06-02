@@ -727,18 +727,23 @@ int ntyIOSPushHandle(void *arg) {
 	if (record == NULL) goto exit;
 	Client *pClient = (Client *)record->value;
 
+#if 1 //add offline msg counter function. select 
+	U32 counter = 0;
+	ntyQueryOfflineMsgCounterSelectHandle(toId, &counter);
+#endif
+
 	if (pClient->deviceType == NTY_PROTO_CLIENT_IOS) {
 		if (pClient->token != NULL) {
 			ntylog("ntySendPushNotify --> selfId:%lld  token:%s\n", toId, pClient->token);
 			void *pushHandle = ntyPushHandleInstance();
-			ntyPushNotifyHandle(pushHandle, gId, type, msg, pClient->token, 0);
+			ntyPushNotifyHandle(pushHandle, gId, type, counter, msg, pClient->token, NTY_PUSH_CLIENT_DEVELOPMENT);
 		}
 		goto exit;
 	} else if (pClient->deviceType == NTY_PROTO_CLIENT_IOS_PUBLISH) {
 		if (pClient->token != NULL) {
 			ntylog("ntySendPushNotify --> selfId:%lld  token:%s\n", toId, pClient->token);
 			void *pushHandle = ntyPushHandleInstance();
-			ntyPushNotifyHandle(pushHandle, gId, type, msg, pClient->token, 1);
+			ntyPushNotifyHandle(pushHandle, gId, type, counter, msg, pClient->token, NTY_PUSH_CLIENT_PRODUCTION);
 		}
 		goto exit;
 	}

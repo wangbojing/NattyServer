@@ -114,7 +114,7 @@ typedef struct _Push_Handle {
 	size_t size;
 	void* (*ctor)(void *_self, va_list *params);
 	void* (*dtor)(void *_self);
-	int (*push)(void *_self, C_DEVID gId, U32 type, U8 *msg, const U8 *token, U8 mode);
+	int (*push)(void *_self, C_DEVID gId, U32 type, U32 counter, U8 *msg, const U8 *token, U8 mode);
 } nPushHandle;
 
 
@@ -125,7 +125,7 @@ typedef enum {
 } NTY_PUSH_TYPE;
 
 void *ntyPushHandleInstance(void);
-int ntyPushNotifyHandle(void *self, C_DEVID gId, U32 type, U8 *msg, const U8 *token, U8 mode) ;
+int ntyPushNotifyHandle(void *self, C_DEVID gId, U32 type, U32 counter, U8 *msg, const U8 *token, U8 mode);
 
 
 

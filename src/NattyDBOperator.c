@@ -2940,6 +2940,42 @@ int ntyQueryAdminGroupInsert(void *self, C_DEVID devId, U8 *bname, C_DEVID fromI
 	return ret;
 }
 
+int ntyQueryOfflineMsgCounterSelect(void *self, C_DEVID appId, U32 *counter) {
+	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = -1;
+
+	TRY
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			
+			ResultSet_T r =Connection_executeQuery(con, NTY_DB_SELECT_OFFLINEMSG_COUNTER, appId);
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					*counter = ResultSet_getInt(r, 1);	
+					ret = 0;
+				}
+			}
+		}
+	} 
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
 
 
 int ntyExecuteWatchInsertHandle(U8 *imei) {
@@ -3265,6 +3301,11 @@ int ntyExecuteCommonMsgToProposerInsertHandle(C_DEVID sid, C_DEVID gid, const ch
 int ntyExecuteChangeDeviceOnlineStatusHandle(C_DEVID did, int status) {
 	void *pool = ntyConnectionPoolInstance();
 	return ntyExecuteChangeDeviceOnlineStatus(pool, did, status);
+}
+
+int ntyQueryOfflineMsgCounterSelectHandle(C_DEVID aid, U32 *counter) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyQueryOfflineMsgCounterSelect(pool, aid, counter);
 }
 
 
