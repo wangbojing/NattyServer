@@ -1134,7 +1134,9 @@ int ntyJsonRestoreAction( ActionParam *pActionParam ){
 			ntylog( "*********ntyJsonRestoreAction destroy vector of client->friends before\n" );
 			aclient->friends = ntyVectorDestory( aclient->friends );
 			ntylog("*********ntyJsonRestoreAction destroy vector of client->friends after\n" );	
-
+#if 1 //recreator friends vector
+			aclient->friends = ntyVectorCreator();
+#endif 
 		}
 	}
 	
