@@ -431,11 +431,12 @@ int ntyBuildPayload(C_DEVID gId, U32 type, U32 counter, char *buffer, int *plen,
 
 		n = n + sprintf(str+n, "%s", buf);
 	}
-	n = n + sprintf(str+n, "%s%d", "\",\"badge\":", badage);
+	n = n + sprintf(str+n, "%s%d", "\",\"badge\":", counter);
 	n = n + sprintf(str+n, ",\"deviceId\":\"%llx\"", gId);
 	n = n + sprintf(str+n, ",\"type\":\"%d\"", type);
+#if 0
 	n = n + sprintf(str+n, ",\"count\":\"%d\"", counter);
-
+#endif
 	if (sound) {
 		n = n + sprintf(str+n, "%s", ",\"sound\":\"");
 		strcpy(buf, sound);
