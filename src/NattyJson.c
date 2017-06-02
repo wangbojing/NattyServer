@@ -2114,7 +2114,7 @@ int ntyCommonJsonCategory(char *json, int length) {
 	int i = 0;
 	U32 matches[128] = {0};
 
-	for (i = NTY_CATEGORY_START;i < NTY_CATEGORY_END;i ++) {
+	for (i = NTY_CATEGORY_START+1;i < NTY_CATEGORY_END;i ++) {
 		int plen = strlen(u8CategoryToken[i]);
 		
 		int ret = ntyKMP(json, length, u8CategoryToken[i], plen, matches);
@@ -2131,11 +2131,12 @@ int ntyCommonJsonCategory(char *json, int length) {
 // gcc -o NattyJson NattyJson.c NattyUtils.c NattyAbstractClass.c  ../json/parson.c NattyLetter.c  -I ../include/
 
 int main() {
-	U8 *json = "{\"Results\":{\"IMEI\":\"355637052567252\",\"Category\": \"SOSReport\",\"SOSReport\": {\"Type\":\"WIFI\",\"Radius\":\"25\",\"Location\":\"113.2409709,23.1322597\"}}}";
+	U8 *json = "{\"Results\":{\"IMEI\":\"355637052567252\",\"Category\":\"EfenceReport\",\"EfenceReport\":{\"Type\":\"WIFI\",\"Radius\":\"35\",\"Location\":\"113.2412598,23.1322485\",\"Bounds\":\"In\",\"TimeStamp\":\"2017-06-02 16:11:39\",\"Index\":\"2\",\"Efence\":{\"Num\":\"5\",\"Points\":[\"113.241158,23.131695\",\"113.241180,23.133001\",\"113.242210,23.133070\",\"113.242386,23.131899\",\"113.241615,23.131495\"]}}}}";
 	int length = strlen(json);
 
 	int ret = ntyCommonJsonCategory(json, length);
 
+	ntylog(" ret:%d\n", ret);
 }
 
 #endif
