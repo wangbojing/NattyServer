@@ -724,29 +724,30 @@ static int ntyPushTcpConnect(void *self, U8 mode) {
 
 	if (mode >= NTY_PUSH_CLIENT_COUNT) return NTY_RESULT_ERROR;
 
-	if (*(unsigned char*)(&addr[mode].sin_addr.s_addr) == 0x0) {
-		if (mode == NTY_PUSH_CLIENT_DEVELOPMENT) {
-			ntylog("gethostbyname : %s\n", APPLE_HOST_DEVELOPMENT_NAME);
-			
-			if (!(hp = gethostbyname(APPLE_HOST_DEVELOPMENT_NAME))) {
-				return NTY_RESULT_FAILED;
-			}
-		} else {
-			ntylog("gethostbyname : %s\n", APPLE_HOST_PRODUCTION_NAME);
-			
-			if (!(hp = gethostbyname(APPLE_HOST_PRODUCTION_NAME))) {
-				return NTY_RESULT_FAILED;
-			}
+	//if (*(unsigned char*)(&addr[mode].sin_addr.s_addr) == 0x0) {
+	
+	if (mode == NTY_PUSH_CLIENT_DEVELOPMENT) {
+		ntylog("gethostbyname : %s\n", APPLE_HOST_DEVELOPMENT_NAME);
+		
+		if (!(hp = gethostbyname(APPLE_HOST_DEVELOPMENT_NAME))) {
+			return NTY_RESULT_FAILED;
 		}
-
-		memset(&addr[mode], 0, sizeof(addr[mode]));
-		addr[mode].sin_addr = *(struct in_addr*)hp->h_addr_list[0];
-		addr[mode].sin_family = AF_INET;
-		addr[mode].sin_port = htons(APPLE_HOST_PORT);
-
-		char *p = inet_ntoa(addr[mode].sin_addr);
-		ntylog("address : %s\n", p);
+	} else {
+		ntylog("gethostbyname : %s\n", APPLE_HOST_PRODUCTION_NAME);
+		
+		if (!(hp = gethostbyname(APPLE_HOST_PRODUCTION_NAME))) {
+			return NTY_RESULT_FAILED;
+		}
 	}
+
+	memset(&addr[mode], 0, sizeof(addr[mode]));
+	addr[mode].sin_addr = *(struct in_addr*)hp->h_addr_list[0];
+	addr[mode].sin_family = AF_INET;
+	addr[mode].sin_port = htons(APPLE_HOST_PORT);
+
+	char *p = inet_ntoa(addr[mode].sin_addr);
+	ntylog("address : %s\n", p);
+	//}
 	
 	int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (sock < 0) {
@@ -780,6 +781,7 @@ static int ntyVerifyConnection(SSL *ssl, const char *peername) {
 	if (strcmp(peer_CN, peername) != 0) {
 		fprintf(stderr, "WARNING ! Server Name Doesn't match, got: %s, required: %s", peer_CN, peername);
 	}
+	
 	return NTY_RESULT_SUCCESS;
 }
 
