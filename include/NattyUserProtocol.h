@@ -189,6 +189,12 @@
 
 
 #define NATTY_USER_PROTOCOL_BINGREQ 		"BindReq"
+#define NATTY_USER_PROTOCOL_BINGREQ_NAME 	"Name"
+#define NATTY_USER_PROTOCOL_BINGREQ_PICURL  "PicURL"
+#define NATTY_USER_PROTOCOL_BINGREQ_TYPE    "Type"
+#define NATTY_USER_PROTOCOL_UNBINGREQ       "UnBindReq"
+
+
 #define NATTY_USER_PROTOCOL_WATCHNAME 		"WatchName"
 #define NATTY_USER_PROTOCOL_WATCHIMAGE 		"WatchImage"
 #define NATTY_USER_PROTOCOL_USERIMAGE 		"UserImage"
@@ -865,6 +871,13 @@ typedef struct _HeartReport {
 
 
 // add by luoyb add begin
+typedef struct _LocatorBindReq{
+	const char *IMEI;
+	const char *Category;
+	const char *Name;
+	const char *PicURL;
+	const char *Type;
+}LocatorBindReq;
 //client user send select request
 typedef struct _ClientSelectReq{
 	const char *IMEI;

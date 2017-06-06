@@ -1711,9 +1711,64 @@ void ntyBindDevicePacketHandleVersionBRequest(const void *_self, unsigned char *
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_BIND_APPID_IDX);
 		C_DEVID toId =  *(C_DEVID*)(buffer+NTY_PROTO_BIND_DEVICEID_IDX);
 		
-
-		ntyProtoBindAck(fromId, toId, 5);
+		U16 jsonLength = *(U16*)( buffer+NTY_PROTO_BIND_JSON_LENGTH_IDX );
+		
+		U8 *jsonstring = (U8*)malloc( jsonLength+1 );
+		if ( jsonstring == NULL ) { 
+			ntylog( "ntyBindDevicePacketHandleVersionBRequest --> malloc json buffer failed\n" );
+			return ;
+		}
+		memset( jsonstring, 0, jsonLength+1 );
+		memcpy( jsonstring, buffer+NTY_PROTO_BIND_JSON_CONTENT_IDX, jsonLength );
 	
+		ntylog( "ntyBindDevicePacketHandleVersionBRequest --> fromId:%lld,toId:%lld,json:%s,jsonLength:%d\n", fromId,toId,jsonstring,jsonLength );
+
+		JSON_Value *json = ntyMallocJsonValue( jsonstring );
+		if ( json == NULL ) { //JSON Error and send Code to FromId Device
+			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
+			free(jsonstring);
+			return;
+		}
+		ntyJsonCommonResult( fromId, NATTY_RESULT_CODE_SUCCESS );  //receive data and then send to fromId 200
+		
+		ClientActionParam *clientActionParamVal = (ClientActionParam*)malloc( sizeof(ClientActionParam) );
+		if ( clientActionParamVal == NULL ){
+			ntylog(" %s --> malloc failed clientActionParamVal", __func__);
+			ntyFreeJsonValue(json);
+			free(jsonstring);
+			return;
+		}
+		memset( clientActionParamVal, 0, sizeof(ClientActionParam) );		
+		clientActionParamVal->fromId = fromId;
+		clientActionParamVal->toId = toId;
+		clientActionParamVal->jsonString = jsonstring;
+		clientActionParamVal->jsonObj = json;
+		int nRet = 0;
+
+		LocatorBindReq *ptrLocatorBindReq = (LocatorBindReq*)malloc( sizeof(LocatorBindReq) );
+		if ( ptrLocatorBindReq == NULL ) {
+			ntylog("ntyBindDevicePacketHandleVersionBRequest --> malloc failed ptrLocatorBindReq\n");
+			return ;
+		}
+		memset( ptrLocatorBindReq, 0, sizeof(LocatorBindReq) );
+		//parse json object from sender to save to struct object ptrLocatorBindReq
+		nRet = ntyLocatorBindReqJsonParse( clientActionParamVal->jsonObj, ptrLocatorBindReq ); 
+		if ( nRet == -1 ){
+			goto EXIT;
+		}
+
+		if( (nRet=strcmp(ptrLocatorBindReq->Category,NATTY_USER_PROTOCOL_BINGREQ)) == 0 ){
+			nRet = ntyLocatorBindReqAction( clientActionParamVal, ptrLocatorBindReq );
+			ntylog( "*********nRet=ntyLocatorBindReqAction():nRet=%d\n",nRet );
+			if ( nRet <= 0 ){	//error
+				nRet = NTY_BIND_ACK_ERROR;
+			}
+			ntyProtoBindAck( fromId, toId, nRet );
+		}		
+		
+		EXIT:
+			ntyFreeJsonValue(json);
+			free(jsonstring);		
 		ntylog("====================end ntyBindDevicePacketHandleRequest_VersionB action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
@@ -1739,7 +1794,16 @@ void ntyUnBindDevicePacketHandleVersionBRequest(const void *_self, unsigned char
 	if (buffer[NTY_PROTO_VERSION_IDX] == NTY_PROTO_VERSION_B && buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_UNBIND_REQ) {
 		ntylog("====================begin ntyUnBindDevicePacketHandleRequest_VersionB action ==========================\n");
 	
+		C_DEVID fromId = *(C_DEVID*)( buffer+NTY_PROTO_UNBIND_APPID_IDX );
+		C_DEVID toId =  *(C_DEVID*)( buffer+NTY_PROTO_UNBIND_DEVICEID_IDX );
 		
+		ntylog( "ntyUnBindDevicePacketHandleVersionBRequest --> fromId:%lld,toId:%lld\n", fromId,toId );
+		ntyJsonCommonResult( fromId, NATTY_RESULT_CODE_SUCCESS );  //receive data and then send to fromId 200
+		int nRet = ntyLocatorUnBindReqAction( fromId, toId );
+		if ( nRet < 0 || nRet > 0 ){
+			nRet = NTY_RESULT_FAILED;
+		}
+		ntyProtoUnBindAck( fromId, toId, nRet );
 		ntylog("====================end ntyUnBindDevicePacketHandleRequest_VersionB action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);

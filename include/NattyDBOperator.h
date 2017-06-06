@@ -196,8 +196,9 @@
 #define NTY_DB_INSERT_GROUP					"CALL PROC_INSERT_GROUP(%lld, %lld, '%s')"
 //½â°ó¹ØÏµ 
 #define NTY_DB_DELETE_GROUP					"CALL PROC_DELETE_GROUP(%lld, %lld)"
+#define NTY_DB_INSERT_GROUP_LOCATOR         "CALL PROC_INSERT_GROUP_LOCATOR(%lld, %lld, '%s', '%s', '%s')"
+#define NTY_DB_DELETE_GROUP_LOCATOR			"CALL PROC_DELETE_GROUP_LOCATOR(%lld, %lld)"
 
-//
 #define NTY_DB_INSERT_COMMON_MSG			"CALL PROC_INSERT_COMMON_MSG(%lld, %lld, '%s')"
 
 
@@ -425,6 +426,10 @@ int ntyExecuteResetHandle( C_DEVID aid, C_DEVID did );
 int ntyExecuteReset( void *self, C_DEVID aid, C_DEVID did );
 int ntyExecuteRestoreHandle( C_DEVID aid, C_DEVID did );
 int ntyExecuteRestore( void *self, C_DEVID aid, C_DEVID did );
+int ntyExecuteLocatorBindInsertHandle( C_DEVID appId, C_DEVID devId, LocatorBindReq *pLocatorBindReq );
+int ntyExecuteLocatorBindInsert( void *self, C_DEVID appId, C_DEVID devId, LocatorBindReq *pLocatorBindReq );
+int ntyExecuteLocatorUnBindDeleteHandle( C_DEVID appId, C_DEVID devId );
+int ntyExecuteLocatorUnBindDelete( void *self, C_DEVID appId, C_DEVID devId );
 
 
 

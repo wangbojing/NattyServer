@@ -162,6 +162,8 @@ int ntyClientSelectURLReqAction( ClientActionParam *pClientActionParam,ClientSel
 int ntyJsonResetAction( ActionParam *pActionParam );
 int ntyJsonRestoreAction( ActionParam *pActionParam );
 int ntyAppIdToDeviceIdDeleteCb( void *self, void *arg );
+int ntyLocatorBindReqAction( ClientActionParam *pClientActionParam, LocatorBindReq *pLocatorBindReq );
+int ntyLocatorUnBindReqAction( C_DEVID appId, C_DEVID devId );
 
 #endif // __NATTY_SERVACTION_H__
 

@@ -3175,6 +3175,26 @@ int ntyClientSelectURLReqAction( ClientActionParam *pClientActionParam,ClientSel
 }
 
 
+int ntyLocatorBindReqAction( ClientActionParam *pClientActionParam, LocatorBindReq *pLocatorBindReq ){
+	
+	if ( (pClientActionParam==NULL) || (pLocatorBindReq==NULL) ){ 
+		ntylog( "ntyLocatorBindReqAction pClientActionParam==NULL||pLocatorBindReq==NULL\n" );
+		return -1;
+	}
+	C_DEVID appId = pClientActionParam->fromId;
+	C_DEVID devId = pClientActionParam->toId;
+	int nRet = 0;
+	ntylog( "ntyLocatorBindReqAction appId:%lld,devId:%lld,json:%s\n", appId, devId, pClientActionParam->jsonString );
+	nRet = ntyExecuteLocatorBindInsertHandle( appId, devId, pLocatorBindReq );
+
+	return nRet;
+}
+
+int ntyLocatorUnBindReqAction( C_DEVID appId, C_DEVID devId ){
+	int nRet = 0;
+	nRet = ntyExecuteLocatorUnBindDeleteHandle( appId, devId );
+	return nRet;
+}
 
 //end
 

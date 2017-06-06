@@ -1622,6 +1622,34 @@ int ntyClientReqJsonParse( JSON_Value *json, ClientSelectReq *pclientSelectReq )
 	pclientSelectReq->Action = json_object_get_string( root_object, NATTY_USER_PROTOCOL_ACTION );
 	return 0;
 }
+/*************************************************************************************************
+** Function: ntyLocatorBindReqJsonParse 
+** Description: parse the json obejct to save to the struct object. 
+** Input: JSON_Value *json
+** Output: LocatorBindReq *ptrLocatorBindReq
+** Return: int -1:error 0:success
+** Author: luoyb
+** Date: 2017-06-2
+** Others:
+*************************************************************************************************/
+
+int ntyLocatorBindReqJsonParse( JSON_Value *json, LocatorBindReq *ptrLocatorBindReq ){
+	if ( json == NULL || ptrLocatorBindReq == NULL) {
+		ntylog(" ntyLocatorBindReqJsonParse param is null.\n");
+		return -1;
+	}
+	JSON_Object *root_object = json_value_get_object( json );  //json to json object
+	ptrLocatorBindReq->IMEI = json_object_get_string( root_object, NATTY_USER_PROTOCOL_IMEI );
+	ptrLocatorBindReq->Category = json_object_get_string( root_object, NATTY_USER_PROTOCOL_CATEGORY );
+
+	JSON_Object *BindReq_object = json_object_get_object( root_object, NATTY_USER_PROTOCOL_BINGREQ );
+	ptrLocatorBindReq->Name = json_object_get_string( BindReq_object, NATTY_USER_PROTOCOL_BINGREQ_NAME );
+	ptrLocatorBindReq->PicURL = json_object_get_string( BindReq_object, NATTY_USER_PROTOCOL_BINGREQ_PICURL);
+	ptrLocatorBindReq->Type = json_object_get_string( BindReq_object, NATTY_USER_PROTOCOL_BINGREQ_TYPE);
+	
+	return 0;	
+}
+
 
 int ntyClientContactsAckJsonCompose( ClientContactsAck *pClientContactsAck, unsigned char *buffer) {
 	if ( pClientContactsAck == NULL || buffer == NULL ) {

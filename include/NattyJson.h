@@ -140,6 +140,8 @@ int ntyClientLocationAckJsonCompose( ClientLocationAck *pClientLocationAck, unsi
 
 char *ntyClientEfenceAckJsonCompose( ClientEfenceAck *pClientEfenceAck );
 int ntyClientURLAckJsonCompose( ClientURLAck *pClientURLAck , unsigned char *buffer);
+int ntyLocatorBindReqJsonParse( JSON_Value *json, LocatorBindReq *ptrLocatorBindReq );
+
 
 //end
 

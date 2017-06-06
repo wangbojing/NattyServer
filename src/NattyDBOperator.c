@@ -3928,6 +3928,118 @@ int ntyExecuteRestore( void *self, C_DEVID aid, C_DEVID did ){
 
 }
 
+int ntyExecuteLocatorBindInsertHandle( C_DEVID appId, C_DEVID devId, LocatorBindReq *pLocatorBindReq ){
+	ConnectionPool *pool = ntyConnectionPoolInstance();
+	return  ntyExecuteLocatorBindInsert( pool, appId, devId, pLocatorBindReq );
+}
+/*************************************************************************************************
+** Function: ntyExecuteLocatorUnBindDelete 
+** Description: locator bind,insert the data from the relation between appid and devid
+** Input: void *self:ConnectionPool *pool,C_DEVID appId,C_DEVID devId,LocatorBindReq *pLocatorBindReq
+** Output: 
+** Return: int 0:succes 5:error:-1,1,2,3,4
+** Author:luyb
+** Date: 2017-06-02
+** Others:
+*************************************************************************************************/
+
+int ntyExecuteLocatorBindInsert( void *self, C_DEVID appId, C_DEVID devId, LocatorBindReq *pLocatorBindReq ){
+	ConnectionPool *pool = self;
+	if ( pool == NULL ) return NTY_RESULT_BUSY;
+	Connection_T conn = ConnectionPool_getConnection( pool->nPool );
+	int nRet = 0;
+
+	TRY
+	{
+		conn = ntyCheckConnection( self, conn );
+		if ( conn == NULL ){
+			nRet = -1;
+		}else{
+			ntylog( "ntyExecuteLocatorBindInsert --> before Connection_execute:CALL PROC_INSERT_GROUP_LOCATOR\n" );
+			ResultSet_T r = Connection_executeQuery( conn, NTY_DB_INSERT_GROUP_LOCATOR,devId,appId,pLocatorBindReq->Name,pLocatorBindReq->PicURL,pLocatorBindReq->Type );
+			if ( r != NULL ){
+				while( ResultSet_next(r) ){
+					const char *r_result = ResultSet_getString(r, 1);
+					if ( r_result != NULL ){
+						nRet = atoi( r_result ); //CALL PROC_INSERT_GROUP_LOCATOR return 1,2,3,4,5, and 5 is ok
+					}
+				}			
+			}	
+			ntylog( "ntyExecuteLocatorBindInsert --> after Connection_execute:CALL PROC_INSERT_GROUP_LOCATOR nRet=%d\n",nRet );
+		}
+		
+	}
+	CATCH( SQLException ) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		nRet = -1;
+	}
+	FINALLY
+	{
+		ntylog( " %s --> Connection_close\n", __func__ );
+		ntyConnectionClose( conn );
+	}
+	END_TRY;
+
+	return nRet;
+
+}
+
+int ntyExecuteLocatorUnBindDeleteHandle( C_DEVID appId, C_DEVID devId ){
+	ConnectionPool *pool = ntyConnectionPoolInstance();
+	return ntyExecuteLocatorUnBindDelete( pool, appId, devId );
+}
+/*************************************************************************************************
+** Function: ntyExecuteLocatorUnBindDelete 
+** Description: locator unbind,delete the data from the relation between appid and devid
+** Input: void *self:ConnectionPool *pool,C_DEVID appId,C_DEVID devId
+** Output: 
+** Return: int 0:succes -1:error
+** Author:luyb
+** Date: 2017-06-02
+** Others:
+*************************************************************************************************/
+
+int ntyExecuteLocatorUnBindDelete( void *self, C_DEVID appId, C_DEVID devId ){
+	ConnectionPool *pool = self;
+	if ( pool == NULL ) return NTY_RESULT_BUSY;
+	Connection_T conn = ConnectionPool_getConnection( pool->nPool );
+	int nRet = 0;
+	
+	TRY
+	{
+		conn = ntyCheckConnection( self, conn );
+		if ( conn == NULL ){
+			nRet = -1;
+		}else{
+			ntylog( "ntyExecuteLocatorUnBindDelete --> before Connection_execute:CALL PROC_DELETE_GROUP_LOCATOR\n" );
+			ResultSet_T r = Connection_executeQuery( conn, NTY_DB_DELETE_GROUP_LOCATOR,devId,appId );
+			if ( r != NULL ){
+				while( ResultSet_next(r) ){
+					const char *r_result = ResultSet_getString(r, 1);
+					if ( r_result != NULL ){
+						nRet = atoi( r_result );  //CALL PROC_DELETE_GROUP_LOCATOR return 0
+					}
+				}			
+			}	
+			ntylog( "ntyExecuteLocatorUnBindDelete --> after Connection_execute:CALL PROC_DELETE_GROUP_LOCATOR nRet=%d\n",nRet );
+		}	
+	}
+	CATCH( SQLException ) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		nRet = -1;
+	}
+	FINALLY
+	{
+		ntylog( " %s --> Connection_close\n", __func__ );
+		ntyConnectionClose( conn );
+	}
+	END_TRY;
+
+	return nRet;	
+
+}
 
 
 //end 
