@@ -49,7 +49,7 @@
 #include "NattyAbstractClass.h"
 
 
-static int ntyPushTcpConnect(void *self);
+static int ntyPushTcpConnect(void *self, U8 mode);
 static SSL* ntyPushSSLConnect(void *self, int sockfd, U8 mode);
 
 void *ntyPushHandleInstance(void);
@@ -533,7 +533,7 @@ int ntySendMessage(C_DEVID gId, U32 type, U32 counter, SSL *ssl, const char* tok
 }
 
 int exiting = 0;
-struct sockaddr_in addr = {0};
+struct sockaddr_in addr[NTY_PUSH_CLIENT_COUNT] = {0};
 
 
 
@@ -597,13 +597,13 @@ void* ntyPushContextCtor(void *self, va_list *params) {
 	pCtx->pctx = ntyContextInitialize(APPLE_CLIENT_PEM_NAME_PUBLISH, APPLE_CLIENT_PEM_NAME_PUBLISH, APPLE_CLIENT_PEM_PWD, APPLE_SERVER_PEM_NAME);
 
 	
-	pCtx->d_sockfd = ntyPushTcpConnect(pCtx);
+	pCtx->d_sockfd = ntyPushTcpConnect(pCtx, NTY_PUSH_CLIENT_DEVELOPMENT);
 	if (pCtx->d_sockfd < 0) {
 		ntylog("failed to connect to host %s\n", strerror(errno));
 		return pCtx;
 	}
 
-	pCtx->d_ssl = ntyPushSSLConnect(pCtx, pCtx->d_sockfd, 0);
+	pCtx->d_ssl = ntyPushSSLConnect(pCtx, pCtx->d_sockfd, NTY_PUSH_CLIENT_DEVELOPMENT);
 	if (pCtx->d_ssl == NULL) {
 		ntylog("ssl connect failed: %s\n", ERR_reason_error_string(ERR_get_error())); 
 		ntyCloseSocket(pCtx->d_sockfd);
@@ -612,13 +612,13 @@ void* ntyPushContextCtor(void *self, va_list *params) {
 	}
 
 
-	pCtx->p_sockfd = ntyPushTcpConnect(pCtx);
+	pCtx->p_sockfd = ntyPushTcpConnect(pCtx, NTY_PUSH_CLIENT_PRODUCTION);
 	if (pCtx->p_sockfd < 0) {
 		ntylog("failed to connect to host %s\n", strerror(errno));
 		return pCtx;
 	}
 	
-	pCtx->p_ssl = ntyPushSSLConnect(pCtx, pCtx->p_sockfd, 1);
+	pCtx->p_ssl = ntyPushSSLConnect(pCtx, pCtx->p_sockfd, NTY_PUSH_CLIENT_PRODUCTION);
 	if (pCtx->p_ssl == NULL) {
 		ntylog("ssl connect failed: %s\n", ERR_reason_error_string(ERR_get_error())); 
 		ntyCloseSocket(pCtx->p_sockfd);
@@ -690,15 +690,15 @@ static SSL* ntyPushSSLConnect(void *self, int sockfd, U8 mode) {
 	return ssl;
 }
 
-static int ntyPushTcpConnect(void *self) {
+static int ntyPushTcpConnect(void *self, U8 mode) {
 	nPushContext *pCtx = self;
 	
 	struct hostent *hp;
 #if 0
 	if (*(unsigned char*)(&pCtx->addr.sin_addr.s_addr) == 0x0) {
-		ntylog("gethostbyname : %s\n", APPLE_HOST_NAME);
+		ntylog("gethostbyname : %s\n", APPLE_HOST_DEVELOPMENT_NAME);
 		
-		if (!(hp = gethostbyname(APPLE_HOST_NAME))) {
+		if (!(hp = gethostbyname(APPLE_HOST_DEVELOPMENT_NAME))) {
 			return NTY_RESULT_FAILED;
 		}
 
@@ -722,19 +722,29 @@ static int ntyPushTcpConnect(void *self) {
 	}
 #else
 
-	if (*(unsigned char*)(&addr.sin_addr.s_addr) == 0x0) {
-		ntylog("gethostbyname : %s\n", APPLE_HOST_NAME);
-		
-		if (!(hp = gethostbyname(APPLE_HOST_NAME))) {
-			return NTY_RESULT_FAILED;
+	if (mode >= NTY_PUSH_CLIENT_COUNT) return NTY_RESULT_ERROR;
+
+	if (*(unsigned char*)(&addr[mode].sin_addr.s_addr) == 0x0) {
+		if (mode == NTY_PUSH_CLIENT_DEVELOPMENT) {
+			ntylog("gethostbyname : %s\n", APPLE_HOST_DEVELOPMENT_NAME);
+			
+			if (!(hp = gethostbyname(APPLE_HOST_DEVELOPMENT_NAME))) {
+				return NTY_RESULT_FAILED;
+			}
+		} else {
+			ntylog("gethostbyname : %s\n", APPLE_HOST_PRODUCTION_NAME);
+			
+			if (!(hp = gethostbyname(APPLE_HOST_PRODUCTION_NAME))) {
+				return NTY_RESULT_FAILED;
+			}
 		}
 
-		memset(&addr, 0, sizeof(addr));
-		addr.sin_addr = *(struct in_addr*)hp->h_addr_list[0];
-		addr.sin_family = AF_INET;
-		addr.sin_port = htons(APPLE_HOST_PORT);
+		memset(&addr[mode], 0, sizeof(addr[mode]));
+		addr[mode].sin_addr = *(struct in_addr*)hp->h_addr_list[0];
+		addr[mode].sin_family = AF_INET;
+		addr[mode].sin_port = htons(APPLE_HOST_PORT);
 
-		char *p = inet_ntoa(addr.sin_addr);
+		char *p = inet_ntoa(addr[mode].sin_addr);
 		ntylog("address : %s\n", p);
 	}
 	
@@ -743,7 +753,7 @@ static int ntyPushTcpConnect(void *self) {
 		return NTY_RESULT_FAILED;
 	}
 	
-	int ret = connect(sock, (struct sockaddr*)&addr, sizeof(addr));
+	int ret = connect(sock, (struct sockaddr*)&addr[mode], sizeof(addr[mode]));
 	if (ret != 0) {
 		return NTY_RESULT_FAILED;
 	}
@@ -780,11 +790,33 @@ int ntyPushNotify(void *self, C_DEVID gId, U32 type, U32 counter, U8 *msg, const
 
 	ntylog("ntyPushNotify ..\n");
 #if 1
+	int ret = NTY_RESULT_FAILED;
 	SSL *ssl = NULL;
 	if (mode) {
 		ssl = pCtx->p_ssl;
+
+		ntylog("ntyVerifyConnection --> APPLE_HOST_PRODUCTION_NAME\n");
+		ret = ntyVerifyConnection(ssl, APPLE_HOST_PRODUCTION_NAME);
+		if (ret != NTY_RESULT_SUCCESS) {
+			ntylog("Verify failed\n");	
+#if 1 
+			ntyPushHandleRelease();
+#endif
+			return NTY_RESULT_FAILED;
+		}
+		
 	} else {
 		ssl = pCtx->d_ssl;
+
+		ntylog("ntyVerifyConnection --> APPLE_HOST_DEVELOPMENT_NAME\n");
+		ret = ntyVerifyConnection(ssl, APPLE_HOST_DEVELOPMENT_NAME);
+		if (ret != NTY_RESULT_SUCCESS) {
+			ntylog("Verify failed\n");
+#if 1 
+			ntyPushHandleRelease();
+#endif
+			return NTY_RESULT_FAILED;
+		}
 	}
 #else
 	int sockfd = ntyPushTcpConnect(pCtx);
@@ -801,17 +833,7 @@ int ntyPushNotify(void *self, C_DEVID gId, U32 type, U32 counter, U8 *msg, const
 		return NTY_RESULT_FAILED;
 	}
 #endif
-	ntylog("ntyVerifyConnection\n");
-	int ret = ntyVerifyConnection(ssl, APPLE_HOST_NAME);
-	if (ret != NTY_RESULT_SUCCESS) {
-		ntylog("Verify failed\n");
-		
-#if 1 
-		ntyPushHandleRelease();
-#endif
-
-		return NTY_RESULT_FAILED;
-	}
+	
 
 	unsigned int msgid = 1;
 	unsigned int expire = time(NULL) + 24 * 3600;
@@ -898,22 +920,24 @@ int main(void) {
 	void *pushHandle = ntyPushHandleInstance();
 
 	char *msg = "abcd";
-	const char *token = "a0c7aa17d80c27e1c98482483655d9cd7036dadca57fc5d4a693321997813707";
+	//const char *token = "a0c7aa17d80c27e1c98482483655d9cd7036dadca57fc5d4a693321997813707";
+	const char *token = "2f88b3df02e08a11e7777479943089aacffb2f8750aaa08a98a5f5978081d84a";
 	C_DEVID devId = 0x355637053172771;
 	U32 type = 1;
 
+	//2f88b3df02e08a11e7777479943089aacffb2f8750aaa08a98a5f5978081d84a
 	//ec49a6b5bcad57279a0fe08f8aeab941
 	//015bafdb5a846a08cbae1d78959a461d 6b9c4e46f6a18dc36b4e9a191487bc0d
 	//015bafdb5a846a08cbae1d78959a461d
 
-	int ret = ntyPushNotifyHandle(pushHandle, devId, type, NULL, token, 0);
+	int ret = ntyPushNotifyHandle(pushHandle, devId, type, 5, NULL, token, NTY_PUSH_CLIENT_PRODUCTION);
 
 	getchar();
 
 	int i = 0;
 
 	for (i = 0;i < 10;i ++) {
-		ntyPushNotifyHandle(pushHandle, devId, type, NULL, token, 0);
+		ntyPushNotifyHandle(pushHandle, devId, type, i+1, NULL, token, NTY_PUSH_CLIENT_PRODUCTION);
 	}
 
 	getchar();
