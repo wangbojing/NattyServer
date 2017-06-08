@@ -3358,6 +3358,7 @@ int ntyExecuteClientSelectSchedule(void *self, C_DEVID aid, C_DEVID did, void *c
 					const char *r_daily = ResultSet_getString(r, 3);
 					const char *r_time = ResultSet_getString(r, 4);
 					const char *r_details = ResultSet_getString(r, 5);
+					const char *r_status = ResultSet_getString(r, 6);
 
 					if (r_id != NULL) {
 						size_t len_id = strlen(r_id);
@@ -3375,6 +3376,10 @@ int ntyExecuteClientSelectSchedule(void *self, C_DEVID aid, C_DEVID did, void *c
 						size_t len_details = strlen(r_details);
 						ntyCopyString(&objScheduleSelectItem->details, r_details, len_details);
 					}
+					if (r_status != NULL) {
+						size_t len_status = strlen(r_status);
+						ntyCopyString(&objScheduleSelectItem->status, r_status, len_status);
+					}					
 
 					ntyVectorInsert(container, objScheduleSelectItem, sizeof(ScheduleSelectItem));	
 				}

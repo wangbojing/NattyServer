@@ -1273,6 +1273,7 @@ int ntyJsonWriteSchedule(ScheduleAck *pScheduleAck, unsigned char *buffer) {
 		json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_DAILY, pScheduleAck->results.pSchedule[i].daily);
 		json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_TIME, pScheduleAck->results.pSchedule[i].time);
 		json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_DETAILS, pScheduleAck->results.pSchedule[i].details);
+		json_object_set_string(schedule_obj, NATTY_USER_PROTOCOL_STATUS, pScheduleAck->results.pSchedule[i].status);
 	}
 
 	char *jsonstring =  json_serialize_to_string(schema);
