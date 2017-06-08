@@ -101,6 +101,7 @@ int ntySendWeatherPushResult(C_DEVID fromId, U8 *json, int length);
 
 int ntySendICCIDAckResult(C_DEVID fromId, U8 *json, int length, U16 status);
 int ntySendRecodeJsonPacket(C_DEVID fromId, C_DEVID toId, U8 *json, int length);
+int ntySendRecodeJsonPacketVersionB(C_DEVID fromId, C_DEVID toId, U8 *json, int length);
 
 int ntySendBinBufferBroadCastResult(U8 *u8Buffer, int length, C_DEVID fromId, C_DEVID gId, U32 index);
 

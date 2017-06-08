@@ -949,7 +949,7 @@ void ntyJsonRunTimeAction(ActionParam *pActionParam) {
 		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
 
 		char msgs[20] = {0};
-		snprintf(msgs, strlen(msgs), "%d", pActionParam->index);
+		snprintf(msgs, 20, "%d", pActionParam->index);
 		pRunTimeReq->msg = msgs;
 		
 		RunTimeAck *pRunTimeAck = (RunTimeAck*)malloc(sizeof(RunTimeAck));
@@ -1092,22 +1092,23 @@ int ntyJsonResetAction( ActionParam *pActionParam ){
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;
 	ntylog( " ********ntyJsonResetAction --> fromId:%lld, toId:%lld, json:%s\n", fromId, toId, pActionParam->jsonstring );
-	
+	nRet = ntyExecuteResetHandle( fromId, toId );
+	if ( nRet == -1 ){
+		ntylog(" ntyJsonResetAction --> DB Exception\n");
+		goto EXIT;
+	}
+
 	//first send to deviceId,then send to fromId(appId,webId).
-	nRet = ntySendRecodeJsonPacket( fromId, toId, (U8*)pActionParam->jsonstring, strlen(pActionParam->jsonstring) );
+	nRet = ntySendRecodeJsonPacketVersionB( fromId, toId, (U8*)pActionParam->jsonstring, strlen(pActionParam->jsonstring) );
 	if ( nRet < 0 ){ //send to deviceId failed.send back to fromId(appId,webId) with offline message.
 		ntyJsonCommonResult( fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE );
-		nRet = -1;
-	}else{	//send to deviceId sucessed.
-		nRet = ntyExecuteResetHandle( fromId, toId );
-		if ( nRet == -1 ){
-			ntylog(" ntyJsonResetAction --> DB Exception\n");
-		}
-		//send back to fromId(appId,webId) with sucess message.
+		nRet = -2;
+	}else{	//send back to fromId(appId,webId) with sucess message.		
 		ntyJsonCommonResult( fromId, NATTY_RESULT_CODE_SUCCESS );
 		nRet = 0;
 	}
-
+	
+EXIT:
 	return nRet;
 }
 
@@ -1141,7 +1142,7 @@ int ntyJsonRestoreAction( ActionParam *pActionParam ){
 		ntylog(" ntyJsonRestoreAction --> DB Exception\n");
 	}else if ( nRet == 0 ){
 		//first send to deviceId,then send to fromId(appId,webId)
-		ret = ntySendRecodeJsonPacket( fromId, toId, (U8*)pActionParam->jsonstring, strlen(pActionParam->jsonstring) );
+		ret = ntySendRecodeJsonPacketVersionB( fromId, toId, (U8*)pActionParam->jsonstring, strlen(pActionParam->jsonstring) );
 		if ( ret < 0 ){
 			ntyJsonCommonResult( fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE );
 		}else{

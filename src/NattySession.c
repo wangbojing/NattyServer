@@ -1399,6 +1399,78 @@ int ntySendRecodeJsonPacket(C_DEVID fromId, C_DEVID toId, U8 *json, int length) 
 
 	return ret;
 }
+/*************************************************************************************************
+** Function: ntySendRecodeJsonPacketVersionB 
+** Description: insert to the tables of TB_COMMON_MSG and TB_COMMON_OFFLINE_MSG with request json.
+**              Get the MesgId from the table,then,send to the device. Don't care about the result.
+** Input: C_DEVID fromId, C_DEVID toId, U8 *json, int length.
+** Output: 
+** Return: int >=0:success, <0:error
+** Author:luoyb
+** Date: 2017-06-08
+** Others:
+*************************************************************************************************/
+
+int ntySendRecodeJsonPacketVersionB(C_DEVID fromId, C_DEVID toId, U8 *json, int length) {
+#if 0
+	U16 bLength = (U16)length;
+	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
+
+	buffer[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
+	buffer[NTY_PROTO_DEVTYPE_IDX] = NTY_PROTO_CLIENT_DEFAULT;
+	buffer[NTY_PROTO_PROTOTYPE_IDX] = PROTO_REQ;
+	buffer[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_COMMON_REQ;
+
+	//insert db
+	int msgId;
+	int ret = ntyExecuteCommonItemMsgInsertHandle(fromId, toId, json, &msgId);
+	if (ret != NTY_RESULT_SUCCESS) {
+		return ret;
+	}
+
+	memcpy(&buffer[NTY_PROTO_COMMON_REQ_DEVID_IDX], &fromId, sizeof(C_DEVID));
+	memcpy(&buffer[NTY_PROTO_COMMON_REQ_RSVD_IDX], &msgId, sizeof(U32));
+	memcpy(&buffer[NTY_PROTO_COMMON_REQ_RECVID_IDX], &toId, sizeof(C_DEVID));
+	
+	memcpy(&buffer[NTY_PROTO_COMMON_REQ_JSON_LENGTH_IDX], &bLength, sizeof(U16));
+	memcpy(&buffer[NTY_PROTO_COMMON_REQ_JSON_CONTENT_IDX], json, bLength);
+
+	bLength = bLength + NTY_PROTO_COMMON_REQ_JSON_CONTENT_IDX + sizeof(U32);
+
+	ntylog("ntySendRecodeJsonPacket buffer:%s\n", buffer+NTY_PROTO_COMMON_REQ_JSON_CONTENT_IDX);
+
+	void *map = ntyMapInstance();
+	ClientSocket *client = ntyMapSearch(map, toId);
+#if 0
+	return ntySendBuffer(client, buffer, bLength);
+#else
+
+	ret = ntySendBuffer(client, buffer, bLength);
+	if (ret < NTY_RESULT_SUCCESS) {
+		ntyExecuteCommonItemMsgDeleteHandle(msgId);
+	}
+
+#endif
+
+#else
+
+	int msgId = 0;
+	int ret = ntyExecuteCommonItemMsgInsertHandle(fromId, toId, json, &msgId);
+	if (ret != NTY_RESULT_SUCCESS) {
+		ntylog("ntyExecuteCommonItemMsgInsertHandle --> failed, ret : %d\n", ret);
+		return ret;
+	}
+
+	ret = ntySendCommonReq(fromId, toId, json, length, msgId);
+	//Don't care about the result for Reset and Restore commonds.
+	//if (ret < NTY_RESULT_SUCCESS) {
+	//	ntyExecuteCommonItemMsgDeleteHandle(msgId);
+	//}
+
+#endif
+
+	return ret;
+}
 
 
 #if 1
