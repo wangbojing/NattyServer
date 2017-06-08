@@ -1092,6 +1092,7 @@ char * ntyJsonWriteRunTime(RunTimeAck *pRunTimeAck) {
 	json_object_set_string(runtime_obj, NATTY_USER_PROTOCOL_LIGHTPANEL, pRunTimeAck->result.runtime.light_panel);
 	json_object_set_string(runtime_obj, NATTY_USER_PROTOCOL_WATCHBELL, pRunTimeAck->result.runtime.watch_bell);
 	json_object_set_string(runtime_obj, NATTY_USER_PROTOCOL_TAGETSTEP, pRunTimeAck->result.runtime.taget_step);
+	json_object_set_string(runtime_obj, NATTY_USER_PROTOCOL_MODEL, pRunTimeAck->result.runtime.model);
 
 	char *jsonstring =  json_serialize_to_string(schema);
 	json_value_free(schema);
