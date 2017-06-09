@@ -919,6 +919,7 @@ typedef struct _ClientRunTimeAckItem{
 	 char *LightPanel;
 	 char *WatchBell;
 	 char *TagetStep;
+	 char *Status;
 }ClientRunTimeAckItem;
 typedef struct _ClientRunTimeAck{
 	const char *IMEI;

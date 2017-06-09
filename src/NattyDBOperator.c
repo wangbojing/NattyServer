@@ -3595,6 +3595,7 @@ int ntyExecuteClientSelectRunTime( void *self, C_DEVID aid, C_DEVID did, void *c
 					const char *r_LightPanel = ResultSet_getString(r, 5);
 					const char *r_WatchBell = ResultSet_getString(r, 6);
 					const char *r_TagetStep = ResultSet_getString(r, 7);
+					const char *r_Status = ResultSet_getString(r, 8);
 
 					if (r_AutoConnection != NULL) {
 						size_t len_autoConnection = strlen(r_AutoConnection);
@@ -3616,6 +3617,10 @@ int ntyExecuteClientSelectRunTime( void *self, C_DEVID aid, C_DEVID did, void *c
 						size_t len_tagetStep = strlen(r_TagetStep);
 						ntyCopyString(&objClientRunTimeAckItem->TagetStep, r_TagetStep, len_tagetStep);
 					}
+					if (r_Status != NULL) {
+						size_t len_status = strlen(r_Status);
+						ntyCopyString(&objClientRunTimeAckItem->Status, r_Status, len_status);
+					}					
 
 					ntyVectorInsert(container, objClientRunTimeAckItem, sizeof(ClientRunTimeAckItem));	
 				}
