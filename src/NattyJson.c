@@ -1780,7 +1780,7 @@ int ntyClientRunTimeAckJsonCompose( ClientRunTimeAck *pClientRunTimeAck, unsigne
 	json_object_set_string( runtime_obj, NATTY_USER_PROTOCOL_LIGHTPANEL, pClientRunTimeAck->objClientRunTimeAckItem->LightPanel );
 	json_object_set_string( runtime_obj, NATTY_USER_PROTOCOL_WATCHBELL, pClientRunTimeAck->objClientRunTimeAckItem->WatchBell );
 	json_object_set_string( runtime_obj, NATTY_USER_PROTOCOL_TAGETSTEP, pClientRunTimeAck->objClientRunTimeAckItem->TagetStep );
-	json_object_set_string( runtime_obj, NATTY_USER_PROTOCOL_STATUS, pClientRunTimeAck->objClientRunTimeAckItem->Status);
+	json_object_set_string( runtime_obj, NATTY_USER_PROTOCOL_MODEL, pClientRunTimeAck->objClientRunTimeAckItem->Model);
 
 #if 0
 	char *jsonstring =  json_serialize_to_string( schema );
