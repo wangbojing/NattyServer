@@ -512,6 +512,8 @@ int ntySendMessage(C_DEVID gId, U32 type, U32 counter, SSL *ssl, const char* tok
 	unsigned char binary[TOKEN_SIZE];
 	int buflen = sizeof(buf);
 
+	if (token == NULL) return NTY_RESULT_ERROR;
+
 	n = strlen(token);
 	ntylog("token length : %d, TOKEN_SIZE = %d\n, token = %s\n", n, TOKEN_SIZE, token);
 	ntyDeviceToken2Binary(token, n, binary, TOKEN_SIZE);
@@ -846,7 +848,7 @@ int ntyPushNotify(void *self, C_DEVID gId, U32 type, U32 counter, U8 *msg, const
 	}
 
 	ntylog("msg : %s\n", msg);
-	ret = ntySendMessage(gId, type, counter, ssl, token, msgid++, expire, msg, 1, "default");
+	ret = ntySendMessage(gId, type, counter, ssl, token, msgid++, expire, msg, 1, "jg505.caf");
 	if (ret <= 0) {
 		ntylog("send failed: %s\n", ERR_reason_error_string(ERR_get_error()));
 #if 1 

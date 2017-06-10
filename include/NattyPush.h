@@ -70,7 +70,6 @@
 
 
 
-#define APPLE_HOST_NAME					"gateway.sandbox.push.apple.com"
 #define APPLE_HOST_DEVELOPMENT_NAME		"gateway.sandbox.push.apple.com"
 #define APPLE_HOST_PRODUCTION_NAME		"gateway.push.apple.com"
 #define APPLE_HOST_PORT					2195
