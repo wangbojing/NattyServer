@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE tsung SYSTEM "/usr/local/share/tsung/tsung-1.0.dtd">
+
+<tsung loglevel="debug" dumptraffic="false" version="1.0">
+  <clients>
+    <client host="localhost" use_controller_vm="true"/>
+  </clients>
+  <!-- Server side setup -->
+  <servers>
+    <server host="192.168.1.178" port="8888" type="tcp"/>
+  </servers>
+  <load>
+    <arrivalphase phase="1" duration="1" unit="minute">
+      <users maxnumber="10" interarrival="1" unit="second"/>
+    </arrivalphase>
+  </load>
+  <sessions>
+    <session probability="10" name="natty-example" type="ts_natty">
+      <request>
+        <natty uid="1001" ack="parse">Hello Tsung Plugin Natty!</natty>
+      </request>
+    </session>
+    <session probability="90" name="natty-subst-example" type="ts_natty">
+      <setdynvars sourcetype="random_number" start="3" end="32">
+        <var name="random_uid"/>
+      </setdynvars>
+      <setdynvars sourcetype="random_string" length="13">
+        <var name="random_txt"/>
+      </setdynvars>
+      <request subst="true">
+        <natty uid="%%_random_uid%%" ack="parse">Haha : %%_random_txt%%</natty>
+      </request>
+      <thinktime value="6"/>
+      <request subst="true">
+        <natty uid="%%_random_uid%%" ack="parse">This is a Tsung Plugin</natty>
+      </request>
+    </session>
+  </sessions>
+</tsung>
