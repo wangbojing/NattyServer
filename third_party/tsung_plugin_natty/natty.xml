@@ -16,8 +16,13 @@
   </load>
   <sessions>
     <session probability="10" name="natty-example" type="ts_natty">
+
       <request>
-        <natty uid="1001" ack="parse">Hello Tsung Plugin Natty!</natty>
+        <login prototype="3" msgtype="7" fromId=>
+      </request>
+
+      <request>
+        <natty prototype="3" msgtype="7" devid="240207489205306960" ack="parse">{\"IMEI\":\"355637052788650\",\"Category\":\"Efence\",\"Efence\":{\"Num\":\"3\",\"Points\":[\"113.2409402,23.1326885\",\"113.2409412,23.1326895\",\"113.2409408,23.1326890\"]}}</natty>
       </request>
     </session>
     <session probability="90" name="natty-subst-example" type="ts_natty">
@@ -28,11 +33,11 @@
         <var name="random_txt"/>
       </setdynvars>
       <request subst="true">
-        <natty uid="%%_random_uid%%" ack="parse">Haha : %%_random_txt%%</natty>
+        <natty prototype="3" msgtype="7" devid="240207489205306960" ack="parse">{\"IMEI\":\"355637052788650\",\"Category\":\"Efence\",\"Efence\":{\"Num\":\"3\",\"Points\":[\"113.2409402,23.1326885\",\"113.2409412,23.1326895\",\"113.2409408,23.1326890\"]}}</natty>
       </request>
       <thinktime value="6"/>
       <request subst="true">
-        <natty uid="%%_random_uid%%" ack="parse">This is a Tsung Plugin</natty>
+        <natty prototype="3" msgtype="7" devid="240207489205306960" ack="parse">{\"IMEI\":\"355637052788650\",\"Category\":\"Efence\",\"Efence\":{\"Num\":\"3\",\"Points\":[\"113.2409402,23.1326885\",\"113.2409412,23.1326895\",\"113.2409408,23.1326890\"]}}</natty>
       </request>
     </session>
   </sessions>

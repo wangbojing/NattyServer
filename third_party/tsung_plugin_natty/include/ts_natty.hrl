@@ -45,11 +45,105 @@
 -author('wangbojing').
 
 -record(natty_request, {
-          uid,
+          prototype,
+          msgtype,
+          devid,
+          length,
           data
          }).
+
+
+-record(natty_response, {
+          prototype,
+          msgtype,
+          status,
+          acknum,
+          length,
+          data
+         }).
+
+
+-record(natty_login, {
+			prototype,
+			msgtype,
+			fromId
+		}).
+
+-record(natty_heartbeat, {
+			prototype,
+			msgtype,
+			fromId
+		}).
+
+-record(natty_logout, {
+			prototype,
+			msgtype,
+			fromId
+		}).
+
+-record(natty_locationasync, {
+			prototype,
+			msgtype,
+			fromId,
+			length,
+			data
+		}).
+
+
+-record(natty_weatherasync, {
+			prototype,
+			msgtype,
+			fromId,
+			length,
+			data
+		}).
+
+
+-record(natty_route, {
+			prototype,
+			msgtype,
+			fromId,
+			toId,
+			length,
+			data
+		}).
+
+-record(natty_bind, {
+			prototype,
+			msgtype,
+			fromId,
+			devId,
+			length,
+			data
+		}).
+
+-record(natty_unbind, {
+			prototype,
+			msgtype,
+			fromId,
+			devId
+		}).
+
+-record(natty_packet, {
+			prototype,
+			msgtype,
+			fromId,
+			length,
+			data
+		}).
+
+-record(natty_common, {
+			prototype,
+			msgtype,
+			fromId,
+			toId,
+			length,
+			data
+		}).
+
 
 -record(natty_dyndata, {
           none
          }
        ).
+

@@ -9,7 +9,7 @@
 %% 	*  permission of Author. (C) 2016
 %% 	* 
 %% 	*
- 
+%% 
 %% ****       *****
 %%   ***        *
 %%   ***        *                         *               *
@@ -90,17 +90,26 @@ new_session() ->
 %% Args:    #jabber
 %% Returns: binary
 %%----------------------------------------------------------------------
-get_message(#natty_request{uid = StrUid, data = Data}, #state_rcv{session = S})->
+get_message(#natty_request{prototype=ProtoType, msgtype = MsgType, devid = DevId, length = Length, data = Data},
+            #state_rcv{session = S})->
+    
     MsgBin = list_to_binary(Data),
-    Uid = case is_list(StrUid) of
-              true -> list_to_integer(StrUid);
-              false -> StrUid
+    PType = list_to_integer(ProtoType),
+    MType = list_to_integer(MsgType),
+    DeviceId = case is_list(DevId) of
+              true -> list_to_integer(DevId);
+              false -> DevId
           end,
-    ReqBody = <<"**##", Uid:32/integer, MsgBin/binary, "##**">>,
-    BodyLen = byte_size(ReqBody),
-    ReqBin = <<BodyLen:32/little, ReqBody/binary>>,
 
-    ?LOGF("natty_request encode result : ~p", [{"**##", Uid, Data, "##**"}], ?DEB),
+    %ReqBody = <<"**##", Uid:32/integer, MsgBin/binary, "##**">>,
+    %BodyLen = byte_size(ReqBody),
+    %ReqBin = <<BodyLen:32/little, ReqBody/binary>>,
+
+    ReqBody = <<"AW", PType:8/integer, MType:8/integer, DeviceId:64/little, Length:16/little, MsgBin/binary>>,
+    BodyCrc = erlang:crc32(ReqBody),
+    ReqBin = <<ReqBody/binary, BodyCrc:32/little>>,
+
+    ?LOGF("natty_request encode result : ~p", [{PType, MType, DeviceId, Length, MsgBin}], ?DEB),
     {ReqBin, S}.
 
 %%----------------------------------------------------------------------
@@ -111,21 +120,23 @@ get_message(#natty_request{uid = StrUid, data = Data}, #state_rcv{session = S})-
 parse(closed, State) ->
     ?LOGF("natty_response got closed", [], ?DEB),
     {State#state_rcv{ack_done = true, datasize = 0}, [], true};
-parse(<<Len:32/little, LeftBin:Len/binary>> = Data, State = #state_rcv{datasize = DataSize}) ->
-    <<"**##", Uid:32/integer, Random:32/integer, "##**">> = LeftBin,
 
-    ?LOGF("natty_response decode result : ~p", [{"**##", Uid, Random, "##**"}], ?DEB),
+%parse(<<ReqBody/binary, BodyCrc:32/little>> = Data, State = #state_rcv{datasize = DataSize}) ->
+%    <<"A", "W", PType:8/integer, MType:8/integer, Status:16/integer, AckNum:32/integer, Length:16/integer, MsgBin/binary>> = ReqBody,
+%
+%    ?LOGF("natty_response decode result : ~p", [{PType, MType, Status, AckNum, Length, MsgBin}], ?DEB),
+%
+%    NewCrc = erlang:crc32(ReqBody),
+%    if 
+%      NewCrc = BodyCrc ->
+%        io:format("Parse Crc Success");
+%      ture ->
+%        io:format("Parse Crc Failed")
+%    end, 
+%
+%    NewDataSize = Length + 16,
+%    {State#state_rcv{ack_done = AckNum, acc = [], datasize = NewDataSize}, [], false};
 
-    AckResult =
-    case Random of
-        Num when Num > 0 ->
-            true;
-        0 ->
-            false
-    end,
-
-    NewDataSize = DataSize + Len + 4,
-    {State#state_rcv{ack_done = AckResult, acc = [], datasize = NewDataSize}, [], false};
 parse(Data, State) ->
     ?LOGF("natty_response got unmatched data : ~p", [Data], ?DEB),
     {State, [], false}.
@@ -153,8 +164,16 @@ add_dynparams(_Subst, _DynData, Param, _Host) ->
 %%----------------------------------------------------------------------
 %% Function: subst/1
 %%----------------------------------------------------------------------
-subst(Req = #natty_request{uid = Uid, data = Data}, DynVars) ->
+subst(Req = #natty_request{prototype=ProtoType, msgtype = MsgType, devid = DevId, length = Length, data = Data}, DynVars) ->
+    NewProto = ts_search:subst(ProtoType, DynVars),
+    NewMsgType = ts_search:subst(MsgType, DynVars),
+    NewDevId = ts_search:subst(DevId, DynVars),
+    NewLength = ts_search:subst(Length, DynVars),
     NewData = ts_search:subst(Data, DynVars),
-    NewUid = ts_search:subst(Uid, DynVars),
-    ?LOGF("subst data result : ~p", [{NewUid, NewData}], ?DEB),
-    Req#natty_request{uid = NewUid, data = NewData}.
+
+    % NewData = ts_search:subst(Data, DynVars),
+    % NewUid = ts_search:subst(Uid, DynVars),
+    ?LOGF("subst data result : ~p", [{NewProto, NewMsgType, NewDevId, NewLength, NewData}], ?DEB),
+    Req#natty_request{prototype=NewProto, msgtype = NewMsgType, devid = NewDevId, length = NewLength, data = NewData}.
+
+

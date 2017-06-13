@@ -490,8 +490,106 @@ repeat | if | change_type | foreach | set_option | interaction )*>
     lt        CDATA #IMPLIED
     lte       CDATA #IMPLIED >
 
+
+<!------------------------------------------------------- natty token defined start -------------------------------------------------------->
+
 <!ELEMENT natty (#PCDATA) >
 <!ATTLIST natty
-    uid         CDATA   "0"
+    prototype   CDATA   "0"
+    msgtype     CDATA   "0"
+    devid       CDATA   "0"
     ack         (local | no_ack | parse) #REQUIRED
     >
+
+<!ELEMENT login (#PCDATA) >
+<!ATTLIST login
+    prototype   CDATA   "0"
+    msgtype     CDATA   "0"
+    fromId      CDATA   "0"
+    ack         (local | no_ack | parse) #REQUIRED
+    >
+
+
+<!ELEMENT heartbeat (#PCDATA) >
+<!ATTLIST heartbeat
+    prototype   CDATA   "0"
+    msgtype     CDATA   "0"
+    fromId      CDATA   "0"
+    ack         (local | no_ack | parse) #REQUIRED
+    >
+
+<!ELEMENT logout (#PCDATA) >
+<!ATTLIST logout
+    prototype   CDATA   "0"
+    msgtype     CDATA   "0"
+    fromId      CDATA   "0"
+    ack         (local | no_ack | parse) #REQUIRED
+    >
+
+<!ELEMENT locationasync (#PCDATA) >
+<!ATTLIST locationasync
+    prototype   CDATA   "0"
+    msgtype     CDATA   "0"
+    fromId      CDATA   "0"
+    ack         (local | no_ack | parse) #REQUIRED
+    >
+
+
+<!ELEMENT weatherasync (#PCDATA) >
+<!ATTLIST weatherasync
+    prototype   CDATA   "0"
+    msgtype     CDATA   "0"
+    fromId      CDATA   "0"
+    ack         (local | no_ack | parse) #REQUIRED
+    >
+
+
+<!ELEMENT route (#PCDATA) >
+<!ATTLIST route
+    prototype   CDATA   "0"
+    msgtype     CDATA   "0"
+    fromId      CDATA   "0"
+    toId        CDATA   "0"
+    ack         (local | no_ack | parse) #REQUIRED
+    >
+
+<!ELEMENT common (#PCDATA) >
+<!ATTLIST common
+    prototype   CDATA   "0"
+    msgtype     CDATA   "0"
+    fromId      CDATA   "0"
+    toId        CDATA   "0"
+    ack         (local | no_ack | parse) #REQUIRED
+    >
+
+
+<!ELEMENT bind (#PCDATA) >
+<!ATTLIST bind
+    prototype   CDATA   "0"
+    msgtype     CDATA   "0"
+    fromId      CDATA   "0"
+    devId       CDATA   "0"
+    ack         (local | no_ack | parse) #REQUIRED
+    >
+
+<!ELEMENT unbind (#PCDATA) >
+<!ATTLIST unbind
+    prototype   CDATA   "0"
+    msgtype     CDATA   "0"
+    fromId      CDATA   "0"
+    devId       CDATA   "0"
+    ack         (local | no_ack | parse) #REQUIRED
+    >
+
+<!ELEMENT packet (#PCDATA) >
+<!ATTLIST packet
+    prototype   CDATA   "0"
+    msgtype     CDATA   "0"
+    fromId      CDATA   "0"
+    ack         (local | no_ack | parse) #REQUIRED
+    >
+
+<!------------------------------------------------------- natty token defined start -------------------------------------------------------->
+
+
+
