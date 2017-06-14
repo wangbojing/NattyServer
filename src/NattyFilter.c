@@ -2508,6 +2508,7 @@ void* ntyProtocolFilterInstance(void) {
 	return ntyProtocolFilter;
 }
 
+#if 1
 #define NTY_CRCTABLE_LENGTH			256
 #define NTY_CRC_KEY					0x04c11db7ul
 
@@ -2540,6 +2541,49 @@ U32 ntyGenCrcValue(U8 *buf, int length) {
 
 	return u32CRC;
 }
+
+#else
+	
+#define NTY_CRCTABLE_LENGTH			256
+#define NTY_CRC_KEY					0xedb88320
+
+static U32 u32CrcTable[NTY_CRCTABLE_LENGTH] = {0};
+
+
+void ntyGenCrcTable(void) {
+	U16 i,j;
+	U32 u32CrcNum = 0;
+
+	for (i = 0;i < NTY_CRCTABLE_LENGTH;i ++) {
+		u32CrcNum = i;
+		for (j = 0;j < 8;j ++) {
+			if (u32CrcNum & 1) {
+				u32CrcNum >>= 1;
+				u32CrcNum ^= NTY_CRC_KEY;
+			} else {
+				u32CrcNum >>= 1;
+			}
+		}
+		u32CrcTable[i] = u32CrcNum;
+	}
+}
+
+U32 ntyGenCrcValue(U8 *buf, int length) {
+	U32 u32CRC = 0;
+	U8 *p, *q;
+	U8 octet;
+	
+	u32CRC = ~u32CRC;
+	q = buf + length;
+	for (p = buf; p < q;p ++) {
+		octet = *p;
+		u32CRC = (u32CRC >> 8) ^ u32CrcTable[(u32CRC & 0xff) ^ octet];
+	}
+
+	return ~u32CRC;
+}
+
+#endif
 
 #if 0
 
