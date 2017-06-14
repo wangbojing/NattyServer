@@ -162,7 +162,8 @@ repeat | if | change_type | foreach | set_option | interaction )*>
     >
 
 <!ELEMENT request ( match*, dyn_variable*, ( http | jabber | raw |
-          pgsql | ldap | mysql |fs | shell | job | websocket | amqp | mqtt | natty) )>
+          pgsql | ldap | mysql |fs | shell | job | websocket | amqp | mqtt | natty | login | heartbeat | 
+          logout | locationasync | weatherasync | route | bind | unbind | packet | common) )>
 <!ATTLIST request
     subst (true|false|all_except_body) "false"
     tag   NMTOKEN "undefined"
@@ -491,7 +492,8 @@ repeat | if | change_type | foreach | set_option | interaction )*>
     lte       CDATA #IMPLIED >
 
 
-<!------------------------------------------------------- natty token defined start -------------------------------------------------------->
+
+
 
 <!ELEMENT natty (#PCDATA) >
 <!ATTLIST natty
@@ -589,7 +591,6 @@ repeat | if | change_type | foreach | set_option | interaction )*>
     ack         (local | no_ack | parse) #REQUIRED
     >
 
-<!------------------------------------------------------- natty token defined start -------------------------------------------------------->
 
 
 

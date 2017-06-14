@@ -114,7 +114,7 @@ parse_config(Element = #xmlElement{name = login, attributes = Attrs},
     MsgType = ts_config:getAttr(string, Attrs, msgtype, "0"),
     FromId = ts_config:getAttr(string, Attrs, fromId, "0"),
 
-    Req = #natty_login{prototype=ProtoType, msgtype = MsgType, fromId = FromId},
+    Req = #natty_login{prototype = ProtoType, msgtype = MsgType, fromId = FromId},
 
     ts_config:mark_prev_req(Id - 1, Tab, CurS),
     Msg=#ts_request{ack     = Ack,
@@ -144,7 +144,7 @@ parse_config(Element = #xmlElement{name = heartbeat, attributes = Attrs},
     MsgType = ts_config:getAttr(string, Attrs, msgtype, "0"),
     FromId = ts_config:getAttr(string, Attrs, fromId, "0"),
 
-    Req = #natty_heartbeat{prototype=ProtoType, msgtype = MsgType, fromId = FromId},
+    Req = #natty_heartbeat{prototype = ProtoType, msgtype = MsgType, fromId = FromId},
 
     ts_config:mark_prev_req(Id - 1, Tab, CurS),
     Msg=#ts_request{ack     = Ack,
@@ -173,7 +173,7 @@ parse_config(Element = #xmlElement{name = logout, attributes = Attrs},
     MsgType = ts_config:getAttr(string, Attrs, msgtype, "0"),
     FromId = ts_config:getAttr(string, Attrs, fromId, "0"),
 
-    Req = #natty_logout{prototype=ProtoType, msgtype = MsgType, fromId = FromId},
+    Req = #natty_logout{prototype = ProtoType, msgtype = MsgType, fromId = FromId},
 
     ts_config:mark_prev_req(Id - 1, Tab, CurS),
     Msg=#ts_request{ack     = Ack,
@@ -206,7 +206,7 @@ parse_config(Element = #xmlElement{name = locationasync, attributes = Attrs},
     Data = ts_config:getText(Element#xmlElement.content),
     Length = erlang:length(Data),
 
-    Req = #natty_locationasync{prototype=ProtoType, msgtype = MsgType, fromId = FromId, length = Length, data = Data},
+    Req = #natty_locationasync{prototype = ProtoType, msgtype = MsgType, fromId = FromId, length = Length, data = Data},
 
     ts_config:mark_prev_req(Id - 1, Tab, CurS),
     Msg=#ts_request{ack     = Ack,
@@ -238,7 +238,7 @@ parse_config(Element = #xmlElement{name = weatherasync, attributes = Attrs},
     Data = ts_config:getText(Element#xmlElement.content),
     Length = erlang:length(Data),
 
-    Req = #natty_weatherasync{prototype=ProtoType, msgtype = MsgType, fromId = FromId, length = Length, data = Data},
+    Req = #natty_weatherasync{prototype = ProtoType, msgtype = MsgType, fromId = FromId, length = Length, data = Data},
 
     ts_config:mark_prev_req(Id - 1, Tab, CurS),
     Msg=#ts_request{ack     = Ack,
@@ -272,7 +272,7 @@ parse_config(Element = #xmlElement{name = route, attributes = Attrs},
     Data = ts_config:getText(Element#xmlElement.content),
     Length = erlang:length(Data),
 
-    Req = #natty_route{prototype=ProtoType, msgtype = MsgType, fromId = FromId, toId = ToId, length = Length, data = Data},
+    Req = #natty_route{prototype = ProtoType, msgtype = MsgType, fromId = FromId, toId = ToId, length = Length, data = Data},
 
     ts_config:mark_prev_req(Id - 1, Tab, CurS),
     Msg=#ts_request{ack     = Ack,
@@ -306,7 +306,7 @@ parse_config(Element = #xmlElement{name = bind, attributes = Attrs},
     Data = ts_config:getText(Element#xmlElement.content),
     Length = erlang:length(Data),
 
-    Req = #natty_bind{prototype=ProtoType, msgtype = MsgType, fromId = FromId, devId = DevId, length = Length, data = Data},
+    Req = #natty_bind{prototype = ProtoType, msgtype = MsgType, fromId = FromId, devId = DevId, length = Length, data = Data},
 
     ts_config:mark_prev_req(Id - 1, Tab, CurS),
     Msg=#ts_request{ack     = Ack,
@@ -337,7 +337,7 @@ parse_config(Element = #xmlElement{name = unbind, attributes = Attrs},
     DevId = ts_config:getAttr(string, Attrs, devId, "0"),
 
 
-    Req = #natty_unbind{prototype=ProtoType, msgtype = MsgType, fromId = FromId, devId = DevId},
+    Req = #natty_unbind{prototype = ProtoType, msgtype = MsgType, fromId = FromId, devId = DevId},
 
     ts_config:mark_prev_req(Id - 1, Tab, CurS),
     Msg=#ts_request{ack     = Ack,
@@ -370,7 +370,7 @@ parse_config(Element = #xmlElement{name = packet, attributes = Attrs},
     Data = ts_config:getText(Element#xmlElement.content),
     Length = erlang:length(Data),
 
-    Req = #natty_packet{prototype=ProtoType, msgtype = MsgType, fromId = FromId, length = Length, data = Data},
+    Req = #natty_packet{prototype = ProtoType, msgtype = MsgType, fromId = FromId, length = Length, data = Data},
 
     ts_config:mark_prev_req(Id - 1, Tab, CurS),
     Msg=#ts_request{ack     = Ack,
@@ -404,7 +404,7 @@ parse_config(Element = #xmlElement{name = common, attributes = Attrs},
     Data = ts_config:getText(Element#xmlElement.content),
     Length = erlang:length(Data),
 
-    Req = #natty_common{prototype=ProtoType, msgtype = MsgType, fromId = FromId, toId = ToId, length = Length, data = Data},
+    Req = #natty_common{prototype = ProtoType, msgtype = MsgType, fromId = FromId, toId = ToId, length = Length, data = Data},
 
     ts_config:mark_prev_req(Id - 1, Tab, CurS),
     Msg=#ts_request{ack     = Ack,

@@ -9,17 +9,52 @@
   <servers>
     <server host="192.168.1.178" port="8888" type="tcp"/>
   </servers>
+
+  <monitoring>
+    <monitor host="localhost" type="erlang"/>
+  </monitoring>
+
   <load>
     <arrivalphase phase="1" duration="1" unit="minute">
       <users maxnumber="10" interarrival="1" unit="second"/>
     </arrivalphase>
   </load>
-  <sessions>
-    <session probability="10" name="natty-example" type="ts_natty">
 
-      <request>
-        <login prototype="3" msgtype="7" fromId=>
+
+  <sessions>
+  
+
+    <session probability="100" name="natty-example" type="ts_natty">
+
+
+      <setdynvars sourcetype="erlang" callback="ts_user_server:get_unique_id" order="iter" start="1" end="100000000">
+        <var name="app_id"/>
+      </setdynvars>
+
+     
+      <request subst="true">
+        <login prototype="3" msgtype="1" fromId="%%_app_id%%" ack="parse" />
       </request>
+
+      <thinktime value="3"/>
+
+      <request subst="true">
+        <common prototype="3" msgtype="7" fromId="%%_app_id%%" toId="240207489205306960" ack="parse">
+          {"IMEI":"355637052788650","Category":"Efence","Efence":{"Num":"3","Points":["113.2409402,23.1326885","113.2409412,23.1326895","113.2409408,23.1326890"]}}
+        </common>
+      </request>
+
+      <thinktime value="3"/>
+
+      <request subst="true">
+        <logout prototype="3" msgtype="3" fromId="%%_app_id%%" ack="parse" />
+      </request>
+
+    </session>
+
+
+<!--
+    <session probability="10" name="natty-example" type="ts_natty">
 
       <request>
         <natty prototype="3" msgtype="7" devid="240207489205306960" ack="parse">{\"IMEI\":\"355637052788650\",\"Category\":\"Efence\",\"Efence\":{\"Num\":\"3\",\"Points\":[\"113.2409402,23.1326885\",\"113.2409412,23.1326895\",\"113.2409408,23.1326890\"]}}</natty>
@@ -40,5 +75,7 @@
         <natty prototype="3" msgtype="7" devid="240207489205306960" ack="parse">{\"IMEI\":\"355637052788650\",\"Category\":\"Efence\",\"Efence\":{\"Num\":\"3\",\"Points\":[\"113.2409402,23.1326885\",\"113.2409412,23.1326895\",\"113.2409408,23.1326890\"]}}</natty>
       </request>
     </session>
+
+-->
   </sessions>
 </tsung>
