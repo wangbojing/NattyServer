@@ -135,7 +135,7 @@ get_message(#natty_request{prototype=ProtoType, msgtype = MsgType, devid = DevId
     %BodyLen = byte_size(ReqBody),
     %ReqBin = <<BodyLen:32/little, ReqBody/binary>>,
 
-    ReqBody = <<"AW", PType:8/integer, MType:8/integer, DeviceId:64/little, Length:16/little, MsgBin/binary>>,
+    ReqBody = <<"AA", PType:8/integer, MType:8/integer, DeviceId:64/little, Length:16/little, MsgBin/binary>>,
     BodyCrc = erlang:crc32(ReqBody),
     ReqBin = <<ReqBody/binary, BodyCrc:32/little>>,
 
@@ -156,7 +156,7 @@ get_message(#natty_login{prototype=ProtoType, msgtype = MsgType, fromId = FromId
               false -> FromId
           end,
 
-    ReqBody = <<"AW", PType:8/integer, MType:8/integer, FId:64/little>>,
+    ReqBody = <<"AA", PType:8/integer, MType:8/integer, FId:64/little>>,
     BodyCrc = erlang:crc32(ReqBody),
     ReqBin = <<ReqBody/binary, BodyCrc:32/little>>,
 
@@ -175,7 +175,7 @@ get_message(#natty_heartbeat{prototype=ProtoType, msgtype = MsgType, fromId = Fr
               false -> FromId
           end,
 
-    ReqBody = <<"AW", PType:8/integer, MType:8/integer, FId:64/little>>,
+    ReqBody = <<"AA", PType:8/integer, MType:8/integer, FId:64/little>>,
     BodyCrc = erlang:crc32(ReqBody),
     ReqBin = <<ReqBody/binary, BodyCrc:32/little>>,
 
@@ -195,7 +195,7 @@ get_message(#natty_logout{prototype=ProtoType, msgtype = MsgType, fromId = FromI
               false -> FromId
           end,
 
-    ReqBody = <<"AW", PType:8/integer, MType:8/integer, FId:64/little>>,
+    ReqBody = <<"AA", PType:8/integer, MType:8/integer, FId:64/little>>,
     BodyCrc = erlang:crc32(ReqBody),
     ReqBin = <<ReqBody/binary, BodyCrc:32/little>>,
 
@@ -219,7 +219,7 @@ get_message(#natty_locationasync{prototype=ProtoType, msgtype = MsgType, fromId 
 
 
 
-    ReqBody = <<"AW", PType:8/integer, MType:8/integer, FId:64/little, Length:16/little, MsgBin/binary>>,
+    ReqBody = <<"AA", PType:8/integer, MType:8/integer, FId:64/little, Length:16/little, MsgBin/binary>>,
     BodyCrc = erlang:crc32(ReqBody),
     ReqBin = <<ReqBody/binary, BodyCrc:32/little>>,
 
@@ -241,7 +241,7 @@ get_message(#natty_weatherasync{prototype=ProtoType, msgtype = MsgType, fromId =
 
     MsgBin = list_to_binary(Data),
 
-    ReqBody = <<"AW", PType:8/integer, MType:8/integer, FId:64/little, Length:16/little, MsgBin/binary>>,
+    ReqBody = <<"AA", PType:8/integer, MType:8/integer, FId:64/little, Length:16/little, MsgBin/binary>>,
     BodyCrc = erlang:crc32(ReqBody),
     ReqBin = <<ReqBody/binary, BodyCrc:32/little>>,
 
@@ -268,7 +268,7 @@ get_message(#natty_route{prototype=ProtoType, msgtype = MsgType, fromId = FromId
 
     MsgBin = list_to_binary(Data),
 
-    ReqBody = <<"AW", PType:8/integer, MType:8/integer, FId:64/little, TId:64/little, Length:16/little, MsgBin/binary>>,
+    ReqBody = <<"AA", PType:8/integer, MType:8/integer, FId:64/little, TId:64/little, Length:16/little, MsgBin/binary>>,
     BodyCrc = erlang:crc32(ReqBody),
     ReqBin = <<ReqBody/binary, BodyCrc:32/little>>,
 
@@ -295,7 +295,7 @@ get_message(#natty_bind{prototype=ProtoType, msgtype = MsgType, fromId = FromId,
 
     MsgBin = list_to_binary(Data),
 
-    ReqBody = <<"AW", PType:8/integer, MType:8/integer, FId:64/little, DeviceId:64/little, Length:16/little, MsgBin/binary>>,
+    ReqBody = <<"AA", PType:8/integer, MType:8/integer, FId:64/little, DeviceId:64/little, Length:16/little, MsgBin/binary>>,
     BodyCrc = erlang:crc32(ReqBody),
     ReqBin = <<ReqBody/binary, BodyCrc:32/little>>,
 
@@ -322,7 +322,7 @@ get_message(#natty_unbind{prototype=ProtoType, msgtype = MsgType, fromId = FromI
 
     %MsgBin = list_to_binary(Data),
 
-    ReqBody = <<"AW", PType:8/integer, MType:8/integer, FId:64/little, DeviceId:64/little>>,
+    ReqBody = <<"AA", PType:8/integer, MType:8/integer, FId:64/little, DeviceId:64/little>>,
     BodyCrc = erlang:crc32(ReqBody),
     ReqBin = <<ReqBody/binary, BodyCrc:32/little>>,
 
@@ -345,7 +345,7 @@ get_message(#natty_packet{prototype=ProtoType, msgtype = MsgType, fromId = FromI
 
     MsgBin = list_to_binary(Data),
 
-    ReqBody = <<"AW", PType:8/integer, MType:8/integer, FId:64/little, Length:16/little, MsgBin/binary>>,
+    ReqBody = <<"AA", PType:8/integer, MType:8/integer, FId:64/little, Length:16/little, MsgBin/binary>>,
     BodyCrc = erlang:crc32(ReqBody),
     ReqBin = <<ReqBody/binary, BodyCrc:32/little>>,
 
@@ -366,6 +366,8 @@ get_message(#natty_common{prototype=ProtoType, msgtype = MsgType, fromId = FromI
               false -> FromId
           end,
 
+    Rsvd = 0,
+
     TId = case is_list(ToId) of
               true -> list_to_integer(ToId);
               false -> ToId
@@ -373,7 +375,7 @@ get_message(#natty_common{prototype=ProtoType, msgtype = MsgType, fromId = FromI
 
     MsgBin = list_to_binary(Data),
 
-    ReqBody = <<"AW", PType:8/integer, MType:8/integer, FId:64/little, TId:64/little, Length:16/little, MsgBin/binary>>,
+    ReqBody = <<"AA", PType:8/integer, MType:8/integer, FId:64/little,Rsvd:32/little, TId:64/little, Length:16/little, MsgBin/binary>>,
     BodyCrc = erlang:crc32(ReqBody),
     ReqBin = <<ReqBody/binary, BodyCrc:32/little>>,
 

@@ -7,7 +7,7 @@
   </clients>
   <!-- Server side setup -->
   <servers>
-    <server host="192.168.1.178" port="8888" type="tcp"/>
+    <server host="112.93.116.191" port="6527" type="tcp"/>
   </servers>
 
   <monitoring>
@@ -16,7 +16,7 @@
 
   <load>
     <arrivalphase phase="1" duration="1" unit="minute">
-      <users maxnumber="10" interarrival="1" unit="second"/>
+      <users maxnumber="10000" interarrival="1" unit="second"/>
     </arrivalphase>
   </load>
 
@@ -27,7 +27,7 @@
     <session probability="100" name="natty-example" type="ts_natty">
 
 
-      <setdynvars sourcetype="erlang" callback="ts_user_server:get_unique_id" order="iter" start="1" end="100000000">
+      <setdynvars sourcetype="erlang" callback="ts_user_server:get_unique_id">
         <var name="app_id"/>
       </setdynvars>
 
