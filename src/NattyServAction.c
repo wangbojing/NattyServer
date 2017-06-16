@@ -463,7 +463,11 @@ void ntyCommonReqAction(ActionParam *pActionParam) {
 
 	const char *app_category = ntyJsonAppCategory(pActionParam->json);
 	if (app_category != NULL) {
-		if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_EFENCE) == 0) {
+		if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_AUTHORIZEPUSH) == 0) {
+			ntyJsonAuthorizePushAction(pActionParam);
+		} if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_AUTHORIZEREPLY) == 0) {
+			ntyJsonAuthorizeReplyAction(pActionParam);
+		} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_EFENCE) == 0) {
 			const char *action = ntyJsonAction(pActionParam->json);
 			if (action == NULL) {
 				ntylog("Can't find action, because action is null\n");
@@ -598,6 +602,42 @@ void ntyJsonICCIDSetAction(ActionParam *pActionParam) {
 }
 
 
+void ntyJsonAuthorizePushAction(ActionParam *pActionParam) {
+	AuthorizePush *pAuthorizePush = (AuthorizePush*)malloc(sizeof(AuthorizePush));
+	if (pAuthorizePush == NULL) {
+		ntylog("ntyJsonAuthorizePushAction --> malloc AuthorizePush failed\n");
+		return;
+	}
+	memset(pAuthorizePush, 0, sizeof(AuthorizePush));
+	
+	ntyJsonAuthorizePush(pActionParam->json, pAuthorizePush);
+
+	C_DEVID did = pActionParam->toId;
+	C_DEVID adminId = 0;
+	int ret = ntyQueryAuthorizeAdminHandle(did, &adminId);
+	if (ret == -1) {
+		ntyJsonCommonResult(pActionParam->fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
+	} else {
+		ntyJsonCommonContextResult(adminId, pActionParam->jsonstring);
+	}
+	
+	free(pAuthorizePush);
+}
+
+void ntyJsonAuthorizeReplyAction(ActionParam *pActionParam) {
+	AuthorizeReply *pAuthorizeReply = (AuthorizeReply*)malloc(sizeof(AuthorizeReply));
+	if (pAuthorizeReply == NULL) {
+		ntylog("ntyJsonAuthorizeReplyAction --> malloc AuthorizeReply failed\n");
+		return;
+	}
+	memset(pAuthorizeReply, 0, sizeof(AuthorizeReply));
+	
+	//ntyJsonAuthorizeReply(pActionParam->json, pAuthorizeReply);
+	ntyJsonBroadCastRecvResult(pActionParam->toId, pActionParam->fromId, (U8*)pActionParam->json, 0);
+	
+	free(pAuthorizeReply);
+}
+
 void ntyJsonAddEfenceAction(ActionParam *pActionParam) {
 	AddEfenceReq *pAddEfenceReq = (AddEfenceReq*)malloc(sizeof(AddEfenceReq));
 	if (pAddEfenceReq == NULL) {
@@ -652,7 +692,6 @@ void ntyJsonAddEfenceAction(ActionParam *pActionParam) {
 	ret = ntyExecuteEfenceInsertHandle(fromId, toId, index, pAddEfenceReq->efence.size, points, runtime, &id);
 	if (ret == -1) {
 		ntylog(" ntyJsonEfenceAction --> DB Exception\n");
-		ret = 4;
 	} else if (ret == 0 && id == -2) { 
 		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_DB_SAVE_REPEATE_DATA);
 	} else if (ret >= 0) {
@@ -1748,13 +1787,12 @@ void ntyJsonLocationReportAction(ActionParam *pActionParam) {
 		type = 3;
 	}
 
-	char info[8] = {0};
-	strcat(info, "OK");
+	const char *desc = pLocationReport->results.locationReport.desc;
 	const char *lnglat = pLocationReport->results.locationReport.location;
 	const char *detatils = pLocationReport->results.locationReport.radius;
 	
 	U32 msg = 0;
-	int ret = ntyExecuteLocationReportInsertHandle(toId, (U8)type, info, lnglat, detatils, &msg);
+	int ret = ntyExecuteLocationReportInsertHandle(toId, (U8)type, desc, lnglat, detatils, &msg);
 	if (ret == -1) {
 		ntylog(" ntyJsonLocationReportAction --> DB Exception\n");
 	} else if (ret >= 0) {

@@ -81,6 +81,10 @@ void ntyCommonReqAction(ActionParam *pActionParam);
 
 void ntyUserDataReqAction(ActionParam *pActionParam);
 
+void ntyJsonAuthorizePushAction(ActionParam *pActionParam);
+
+void ntyJsonAuthorizeReplyAction(ActionParam *pActionParam);
+
 void ntyJsonAddEfenceAction(ActionParam *pActionParam);
 
 void ntyJsonDelEfenceAction(ActionParam *pActionParam);

@@ -147,6 +147,10 @@ int ntyLocatorBindReqJsonParse( JSON_Value *json, LocatorBindReq *ptrLocatorBind
 
 void ntyJsonCommonExtend(JSON_Value *json, CommonReqExtend *pCommonReqExtend);
 
+void ntyJsonAuthorizePush(JSON_Value *json, AuthorizePush *pAuthorizePush);
+
+void ntyJsonAuthorizeReply(JSON_Value *json, AuthorizeReply *pAuthorizeReply);
+
 void ntyJsonAddEfence(JSON_Value *json, AddEfenceReq *pAddEfenceReq);
 
 void ntyJsonAddEfencePointRelease(EfencePoints *pPoints);

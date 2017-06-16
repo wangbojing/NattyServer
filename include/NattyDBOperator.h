@@ -248,6 +248,8 @@
 
 #define NTY_DB_SELECT_PHONE_NUMBER			"CALL PROC_SELECT_PHONE_NUMBER(%lld, %lld)"
 
+#define NTY_DB_SELECT_AUTHORIZE_ADMIN 		"CALL PROC_SELECT_AUTHORIZE_ADMIN(%lld)"
+
 #define NTY_DB_INSERT_ADMIN_GROUP			"CALL PROC_INSERT_ADMIN_GROUP(%lld, '%s', %lld, '%s', '%s', '%s')"
 
 #define NTY_DB_SELECT_VOICE_OFFLINE_MSG		"CALL PROC_SELECT_VOICE_OFFLINE_MSG(%lld)"
@@ -398,6 +400,8 @@ int ntyExecuteDevAppGroupBindInsertHandle(int msgId, C_DEVID *proposerId, U8 *ph
 int ntyExecuteDevAppGroupBindAndAgreeInsertHandle(int msgId, C_DEVID *proposerId, char *phonenum, int *pid, char *pname, char *pimage);
 
 int ntyExecuteCommonOfflineMsgDeleteHandle(int msgId, C_DEVID clientId);
+
+int ntyQueryAuthorizeAdminHandle(C_DEVID devId, C_DEVID *adminId);
 
 int ntyQueryAdminGroupInsertHandle(C_DEVID devId, U8 *bname, C_DEVID fromId, U8 *userCall, U8 *wimage, U8 *uimage, U8 *phnum, U32 *msgId);
 

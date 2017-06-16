@@ -63,6 +63,8 @@
 #define NATTY_USER_PROTOCOL_CATEGORY				"Category"
 #define NATTY_USER_PROTOCOL_INDEX					"Index"
 
+#define NATTY_USER_PROTOCOL_CATEGORY_AUTHORIZEPUSH	"AuthorizePush"
+#define NATTY_USER_PROTOCOL_CATEGORY_AUTHORIZEREPLY	"AuthorizeReply"
 #define NATTY_USER_PROTOCOL_CATEGORY_EFENCE			"Efence"
 #define NATTY_USER_PROTOCOL_CATEGORY_RUNTIME		"RunTime"
 #define NATTY_USER_PROTOCOL_CATEGORY_TURN			"Turn"
@@ -92,6 +94,7 @@
 #define NATTY_USER_PROTOCOL_CATEGORY_CONTACTS		"Contacts"
 
 
+#define NATTY_USER_PROTOCOL_AUTHORIZETYPE	"AuthorizeType"
 #define NATTY_USER_PROTOCOL_AGREE			"Agree"
 #define NATTY_USER_PROTOCOL_REJECT			"Reject"
 #define NATTY_USER_PROTOCOL_BINDCONFIRM		"BindConfirm"
@@ -446,6 +449,23 @@ typedef struct _LocationAck {
 	LocationResults results;
 } LocationAck;
 
+
+typedef struct _AuthorizePush {
+	const char *IMEI;
+	const char *category;
+	const char *authorize_type;
+} AuthorizePush;
+
+typedef struct _AuthorizeReplyResults {
+	const char *IMEI;
+	const char *category;
+	const char *authorize_type;
+	const char *answer;
+} AuthorizeReplyResults;
+
+typedef struct _AuthorizeReply {
+	AuthorizeReplyResults results;
+} AuthorizeReply;
 
 
 typedef struct _EfencePoints {
@@ -828,9 +848,18 @@ typedef struct _SOSReport {
 
 
 typedef struct _LocationReportItem {
-	const char *type;
-	const char *radius;
-	const char *location;
+	const char *type;		// 4
+	const char *location;	// 113.2408968,23.1318213
+	const char *radius;		// 550
+	const char *desc;		// Guangdong Shenzhen Liwan Zhoumenbeilu KaojinGuangzhouLiWanKeJiYuan
+	const char *country;	// China
+	const char *province;	// province
+	const char *city;		// city
+	const char *citycode;	// 020
+	const char *adcode;		// 440103
+	const char *road;		// road
+	const char *street;		// street
+	const char *poi;		// poi
 } LocationReportItem;
 
 typedef struct _LocationReportResults {

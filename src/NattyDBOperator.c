@@ -2898,6 +2898,51 @@ int ntyQueryVoiceMsgSelect(void *self, int index,C_DEVID *senderId, C_DEVID *gId
 	return ret;
 }
 
+
+int ntyQueryAuthorizeAdmin(void *self, C_DEVID devId, C_DEVID *adminId) {
+	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = 0;
+
+	TRY
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			ret = -1;
+
+			U8 sql[256] = {0};		
+			sprintf(sql, NTY_DB_SELECT_AUTHORIZE_ADMIN, devId);			
+			ntylog("%s\n", sql);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_AUTHORIZE_ADMIN, devId);
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					C_DEVID r_admin = ResultSet_getLLong(r, 1);
+					*adminId = r_admin;
+					ret = 0;
+				}
+			}
+		}
+	}
+	CATCH(SQLException)
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+	
+}
+
+
 //PROC_INSERT_ADMIN_GROUP
 int ntyQueryAdminGroupInsert(void *self, C_DEVID devId, U8 *bname, C_DEVID fromId, U8 *userCall, U8 *wimage, U8 *uimage, U8 *phnum, U32 *msgId) {
 	ConnectionPool *pool = self;
@@ -3276,6 +3321,11 @@ int ntyQueryDeviceOnlineStatusHandle(C_DEVID did, int *online) {
 int ntyQueryAppOnlineStatusHandle(C_DEVID aid, int *online) {
 	void *pool = ntyConnectionPoolInstance();
 	return ntyQueryAppOnlineStatus(pool, aid, online);
+}
+
+int ntyQueryAuthorizeAdminHandle(C_DEVID devId, C_DEVID *adminId) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyQueryAuthorizeAdmin(pool, devId, adminId);
 }
 
 int ntyQueryAdminGroupInsertHandle(C_DEVID devId, U8 *bname, C_DEVID fromId, U8 *userCall, U8 *wimage, U8 *uimage, U8 *phnum, U32 *msgId) {

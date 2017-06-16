@@ -452,6 +452,35 @@ void ntyJsonCommonExtend(JSON_Value *json, CommonReqExtend *pCommonReqExtend) {
 	pCommonReqExtend->id = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ID);
 }
 
+
+void ntyJsonAuthorizePush(JSON_Value *json, AuthorizePush *pAuthorizePush) {
+	if (json == NULL || pAuthorizePush == NULL) {
+		ntylog("param is null.\n");
+		return;
+	}
+
+	JSON_Object *root_object = json_value_get_object(json);
+	pAuthorizePush->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
+	pAuthorizePush->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
+	pAuthorizePush->authorize_type = json_object_get_string(root_object, NATTY_USER_PROTOCOL_AUTHORIZETYPE);
+}
+
+void ntyJsonAuthorizeReply(JSON_Value *json, AuthorizeReply *pAuthorizeReply) {
+	if (json == NULL || pAuthorizeReply == NULL) {
+		ntylog("param is null.\n");
+		return;
+	}
+
+	JSON_Object *root_object = json_value_get_object(json);
+	json_object_set_value(root_object, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object());
+	JSON_Object *results_obj = json_object_get_object(root_object, NATTY_USER_PROTOCOL_RESULTS);
+	
+	pAuthorizeReply->results.IMEI = json_object_get_string(results_obj, NATTY_USER_PROTOCOL_IMEI);
+	pAuthorizeReply->results.category = json_object_get_string(results_obj, NATTY_USER_PROTOCOL_CATEGORY);
+	pAuthorizeReply->results.authorize_type = json_object_get_string(results_obj, NATTY_USER_PROTOCOL_AUTHORIZETYPE);
+	pAuthorizeReply->results.answer = json_object_get_string(results_obj, NATTY_USER_PROTOCOL_ANSWER);
+}
+
 void ntyJsonAddEfence(JSON_Value *json, AddEfenceReq *pAddEfenceReq) {
 	if (json == NULL || pAddEfenceReq == NULL) {
 		ntylog("param is null.\n");
@@ -703,6 +732,7 @@ void ntyJsonLocationReport(JSON_Value *json,  LocationReport *pLocationReport) {
 	pLocationReport->results.locationReport.location = json_object_get_string(locationreport_object, NATTY_USER_PROTOCOL_LOCATION);
 	pLocationReport->results.locationReport.radius = json_object_get_string(locationreport_object, NATTY_USER_PROTOCOL_RADIUS);
 	pLocationReport->results.locationReport.type = json_object_get_string(locationreport_object, NATTY_USER_PROTOCOL_TYPE);
+	pLocationReport->results.locationReport.desc = json_object_get_string(locationreport_object, NATTY_AMAP_PROTOCOL_DESC);
 }
 
 void ntyJsonStepsReport(JSON_Value *json,  StepsReport *pStepsReport) {
