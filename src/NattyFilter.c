@@ -2233,6 +2233,33 @@ static const ProtocolFilter ntyUserDataPacketReqFilter = {
 
 
 
+void ntyPerformancePacketHandleRequest(const void *_self, unsigned char *buffer, int length,const void* obj) {
+	
+	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_VOICE_PERFORMANCE_REQ) {
+		ntylog("====================begin ntyPerformancePacketHandleRequest action ==========================\n");
+
+		
+		ntylog("====================end ntyPerformancePacketHandleRequest action ==========================\n");
+	} else if (ntyPacketGetSuccessor(_self) != NULL) {
+		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
+		(*succ)->handleRequest(succ, buffer, length, obj);
+	} else {
+		ntylog("Can't deal with: %d\n", buffer[NTY_PROTO_MSGTYPE_IDX]);
+	}
+}
+
+
+static const ProtocolFilter ntyPerformancePacketFilter = {
+	sizeof(Packet),
+	ntyPacketCtor,
+	ntyPacketDtor,
+	ntyPacketSetSuccessor,
+	ntyPacketGetSuccessor,
+	ntyPerformancePacketHandleRequest,
+};
+
+
+
 
 static void ntySetSuccessor(void *_filter, void *_succ) {
 	ProtocolFilter **filter = _filter;
@@ -2292,6 +2319,7 @@ const void *pNtyUserDataPacketReqFilter = &ntyUserDataPacketReqFilter;
 const void *pNtyBindDeviceVersionBFilter = &ntyBindDeviceVersionBFilter;
 const void *pNtyUnBindDeviceVersionBFilter = &ntyUnBindDeviceVersionBFilter;
 
+const void *pNtyPerformancePacketFilter = &ntyPerformancePacketFilter;
 
 //ntyVoiceReqPacketHandleRequest
 
@@ -2332,6 +2360,8 @@ void* ntyProtocolFilterInit(void) {
 	void *pBindDeviceVersionBFilter = New(pNtyBindDeviceVersionBFilter);
 	void *pUnBindDeviceVersionBFilter = New(pNtyUnBindDeviceVersionBFilter);
 
+	void *pPerformancePacketFilter = New(pNtyPerformancePacketFilter);
+
 	ntySetSuccessor(pLoginFilter, pHeartBeatFilter);
 	ntySetSuccessor(pHeartBeatFilter, pLogoutFilter);
 	ntySetSuccessor(pLogoutFilter, pTimeCheckFilter);
@@ -2365,7 +2395,9 @@ void* ntyProtocolFilterInit(void) {
 	ntySetSuccessor(pUserDataPacketReqFilter, pBindDeviceVersionBFilter);
 	
 	ntySetSuccessor(pBindDeviceVersionBFilter, pUnBindDeviceVersionBFilter);
-	ntySetSuccessor(pUnBindDeviceVersionBFilter, NULL);
+	ntySetSuccessor(pUnBindDeviceVersionBFilter, pPerformancePacketFilter);
+	
+	ntySetSuccessor(pPerformancePacketFilter, NULL);
 
 	
 	/*

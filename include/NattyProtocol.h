@@ -474,6 +474,9 @@
 #define NTY_PROTO_VOICE_UPLOAD				0x41 //rsvd
 #define NTY_PROTO_VOICE_DOWNLOAD			0x42 //rsvd
 
+#define NTY_PROTO_VOICE_PERFORMANCE_REQ 	0x50
+#define NTY_PROTO_VOICE_PERFORMANCE_ACK		0xD0
+
 /* ** rsvd start ** */
 
 #define NTY_PROTO_DATAPACKET_NOTIFY_REQ		0x22 //use for client ,
