@@ -87,6 +87,8 @@
 
 #define MAX_PAYLOAD_SIZE		256
 #define TOKEN_SIZE				32
+#define PUSH_HANDLE_MAX_COUNT   20
+#define PUSH_HANDLE_MAX_SOCKET (PUSH_HANDLE_MAX_COUNT*2)
 
 #define NTY_PUSH_MSG_CONTEXT			"全家康 \n 您收到了一条新消息"
 #define NTY_PUSH_VOICE_MSG_CONTEXT			"全家康 \n 您收到了一条语音消息"
@@ -118,6 +120,23 @@ typedef struct _Push_Handle {
 	int (*push)(void *_self, C_DEVID gId, U32 type, U32 counter, U8 *msg, const U8 *token, U8 mode);
 } nPushHandle;
 
+typedef struct _stPushHandle {
+	size_t size;
+	void* (*ctor)(void *_self, va_list *params);
+	void* (*dtor)(void *_self);
+	int (*push)(void *_self, C_DEVID gId, U32 type, U32 counter, U8 *msg, const U8 *token, U8 mode, U32 index);
+} stPushHandle;
+
+
+typedef struct PushHandleIndex{
+	int lockFlag;	
+}PushHandleIndex;
+
+typedef struct _PushHandleObj{
+	stPushHandle *pushHandleArray[PUSH_HANDLE_MAX_COUNT];
+	PushHandleIndex pushHandleIndexArray[PUSH_HANDLE_MAX_COUNT]; //the flag index for pushHandleArray[PUSH_HANDLE_MAX_COUNT]
+}PushHandleObj;
+
 
 typedef enum {
 	NTY_PUSH_CLIENT_DEVELOPMENT = 0,
@@ -126,6 +145,14 @@ typedef enum {
 } NTY_PUSH_TYPE;
 
 void *ntyPushHandleInstance(void);
+int ntyPushConnectionPoolInstance(void);
+//when use this function,and then must use the function ntySetPushHandle( int index )
+stPushHandle *ntyGetPushHandle( int *outInt );
+int ntySetPushHandle( U32 index );
+int ntyPushNotifyToHandle(void *self, C_DEVID gId, U32 type, U32 counter, U8 *msg, const U8 *token, U8 mode, U32 index);
+
+
+
 int ntyPushNotifyHandle(void *self, C_DEVID gId, U32 type, U32 counter, U8 *msg, const U8 *token, U8 mode);
 
 

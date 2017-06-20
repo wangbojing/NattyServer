@@ -735,15 +735,66 @@ int ntyIOSPushHandle(void *arg) {
 	if (pClient->deviceType == NTY_PROTO_CLIENT_IOS) {
 		if (pClient->token != NULL) {
 			ntylog("ntySendPushNotify --> selfId:%lld  token:%s\n", toId, pClient->token);
+			//two models,single connection,or connection pool
+			#if 0
 			void *pushHandle = ntyPushHandleInstance();
-			ntyPushNotifyHandle(pushHandle, gId, type, counter, msg, pClient->token, NTY_PUSH_CLIENT_DEVELOPMENT);
+			ntyPushNotifyHandle( pushHandle, gId, type, counter, msg, pClient->token, NTY_PUSH_CLIENT_DEVELOPMENT );
+			#else
+			int *outIndex = (int *)malloc( sizeof(int *) );
+			if ( outIndex == NULL ){
+				ntylog("ntyIOSPushHandle outIndex malloc failed\n");
+				goto exit;
+			}
+			memset( outIndex, 0, sizeof(outIndex) );
+			stPushHandle *pushHandle = ntyGetPushHandle( outIndex );
+			if ( pushHandle != NULL ){
+				ntyPushNotifyToHandle( pushHandle, gId, type, counter, msg, pClient->token, NTY_PUSH_CLIENT_DEVELOPMENT,*outIndex );
+			}
+
+			ntylog( "ntyIOSPushHandle outIndex:%d,mode:development\n",*outIndex );
+			ntySetPushHandle( *outIndex );
+			if( outIndex != NULL ){
+				free( outIndex );
+				outIndex = NULL;
+			}
+			if ( pushHandle != NULL ){
+				free( pushHandle );
+				pushHandle = NULL;
+			}
+			#endif
 		}
 		goto exit;
 	} else if (pClient->deviceType == NTY_PROTO_CLIENT_IOS_PUBLISH) {
 		if (pClient->token != NULL) {
 			ntylog("ntySendPushNotify --> selfId:%lld  token:%s\n", toId, pClient->token);
+			//two models,single connection,or connection pool
+			#if 0
 			void *pushHandle = ntyPushHandleInstance();
-			ntyPushNotifyHandle(pushHandle, gId, type, counter, msg, pClient->token, NTY_PUSH_CLIENT_PRODUCTION);
+			ntyPushNotifyHandle( pushHandle, gId, type, counter, msg, pClient->token, NTY_PUSH_CLIENT_PRODUCTION );
+			#else
+			int *outIndex = (int *)malloc( sizeof(int *) );
+			if ( outIndex == NULL ){
+				ntylog("ntyIOSPushHandle outIndex malloc failed\n");
+				goto exit;
+			}
+			memset( outIndex, 0, sizeof(outIndex) );
+			stPushHandle *pushHandle = ntyGetPushHandle( outIndex );
+			if ( pushHandle != NULL ){
+				ntyPushNotifyToHandle( pushHandle, gId, type, counter, msg, pClient->token, NTY_PUSH_CLIENT_PRODUCTION,*outIndex );
+			}
+
+			ntylog( "ntyIOSPushHandle outIndex:%d,mode:production\n",*outIndex );
+			ntySetPushHandle( *outIndex );
+			if( outIndex != NULL ){
+				free( outIndex );
+				outIndex = NULL;
+			}
+			if ( pushHandle != NULL ){
+				free( pushHandle );
+				pushHandle = NULL;
+			}
+
+			#endif
 		}
 		goto exit;
 	}
