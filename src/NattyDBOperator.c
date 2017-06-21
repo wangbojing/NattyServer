@@ -1800,7 +1800,7 @@ int ntyExecuteICCIDSetInsert(void *self, C_DEVID did, const char *iccid, char *p
 			U8 sql[512] = {0};
 			sprintf(sql, NTY_DB_SET_ICCID, did, iccid, phonenum);			
 			ntylog("%s\n", sql);	
-
+#if 0
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SET_ICCID, did, iccid, phonenum);
 			if (r != NULL) {
 				if (ResultSet_next(r)) {
@@ -1812,6 +1812,10 @@ int ntyExecuteICCIDSetInsert(void *self, C_DEVID did, const char *iccid, char *p
 					}
 				}
 			}
+#else
+			Connection_execute(con, NTY_DB_SET_ICCID, did, iccid, phonenum);
+			ret = 0;
+#endif
 		}
 	} 
 	CATCH(SQLException) 
