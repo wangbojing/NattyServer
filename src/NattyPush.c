@@ -1046,12 +1046,14 @@ int ntyPushConnectionPoolInstance( void ){
 				}
 				pCtx = ptrPush;
 			}
-			
-			fdsArray[i].fd = pCtx->d_sockfd;
-			fdsArray[i].events = POLLIN;
-			
-			fdsArray[i+1].fd = pCtx->p_sockfd;
-			fdsArray[i+1].events = POLLIN;
+			if ( n < PUSH_HANDLE_MAX_SOCKET ){
+				fdsArray[n].fd = pCtx->d_sockfd;
+				fdsArray[n].events = POLLIN;
+				
+				fdsArray[n+1].fd = pCtx->p_sockfd;
+				fdsArray[n+1].events = POLLIN;
+			}
+			n = n + 2; 
 
 			ptrPushHandleObj->pushHandleIndexArray[i].lockFlag = 0; 
 		}
@@ -1092,7 +1094,6 @@ stPushHandle *ntyGetPushHandle( int *outInt ){
 		return NULL;
 	}
 	for ( i=0; i<PUSH_HANDLE_MAX_COUNT; i++ ){
-		ntylog( "ptrPushHandleObj->pushHandleIndexArray[%d].lockFlag:%d\n",i,ptrPushHandleObj->pushHandleIndexArray[i].lockFlag );
 		if ( ptrPushHandleObj->pushHandleArray[i] == NULL ){//judge NULL, others could delete ptrPushHandleObj->pushHandleArray[i]		 
 			void *pPush	= New( pNtyPushHandle );
 			if ( (unsigned long)NULL != cmpxchg((void*)(&ptrPushHandleObj->pushHandleArray[i]), (unsigned long)NULL, (unsigned long)pPush, WORD_WIDTH) ) {
@@ -1111,21 +1112,24 @@ stPushHandle *ntyGetPushHandle( int *outInt ){
 				}
 			}
 		}
-
+		if ( ptrPushHandleObj->pushHandleArray[i] == NULL ){  //next object
+			continue;
+		}
 		nPushContext *ptrCtx = (nPushContext *) ptrPushHandleObj->pushHandleArray[i]; 
 		if ( ptrCtx->d_sockfd < 0 || ptrCtx->p_sockfd < 0 ){	//judge socket
 			ntyPushHandleReleaseObject( i );
 			void *ptrPush	= New( pNtyPushHandle );
-			cmpxchg( (void*)(&ptrPushHandleObj->pushHandleArray[i]), (unsigned long)NULL, (unsigned long)ptrPush, WORD_WIDTH );
-			nPushContext *pcCtx = (nPushContext *) ptrPush;
-			fdsArray[i].fd = pcCtx->d_sockfd;
-			fdsArray[i].events = POLLIN;	
-			fdsArray[i+1].fd = pcCtx->p_sockfd;
-			fdsArray[i+1].events = POLLIN;	
-			ptrPushHandleObj->pushHandleIndexArray[i].lockFlag = 0;		
-			if( pcCtx->d_sockfd < 0 || pcCtx->p_sockfd < 0  ){
-				continue; //next object
-			}			
+			if ( (unsigned long)NULL==cmpxchg( (void*)(&ptrPushHandleObj->pushHandleArray[i]), (unsigned long)NULL, (unsigned long)ptrPush, WORD_WIDTH ) ){
+				nPushContext *pcCtx = (nPushContext *) ptrPush;
+				fdsArray[i].fd = pcCtx->d_sockfd;
+				fdsArray[i].events = POLLIN;	
+				fdsArray[i+1].fd = pcCtx->p_sockfd;
+				fdsArray[i+1].events = POLLIN;	
+				ptrPushHandleObj->pushHandleIndexArray[i].lockFlag = 0;		
+				if( pcCtx->d_sockfd < 0 || pcCtx->p_sockfd < 0  ){
+					continue; //next object
+				}
+			}
 		}
 		
 		if ( 0 == cmpxchg(&ptrPushHandleObj->pushHandleIndexArray[i].lockFlag, 0, 1, WORD_WIDTH) ) { //==0 free,can use it   
