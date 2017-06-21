@@ -1787,7 +1787,8 @@ void ntyJsonLocationReportAction(ActionParam *pActionParam) {
 		type = 3;
 	}
 
-	const char *desc = pLocationReport->results.locationReport.desc;
+	char desc[32] = {0};
+	strcat(desc, "Location not detected");
 	const char *lnglat = pLocationReport->results.locationReport.location;
 	const char *detatils = pLocationReport->results.locationReport.radius;
 	

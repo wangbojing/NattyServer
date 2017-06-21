@@ -732,7 +732,6 @@ void ntyJsonLocationReport(JSON_Value *json,  LocationReport *pLocationReport) {
 	pLocationReport->results.locationReport.location = json_object_get_string(locationreport_object, NATTY_USER_PROTOCOL_LOCATION);
 	pLocationReport->results.locationReport.radius = json_object_get_string(locationreport_object, NATTY_USER_PROTOCOL_RADIUS);
 	pLocationReport->results.locationReport.type = json_object_get_string(locationreport_object, NATTY_USER_PROTOCOL_TYPE);
-	pLocationReport->results.locationReport.desc = json_object_get_string(locationreport_object, NATTY_AMAP_PROTOCOL_DESC);
 }
 
 void ntyJsonStepsReport(JSON_Value *json,  StepsReport *pStepsReport) {
