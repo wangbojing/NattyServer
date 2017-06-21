@@ -50,7 +50,7 @@
 #include "NattyUtils.h"
 #include "NattyHttpCurl.h"
 #include "NattySignal.h"
-#include "NattyPush.h"
+
 
 
 void *ntyStartupTcpServerThread(void *arg) {
@@ -71,10 +71,6 @@ void *ntyStartupMulticastServerThread(void *arg) {
 	ntyMulticastServerRun(arg);
 } 
 
-void *ntyStartupPushConnectionPoolThread( void *arg ){
-	ntylog("... Push connection pool startup ...\n");
-	ntyPushConnectionPoolInstance();
-}
 
 int main() {
 	//void* ntyServerInfo = New(ntyUdpServerInstance());
@@ -125,19 +121,10 @@ int main() {
 		}
 	}
 
-	#if 1
-	pthread_t pushThreadId;
-	int nRet = pthread_create( &pushThreadId, NULL, ntyStartupPushConnectionPoolThread, NULL );
-	if ( nRet != 0 ){
-		ntylog( "ntyStartupPushConnectionPoolThread error,return code:%d\n",nRet );
-	}
-	#endif	
-
 	for (i = 0;i < PROTO_TYPE_COUNT;i ++) {
 		pthread_join(thread_id[i], NULL);
 	}
-	pthread_join( pushThreadId, NULL );
-	
+
 	return 0;
 }
 

@@ -56,7 +56,7 @@ void *ntyPushHandleInstance(void);
 void *ntyPushHandleRelease(void);
 void *ntyPushHandleGetInstance(void);
 
-int ntyPushHandleReleaseObject( U32 index );
+
 
 int ntyDeviceToken2Binary(const char *sz, const int len, unsigned char *const binary, const int size) {
 	int i, val;
@@ -537,45 +537,6 @@ int ntySendMessage(C_DEVID gId, U32 type, U32 counter, SSL *ssl, const char* tok
 int exiting = 0;
 struct sockaddr_in addr[NTY_PUSH_CLIENT_COUNT] = {0};
 
-static struct pollfd fdsArray[PUSH_HANDLE_MAX_SOCKET] = {0};
-static void *ntyPushRecvManage(void *arg) {
-	int nReady = 0;
-	int nRet = 0;
-	int i = 0;
-	U32 index = 0;
-	int maxCount = PUSH_HANDLE_MAX_SOCKET;
-	U8 buffer[1024] = {0};
-	ntylog( "PushConnectionPool initialize succeed.maxCount=%d\n ",maxCount );
-	while (1) {
-		nReady = poll( fdsArray, maxCount, -1 );  //return nReady,the ready number of FD.
-		ntylog( "poll() pollfd ready,nReady=%d\n",nReady );
-		if ( nReady > 0 ){
-			for ( i=0; i<PUSH_HANDLE_MAX_SOCKET; i++ ){  //check all fdsArray elements
-				if ( fdsArray[i].events & POLLIN ) {  //FD ready read
-					ntylog("fdsArray[i=%d].events & POLLIN true\n",i);
-					memset( buffer, 0, sizeof(buffer) );
-					ntylog( "********read before,fdsArray[i=%d].fd=%d ***********\n",i,fdsArray[i].fd );
-					nRet = read( fdsArray[i].fd, buffer, 1024 );
-					ntylog( "********read after,fdsArray[i=%d].fd=%d ***********\n",i,fdsArray[i].fd );
-					if ( nRet <= 0 ) { //nRet<0 connection reset by client,nRet=0 connection closed by client.
-						ntylog("ntyPushRecvCallback --> connection disconnect.\n");	
-						index = i/2;
-						nRet = ntyPushHandleReleaseObject( index );
-						if ( nRet < 0 ){
-							ntylog( "ntyPushRecvManage release object failed\n" );
-						}
-						fdsArray[i].fd = -1;  //FD disable.
-					} else {
-						ntylog("ntyPushRecvCallback --> connection keep alive, read buffer:%s\n", buffer);
-					}
-					if ( --nReady <= 0 ){ //poll() return the ready FD,<=0 needn't to traverse the fdsArray array.
-						break;
-					}
-				}
-			}
-		}
- 	}
-}
 
 
 static void *ntyPushRecvCallback(void *arg) {
@@ -667,7 +628,7 @@ void* ntyPushContextCtor(void *self, va_list *params) {
 		return pCtx;
 	}
 
-#if 0 //setup recv thread
+#if 1 //setup recv thread
 	pthread_t recvThreadId;
 	int err = pthread_create(&recvThreadId, NULL, ntyPushRecvCallback, pCtx);				
 	if (err != 0) { 				
@@ -903,95 +864,6 @@ int ntyPushNotify(void *self, C_DEVID gId, U32 type, U32 counter, U8 *msg, const
 	return NTY_RESULT_SUCCESS;
 }
 
-/*************************************************************************************************
-** Function: ntyPushNotifySend 
-** Description: send the message to the socket handle.
-** Input: void *self, C_DEVID gId, U32 type, U32 counter, U8 *msg, const U8 *token, U8 mode, U32 index.
-** Output: 
-** Return: int 0:success,-1:error
-** Author: luoyb
-** Date: 2017-06-20
-** Others:
-*************************************************************************************************/
-
-
-int ntyPushNotifySend(void *self, C_DEVID gId, U32 type, U32 counter, U8 *msg, const U8 *token, U8 mode, U32 index) {
-	nPushContext *pCtx = self;
-	if (pCtx == NULL) return NTY_RESULT_FAILED;
-
-	ntylog("ntyPushNotify ..\n");
-#if 1
-	int ret = NTY_RESULT_FAILED;
-	SSL *ssl = NULL;
-	if (mode) {
-		ssl = pCtx->p_ssl;
-
-		ntylog("ntyVerifyConnection --> APPLE_HOST_PRODUCTION_NAME\n");
-		ret = ntyVerifyConnection(ssl, APPLE_HOST_PRODUCTION_NAME);
-		if (ret != NTY_RESULT_SUCCESS) {
-			ntylog("Verify failed\n");	
-#if 1 
-			ntyPushHandleReleaseObject( index );
-#endif
-			return NTY_RESULT_FAILED;
-		}
-		
-	} else {
-		ssl = pCtx->d_ssl;
-
-		ntylog("ntyVerifyConnection --> APPLE_HOST_DEVELOPMENT_NAME\n");
-		ret = ntyVerifyConnection(ssl, APPLE_HOST_DEVELOPMENT_NAME);
-		if (ret != NTY_RESULT_SUCCESS) {
-			ntylog("Verify failed\n");
-#if 1 
-			ntyPushHandleReleaseObject( index );
-#endif
-			return NTY_RESULT_FAILED;
-		}
-	}
-#else
-	int sockfd = ntyPushTcpConnect(pCtx);
-	if (sockfd < 0) {
-		ntylog("failed to connect to host %s\n", strerror(errno));
-		return NTY_RESULT_FAILED;
-	}
-	
-	SSL *ssl = ntyPushSSLConnect(pCtx, sockfd, mode);
-	if (ssl == NULL) {
-		ntylog("ssl connect failed: %s\n", ERR_reason_error_string(ERR_get_error())); 
-		ntyCloseSocket(sockfd);
-
-		return NTY_RESULT_FAILED;
-	}
-#endif
-	
-
-	unsigned int msgid = 1;
-	unsigned int expire = time(NULL) + 24 * 3600;
-	ntylog("msgid : %d\n", msgid);
-	
-	if (msg == NULL) {
-		msg = NTY_PUSH_MSG_CONTEXT;
-	}
-
-	ntylog("msg : %s\n", msg);
-	ret = ntySendMessage(gId, type, counter, ssl, token, msgid++, expire, msg, 1, "jg505.caf");
-	if (ret <= 0) {
-		ntylog("send failed: %s\n", ERR_reason_error_string(ERR_get_error()));
-#if 1 
-		ntyPushHandleReleaseObject( index );
-#endif
-	} else {
-		ntylog("send successfully\n");
-	}
-
-
-	ntylog("ntyPushNotify Exit\n");
-
-	return NTY_RESULT_SUCCESS;
-}
-
-
 static const nPushHandle ntyPushHandle = {
 	sizeof(nPushContext),
 	ntyPushContextCtor,
@@ -999,173 +871,10 @@ static const nPushHandle ntyPushHandle = {
 	ntyPushNotify,
 };
 
-static const stPushHandle ntyPushHandleObj = {
-	sizeof(nPushContext),
-	ntyPushContextCtor,
-	ntyPushContextDtor,
-	ntyPushNotifySend,
-};
 
 const void *pNtyPushHandle = &ntyPushHandle; 
-const void *ptrNtyPushHandleObj = &ntyPushHandleObj;
 
 static void *pPushHandle = NULL;
-static PushHandleObj *ptrPushHandleObj = NULL;
-
-/*************************************************************************************************
-** Function: ntyPushConnectionPoolInstance 
-** Description: new ptrPushHandleObj object,save the pollfd array for socket,monitor the socket FD.
-** Input: 
-** Output: 
-** Return: int 0:succes, -2 :error
-** Author:luoyb
-** Date: 2017-06-20
-** Others:
-*************************************************************************************************/
-
-int ntyPushConnectionPoolInstance( void ){
-	int i = 0;
-	int n = 0;
-	if ( ptrPushHandleObj == NULL ){
-		ptrPushHandleObj = (PushHandleObj*)malloc( sizeof(PushHandleObj) );
-		if ( ptrPushHandleObj == NULL ){
-			ntylog("ntyPushHandleArrayInstance PushHandleObj malloc failed\n");
-			return NTY_RESULT_ERROR;
-		}
-		for ( i=0; i<PUSH_HANDLE_MAX_COUNT; i++ ){
-			void *pPush = New(ptrNtyPushHandleObj);					
-			if ((unsigned long)NULL != cmpxchg((void*)(&ptrPushHandleObj->pushHandleArray[i]), (unsigned long)NULL, (unsigned long)pPush, WORD_WIDTH)) {
-				Delete( pPush );
-			}
-
-			nPushContext *pCtx = pPush;
-			if ( pCtx->d_sockfd < 0 || pCtx->p_sockfd < 0 ){  //if connect failed,connect again.
-				void *ptrPush = New(ptrNtyPushHandleObj);					
-				if ((unsigned long)NULL != cmpxchg((void*)(&ptrPushHandleObj->pushHandleArray[i]), (unsigned long)NULL, (unsigned long)ptrPush, WORD_WIDTH)) {
-					Delete( ptrPush );
-				}
-				pCtx = ptrPush;
-			}
-			if ( n < PUSH_HANDLE_MAX_SOCKET ){
-				fdsArray[n].fd = pCtx->d_sockfd;
-				fdsArray[n].events = POLLIN;
-				
-				fdsArray[n+1].fd = pCtx->p_sockfd;
-				fdsArray[n+1].events = POLLIN;
-			}
-			n = n + 2; 
-
-			ptrPushHandleObj->pushHandleIndexArray[i].lockFlag = 0; 
-		}
-		//create a thread to use ntyPushRecvManage(),or use ntyPushRecvManage() then create a thread in other place.
-		#if 0
-		pthread_t recvThreadId;
-		int err = pthread_create( &recvThreadId, NULL, ntyPushRecvManage, NULL );				
-		if ( err != 0 ) { 				
-			ntylog(" can't create thread:%s\n", strerror(err)); 
-		}
-		#else
-		ntyPushRecvManage( NULL );
-		#endif
-	}
-	return NTY_RESULT_SUCCESS;
-}
-
-/*************************************************************************************************
-** Function: ntyGetPushHandle 
-** Description: get the stPushHandle object,which could be used,then lock the object.
-** Input: 
-** Output: 
-** Return: stPushHandle*:the object pointer,int *outInt:the object array index.
-** Author: luoyb
-** Date: 2017-06-20
-** Others:
-*************************************************************************************************/
-
-stPushHandle *ntyGetPushHandle( int *outInt ){
-	int i = 0;
-	int nRet = 0;
-	stPushHandle *pushHandle = NULL;
-	if ( ptrPushHandleObj == NULL ){
-		return NULL;
-	}
-	if ( outInt == NULL ){
-		ntylog("ntyGetPushHandle outInt==NULL\n");
-		return NULL;
-	}
-	for ( i=0; i<PUSH_HANDLE_MAX_COUNT; i++ ){
-		if ( ptrPushHandleObj->pushHandleArray[i] == NULL ){//judge NULL, others could delete ptrPushHandleObj->pushHandleArray[i]		 
-			void *pPush	= New( pNtyPushHandle );
-			if ( (unsigned long)NULL != cmpxchg((void*)(&ptrPushHandleObj->pushHandleArray[i]), (unsigned long)NULL, (unsigned long)pPush, WORD_WIDTH) ) {
-				Delete( pPush );
-				pPush = NULL;
-			}
-			if ( pPush != NULL  ){
-				nPushContext *pCtx = pPush;
-				fdsArray[i].fd = pCtx->d_sockfd;
-				fdsArray[i].events = POLLIN;	
-				fdsArray[i+1].fd = pCtx->p_sockfd;
-				fdsArray[i+1].events = POLLIN;	
-				ptrPushHandleObj->pushHandleIndexArray[i].lockFlag = 0;	
-				if( pCtx->d_sockfd < 0 || pCtx->p_sockfd < 0  ){
-					continue; //next object
-				}
-			}
-		}
-		if ( ptrPushHandleObj->pushHandleArray[i] == NULL ){  //next object
-			continue;
-		}
-		nPushContext *ptrCtx = (nPushContext *) ptrPushHandleObj->pushHandleArray[i]; 
-		if ( ptrCtx->d_sockfd < 0 || ptrCtx->p_sockfd < 0 ){	//judge socket
-			ntyPushHandleReleaseObject( i );
-			void *ptrPush	= New( pNtyPushHandle );
-			if ( (unsigned long)NULL==cmpxchg( (void*)(&ptrPushHandleObj->pushHandleArray[i]), (unsigned long)NULL, (unsigned long)ptrPush, WORD_WIDTH ) ){
-				nPushContext *pcCtx = (nPushContext *) ptrPush;
-				fdsArray[i].fd = pcCtx->d_sockfd;
-				fdsArray[i].events = POLLIN;	
-				fdsArray[i+1].fd = pcCtx->p_sockfd;
-				fdsArray[i+1].events = POLLIN;	
-				ptrPushHandleObj->pushHandleIndexArray[i].lockFlag = 0;		
-				if( pcCtx->d_sockfd < 0 || pcCtx->p_sockfd < 0  ){
-					continue; //next object
-				}
-			}
-		}
-		
-		if ( 0 == cmpxchg(&ptrPushHandleObj->pushHandleIndexArray[i].lockFlag, 0, 1, WORD_WIDTH) ) { //==0 free,can use it   
-			pushHandle = ptrPushHandleObj->pushHandleArray[i];			
-			memcpy( outInt, &i, sizeof(outInt) );
-			ntylog("get ntyGetPushHandle outInt:%d,lockFlag:%d\n",*outInt,ptrPushHandleObj->pushHandleIndexArray[i].lockFlag);
-			break;
-		}
-	}
-	return pushHandle;
-}
-
-/*************************************************************************************************
-** Function: ntySetPushHandle 
-** Description: after getting the stPushHandle object,which could be locked,unlock the object.
-** Input: U32 index:the object array index.
-** Output: 
-** Return: int 0:success,-2:error
-** Author: luoyb
-** Date: 2017-06-20
-** Others:
-*************************************************************************************************/
-
-int ntySetPushHandle( U32 index ){
-	if ( ptrPushHandleObj == NULL ){
-		return NTY_RESULT_ERROR;
-	}
-	if( index > PUSH_HANDLE_MAX_COUNT ){
-		return NTY_RESULT_ERROR;
-	}
-	ptrPushHandleObj->pushHandleIndexArray[index].lockFlag = 0;
-	ntylog("................lockFlag=%d\n",ptrPushHandleObj->pushHandleIndexArray[index].lockFlag);
-	return NTY_RESULT_SUCCESS;
-}
-
-
 
 void *ntyPushHandleInstance(void) {
 	if (pPushHandle == NULL) {
@@ -1193,55 +902,6 @@ void *ntyPushHandleRelease(void) {
 	return pPushHandle;
 }
 
-/*************************************************************************************************
-** Function: ntyPushHandleReleaseObject 
-** Description: release the stPushHandle object.
-** Input: U32 index:the object array index.
-** Output: 
-** Return: int 0:success,-2 -1:error
-** Author: luoyb
-** Date: 2017-06-20
-** Others:
-*************************************************************************************************/
-
-int ntyPushHandleReleaseObject( U32 index ){
-	if( index >= PUSH_HANDLE_MAX_COUNT  ){
-		ntylog("ntyPushHandleReleaseObject index error\n");
-		return NTY_RESULT_ERROR;
-	}
-	if ( ptrPushHandleObj->pushHandleArray[index] == NULL ){
-		ntylog("ntyPushHandleReleaseObject ptrPushHandleObj->pushHandleArray[index] == NULL\n");
-		return NTY_RESULT_FAILED;
-	}
-	Delete( ptrPushHandleObj->pushHandleArray[index] );
-	ptrPushHandleObj->pushHandleArray[index] = NULL;
-
-	return NTY_RESULT_SUCCESS;
-}
-
-/*************************************************************************************************
-** Function: ntyPushNotifyToHandle 
-** Description: push the message to the socket handle.
-** Input: void *self, C_DEVID gId, U32 type, U32 counter, U8 *msg, const U8 *token, U8 mode, U32 index.
-** Output: 
-** Return: int 0:success,-1:error
-** Author: luoyb
-** Date: 2017-06-20
-** Others:
-*************************************************************************************************/
-
-int ntyPushNotifyToHandle(void *self, C_DEVID gId, U32 type, U32 counter, U8 *msg, const U8 *token, U8 mode, U32 index)
-{
-	stPushHandle * const *pHandle = self;
-	if (self && (*pHandle) && (*pHandle)->push) {
-		return (*pHandle)->push(self, gId, type, counter, msg, token, mode, index);
-	}
-	
-	return NTY_RESULT_SUCCESS;
-
-}
-
-
 /*
  * mode : 	1 -> product
  * 			0 -> development
@@ -1255,59 +915,6 @@ int ntyPushNotifyHandle(void *self, C_DEVID gId, U32 type, U32 counter, U8 *msg,
 	
 	return NTY_RESULT_ERROR;
 }
-
-
-#if 0
-int main(void) {
-	//void *pushHandle = ntyPushHandleInstance();
-	int nRet = 0;
-	nRet = ntyPushConnectionPoolInstance();
-	struct timeval start;	
-	struct timeval end;	
-	struct timeval end2;
-	gettimeofday( &start, NULL );
-	ntylog("**********************aaa sec:%d,usec:%d*********************\n",(int)start.tv_sec,(int)start.tv_usec);
-	int *outIndex = (int *)malloc( sizeof(int *) );
-	memset( outIndex, 0, sizeof(outIndex) );
-	stPushHandle *pushHandle = ntyGetPushHandle( outIndex );
-	
-
-	char *msg = "abcd";
-	//const char *token = "a0c7aa17d80c27e1c98482483655d9cd7036dadca57fc5d4a693321997813707";
-	const char *token = "2f88b3df02e08a11e7777479943089aacffb2f8750aaa08a98a5f5978081d84a";
-	C_DEVID devId = 0x355637053172771;
-	U32 type = 1;
-
-	//2f88b3df02e08a11e7777479943089aacffb2f8750aaa08a98a5f5978081d84a
-	//ec49a6b5bcad57279a0fe08f8aeab941
-	//015bafdb5a846a08cbae1d78959a461d 6b9c4e46f6a18dc36b4e9a191487bc0d
-	//015bafdb5a846a08cbae1d78959a461d
-	
-	nRet = ntyPushNotifyToHandle( pushHandle, devId, type, 5, NULL, token, NTY_PUSH_CLIENT_PRODUCTION, *outIndex );
-	gettimeofday( &end, NULL );
-	ntylog("**********************bbb sec:%d,usec:%d*********************\n",(int)end.tv_sec,(int)end.tv_usec);
-	nRet = ntyPushNotifyToHandle( pushHandle, devId, type, 5, NULL, token, NTY_PUSH_CLIENT_DEVELOPMENT, *outIndex );
-	
-	gettimeofday( &end2, NULL );
-	ntylog("**********************ccc sec:%d,usec:%d*********************\n",(int)end2.tv_sec,(int)end2.tv_usec);
-
-	getchar();
-
-	int i = 0;
-
-	for (i = 0;i < 10;i ++) {
-		ntyPushNotifyToHandle( pushHandle, devId, type, i+1, NULL, token, NTY_PUSH_CLIENT_PRODUCTION, *outIndex );	
-	}
-
-	ntylog( "outIndex:%d\n",*outIndex );
-	ntySetPushHandle( *outIndex );
-	free( outIndex );
-	outIndex = NULL;
-	
-	getchar();
-}
-#endif
-
 
 #if 0
 
