@@ -477,6 +477,11 @@
 #define NTY_PROTO_VOICE_PERFORMANCE_REQ 	0x50
 #define NTY_PROTO_VOICE_PERFORMANCE_ACK		0xD0
 
+#define NTY_PROTO_MSG_PUSH_REQ				0x51
+#define NTY_PROTO_MSG_PUSH_ACK				0xD1
+
+
+
 /* ** rsvd start ** */
 
 #define NTY_PROTO_DATAPACKET_NOTIFY_REQ		0x22 //use for client ,
@@ -494,8 +499,6 @@
 #define NTY_PROTO_EFENCE_DATA_REQ			0x27
 #define NTY_PROTO_EFENCE_DATA_ACK			0x28
 
-#define NTY_PROTO_EFENCE_REQ				0x51
-#define NTY_PROTO_EFENCE_ACK				0xD1
 
 /* ** rsvd end ** */
 

@@ -2258,7 +2258,30 @@ static const ProtocolFilter ntyPerformancePacketFilter = {
 	ntyPerformancePacketHandleRequest,
 };
 
+void ntyMessagePushPacketHandleRequest(const void *_self, unsigned char *buffer, int length,const void* obj) {
+	
+	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_MSG_PUSH_REQ) {
+		ntylog("====================begin ntyMessagePushPacketHandleRequest action ==========================\n");
 
+		
+		ntylog("====================end ntyMessagePushPacketHandleRequest action ==========================\n");
+	} else if (ntyPacketGetSuccessor(_self) != NULL) {
+		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
+		(*succ)->handleRequest(succ, buffer, length, obj);
+	} else {
+		ntylog("Can't deal with: %d\n", buffer[NTY_PROTO_MSGTYPE_IDX]);
+	}
+}
+
+
+static const ProtocolFilter ntyMessagePushPacketFilter = {
+	sizeof(Packet),
+	ntyPacketCtor,
+	ntyPacketDtor,
+	ntyPacketSetSuccessor,
+	ntyPacketGetSuccessor,
+	ntyMessagePushPacketHandleRequest,
+};
 
 
 static void ntySetSuccessor(void *_filter, void *_succ) {
@@ -2320,6 +2343,9 @@ const void *pNtyBindDeviceVersionBFilter = &ntyBindDeviceVersionBFilter;
 const void *pNtyUnBindDeviceVersionBFilter = &ntyUnBindDeviceVersionBFilter;
 
 const void *pNtyPerformancePacketFilter = &ntyPerformancePacketFilter;
+const void *pNtyMessagePushPacketFilter = &ntyMessagePushPacketFilter;
+
+
 
 //ntyVoiceReqPacketHandleRequest
 
@@ -2361,6 +2387,7 @@ void* ntyProtocolFilterInit(void) {
 	void *pUnBindDeviceVersionBFilter = New(pNtyUnBindDeviceVersionBFilter);
 
 	void *pPerformancePacketFilter = New(pNtyPerformancePacketFilter);
+	void *pMessagePushPacketFilter = New(pNtyMessagePushPacketFilter);
 
 	ntySetSuccessor(pLoginFilter, pHeartBeatFilter);
 	ntySetSuccessor(pHeartBeatFilter, pLogoutFilter);
@@ -2397,7 +2424,8 @@ void* ntyProtocolFilterInit(void) {
 	ntySetSuccessor(pBindDeviceVersionBFilter, pUnBindDeviceVersionBFilter);
 	ntySetSuccessor(pUnBindDeviceVersionBFilter, pPerformancePacketFilter);
 	
-	ntySetSuccessor(pPerformancePacketFilter, NULL);
+	ntySetSuccessor(pPerformancePacketFilter, pMessagePushPacketFilter);
+	ntySetSuccessor(pMessagePushPacketFilter, NULL);
 
 	
 	/*
