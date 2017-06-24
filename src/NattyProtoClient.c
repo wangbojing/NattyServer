@@ -61,11 +61,15 @@
 #include "NattyVector.h"
 
 
+#define NTY_RECONNECTION_TIMER_TICK		3
+
 /* ** **** ******** **************** Global Variable **************** ******** **** ** */
 static NWTimer *nHeartBeatTimer = NULL;
 static NWTimer *nReconnectTimer = NULL;
 static NWTimer *nBigBufferSendTimer = NULL;
 static NWTimer *nBigBufferRecvTimer = NULL;
+static NWTimer *nRunTimer = NULL;
+
 
 
 static int ntyHeartBeatCb (NITIMER_ID id, void *user_data, int len);
@@ -97,6 +101,9 @@ typedef enum {
 } StatusNetwork;
 
 #if 1 //local
+
+static char *sdk_version = "NattyClient V5.4 betaA";
+
 static C_DEVID gSelfId = 0;
 RECV_CALLBACK onRecvCallback = NULL;
 PROXY_CALLBACK onProxyCallback = NULL;
@@ -128,8 +135,14 @@ NTY_RETURN_CALLBACK onCommonBroadCastResult = NULL; //RECV COMMON_BROADCAST
 NTY_RETURN_CALLBACK onBindConfirmResult = NULL;
 NTY_PARAM_CALLBACK onUserDataAck = NULL;
 
+#if (NTY_PROTO_SELFTYPE==NTY_PROTO_CLIENT_IOS)
+U8 tokens[NORMAL_BUFFER_SIZE];
+U16 tokenLen;
+U8 publishStatus = 0;
+#endif
 
-U8 u8ConnectFlag = 0;;
+
+U8 u8ConnectFlag = 0;
 
 
 #endif
@@ -142,6 +155,7 @@ typedef struct _NATTYPROTOCOL {
 #if (NTY_PROTO_SELFTYPE==NTY_PROTO_CLIENT_IOS)
 	U8 tokens[NORMAL_BUFFER_SIZE];
 	U8 tokenLen;
+	U8 publishStatus;
 #endif
 	void *friends;
 	U8 recvBuffer[RECV_BUFFER_SIZE];
@@ -217,10 +231,6 @@ typedef struct _NATTYPROTO_OPERA {
 typedef NattyProtoOpera NattyProtoHandle;
 
 #endif
-#if 0
-extern DEVID g_devid;
-#endif
-
 
 
 void* ntyProtoClientCtor(void *_self, va_list *params) {
@@ -265,7 +275,13 @@ void* ntyProtoClientCtor(void *_self, va_list *params) {
 	proto->onBindConfirmResult = onBindConfirmResult;
 
 	proto->onUserDataAck = onUserDataAck;
-	
+
+#if (NTY_PROTO_SELFTYPE==NTY_PROTO_CLIENT_IOS)
+	memcpy(proto->tokens, tokens, tokenLen);
+	proto->tokenLen = tokenLen;
+	proto->publishStatus = publishStatus;
+#endif	
+
 	ntyGenCrcTable();
 	//Setup Socket Connection
 	Network *network = ntyNetworkInstance();
@@ -357,6 +373,14 @@ void ntyProtoClientSetToken(void *_self, U8 *tokens, int length) {
 	memcpy(proto->tokens, tokens, length);
 	proto->tokenLen = (U16)length;
 }
+
+void ntyProtoClientSetPublishStatus(void *_self, U8 status) {
+	NattyProto *proto = _self;
+
+	proto->publishStatus = status;
+}
+
+
 #endif
 
 /*
@@ -538,7 +562,7 @@ int ntyProtoClientVoiceAck(void *_self, U32 msgId, U8 *json, U16 length) {
 int ntyProtoClientVoiceDataReq(void *_self, C_DEVID gId, U8 *data, int length) {
 	NattyProto *proto = _self;
 
-	ntySendBigBuffer(proto, data, length, gId);
+	return ntySendBigBuffer(proto, data, length, gId);
 }
 
 int ntyProtoClientCommonReq(void *_self, C_DEVID gId, U8 *json, U16 length) {
@@ -946,7 +970,7 @@ void ntySetCommonBroadCastResult(NTY_RETURN_CALLBACK cb) {
 	onCommonBroadCastResult = cb;
 }
 
-void ntySetBindComfirmResult(NTY_RETURN_CALLBACK cb) {
+void ntySetBindConfirmResult(NTY_RETURN_CALLBACK cb) {
 	onBindConfirmResult = cb;
 }
 
@@ -972,24 +996,71 @@ int ntyCheckProtoClientStatus(void) {
 	
 }
 
+#if (NTY_PROTO_SELFTYPE==NTY_PROTO_CLIENT_IOS)
+void ntySetIosTokenClient(U8 *iosTokens, int length) {
+	memcpy(tokens, iosTokens, length);
+	tokenLen = (U16)length;
+}
+
+void ntySetIosAppPublishStatus(U8 status) { //status: 0 -> development, 1 -> product
+	if (status) {
+		publishStatus = NTY_PROTO_CLIENT_IOS_PUBLISH;
+	} else {
+		publishStatus = NTY_PROTO_CLIENT_IOS;
+	}
+}
+
+#endif
+
+void* ntyStartupClient(int *status);
+static int ntyReconnectCb(NITIMER_ID id, void *user_data, int len) {
+	int status = 0;
+	
+	//trace(" ntyReconnectCb ...\n");
+	NattyProto *proto = ntyProtoGetInstance();
+	if (proto != NULL) {
+		if (proto->u8ConnectFlag) {
+			return 0;
+		}
+	}
+	
+	proto = ntyStartupClient(&status);
+	if (status != -1 && (proto != NULL)) {
+		trace(" ntyReconnectCb  Success... status:%d, flag:%d\n", status, proto->u8ConnectFlag);
+		if (proto->u8ConnectFlag) { //Reconnect Success
+			if (proto->onProxyReconnect)
+				proto->onProxyReconnect(0);
+			//Stop Timer
+#if 1
+			trace(" Stop Timer\n");
+			void *nTimerList = ntyTimerInstance();
+			ntyTimerDel(nTimerList, nReconnectTimer);
+			nReconnectTimer = NULL;
+#endif
+		}
+	}
+
+	return NTY_RESULT_SUCCESS;
+}
+
+
 void* ntyStartupClient(int *status) {
 	NattyProto* proto = ntyProtoInstance();
-	//proto->
 	if (proto) {
 		ntySendLogin(proto);
 		ntySetupRecvProcThread(proto); //setup recv proc
 		
 		*status = proto->u8ConnectFlag;
 	} else {
-		if (nReconnectTimer == NULL) {
-			// startup failed
-			void *nTimerList = ntyTimerInstance();
-			nReconnectTimer = ntyTimerAdd(nTimerList, 15, ntyReconnectCb, NULL, 0);
-		}
 		*status = -1;
 	}
 
-	
+	if (nReconnectTimer == NULL) {
+		// startup failed
+		void *nTimerList = ntyTimerInstance();
+		nReconnectTimer = ntyTimerAdd(nTimerList, NTY_RECONNECTION_TIMER_TICK, ntyReconnectCb, NULL, 0);
+	}
+
 	return proto;
 }
 
@@ -997,6 +1068,14 @@ void ntyShutdownClient(void) {
 	NattyProto* proto = ntyProtoGetInstance();
 	if (proto) {
 		ntySendLogout(proto);
+		proto->u8RecvExitFlag = 2;
+	}
+	
+	if (nReconnectTimer != NULL) {
+		// shutdown failed
+		void *nTimerList = ntyTimerInstance();
+		ntyTimerDel(nTimerList, nReconnectTimer);
+		nReconnectTimer = NULL;
 	}
 }
 
@@ -1092,12 +1171,21 @@ int ntyDataRouteClient(C_DEVID toId, U8 *json, U16 length) {
 	}
 	return -1;
 }
-//(void *_self, C_DEVID proposerId, C_DEVID devId, U32 msgId, U8 *json, U16 length)
+
 int ntyBindConfirmReqClient(C_DEVID proposerId, C_DEVID devId, U32 msgId, U8 *json, U16 length) {
 	NattyProto* proto = ntyProtoGetInstance();
 
 	if (proto) {
 		return ntyProtoClientConfirmReq(proto, proposerId, devId, msgId, json, length);
+	}
+	return -1;
+}
+
+int ntyOfflineMsgReqClient(void) {
+	NattyProto* proto = ntyProtoGetInstance();
+
+	if (proto) {
+		return ntyProtoClientOfflineMsgReq(proto);
 	}
 	return -1;
 }
@@ -1150,28 +1238,7 @@ int ntyGetRecvBufferSize(void) {
 	return -1;
 }
 
-static int ntyReconnectCb(NITIMER_ID id, void *user_data, int len) {
-	int status = 0;
-	
-	trace(" ntyReconnectCb ...\n");
-	NattyProto *proto = ntyStartupClient(&status);
-	if (status != -1 && (proto != NULL)) {
-		trace(" ntyReconnectCb  Success... status:%d, flag:%d\n", status, proto->u8ConnectFlag);
-		if (proto->u8ConnectFlag) { //Reconnect Success
-			if (proto->onProxyReconnect)
-				proto->onProxyReconnect(0);
-			//Stop Timer
-#if 1
-			trace(" Stop Timer\n");
-			void *nTimerList = ntyTimerInstance();
-			ntyTimerDel(nTimerList, nReconnectTimer);
-			nReconnectTimer = NULL;
-#endif
-		}
-	}
 
-	return NTY_RESULT_SUCCESS;
-}
 
 
 void ntyStartReconnectTimer(void) {
@@ -1179,8 +1246,12 @@ void ntyStartReconnectTimer(void) {
 	ntydbg(" setup ntyStartReconnectTimer \n");
 	if (nReconnectTimer == NULL) {
 		void *nTimerList = ntyTimerInstance();
-		nReconnectTimer = ntyTimerAdd(nTimerList, 15, ntyReconnectCb, NULL, 0);
+		nReconnectTimer = ntyTimerAdd(nTimerList, NTY_RECONNECTION_TIMER_TICK, ntyReconnectCb, NULL, 0);
 	}
+}
+
+char* ntyProtoClientGetVersion(void) {
+	return sdk_version;
 }
 
 
@@ -1222,6 +1293,15 @@ int ntySendVoicePacket(void *self, U8 *buffer, int length, C_DEVID toId) {
 
 		if (i == Count-1) { //last packet
 			pktLength = (length % NTY_VOICEREQ_PACKET_LENGTH) - NTY_VOICEREQ_EXTEND_LENGTH;
+
+#if 1 //Cancel Timer
+			void *nTimerList = ntyTimerInstance();
+
+			if (nBigBufferSendTimer != NULL) {
+				ntyTimerDel(nTimerList, nBigBufferSendTimer);
+				nBigBufferSendTimer = NULL;
+			}
+#endif
 		}
 
 		memcpy(pkt+NTY_PROTO_VOICE_DATA_REQ_PKTLENGTH_IDX, &pktLength, sizeof(U32));
@@ -1310,10 +1390,12 @@ static int ntySendBigBuffer(void *self, U8 *u8Buffer, int length, C_DEVID gId) {
 	tBigTimer = add_timer(10, ntySendBigBufferCb, NULL, 0);
 #else
 	void *nTimerList = ntyTimerInstance();
-	nBigBufferSendTimer = ntyTimerAdd(nTimerList, PACKET_SEND_TIME_TICK, ntySendBigBufferCb, NULL, 0);
+	if (nBigBufferSendTimer == NULL) {
+		nBigBufferSendTimer = ntyTimerAdd(nTimerList, PACKET_SEND_TIME_TICK, ntySendBigBufferCb, NULL, 0);
+	}
 #endif
-	int ret = ntyAudioPacketEncode(u8Buffer, length);
-	LOG(" ntySendBigBuffer --> Ret %d, %x, %lld, self:%lld", ret, u8Buffer[0], gId, proto->selfId);
+	length = ntyAudioPacketEncode(u8Buffer, length);
+	LOG(" ntySendBigBuffer --> Ret %d, %x, %lld, self:%lld", length, u8Buffer[0], gId, proto->selfId);
 
 	ntySendVoicePacket(proto, u8Buffer, length, gId);
 #if 0
@@ -1321,7 +1403,7 @@ static int ntySendBigBuffer(void *self, U8 *u8Buffer, int length, C_DEVID gId) {
 	memcpy(&tToId, u8Buffer+NTY_PROTO_VOICEREQ_DESTID_IDX, sizeof(C_DEVID));
 	LOG(" ntySendBigBuffer --> toId : %lld, %d", tToId, NTY_PROTO_VOICEREQ_DESTID_IDX);
 #endif
-	return 0;
+	return length;
 }
 
 int ntyAudioRecodeDepacket(U8 *buffer, int length) {
@@ -1362,6 +1444,8 @@ void ntyPacketClassifier(void *arg, U8 *buf, int length) {
 			U16 status = *(U16*)(buf+NTY_PROTO_LOGIN_ACK_STATUS_IDX);
 			U16 jsonLen = *(U16*)(buf+NTY_PROTO_LOGIN_ACK_JSON_LENGTH_IDX);
 			U8 *json = buf+NTY_PROTO_LOGIN_ACK_JSON_CONTENT_IDX;
+
+			if (NTY_RESULT_FAILED == ntyOfflineMsgReqClient()) break;
 
 			LOG(" LoginAckResult status:%d\n", status);
 			if (proto->onLoginAckResult) {
@@ -1656,8 +1740,6 @@ int ntyPacketValidator(void *self, U8 *buffer, int length) {
 	uClientCrc = ntyU8ArrayToU32(buffer+length-4);
 	LOG(" rLength :%d, length:%d, crc:%x, u8Crc:%x\n", rLength, length, uCrc, uClientCrc);
 
-	if (length < NTY_PROTO_MIN_LENGTH) return NTY_RESULT_ERROR;
-
 	if (uCrc != uClientCrc) {
 		do {
 			bCopy = (bLength > NTY_VOICEREQ_PACKET_LENGTH ? NTY_VOICEREQ_PACKET_LENGTH : bLength);
@@ -1712,14 +1794,18 @@ static void* ntyRecvProc(void *arg) {
 
 	ntydbg(" ntyRecvProc %d\n", fds.fd);
 	while (1) {
-		if (proto->u8RecvExitFlag){ 
-			ntydbg(" ntyRecvProc Exist\n");
+		if (proto->u8RecvExitFlag == 1){ //reconnect
+			ntydbg(" ntyRecvProc Reconnect Exist\n");
 			ntyProtoRelease();
 
-			//reconnect
 			ntyStartReconnectTimer();
 			break;
+		} else if (proto->u8RecvExitFlag == 2) {  //shutdown
+			ntydbg(" ntyRecvProc Shutdown Exist\n");
+			ntyProtoRelease();
+			break;
 		}
+		
 		ret = poll(&fds, 1, 5);
 		if (ret) {
 			bzero(buf, RECV_BUFFER_SIZE);
@@ -1734,6 +1820,9 @@ static void* ntyRecvProc(void *arg) {
 					proto->onProxyDisconnect(0);
 				}
 
+				continue;
+			} else if (proto->recvLen > RECV_BUFFER_SIZE) {
+				proto->u8RecvExitFlag = 1;
 				continue;
 			}
 
