@@ -2235,7 +2235,7 @@ static const ProtocolFilter ntyUserDataPacketReqFilter = {
 
 void ntyPerformancePacketHandleRequest(const void *_self, unsigned char *buffer, int length,const void* obj) {
 	
-	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_VOICE_PERFORMANCE_REQ) {
+	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_PERFORMANCE_REQ) {
 		ntylog("====================begin ntyPerformancePacketHandleRequest action ==========================\n");
 
 		

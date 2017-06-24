@@ -210,6 +210,8 @@ typedef struct _NATTYPROTO_OPERA {
 	int (*unbind)(void *_self, C_DEVID did);
 	int (*comfirmReq)(void *_self, C_DEVID proposerId, C_DEVID devId, U32 msgId, U8 *json, U16 length);
 	int (*dataReq)(void *_self, U8 *json, U16 length);
+	int (*perform)(void *_self, U8 *json, U16 length);
+	int (*msgPush)(void *_self, C_DEVID toId, U8 *json, U16 length);
 } NattyProtoOpera;
 
 typedef NattyProtoOpera NattyProtoHandle;
@@ -664,7 +666,7 @@ int ntyProtoClientDataRoute(void *_self, C_DEVID toId, U8 *json, U16 length) {
 	memcpy(&buf[NTY_PROTO_DATA_ROUTE_JSON_LENGTH_IDX], &length, sizeof(U16));
 	memcpy(&buf[NTY_PROTO_DATA_ROUTE_JSON_CONTENT_IDX], json, length);
 
-	length = NTY_PROTO_COMMON_REQ_JSON_CONTENT_IDX+length+sizeof(U32);
+	length = NTY_PROTO_DATA_ROUTE_JSON_CONTENT_IDX+length+sizeof(U32);
 
 	void *pNetwork = ntyNetworkInstance();
 	return ntySendFrame(pNetwork, buf, length);
@@ -712,6 +714,46 @@ int ntyProtoClientUserDataPacketReq(void *_self, U8 *json, U16 length) {
 	return ntySendFrame(pNetwork, buf, length);
 }
 
+int ntyProtoClientPerformancePacketReq(void *_self, U8 *json, U16 length) {
+	NattyProto *proto = _self;
+	U8 buf[RECV_BUFFER_SIZE] = {0}; 
+
+	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
+	buf[NTY_PROTO_PROTOTYPE_IDX] = (U8) PROTO_REQ; 
+	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_DATAPACKET_REQ;
+
+	memcpy(&buf[NTY_PROTO_PERFORMANCE_PACKET_REQ_DEVICEID_IDX], &proto->selfId, sizeof(C_DEVID));
+	memcpy(&buf[NTY_PROTO_PERFORMANCE_PACKET_REQ_JSON_LENGTH_IDX], &length, sizeof(U16));
+	memcpy(&buf[NTY_PROTO_PERFORMANCE_PACKET_REQ_JSON_CONTENT_IDX], json, length);
+
+	length = NTY_PROTO_PERFORMANCE_PACKET_REQ_JSON_CONTENT_IDX+length+sizeof(U32);
+
+	void *pNetwork = ntyNetworkInstance();
+
+	return ntySendFrame(pNetwork, buf, length);
+}
+
+
+int ntyProtoClientMsgPushPacketReq(void *_self, C_DEVID toId, U8 *json, U16 length) {
+	NattyProto *proto = _self;
+	U8 buf[RECV_BUFFER_SIZE] = {0}; 
+
+	buf[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
+	buf[NTY_PROTO_PROTOTYPE_IDX] = (U8) PROTO_ROUTE; 
+	buf[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_DATA_ROUTE;
+
+	memcpy(&buf[NTY_PROTO_MSG_PUSH_DEVID_IDX], &proto->selfId, sizeof(C_DEVID));
+	memcpy(&buf[NTY_PROTO_MSG_PUSH_RECVID_IDX], &toId, sizeof(C_DEVID));
+
+	memcpy(&buf[NTY_PROTO_MSG_PUSH_JSON_LENGTH_IDX], &length, sizeof(U16));
+	memcpy(&buf[NTY_PROTO_MSG_PUSH_JSON_CONTENT_IDX], json, length);
+
+	length = NTY_PROTO_MSG_PUSH_JSON_CONTENT_IDX+length+sizeof(U32);
+
+	void *pNetwork = ntyNetworkInstance();
+	return ntySendFrame(pNetwork, buf, length);
+}
+
 
 
 static const NattyProtoHandle ntyProtoOpera = {
@@ -726,13 +768,17 @@ static const NattyProtoHandle ntyProtoOpera = {
 	ntyProtoClientVoiceDataReq,
 	ntyProtoClientCommonReq,
 	ntyProtoClientCommonAck,
+	
 	ntyProtoClientOfflineMsgReq,
 	ntyProtoClientDataRoute,
 	
 	ntyProtoClientBind,
 	ntyProtoClientUnBind,
 	ntyProtoClientConfirmReq,
+	
 	ntyProtoClientUserDataPacketReq,
+	ntyProtoClientPerformancePacketReq,
+	ntyProtoClientMsgPushPacketReq,
 };
 
 const void *pNattyProtoOpera = &ntyProtoOpera;
@@ -1065,6 +1111,24 @@ int ntyUserDataReqClient(U8 *json, U16 length) {
 	return -1;
 }
 
+int ntyPerformReqClient(U8 *json, U16 length) {
+	NattyProto* proto = ntyProtoGetInstance();
+
+	if (proto) {
+		return ntyProtoClientPerformancePacketReq(proto, json, length);
+	}
+	return -1;
+}
+
+
+int ntyMsgPushReqClient(C_DEVID toId, U8 *json, U16 length) {
+	NattyProto* proto = ntyProtoGetInstance();
+
+	if (proto) {
+		return ntyProtoClientMsgPushPacketReq(proto, toId, json, length);
+	}
+	return -1;
+}
 
 
 #endif
