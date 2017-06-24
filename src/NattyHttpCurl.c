@@ -706,6 +706,110 @@ int ntyHttpCurlDeInit(void) {
 	return NTY_RESULT_SUCCESS;
 }
 
+static size_t ntyHttpQJKLocationGetAddressHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
+	MessageTag *pMessageTag = (MessageTag *)stream;
+	if ( pMessageTag == NULL ) return NTY_RESULT_PROCESS;
+
+	U8 *jsonstring = buffer;
+	ntylog( "ntyHttpQJKLocationGetAdressHandleResult json --> %s\n", jsonstring );
+	if ( pMessageTag->Tag != NULL ) {
+		ntylog("ntyHttpQJKLocationHandleResult url --> %s\n", pMessageTag->Tag);
+	}
+
+	JSON_Value *json = ntyMallocJsonValue( jsonstring );
+	AMap *pAMap = (AMap *)malloc( sizeof(AMap) );
+	if ( pAMap == NULL ) {
+		if (pMessageTag->Tag != NULL) {
+			free(pMessageTag->Tag);
+		}
+		free( pMessageTag );
+		return size * nmemb;
+	}
+	memset( pAMap, 0, sizeof(AMap) );
+	ntyJsonAMapGetAddress( json, pAMap );
+
+	size_t len_LocationAck = sizeof(LocationAck);
+	LocationAck *pLocationAck = malloc(len_LocationAck);
+	if (pLocationAck == NULL) {
+		if (pMessageTag->Tag != NULL) {
+			free(pMessageTag->Tag);
+		}
+		free(pMessageTag);
+		free(pAMap);
+		return size * nmemb;
+	}
+	memset(pLocationAck, 0, len_LocationAck);
+	
+	char bufIMEI[50] = {0};
+	sprintf(bufIMEI, "%llx", pMessageTag->fromId);
+	ntydbg("*****ntyHttpQJKLocationGetAddressHandleResult IMEI:%s,fromId:%lld,toId:%lld\n", bufIMEI, pMessageTag->fromId, pMessageTag->toId);
+	pLocationAck->results.IMEI = bufIMEI;
+
+	U8 tb_location_type = 0; //the value of tb_location_type insert tb_location table
+	if (pMessageTag->Type== MSG_TYPE_LOCATION_WIFI_API) {
+		pLocationAck->results.category = NATTY_USER_PROTOCOL_WIFI;
+		pLocationAck->results.type = NATTY_USER_PROTOCOL_WIFI;
+		tb_location_type = 1;
+	}else if (pMessageTag->Type == MSG_TYPE_LOCATION_GPS_API) {
+		pLocationAck->results.category = NATTY_USER_PROTOCOL_GPS;
+		pLocationAck->results.type = NATTY_USER_PROTOCOL_GPS;
+		tb_location_type = 2;
+	}else if (pMessageTag->Type == MSG_TYPE_LOCATION_LAB_API) {
+		pLocationAck->results.category = NATTY_USER_PROTOCOL_LAB;
+		pLocationAck->results.type = NATTY_USER_PROTOCOL_LAB;
+		tb_location_type = 3;
+	}
+	
+	pLocationAck->results.location = pAMap->result.location;
+	pLocationAck->results.radius = pAMap->result.radius;
+	U32 msgid = 0;
+	int ret = ntyExecuteLocationReportInsertHandle( pMessageTag->toId, tb_location_type, pAMap->result.desc, pAMap->result.location, pAMap->result.radius, &msgid );
+	if (ret == 0) {
+		char *jsonresult = ntyJsonWriteLocation(pLocationAck);
+		ntylog("******send to toId jsonresult:%s\n", jsonresult);
+		ret = ntySendLocationPushResult(pMessageTag->toId, jsonresult, strlen(jsonresult));
+		if (ret > 0) {
+#if 0
+			
+			ntySendLocationBroadCastResult(pMessageTag->fromId, pMessageTag->toId, jsonresult, strlen(jsonresult));
+#else
+			size_t len_ValueType = sizeof(VALUE_TYPE);
+			VALUE_TYPE *tag = (VALUE_TYPE*)malloc(len_ValueType);
+			if (tag == NULL) {
+				goto exit;
+			}
+			memset(tag, 0, len_ValueType);
+
+			tag->fromId = pMessageTag->fromId;
+			tag->gId = pMessageTag->toId;
+			tag->length = strlen(jsonresult);
+			tag->Tag = malloc(tag->length+1);
+			memset(tag->Tag, 0, tag->length+1);
+			memcpy(tag->Tag, jsonresult, tag->length);
+
+			tag->Type = MSG_TYPE_LOCATION_BROADCAST_HANDLE;
+			tag->cb = ntyLocationBroadCastHandle;
+			ntyDaveMqPushMessage(tag);
+
+#endif
+		}
+	}
+
+exit:
+	free(pLocationAck);
+	free(pAMap);
+#if 1 //Release Message
+	//nHttpRequest *req = (nHttpRequest *)pMessageTag->param;
+	
+
+	if (pMessageTag->Tag != NULL) {
+		free(pMessageTag->Tag);
+	}
+	free(pMessageTag);
+#endif
+	
+	return size * nmemb;
+}
 
 static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
 	MessageTag *pMessageTag = (MessageTag *)stream;
@@ -747,18 +851,21 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 	ntydbg("bufIMEI %s %lld %lld\n", bufIMEI, pMessageTag->fromId, pMessageTag->toId);
 	pLocationAck->results.IMEI = bufIMEI;
 
+	U8 tb_location_type = 0;	
 	if (pMessageTag->Type== MSG_TYPE_LOCATION_WIFI_API) {
 		pLocationAck->results.category = NATTY_USER_PROTOCOL_WIFI;
 		pLocationAck->results.type = NATTY_USER_PROTOCOL_WIFI;
+		tb_location_type = 1;
 	} else if (pMessageTag->Type == MSG_TYPE_LOCATION_LAB_API) {
 		pLocationAck->results.category = NATTY_USER_PROTOCOL_LAB;
 		pLocationAck->results.type = NATTY_USER_PROTOCOL_LAB;
+		tb_location_type = 3;
 	}
 	
 	pLocationAck->results.location = pAMap->result.location;
 	pLocationAck->results.radius = pAMap->result.radius;
 
-	int ret = ntyExecuteLocationNewInsertHandle(pMessageTag->toId, (U8)pMessageTag->Type, pAMap->result.location, pAMap->info, pAMap->result.desc);
+	int ret = ntyExecuteLocationNewInsertHandle(pMessageTag->toId, tb_location_type, pAMap->result.location, pAMap->result.desc, pAMap->result.radius);
 	if (ret == 0) {
 		char *jsonresult = ntyJsonWriteLocation(pLocationAck);
 		ntylog("ntyHttpQJKLocationHandleResult jsonresult --> %s\n", jsonresult);
@@ -805,6 +912,97 @@ exit:
 	
 	return size * nmemb;
 }
+
+int ntyHttpQJKLocationGetAddress(void *arg) {
+	ntylog("**********ntyHttpQJKLocationGetAddress begin\n");
+	CURL *curl;	
+	CURLcode res;
+
+	MessageTag *pMessageTag = (MessageTag *)arg;
+	if (pMessageTag == NULL) return NTY_RESULT_ERROR;
+	
+	U8 *tag = pMessageTag->Tag;
+#if 0
+	CURLcode return_code;
+	return_code = curl_global_init(CURL_GLOBAL_ALL);
+	if (CURLE_OK != return_code) {
+		ntylog("init libcurl failed.\n");		
+		return -1;
+	}
+#endif
+	curl_version_info_data *info=curl_version_info(CURLVERSION_NOW);
+	if (info->features & CURL_VERSION_ASYNCHDNS) {
+		ntylog("ares enabled\n");
+	} else {
+		ntylog("ares NOT enabled\n");
+	}
+#if 0
+	curl = curl_easy_init();
+#else
+	nHttpRequest *req = ntyHttpRequestGetCURL();
+	if (req == NULL) { 
+
+		if (pMessageTag->Tag != NULL) {
+			free(pMessageTag->Tag);
+		}
+		free(pMessageTag);
+		
+		return NTY_RESULT_ERROR;
+	}
+	curl = req->curl;
+	//pMessageTag->param = req;
+#endif
+	if (!curl)	{		
+		ntylog("curl init failed\n");
+
+		if (pMessageTag->Tag != NULL) {
+			free(pMessageTag->Tag);
+		}
+		free(pMessageTag);
+		
+		return NTY_RESULT_ERROR;	
+	}
+
+	ntylog("get address QJK url:%s\n", tag);
+
+	curl_easy_setopt(curl, CURLOPT_URL, tag);
+	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, NTY_CURL_TIMEOUT);
+#if 1
+	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
+#endif
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ntyHttpQJKLocationGetAddressHandleResult); 
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, arg); 
+
+	res = curl_easy_perform(curl);	
+	if (res != CURLE_OK)	{		
+		switch(res)		{
+			case CURLE_UNSUPPORTED_PROTOCOL:			
+				ntylog("CURLE_UNSUPPORTED_PROTOCOL\n");	
+			case CURLE_COULDNT_CONNECT:
+				ntylog("CURLE_COULDNT_CONNECT\n");	
+			case CURLE_HTTP_RETURNED_ERROR:				
+				ntylog("CURLE_HTTP_RETURNED_ERROR\n");			
+			case CURLE_READ_ERROR:				
+				ntylog("CURLE_READ_ERROR\n");			
+			default:				
+				ntylog("default %d\n",res);		
+		}		
+		//return -3;	
+	}
+#if 0	
+	curl_easy_cleanup(curl);
+#endif
+	ntyHttpRequestResetCURL(req);
+#if 0	
+	if (tag != NULL) {
+		free(tag);
+		tag = NULL;
+	}
+#endif
+	return 0;
+}
+
 
 int ntyHttpQJKLocation(void *arg) {
 	CURL *curl;	

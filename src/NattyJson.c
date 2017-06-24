@@ -290,6 +290,35 @@ void ntyJsonLABItemRelease(Nearbts *pNearbts) {
 	}
 }
 
+void ntyJsonAMapGetAddress(JSON_Value *json, AMap *pAMap) {
+	if (json == NULL || pAMap == NULL) {
+		ntylog("ntyJsonAMapGetAdress param is null.\n");
+		return;
+	}
+
+	JSON_Object *root_object = json_value_get_object(json);
+	pAMap->status = json_object_get_string(root_object, NATTY_AMAP_PROTOCOL_STATUS);
+	pAMap->info = json_object_get_string(root_object, NATTY_AMAP_PROTOCOL_INFO);
+	pAMap->infocode = json_object_get_string(root_object, NATTY_AMAP_PROTOCOL_INFOCODE);
+	
+	JSON_Object *regeocode_object = json_object_get_object(root_object, NATTY_AMAP_PROTOCOL_REGEOCODE);
+	pAMap->result.desc = json_object_get_string(regeocode_object, NATTY_AMAP_PROTOCOL_FORMATTED_ADDRESS);
+	
+	JSON_Object *addresscomponent_object = json_object_get_object(regeocode_object, NATTY_AMAP_PROTOCOL_ADDRESSCOMPONENT);
+	JSON_Object *streetnumber_object = json_object_get_object(addresscomponent_object, NATTY_AMAP_PROTOCOL_STREETNUMBER);
+	pAMap->result.location = json_object_get_string(streetnumber_object, NATTY_AMAP_PROTOCOL_LOCATION);
+	pAMap->result.radius = json_object_get_string(streetnumber_object, NATTY_AMAP_PROTOCOL_DISTANCE);
+		
+	ntydbg("ntyJsonAMapGetAddress status:%s,info:%s,infocode:%s,address:%s,location:%s,radius:%s\n", pAMap->status, pAMap->info, pAMap->infocode,pAMap->result.desc,pAMap->result.location,pAMap->result.radius);
+
+	if (pAMap->result.location != NULL) {
+		if (strcmp(pAMap->result.location, "(null)") == 0) {
+			pAMap->result.location = NULL;
+		}
+	}
+}
+
+
 void ntyJsonAMap(JSON_Value *json, AMap *pAMap) {
 	if (json == NULL || pAMap == NULL) {
 		ntylog("param is null.\n");

@@ -109,6 +109,8 @@ const char * ntyJsonWatchCategory(JSON_Value *json);
 const char * ntyJsonAction(JSON_Value *json);
 
 void ntyJsonAMap(JSON_Value *json, AMap *pAMap);
+void ntyJsonAMapGetAddress(JSON_Value *json, AMap *pAMap);
+
 
 void ntyJsonWIFI(JSON_Value *json, WIFIReq *pWIFIReq);
 

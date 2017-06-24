@@ -55,6 +55,8 @@
 #define HTTP_WEATHER_BASE_URL	"http://api.thinkpage.cn"
 #define HTTP_GAODE_KEY			"fb44f91d1a1df4d4b6356f43183a329f"
 #define HTTP_WEATHER_KEY		"0pyd8z7jouficcil"
+#define HTTP_GAODE_RESTAPI_URL  "http://restapi.amap.com"
+
 
 #define NTY_PACKET_BUFFER_SIZE		992 //32 pkthdr, pkttail
 
@@ -218,6 +220,11 @@
 #define NATTY_AMAP_PROTOCOL_TYPE 			"type"
 #define NATTY_AMAP_PROTOCOL_RADIUS 			"radius"
 #define NATTY_AMAP_PROTOCOL_LOCATION 		"location"
+#define NATTY_AMAP_PROTOCOL_REGEOCODE		"regeocode"
+#define NATTY_AMAP_PROTOCOL_FORMATTED_ADDRESS       "formatted_address"
+#define NATTY_AMAP_PROTOCOL_ADDRESSCOMPONENT 		"addressComponent"
+#define NATTY_AMAP_PROTOCOL_STREETNUMBER 			"streetNumber"
+#define NATTY_AMAP_PROTOCOL_DISTANCE 				"distance"
 
 
 #define NATTY_WEATHER_PROTOCOL_RESULTS 				"results"

@@ -1767,6 +1767,80 @@ void ntyJsonSOSReportAction(ActionParam *pActionParam) {
 }
 
 void ntyJsonLocationReportAction(ActionParam *pActionParam) {
+	if ( pActionParam == NULL ) return;
+	C_DEVID fromId = pActionParam->fromId;
+	C_DEVID toId = pActionParam->toId;
+	LocationReport *pLocationReport = (LocationReport *)malloc( sizeof(LocationReport) );
+	if ( pLocationReport == NULL ) {
+		ntylog("ntyJsonLocationReportAction --> malloc failed LocationReport\n");
+		return;
+	}
+	memset( pLocationReport, 0, sizeof(LocationReport) );
+	ntyJsonLocationReport( pActionParam->json, pLocationReport );	
+	
+	U8 httpBuf[1024] = {0};
+	sprintf( httpBuf, "%s/v3/geocode/regeo?key=%s&location=%s", 
+		HTTP_GAODE_RESTAPI_URL, HTTP_GAODE_KEY, pLocationReport->results.locationReport.location );
+	ntylog( "********ntyJsonLocationReportAction http request:%s\n", httpBuf );
+	int length = strlen( httpBuf );
+
+#if 1 //Push to MessageQueue
+	MessageTag *pMessageTag = (MessageTag *)malloc(sizeof(MessageTag));
+	if ( pMessageTag == NULL ) {
+		ntylog("ntyJsonLocationReportAction --> malloc failed MessageTag\n");
+		free( pLocationReport );	
+		return;
+	}
+	memset( pMessageTag, 0, sizeof(MessageTag) );	
+	
+	if (strcmp(pLocationReport->results.locationReport.type, NATTY_USER_PROTOCOL_WIFI) == 0) {
+		pMessageTag->Type = MSG_TYPE_LOCATION_WIFI_API;
+	} else if (strcmp(pLocationReport->results.locationReport.type, NATTY_USER_PROTOCOL_GPS) == 0) {
+		pMessageTag->Type = MSG_TYPE_LOCATION_GPS_API;
+	} else if (strcmp(pLocationReport->results.locationReport.type, NATTY_USER_PROTOCOL_LAB) == 0) {
+		pMessageTag->Type = MSG_TYPE_LOCATION_LAB_API;
+	}else{}	
+	
+	pMessageTag->fromId = fromId;
+	pMessageTag->toId = toId;
+	pMessageTag->length = length;
+
+#if ENABLE_DAVE_MSGQUEUE_MALLOC
+	pMessageTag->Tag = malloc((length+1)*sizeof(U8));
+	if ( pMessageTag->Tag == NULL ) {
+		ntylog("ntyJsonLocationReportAction --> malloc failed pMessageTag->Tag\n");
+		free( pMessageTag );
+		free( pLocationReport );	
+		return;
+	}
+	memset( pMessageTag->Tag, 0, length+1 );
+	memcpy( pMessageTag->Tag, httpBuf, length );
+#else
+	memset( pMessageTag->Tag, 0, length+1 );
+	memcpy( pMessageTag->Tag, httpBuf, length );
+#endif
+
+	pMessageTag->cb = ntyHttpQJKLocationGetAddress;
+
+	int ret = ntyDaveMqPushMessage( pMessageTag );
+
+#endif
+	//int ret = ntyHttpQJKLocation(pMessageTag);
+	if ( ret < 0 ) {
+		ntylog(" ntyDaveMqPushMessage error\n");
+	} else{
+		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
+	}
+	
+	if ( pLocationReport != NULL ){
+		free( pLocationReport );	
+		pLocationReport = NULL;
+	}
+	if ( pMessageTag != NULL ){
+		free( pMessageTag );
+		pMessageTag = NULL;
+	}
+#if 0
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;
 
@@ -1804,6 +1878,7 @@ void ntyJsonLocationReportAction(ActionParam *pActionParam) {
 			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
 		}
 	}
+#endif
 }
 
 
