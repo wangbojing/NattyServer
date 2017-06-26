@@ -1840,10 +1840,7 @@ void ntyJsonLocationReportAction(ActionParam *pActionParam) {
 		free( pLocationReport );	
 		pLocationReport = NULL;
 	}
-	if ( pMessageTag != NULL ){
-		free( pMessageTag );
-		pMessageTag = NULL;
-	}
+
 #if 0
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;
