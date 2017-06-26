@@ -92,6 +92,8 @@ int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int lengt
 int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int length, int index);
 int ntySendDataResult(C_DEVID toId, U8 *json, int length, U16 status);
 int ntySendDataRoute(C_DEVID toId, U8 *buffer, int length);
+int ntySendDataMessagePush(C_DEVID toId, U8 *buffer, int length);
+
 
 int ntySendCommonReq(C_DEVID fromId, C_DEVID toId, U8 *json, int length, int msgId);
 
@@ -109,6 +111,7 @@ int ntySendBinBufferBroadCastResult(U8 *u8Buffer, int length, C_DEVID fromId, C_
 int ntySendBindConfirmPushResult(C_DEVID proposerId, C_DEVID adminId, U8 *json, int length);
 
 int ntySendPushNotify(C_DEVID selfId, C_DEVID gId, U8 *msg, U32 type);
+int ntySendPushNotifyIos(C_DEVID selfId, C_DEVID gId, U8 *msg, U32 type);
 
 
 #endif

@@ -611,6 +611,57 @@ int ntySendUserDataAck(C_DEVID fromId, U8 *json, int length) {
 	
 }
 
+int ntySendPushNotifyIos(C_DEVID selfId, C_DEVID gId, U8 *msg, U32 type){
+#if 0
+		void *heap = ntyBHeapInstance();
+		NRecord *record = ntyBHeapSelect(heap, selfId);
+		if (record == NULL) return NTY_RESULT_NOEXIST;
+		Client *pClient = (Client *)record->value;
+	
+		if (pClient->deviceType == NTY_PROTO_CLIENT_IOS) {
+			if (pClient->token != NULL) {
+				ntylog("ntySendPushNotify --> selfId:%lld  token:%s\n", selfId, pClient->token);
+				void *pushHandle = ntyPushHandleInstance();
+				return ntyPushNotifyHandle(pushHandle, msg, pClient->token, 0);
+			}
+		} else if (pClient->deviceType == NTY_PROTO_CLIENT_IOS_PUBLISH) {
+			if (pClient->token != NULL) {
+				ntylog("ntySendPushNotify Publish --> selfId:%lld  token:%s\n", selfId, pClient->token);
+				void *pushHandle = ntyPushHandleInstance();
+				return ntyPushNotifyHandle(pushHandle, msg, pClient->token, 1);
+			}
+		}
+		
+		return NTY_RESULT_FAILED;//NTY_RESULT_FAILED
+#else
+			
+		VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
+		if (tag == NULL) return NTY_RESULT_ERROR;
+		memset( tag, 0, sizeof(VALUE_TYPE) );
+		if ( msg != NULL ){			
+			tag->length = strlen(msg);
+			tag->Tag = malloc(tag->length+1);
+			memset(tag->Tag, 0, tag->length+1);
+			memcpy(tag->Tag, msg, tag->length);	
+		}else{
+			tag->length = 0;
+			tag->Tag = NULL;
+		}
+		tag->gId = gId;
+		tag->arg = type;
+		tag->toId = selfId;
+		tag->Type = MSG_TYPE_IOS_PUSH_HANDLE;
+		ntylog("ntySendPushNotifyIos send to ios app --> begin");
+		tag->cb = ntyIOSPushHandle;
+		int nRet = ntyDaveMqPushMessage(tag);
+		if ( nRet < 0 ){
+			return NTY_RESULT_FAILED;
+		}
+		return NTY_RESULT_SUCCESS;
+		
+#endif
+
+}
 
 int ntySendPushNotify(C_DEVID selfId, C_DEVID gId, U8 *msg, U32 type) {
 #if 0
@@ -899,6 +950,14 @@ int ntySendDataRoute(C_DEVID toId, U8 *buffer, int length) {
 	ClientSocket *client = ntyMapSearch(map, toId);
 
 	return ntySendBuffer(client, buffer, length);
+}
+
+int ntySendDataMessagePush(C_DEVID toId, U8 *buffer, int length){
+	void *map = ntyMapInstance();
+	ClientSocket *client = ntyMapSearch(map, toId);
+
+	return ntySendBuffer(client, buffer, length);
+
 }
 
 int ntySendVoiceBroadCastItem(C_DEVID fromId, C_DEVID toId, C_DEVID gId, U8 *json, int length, int index) {

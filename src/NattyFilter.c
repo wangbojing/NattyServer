@@ -2263,6 +2263,48 @@ void ntyMessagePushPacketHandleRequest(const void *_self, unsigned char *buffer,
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_MSG_PUSH_REQ) {
 		ntylog("====================begin ntyMessagePushPacketHandleRequest action ==========================\n");
 
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if ( msg == NULL ) return ;
+
+		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_MSG_PUSH_DEVID_IDX);
+		C_DEVID toId = *(C_DEVID*)(buffer+NTY_PROTO_MSG_PUSH_RECVID_IDX);
+		int nRet = 0;
+		
+		U16 jsonLength = *(U16*)( buffer+NTY_PROTO_MSG_PUSH_JSON_LENGTH_IDX );
+		U8 *jsonstring = (U8*)malloc( jsonLength+1 );
+		if ( jsonstring == NULL ) { 
+			ntylog("ntyMessagePushPacketHandleRequest --> malloc failed jsonstring buffer\n");
+			return ;
+		}
+		memset( jsonstring, 0, jsonLength+1 );
+		memcpy( jsonstring, buffer+NTY_PROTO_MSG_PUSH_JSON_CONTENT_IDX, jsonLength );		
+		ntylog( "ntyMessagePushPacketHandleRequest --> fromId:%lld, toId:%lld, json:%s, jsonlength:%d\n", fromId, toId, jsonstring, jsonLength );
+
+		void *heap = ntyBHeapInstance();
+		NRecord *record = ntyBHeapSelect( heap, toId );
+		if ( record == NULL ) return ;
+		Client *pClient = (Client *)record->value;
+		
+		if ( pClient->deviceType != NTY_PROTO_CLIENT_IOS && pClient->deviceType != NTY_PROTO_CLIENT_IOS_PUBLISH ) {
+			nRet = ntySendDataMessagePush( toId, (U8*)buffer, length );
+			if ( nRet >= 0 ) {
+				ntylog( "ntyMessagePushPacketHandleRequest send to app which is not ios app success\n" );
+				ntyJsonCommonResult( fromId, NATTY_RESULT_CODE_SUCCESS );
+			} else {
+				ntylog( "ntyMessagePushPacketHandleRequest send to app which is not ios app failed\n" );
+				ntyJsonCommonResult( fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE );
+			}			
+		} else{
+			nRet = ntySendPushNotifyIos( toId, fromId, (U8*)buffer, 0 );
+			if ( nRet = 0 ){
+				ntylog( "ntyMessagePushPacketHandleRequest send to app which is ios app success\n" );
+				ntyJsonCommonResult( fromId, NATTY_RESULT_CODE_SUCCESS );				
+			}else {
+				ntylog( "ntyMessagePushPacketHandleRequest send to app which is not ios app failed\n" );
+				ntyJsonCommonResult( fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE );				
+			}	
+		}
+
 		
 		ntylog("====================end ntyMessagePushPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
