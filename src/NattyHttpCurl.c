@@ -710,6 +710,8 @@ static size_t ntyHttpQJKLocationGetAddressHandleResult(void* buffer, size_t size
 	MessageTag *pMessageTag = (MessageTag *)stream;
 	if ( pMessageTag == NULL ) return NTY_RESULT_PROCESS;
 
+	ntylog("ntyHttpQJKLocationGetAddressHandleResult --> fromId:%llx, toId:%llx\n", pMessageTag->fromId, pMessageTag->toId);
+
 	U8 *jsonstring = buffer;
 	ntylog( "ntyHttpQJKLocationGetAdressHandleResult json --> %s\n", jsonstring );
 	if ( pMessageTag->Tag != NULL ) {
@@ -742,7 +744,7 @@ static size_t ntyHttpQJKLocationGetAddressHandleResult(void* buffer, size_t size
 	
 	char bufIMEI[50] = {0};
 	sprintf(bufIMEI, "%llx", pMessageTag->fromId);
-	ntydbg("*****ntyHttpQJKLocationGetAddressHandleResult IMEI:%s,fromId:%lld,toId:%lld\n", bufIMEI, pMessageTag->fromId, pMessageTag->toId);
+	ntylog("*****ntyHttpQJKLocationGetAddressHandleResult IMEI:%s,fromId:%lld,toId:%lld\n", bufIMEI, pMessageTag->fromId, pMessageTag->toId);
 	pLocationAck->results.IMEI = bufIMEI;
 
 	U8 tb_location_type = 0; //the value of tb_location_type insert tb_location table
@@ -920,6 +922,7 @@ int ntyHttpQJKLocationGetAddress(void *arg) {
 
 	MessageTag *pMessageTag = (MessageTag *)arg;
 	if (pMessageTag == NULL) return NTY_RESULT_ERROR;
+	ntylog("ntyHttpQJKLocationGetAddress --> fromId:%llx, toId:%llx\n", pMessageTag->fromId, pMessageTag->toId);
 	
 	U8 *tag = pMessageTag->Tag;
 #if 0

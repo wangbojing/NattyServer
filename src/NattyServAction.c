@@ -1770,6 +1770,10 @@ void ntyJsonLocationReportAction(ActionParam *pActionParam) {
 	if ( pActionParam == NULL ) return;
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;
+
+
+	ntylog("fromId:%lld, toId:%lld\n", fromId, toId);
+	
 	LocationReport *pLocationReport = (LocationReport *)malloc( sizeof(LocationReport) );
 	if ( pLocationReport == NULL ) {
 		ntylog("ntyJsonLocationReportAction --> malloc failed LocationReport\n");
