@@ -552,6 +552,13 @@ static void *ntyPushRecvCallback(void *arg) {
 	fds[NTY_PUSH_CLIENT_PRODUCTION].fd = pCtx->p_sockfd;
 	fds[NTY_PUSH_CLIENT_PRODUCTION].events = POLLIN;
 
+	fds[NTY_PUSH_CLIENT_DEVELOPMENT_B].fd = pCtx->d_sockfd;
+	fds[NTY_PUSH_CLIENT_DEVELOPMENT_B].events = POLLIN;
+
+	fds[NTY_PUSH_CLIENT_PRODUCTION_B].fd = pCtx->p_sockfd;
+	fds[NTY_PUSH_CLIENT_PRODUCTION_B].events = POLLIN;
+
+
 	while (1) {
 		if (exiting) { 
 			
@@ -582,6 +589,30 @@ static void *ntyPushRecvCallback(void *arg) {
 					ntylog("ntyPushRecvCallback --> production: %s\n", buffer);
 				}
 			}
+
+			if (fds[NTY_PUSH_CLIENT_DEVELOPMENT_B].events & POLLIN) {
+				U8 buffer[1024] = {0};
+				int rLen = read(fds[NTY_PUSH_CLIENT_DEVELOPMENT_B].fd, buffer, 1024);
+				if (rLen <= 0) {
+					ntylog("ntyPushRecvCallback --> development disconnect\n");
+					
+					ntyPushHandleRelease();
+				} else {
+					ntylog("ntyPushRecvCallback --> development: %s\n", buffer);
+				}
+			}
+
+			if (fds[NTY_PUSH_CLIENT_PRODUCTION_B].events & POLLIN) {
+				U8 buffer[1024] = {0};
+				int rLen = read(fds[NTY_PUSH_CLIENT_PRODUCTION_B].fd, buffer, 1024);
+				if (rLen <= 0) {
+					ntylog("ntyPushRecvCallback --> production disconnect\n");
+					
+					ntyPushHandleRelease();
+				} else {
+					ntylog("ntyPushRecvCallback --> production: %s\n", buffer);
+				}
+			}
 		}
 	}
 } 
@@ -593,11 +624,10 @@ void* ntyPushContextCtor(void *self, va_list *params) {
 	ntyOpensslInitialize();
 
 	pCtx->ctx = ntyContextInitialize(APPLE_CLIENT_PEM_NAME, APPLE_CLIENT_PEM_NAME, APPLE_CLIENT_PEM_PWD, APPLE_SERVER_PEM_NAME);
-#if 0
-	memset(&pCtx->addr, 0, sizeof(pCtx->addr));
-#endif
 	pCtx->pctx = ntyContextInitialize(APPLE_CLIENT_PEM_NAME_PUBLISH, APPLE_CLIENT_PEM_NAME_PUBLISH, APPLE_CLIENT_PEM_PWD, APPLE_SERVER_PEM_NAME);
-
+	pCtx->ctx_b = ntyContextInitialize(APPLE_CLIENT_PEM_NAME_JINGWU, APPLE_CLIENT_PEM_NAME_JINGWU, APPLE_CLIENT_PEM_PWD, APPLE_SERVER_PEM_NAME);
+	pCtx->pctx_b = ntyContextInitialize(APPLE_CLIENT_PEM_NAME_PUBLISH_JINGWU, APPLE_CLIENT_PEM_NAME_PUBLISH_JINGWU, APPLE_CLIENT_PEM_PWD, APPLE_SERVER_PEM_NAME);
+	
 	
 	pCtx->d_sockfd = ntyPushTcpConnect(pCtx, NTY_PUSH_CLIENT_DEVELOPMENT);
 	if (pCtx->d_sockfd < 0) {
@@ -613,6 +643,8 @@ void* ntyPushContextCtor(void *self, va_list *params) {
 		return pCtx;
 	}
 
+	ntylog(" development is success\n");
+
 
 	pCtx->p_sockfd = ntyPushTcpConnect(pCtx, NTY_PUSH_CLIENT_PRODUCTION);
 	if (pCtx->p_sockfd < 0) {
@@ -627,6 +659,45 @@ void* ntyPushContextCtor(void *self, va_list *params) {
 
 		return pCtx;
 	}
+
+	ntylog(" production is success\n");
+
+	//B stand for jingwu
+	ntylog("ntyPushContextCtor\n");
+	
+	pCtx->d_sockfd_b = ntyPushTcpConnect(pCtx, NTY_PUSH_CLIENT_DEVELOPMENT_B);
+	if (pCtx->d_sockfd_b < 0) {
+		ntylog("failed to connect to host %s\n", strerror(errno));
+		return pCtx;
+	}
+
+	pCtx->d_ssl_b = ntyPushSSLConnect(pCtx, pCtx->d_sockfd_b, NTY_PUSH_CLIENT_DEVELOPMENT_B);
+	if (pCtx->d_ssl_b == NULL) {
+		ntylog("ssl connect failed: %s\n", ERR_reason_error_string(ERR_get_error())); 
+		ntyCloseSocket(pCtx->d_sockfd_b);
+
+		return pCtx;
+	}
+
+	ntylog(" development version b is success\n");
+
+
+	pCtx->p_sockfd_b = ntyPushTcpConnect(pCtx, NTY_PUSH_CLIENT_PRODUCTION_B);
+	if (pCtx->p_sockfd_b < 0) {
+		ntylog("failed to connect to host %s\n", strerror(errno));
+		return pCtx;
+	}
+	
+	pCtx->p_ssl_b = ntyPushSSLConnect(pCtx, pCtx->p_sockfd_b, NTY_PUSH_CLIENT_PRODUCTION_B);
+	if (pCtx->p_ssl_b == NULL) {
+		ntylog("ssl connect failed: %s\n", ERR_reason_error_string(ERR_get_error())); 
+		ntyCloseSocket(pCtx->p_sockfd_b);
+
+		return pCtx;
+	}
+
+	ntylog(" production version b is success\n");
+
 
 #if 1 //setup recv thread
 	pthread_t recvThreadId;
@@ -665,6 +736,28 @@ void* ntyPushContextDtor(void *self) {
 		if (pCtx->p_sockfd >= 0) {
 			ntyCloseSocket(pCtx->p_sockfd);
 		}
+		//B stand for jingwu
+		if (pCtx->ctx_b != NULL) {
+			SSL_CTX_free(pCtx->ctx_b);
+		}
+
+		if (pCtx->pctx_b != NULL) {
+			SSL_CTX_free(pCtx->pctx_b);
+		}
+
+		if (pCtx->d_ssl_b != NULL) {
+			SSL_shutdown(pCtx->d_ssl_b);
+		}
+		if (pCtx->d_sockfd_b >= 0) {
+			ntyCloseSocket(pCtx->d_sockfd_b);
+		}
+
+		if (pCtx->p_ssl_b != NULL) {
+			SSL_shutdown(pCtx->p_ssl_b);
+		}
+		if (pCtx->p_sockfd_b >= 0) {
+			ntyCloseSocket(pCtx->p_sockfd_b);
+		}
 	}
 	
 	return pCtx;
@@ -675,12 +768,20 @@ static SSL* ntyPushSSLConnect(void *self, int sockfd, U8 mode) {
 	if (pCtx == NULL) return NULL;
 	if (pCtx->ctx == NULL) return NULL;
 	if (pCtx->pctx == NULL) return NULL;
+	if (pCtx->ctx_b == NULL) return NULL;
+	if (pCtx->pctx_b == NULL) return NULL;
 
 	SSL *ssl = NULL;
-	if (mode) { //production
-		ssl = SSL_new(pCtx->pctx);
-	} else { //development
+	if (mode == NTY_PUSH_CLIENT_DEVELOPMENT) { //development
 		ssl = SSL_new(pCtx->ctx);
+	} else if (mode == NTY_PUSH_CLIENT_PRODUCTION) { //production
+		ssl = SSL_new(pCtx->pctx);
+	} else if (mode == NTY_PUSH_CLIENT_DEVELOPMENT_B) { //production
+		ssl = SSL_new(pCtx->ctx_b);
+	} else if (mode == NTY_PUSH_CLIENT_PRODUCTION_B) { //production
+		ssl = SSL_new(pCtx->pctx_b);
+	} else {
+		return ssl;
 	}
 	
 	BIO *bio = BIO_new_socket(sockfd, BIO_NOCLOSE);
@@ -728,7 +829,7 @@ static int ntyPushTcpConnect(void *self, U8 mode) {
 
 	//if (*(unsigned char*)(&addr[mode].sin_addr.s_addr) == 0x0) {
 	
-	if (mode == NTY_PUSH_CLIENT_DEVELOPMENT) {
+	if (mode == NTY_PUSH_CLIENT_DEVELOPMENT || mode == NTY_PUSH_CLIENT_DEVELOPMENT_B) {
 		ntylog("gethostbyname : %s\n", APPLE_HOST_DEVELOPMENT_NAME);
 		
 		if (!(hp = gethostbyname(APPLE_HOST_DEVELOPMENT_NAME))) {
@@ -796,7 +897,19 @@ int ntyPushNotify(void *self, C_DEVID gId, U32 type, U32 counter, U8 *msg, const
 #if 1
 	int ret = NTY_RESULT_FAILED;
 	SSL *ssl = NULL;
-	if (mode) {
+	if (mode == NTY_PUSH_CLIENT_DEVELOPMENT) {
+		ssl = pCtx->d_ssl;
+
+		ntylog("ntyVerifyConnection --> APPLE_HOST_DEVELOPMENT_NAME\n");
+		ret = ntyVerifyConnection(ssl, APPLE_HOST_DEVELOPMENT_NAME);
+		if (ret != NTY_RESULT_SUCCESS) {
+			ntylog("Verify failed\n");
+#if 1 
+			ntyPushHandleRelease();
+#endif
+			return NTY_RESULT_FAILED;
+		}
+	}  else if (mode == NTY_PUSH_CLIENT_PRODUCTION) {
 		ssl = pCtx->p_ssl;
 
 		ntylog("ntyVerifyConnection --> APPLE_HOST_PRODUCTION_NAME\n");
@@ -809,9 +922,9 @@ int ntyPushNotify(void *self, C_DEVID gId, U32 type, U32 counter, U8 *msg, const
 			return NTY_RESULT_FAILED;
 		}
 		
-	} else {
-		ssl = pCtx->d_ssl;
-
+	} else if (mode == NTY_PUSH_CLIENT_DEVELOPMENT_B) {
+		ssl = pCtx->d_ssl_b;
+		
 		ntylog("ntyVerifyConnection --> APPLE_HOST_DEVELOPMENT_NAME\n");
 		ret = ntyVerifyConnection(ssl, APPLE_HOST_DEVELOPMENT_NAME);
 		if (ret != NTY_RESULT_SUCCESS) {
@@ -821,6 +934,19 @@ int ntyPushNotify(void *self, C_DEVID gId, U32 type, U32 counter, U8 *msg, const
 #endif
 			return NTY_RESULT_FAILED;
 		}
+
+	} else if (mode == NTY_PUSH_CLIENT_PRODUCTION_B) {
+		ssl = pCtx->p_ssl_b;
+
+		ntylog("ntyVerifyConnection --> APPLE_HOST_PRODUCTION_NAME\n");
+		ret = ntyVerifyConnection(ssl, APPLE_HOST_PRODUCTION_NAME);
+		if (ret != NTY_RESULT_SUCCESS) {
+			ntylog("Verify failed\n");	
+#if 1 
+			ntyPushHandleRelease();
+#endif
+			return NTY_RESULT_FAILED;
+		}		
 	}
 #else
 	int sockfd = ntyPushTcpConnect(pCtx);
@@ -924,8 +1050,8 @@ int main(void) {
 	void *pushHandle = ntyPushHandleInstance();
 
 	char *msg = "abcd";
-	//const char *token = "a0c7aa17d80c27e1c98482483655d9cd7036dadca57fc5d4a693321997813707";
-	const char *token = "2f88b3df02e08a11e7777479943089aacffb2f8750aaa08a98a5f5978081d84a";
+	const char *token = "ee088b72e57c751b6c04fb40c371dee35a82a989fe1f9e358a7ee15a2084b5bd";
+	//const char *token = "2f88b3df02e08a11e7777479943089aacffb2f8750aaa08a98a5f5978081d84a";
 	C_DEVID devId = 0x355637053172771;
 	U32 type = 1;
 
@@ -934,14 +1060,14 @@ int main(void) {
 	//015bafdb5a846a08cbae1d78959a461d 6b9c4e46f6a18dc36b4e9a191487bc0d
 	//015bafdb5a846a08cbae1d78959a461d
 
-	int ret = ntyPushNotifyHandle(pushHandle, devId, type, 5, NULL, token, NTY_PUSH_CLIENT_PRODUCTION);
+	int ret = ntyPushNotifyHandle(pushHandle, devId, type, 5, NTY_PUSH_POLICE_MSG_CONTEXT, token, NTY_PUSH_CLIENT_DEVELOPMENT_B);
 
 	getchar();
 
 	int i = 0;
 
 	for (i = 0;i < 10;i ++) {
-		ntyPushNotifyHandle(pushHandle, devId, type, i+1, NULL, token, NTY_PUSH_CLIENT_PRODUCTION);
+		ntyPushNotifyHandle(pushHandle, devId, type, i+1, NTY_PUSH_POLICE_MSG_CONTEXT, token, NTY_PUSH_CLIENT_DEVELOPMENT_B);
 	}
 
 	getchar();

@@ -746,6 +746,20 @@ int ntyIOSPushHandle(void *arg) {
 			ntyPushNotifyHandle(pushHandle, gId, type, counter, msg, pClient->token, NTY_PUSH_CLIENT_PRODUCTION);
 		}
 		goto exit;
+	} else if (pClient->deviceType == NTY_PROTO_CLIENT_IOS_APP_B) {
+		if (pClient->token != NULL) {
+			ntylog("ntySendPushNotify --> selfId:%lld  token:%s\n", toId, pClient->token);
+			void *pushHandle = ntyPushHandleInstance();
+			ntyPushNotifyHandle(pushHandle, gId, type, counter, msg, pClient->token, NTY_PUSH_CLIENT_DEVELOPMENT_B);
+		}
+		goto exit;
+	} else if (pClient->deviceType == NTY_PROTO_CLIENT_IOS_APP_B_PUBLISH) {
+		if (pClient->token != NULL) {
+			ntylog("ntySendPushNotify --> selfId:%lld  token:%s\n", toId, pClient->token);
+			void *pushHandle = ntyPushHandleInstance();
+			ntyPushNotifyHandle(pushHandle, gId, type, counter, msg, pClient->token, NTY_PUSH_CLIENT_PRODUCTION_B);
+		}
+		goto exit;
 	}
 exit:
 	if (msg != NULL) {

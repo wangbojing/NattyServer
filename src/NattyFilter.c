@@ -628,8 +628,15 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 		Client *pClient = ntyAddClientHeap(client, &ret);
 		if (pClient != NULL) {
 			//ntySendFriendsTreeIpAddr(pClient, 1);
-			pClient->deviceType = client->deviceType; //Client from Android switch IOS 
 
+			pClient->deviceType = client->deviceType; //Client from Android switch IOS 
+			if (pClient->deviceType == NTY_PROTO_CLIENT_IOS && buffer[NTY_PROTO_VERSION_IDX] == NTY_PROTO_VERSION_B) {
+				pClient->deviceType = NTY_PROTO_CLIENT_IOS_APP_B;
+			} else if (pClient->deviceType == NTY_PROTO_CLIENT_IOS_PUBLISH && buffer[NTY_PROTO_VERSION_IDX] == NTY_PROTO_VERSION_B) {
+				pClient->deviceType = NTY_PROTO_CLIENT_IOS_APP_B_PUBLISH;
+			}
+
+			
 			if (pClient->deviceType == NTY_PROTO_CLIENT_WATCH) {
 #if 0
 				ntySendDeviceTimeCheckAck(pClient, client->ackNum+1);
@@ -656,7 +663,8 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 #endif
 			} else {
 
-				if (pClient->deviceType == NTY_PROTO_CLIENT_IOS || pClient->deviceType == NTY_PROTO_CLIENT_IOS_PUBLISH) {
+				if (pClient->deviceType == NTY_PROTO_CLIENT_IOS || pClient->deviceType == NTY_PROTO_CLIENT_IOS_PUBLISH
+					|| pClient->deviceType == NTY_PROTO_CLIENT_IOS_APP_B || pClient->deviceType == NTY_PROTO_CLIENT_IOS_APP_B_PUBLISH) {
 					U16 tokenLen = *(U16*)(buffer+NTY_PROTO_LOGIN_REQ_JSON_LENGTH_IDX);
 						
 					U8 *token = buffer+NTY_PROTO_LOGIN_REQ_JSON_CONTENT_IDX;

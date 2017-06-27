@@ -77,6 +77,10 @@
 #define APPLE_CLIENT_PEM_NAME			"/home/crt/ck_development.pem"
 #define APPLE_CLIENT_PEM_NAME_PUBLISH	"/home/crt/ck_production.pem"
 
+#define APPLE_CLIENT_PEM_NAME_JINGWU			"/home/crt/jingwu_ck_development.pem"
+#define APPLE_CLIENT_PEM_NAME_PUBLISH_JINGWU	"/home/crt/jingwu_ck_production.pem"
+
+
 #define APPLE_CLIENT_PEM_KEY			"123456"
 #define APPLE_CLIENT_PEM_PWD			"123456"
 
@@ -101,6 +105,7 @@ typedef struct _Push_Context {
 	const void *_;
 	SSL_CTX *ctx;
 	SSL_CTX *pctx;
+
 #if 0
 	struct sockaddr_in addr;
 #endif
@@ -109,6 +114,16 @@ typedef struct _Push_Context {
 
 	SSL *d_ssl;
 	SSL *p_ssl;
+
+	//B stand for jingwu
+	SSL_CTX *ctx_b;
+	SSL_CTX *pctx_b;
+
+	int d_sockfd_b; //B stand for jingwu
+	int p_sockfd_b; //B stand for jingwu
+
+	SSL *d_ssl_b; //B stand for jingwu
+	SSL *p_ssl_b; //B stand for jingwu
 
 } nPushContext;
 
@@ -123,7 +138,9 @@ typedef struct _Push_Handle {
 typedef enum {
 	NTY_PUSH_CLIENT_DEVELOPMENT = 0,
 	NTY_PUSH_CLIENT_PRODUCTION = 1,
-	NTY_PUSH_CLIENT_COUNT = 2,
+	NTY_PUSH_CLIENT_DEVELOPMENT_B = 2,
+	NTY_PUSH_CLIENT_PRODUCTION_B = 3,
+	NTY_PUSH_CLIENT_COUNT = 4,
 } NTY_PUSH_TYPE;
 
 void *ntyPushHandleInstance(void);

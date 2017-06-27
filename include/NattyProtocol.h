@@ -59,6 +59,14 @@
 #define NTY_PROTO_CLIENT_IOS_PUBLISH	'P'		
 #define NTY_PROTO_CLIENT_WEB			'W'
 #define NTY_PROTO_CLIENT_PC				'C'
+
+
+#define NTY_PROTO_CLIENT_IOS_APP_B				0x02
+#define NTY_PROTO_CLIENT_IOS_APP_B_PUBLISH		0x03
+
+
+
+
 #define NTY_PROTO_SERVER				'S'
 #define NTY_PROTO_CLIENT_DEFAULT		0x0 //server
 
