@@ -238,12 +238,6 @@ int ntyJsonLocationWIFIAction(ActionParam *pActionParam) {
 	int ret = ntyDaveMqPushMessage(pMessageTag);
 #endif
 	//int ret = ntyHttpQJKLocation(pMessageTag);
-	if (ret == -1) {
-		ntylog(" ntyHttpQJKLocation --> Http Exception\n");
-		ret = 4;
-	} else if (ret > 0) {
-		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
-	}
 	
 	ntyJsonWIFIItemRelease(pWIFIReq->pWIFI);
 	free(pWIFIReq);
@@ -329,13 +323,6 @@ int ntyJsonLocationLabAction(ActionParam *pActionParam) {
 
 	int ret = ntyDaveMqPushMessage(pMessageTag);
 	//int ret = ntyHttpQJKLocation(pMessageTag);
-	//free(pMessageTag);
-	if (ret == -1) {
-		ntylog(" ntyHttpQJKLocation --> Http Exception\n");
-		ret = 4;
-	} else if (ret > 0) {
-		ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_SUCCESS);
-	}
 
 	ntyJsonLABItemRelease(pLABReq->lab.pNearbts);
 	free(pLABReq);
@@ -396,12 +383,6 @@ int ntyJsonWeatherAction(ActionParam *pActionParam) {
 
 	int ret = ntyDaveMqPushMessage(pMessageTag);
 	//int ret = ntyHttpQJKWeatherLocation(pMessageTag);
-	if (ret == -1) {
-		ntylog(" ntyHttpQJKWeatherLocation --> Http Exception\n");
-		ret = 4;
-	} else if (ret >= 0) {
-		ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
-	}
 
 	free(pWeatherLocationReq);
 }

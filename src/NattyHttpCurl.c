@@ -855,11 +855,11 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 
 	U8 tb_location_type = 0;	
 	if (pMessageTag->Type== MSG_TYPE_LOCATION_WIFI_API) {
-		pLocationAck->results.category = NATTY_USER_PROTOCOL_WIFI;
+		pLocationAck->results.category = NATTY_USER_PROTOCOL_LOCATION;
 		pLocationAck->results.type = NATTY_USER_PROTOCOL_WIFI;
 		tb_location_type = 1;
 	} else if (pMessageTag->Type == MSG_TYPE_LOCATION_LAB_API) {
-		pLocationAck->results.category = NATTY_USER_PROTOCOL_LAB;
+		pLocationAck->results.category = NATTY_USER_PROTOCOL_LOCATION;
 		pLocationAck->results.type = NATTY_USER_PROTOCOL_LAB;
 		tb_location_type = 3;
 	}
