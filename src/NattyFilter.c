@@ -2295,7 +2295,7 @@ void ntyMessagePushPacketHandleRequest(const void *_self, unsigned char *buffer,
 				ntyJsonCommonResult( fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE );
 			}			
 		} else{
-			nRet = ntySendPushNotifyIos( toId, fromId, (U8*)buffer, 0 );
+			nRet = ntySendPushNotifyIos( toId, fromId, NTY_PUSH_POLICE_MSG_CONTEXT, 0 );
 			if ( nRet = 0 ){
 				ntylog( "ntyMessagePushPacketHandleRequest send to app which is ios app success\n" );
 				ntyJsonCommonResult( fromId, NATTY_RESULT_CODE_SUCCESS );				
