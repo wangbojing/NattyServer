@@ -2293,7 +2293,8 @@ void ntyMessagePushPacketHandleRequest(const void *_self, unsigned char *buffer,
 		if ( record == NULL ) return ;
 		Client *pClient = (Client *)record->value;
 		
-		if ( pClient->deviceType != NTY_PROTO_CLIENT_IOS && pClient->deviceType != NTY_PROTO_CLIENT_IOS_PUBLISH ) {
+		if ( pClient->deviceType != NTY_PROTO_CLIENT_IOS && pClient->deviceType != NTY_PROTO_CLIENT_IOS_PUBLISH 
+			&& pClient->deviceType != NTY_PROTO_CLIENT_IOS_APP_B && pClient->deviceType != NTY_PROTO_CLIENT_IOS_APP_B_PUBLISH) {
 			nRet = ntySendDataMessagePush( toId, (U8*)buffer, length );
 			if ( nRet >= 0 ) {
 				ntylog( "ntyMessagePushPacketHandleRequest send to app which is not ios app success\n" );
