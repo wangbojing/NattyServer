@@ -768,33 +768,30 @@ static size_t ntyHttpQJKLocationGetAddressHandleResult(void* buffer, size_t size
 	int ret = ntyExecuteLocationReportInsertHandle( pMessageTag->toId, tb_location_type, pAMap->result.desc, pAMap->result.location, pAMap->result.radius, &msgid );
 	if (ret == 0) {
 		char *jsonresult = ntyJsonWriteLocation(pLocationAck);
-		ntylog("******send to toId jsonresult:%s\n", jsonresult);
-		ret = ntySendLocationPushResult(pMessageTag->toId, jsonresult, strlen(jsonresult));
-		if (ret > 0) {
+		ntylog("******ntyHttpQJKLocationGetAddressHandleResult broadcast to app json:%s\n", jsonresult);
 #if 0
 			
 			ntySendLocationBroadCastResult(pMessageTag->fromId, pMessageTag->toId, jsonresult, strlen(jsonresult));
 #else
-			size_t len_ValueType = sizeof(VALUE_TYPE);
-			VALUE_TYPE *tag = (VALUE_TYPE*)malloc(len_ValueType);
-			if (tag == NULL) {
-				goto exit;
-			}
-			memset(tag, 0, len_ValueType);
+		size_t len_ValueType = sizeof(VALUE_TYPE);
+		VALUE_TYPE *tag = (VALUE_TYPE*)malloc(len_ValueType);
+		if (tag == NULL) {
+			goto exit;
+		}
+		memset(tag, 0, len_ValueType);
 
-			tag->fromId = pMessageTag->fromId;
-			tag->gId = pMessageTag->toId;
-			tag->length = strlen(jsonresult);
-			tag->Tag = malloc(tag->length+1);
-			memset(tag->Tag, 0, tag->length+1);
-			memcpy(tag->Tag, jsonresult, tag->length);
+		tag->fromId = pMessageTag->fromId;
+		tag->gId = pMessageTag->toId;
+		tag->length = strlen(jsonresult);
+		tag->Tag = malloc(tag->length+1);
+		memset(tag->Tag, 0, tag->length+1);
+		memcpy(tag->Tag, jsonresult, tag->length);
 
-			tag->Type = MSG_TYPE_LOCATION_BROADCAST_HANDLE;
-			tag->cb = ntyLocationBroadCastHandle;
-			ntyDaveMqPushMessage(tag);
+		tag->Type = MSG_TYPE_LOCATION_BROADCAST_HANDLE;
+		tag->cb = ntyLocationBroadCastHandle;
+		ntyDaveMqPushMessage(tag);
 
 #endif
-		}
 	}
 
 exit:
