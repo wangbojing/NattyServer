@@ -1027,10 +1027,10 @@ char *ntyJsonWriteLocation(LocationAck *pLocationAck) {
 	JSON_Object *schema_obj = json_value_get_object(schema);
 	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object());
 	JSON_Object *results_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULTS);
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_CATEGORY, pLocationAck->results.category);
 	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_TYPE, pLocationAck->results.type);
 	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_RADIUS, pLocationAck->results.radius);
 	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_LOCATION, pLocationAck->results.location);
-	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_CATEGORY, pLocationAck->results.category);
 	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_IMEI, pLocationAck->results.IMEI);
 
 	char *jsonstring =  json_serialize_to_string(schema);
