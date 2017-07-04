@@ -218,6 +218,14 @@ int ntyAddRelationMap(MessagePacket *msg) {
 #if 1 //Add Repeat clientId, logout the other client.
 			ntyJsonCommonResult(msg->client->devId, NATTY_RESULT_CODE_ERR_REPEAT_CLIENTID);
 #endif
+
+#if 1 //before socket set 0x0. this status as accept
+			void *hash = ntyHashTableInstance();
+			Payload *load = ntyHashTableSearch(hash, value->sockfd);
+			if (load != NULL) {
+				load->id = NATTY_NULL_DEVID;
+			}
+#endif
 			
 #if ENABLE_EV_WATCHER_MODE
 			//release before socket
