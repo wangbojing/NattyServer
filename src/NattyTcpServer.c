@@ -214,6 +214,11 @@ int ntyAddRelationMap(MessagePacket *msg) {
 			ntylog(" to:%d.%d.%d.%d:%d\n", *(unsigned char*)(&client_addr.sin_addr.s_addr), *((unsigned char*)(&client_addr.sin_addr.s_addr)+1),													
 				*((unsigned char*)(&client_addr.sin_addr.s_addr)+2), *((unsigned char*)(&client_addr.sin_addr.s_addr)+3),													
 				client_addr.sin_port);
+
+#if 1 //Add Repeat clientId, logout the other client.
+			ntyJsonCommonResult(msg->client->devId, NATTY_RESULT_CODE_ERR_REPEAT_CLIENTID);
+#endif
+			
 #if ENABLE_EV_WATCHER_MODE
 			//release before socket
 			//ntyReleaseSocket(tcp_mainloop, value->watcher);

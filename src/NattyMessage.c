@@ -93,6 +93,8 @@ void ntyCommonResultMessage(const char *code, char *message) {
 		strcat(message, "Cannot save offline data");
 	} else if (strcmp(code, NATTY_RESULT_CODE_ERR_DB_SAVE_REPEATE_DATA) == 0) {
 		strcat(message, "Save Repeate data");
+	} else if (strcmp(code, NATTY_RESULT_CODE_ERR_REPEAT_CLIENTID) == 0) {
+		strcat(message, "Repeate Client Id");
 	} else if (strcmp(code, NATTY_RESULT_CODE_BUSY) == 0) {
 		strcat(message, "Server be Busy");
 	} else {

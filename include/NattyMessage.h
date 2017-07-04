@@ -73,6 +73,8 @@
 #define NATTY_RESULT_CODE_ERR_BROADCAST				"10014"		//广播数据
 #define NATTY_RESULT_CODE_ERR_EFENCE_POINTS			"10015"		//电子围栏数据点数未在合理范围
 
+#define NATTY_RESULT_CODE_ERR_REPEAT_CLIENTID		"10016"		//重复客户端ID
+
 
 #if 0
 const char* ntyCommonResultMessage(const char *code);
