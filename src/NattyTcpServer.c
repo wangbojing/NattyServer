@@ -221,7 +221,7 @@ int ntyAddRelationMap(MessagePacket *msg) {
 
 #if 1 //before socket set 0x0. this status as accept
 			void *hash = ntyHashTableInstance();
-			Payload *load = ntyHashTableSearch(hash, value->sockfd);
+			Payload *load = ntyHashTableSearch(hash, value->watcher->fd);
 			if (load != NULL) {
 				load->id = NATTY_NULL_DEVID;
 			}
