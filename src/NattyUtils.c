@@ -435,3 +435,38 @@ int ntyReadDat(const char *filename, char *data, int len) {
 
 
 
+int ntyUrlEncode(const char *desc, char *out, int len) {
+	int res = 0;
+	int i = 0;
+	
+	for (i = 0;i < len;i ++) {
+		char c = desc[i] & 0xff;
+		
+		if ( ('0' <= c && c <= '9') 
+			|| ('a' <= c && c <= 'z')
+			|| ('A' <= c && c <= 'Z')
+			|| c == '/' || c == '.') {
+			out[res++] = c;
+		} else {
+			out[res++] = '%';
+			char high = (c & 0xF0) >> 4;
+			if (0 <= high && high <= 9) high += '0';
+			if (10 <= high && high <= 15) high += 'A'-10;
+			out[res++] = high;
+			
+			char low = c & 0x0F;
+			if (0 <= low && low <= 9) low += '0';
+			if (10 <= low && low <= 15) low += 'A'-10;
+			out[res++] = low;
+			
+		}
+	}
+
+	out[res] = 0;
+
+	return res;
+}
+
+
+
+

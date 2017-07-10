@@ -765,7 +765,13 @@ static size_t ntyHttpQJKLocationGetAddressHandleResult(void* buffer, size_t size
 	pLocationAck->results.location = pAMap->result.location;
 	pLocationAck->results.radius = pAMap->result.radius;
 	U32 msgid = 0;
-	int ret = ntyExecuteLocationReportInsertHandle( pMessageTag->toId, tb_location_type, pAMap->result.desc, pAMap->result.location, pAMap->result.radius, &msgid );
+	
+	U8 urlCode[512] = {0};
+	int length = strlen(pAMap->result.desc);
+
+	int res = ntyUrlEncode(pAMap->result.desc, urlCode, length);
+	ntydbg("urlCode : %s\n", urlCode);
+	int ret = ntyExecuteLocationReportInsertHandle( pMessageTag->toId, tb_location_type, urlCode, pAMap->result.location, pAMap->result.radius, &msgid );
 	if (ret == 0) {
 		char *jsonresult = ntyJsonWriteLocation(pLocationAck);
 		ntylog("******ntyHttpQJKLocationGetAddressHandleResult broadcast to app json:%s\n", jsonresult);

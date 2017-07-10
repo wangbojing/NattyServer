@@ -86,6 +86,7 @@ int ntyReadDat(const char *filename, char *data, int len);
 int ntyWriteDat(const char *filename, const char *data, int len);
 
 
+int ntyUrlEncode(const char *desc, char *out, int len);
 
 #endif
 
