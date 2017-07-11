@@ -2429,10 +2429,14 @@ int ntyExecuteLocationReportInsert(void *self, C_DEVID did, U8 type, const char 
 			ret = -1;
 		} else {
 			ntylog(" ntyExecuteLocationReportInsert --> start\n");
-
-			U8 sql[NATTY_AMAP_PROTOCOL_URLCODE_MAXSIZE+256] = {0};		
-			snprintf(sql,NATTY_AMAP_PROTOCOL_URLCODE_MAXSIZE+256,NTY_DB_INSERT_LOCATIONREPORT, did, type, info, lnglat, detatils);		
-			ntylog("%s", sql);
+			U32 nLength = strlen( info );
+			U8 *sqlStr = (U8 *)malloc( nLength + 256 ); //add more 256 bytes.
+			if ( sqlStr == NULL ){
+				ntylog(" ntyExecuteLocationReportInsert sqlStr malloc failed.\n");
+				return NTY_RESULT_FAILED;
+			}
+			snprintf(sqlStr, nLength+256, NTY_DB_INSERT_LOCATIONREPORT, did, type, info, lnglat, detatils);		
+			ntylog("%s", sqlStr);
 			
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_LOCATIONREPORT, did, type, info, lnglat, detatils);
 			if (r != NULL) {
@@ -2442,6 +2446,9 @@ int ntyExecuteLocationReportInsert(void *self, C_DEVID did, U8 type, const char 
 
 					ntylog("ntyExecuteHeartReportInsert msgId : %d\n", *msg);
 				}
+			}
+			if ( sqlStr != NULL ){
+				free(sqlStr);
 			}
 		}
 	}
