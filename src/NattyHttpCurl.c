@@ -720,11 +720,14 @@ static size_t ntyHttpQJKLocationGetAddressHandleResult(void* buffer, size_t size
 
 	JSON_Value *json = ntyMallocJsonValue( jsonstring );
 	AMap *pAMap = (AMap *)malloc( sizeof(AMap) );
-	if ( pAMap == NULL ) {
+	if ( pAMap == NULL || json == NULL ) {
 		if (pMessageTag->Tag != NULL) {
 			free(pMessageTag->Tag);
 		}
 		free( pMessageTag );
+		if ( json == NULL ){
+			ntylog("ntyHttpQJKLocationGetAdressHandleResult get the error jsonstring\n");
+		}
 		return size * nmemb;
 	}
 	memset( pAMap, 0, sizeof(AMap) );
@@ -766,9 +769,10 @@ static size_t ntyHttpQJKLocationGetAddressHandleResult(void* buffer, size_t size
 	pLocationAck->results.radius = pAMap->result.radius;
 	U32 msgid = 0;
 	
-	U8 urlCode[512] = {0};
+	U8 urlCode[NATTY_AMAP_PROTOCOL_URLCODE_MAXSIZE] = {0};
 	int length = strlen(pAMap->result.desc);
-
+	length = length > NATTY_AMAP_PROTOCOL_URLCODE_MAXSIZE ? NATTY_AMAP_PROTOCOL_URLCODE_MAXSIZE : length;
+		
 	int res = ntyUrlEncode(pAMap->result.desc, urlCode, length);
 	ntydbg("urlCode : %s\n", urlCode);
 	int ret = ntyExecuteLocationReportInsertHandle( pMessageTag->toId, tb_location_type, urlCode, pAMap->result.location, pAMap->result.radius, &msgid );

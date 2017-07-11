@@ -2430,8 +2430,8 @@ int ntyExecuteLocationReportInsert(void *self, C_DEVID did, U8 type, const char 
 		} else {
 			ntylog(" ntyExecuteLocationReportInsert --> start\n");
 
-			U8 sql[256] = {0};		
-			sprintf(sql, NTY_DB_INSERT_LOCATIONREPORT, did, type, info, lnglat, detatils);		
+			U8 sql[NATTY_AMAP_PROTOCOL_URLCODE_MAXSIZE+256] = {0};		
+			snprintf(sql,NATTY_AMAP_PROTOCOL_URLCODE_MAXSIZE+256,NTY_DB_INSERT_LOCATIONREPORT, did, type, info, lnglat, detatils);		
 			ntylog("%s", sql);
 			
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_LOCATIONREPORT, did, type, info, lnglat, detatils);
