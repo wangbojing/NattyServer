@@ -709,10 +709,21 @@ int ntyHttpCurlDeInit(void) {
 static size_t ntyHttpQJKLocationGetAddressHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
 	MessageTag *pMessageTag = (MessageTag *)stream;
 	if ( pMessageTag == NULL ) return NTY_RESULT_PROCESS;
-
+	int nSize = size*nmemb;
+	ntylog("ntyHttpQJKLocationGetAddressHandleResult size*nmemb:%d\n",nSize);
 	ntylog("ntyHttpQJKLocationGetAddressHandleResult --> fromId:%llx, toId:%llx\n", pMessageTag->fromId, pMessageTag->toId);
 
-	U8 *jsonstring = buffer;
+	U8 *jsonstring = (U8 *)malloc( nSize+1 );
+	if ( jsonstring == NULL ){
+		if (pMessageTag->Tag != NULL) {
+			free(pMessageTag->Tag);
+		}
+		free( pMessageTag );
+		ntylog( "ntyHttpQJKLocationGetAdressHandleResult jsonstring malloc failed\n");	
+		return size * nmemb;
+	}
+	memset( jsonstring, 0, nSize+1 );
+	memcpy( jsonstring, buffer, nSize );
 	ntylog( "ntyHttpQJKLocationGetAdressHandleResult json --> %s\n", jsonstring );
 	if ( pMessageTag->Tag != NULL ) {
 		ntylog("ntyHttpQJKLocationHandleResult url --> %s\n", pMessageTag->Tag);
@@ -728,6 +739,7 @@ static size_t ntyHttpQJKLocationGetAddressHandleResult(void* buffer, size_t size
 		if ( json == NULL ){
 			ntylog("ntyHttpQJKLocationGetAdressHandleResult get the error jsonstring\n");
 		}
+		free( jsonstring );
 		return size * nmemb;
 	}
 	memset( pAMap, 0, sizeof(AMap) );
@@ -741,6 +753,7 @@ static size_t ntyHttpQJKLocationGetAddressHandleResult(void* buffer, size_t size
 		}
 		free(pMessageTag);
 		free(pAMap);
+		free( jsonstring );
 		return size * nmemb;
 	}
 	memset(pLocationAck, 0, len_LocationAck);
@@ -807,6 +820,7 @@ static size_t ntyHttpQJKLocationGetAddressHandleResult(void* buffer, size_t size
 exit:
 	free(pLocationAck);
 	free(pAMap);
+	free( jsonstring );
 #if 1 //Release Message
 	//nHttpRequest *req = (nHttpRequest *)pMessageTag->param;
 	
