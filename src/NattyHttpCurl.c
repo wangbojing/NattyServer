@@ -847,7 +847,17 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 	MessageTag *pMessageTag = (MessageTag *)stream;
 	if (pMessageTag == NULL) return NTY_RESULT_PROCESS;
 
-	U8 *jsonstring = buffer;
+	U32 nSize = size*nmemb;
+	ntylog("ntyHttpQJKLocationHandleResult size*nmemb:%d\n",nSize);
+	U8 *jsonstring = (U8 *)malloc( nSize + 1 );
+	if( jsonstring == NULL ){
+		free( pMessageTag );
+		ntylog("ntyHttpQJKLocationHandleResult jsonstring malloc failed.\n");
+		return size*nmemb;
+	}
+	memset( jsonstring, 0, nSize+1 );
+	memcpy( jsonstring, buffer, nSize );
+		
 	ntylog("ntyHttpQJKLocationHandleResult json --> %s\n", jsonstring);
 	if (pMessageTag->Tag != NULL) {
 		ntylog("ntyHttpQJKLocationHandleResult url --> %s\n", pMessageTag->Tag);
@@ -897,7 +907,19 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 	pLocationAck->results.location = pAMap->result.location;
 	pLocationAck->results.radius = pAMap->result.radius;
 
-	int ret = ntyExecuteLocationNewInsertHandle(pMessageTag->toId, tb_location_type, pAMap->result.location, pAMap->result.desc, pAMap->result.radius);
+	U32 nLength = strlen( pAMap->result.desc );
+	U8 *urlCode = (U8 *)malloc( nLength*3+1 );  //becourse of the function ntyUrlEncode.
+	if ( urlCode == NULL ){
+		free( pMessageTag );
+		free( pAMap );
+		free( jsonstring );
+		free( pLocationAck );
+		return size*nmemb;
+	}
+	int res = ntyUrlEncode( pAMap->result.desc, urlCode, nLength );  //strlen(urlCode) = nLength * 3 +1
+	ntydbg("urlCode : %s\n", urlCode);
+	
+	int ret = ntyExecuteLocationNewInsertHandle(pMessageTag->toId, tb_location_type, pAMap->result.location, urlCode, pAMap->result.radius);
 	if (ret == 0) {
 		char *jsonresult = ntyJsonWriteLocation(pLocationAck);
 		ntylog("ntyHttpQJKLocationHandleResult jsonresult --> %s\n", jsonresult);
@@ -932,6 +954,8 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 exit:
 	free(pLocationAck);
 	free(pAMap);
+	free( jsonstring );
+	free( urlCode );
 #if 1 //Release Message
 	//nHttpRequest *req = (nHttpRequest *)pMessageTag->param;
 	
