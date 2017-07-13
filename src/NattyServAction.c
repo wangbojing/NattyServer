@@ -446,7 +446,7 @@ void ntyCommonReqAction(ActionParam *pActionParam) {
 	if (app_category != NULL) {
 		if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_AUTHORIZEPUSH) == 0) {
 			ntyJsonAuthorizePushAction(pActionParam);
-		} if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_AUTHORIZEREPLY) == 0) {
+		} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_AUTHORIZEREPLY) == 0) {
 			ntyJsonAuthorizeReplyAction(pActionParam);
 		} else if (strcmp(app_category, NATTY_USER_PROTOCOL_CATEGORY_EFENCE) == 0) {
 			const char *action = ntyJsonAction(pActionParam->json);
@@ -599,7 +599,11 @@ void ntyJsonAuthorizePushAction(ActionParam *pActionParam) {
 	if (ret == -1) {
 		ntyJsonCommonResult(pActionParam->fromId, NATTY_RESULT_CODE_ERR_DEVICE_NOTONLINE);
 	} else {
-		ntyJsonCommonContextResult(adminId, pActionParam->jsonstring);
+		if (adminId == 0) {
+			ntyJsonCommonContextResult(pActionParam->fromId, NATTY_RESULT_CODE_ERR_NOT_FIND_ADMIN);
+		} else {
+			ntyJsonCommonContextResult(adminId, pActionParam->jsonstring);
+		}
 	}
 	
 	free(pAuthorizePush);
@@ -614,7 +618,9 @@ void ntyJsonAuthorizeReplyAction(ActionParam *pActionParam) {
 	memset(pAuthorizeReply, 0, sizeof(AuthorizeReply));
 	
 	//ntyJsonAuthorizeReply(pActionParam->json, pAuthorizeReply);
-	ntyJsonBroadCastRecvResult(pActionParam->toId, pActionParam->fromId, (U8*)pActionParam->json, 0);
+	//ntyJsonBroadCastRecvResult(pActionParam->toId, pActionParam->fromId, (U8*)pActionParam->json, 0);
+
+	ntyJsonCommonContextResult(pActionParam->toId, pActionParam->jsonstring);
 	
 	free(pAuthorizeReply);
 }

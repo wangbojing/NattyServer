@@ -74,6 +74,7 @@
 #define NATTY_RESULT_CODE_ERR_EFENCE_POINTS			"10015"		//电子围栏数据点数未在合理范围
 
 #define NATTY_RESULT_CODE_ERR_REPEAT_CLIENTID		"10016"		//重复客户端ID
+#define NATTY_RESULT_CODE_ERR_NOT_FIND_ADMIN 		"10018"		//没有找到管理员
 
 
 #if 0

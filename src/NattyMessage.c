@@ -95,6 +95,8 @@ void ntyCommonResultMessage(const char *code, char *message) {
 		strcat(message, "Save Repeate data");
 	} else if (strcmp(code, NATTY_RESULT_CODE_ERR_REPEAT_CLIENTID) == 0) {
 		strcat(message, "Repeate Client Id");
+	} else if (strcmp(code, NATTY_RESULT_CODE_ERR_NOT_FIND_ADMIN) == 0) {
+		strcat(message, "Cannot find admin");
 	} else if (strcmp(code, NATTY_RESULT_CODE_BUSY) == 0) {
 		strcat(message, "Server be Busy");
 	} else {
