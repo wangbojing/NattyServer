@@ -68,8 +68,6 @@
 
 nHttpRequest *ntyHttpRequestGetCURL(void);
 
-
-
 static size_t ntyHttpQJKFallenHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
 	VALUE_TYPE *tag = stream;
 	U8 u8ResultBuffer[256] = {0};
@@ -707,40 +705,26 @@ int ntyHttpCurlDeInit(void) {
 }
 
 static size_t ntyHttpQJKLocationGetAddressHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
-	MessageTag *pMessageTag = (MessageTag *)stream;
-	if ( pMessageTag == NULL ) return NTY_RESULT_PROCESS;
+
+	U8 *data = (U8*)stream;
 	int nSize = size*nmemb;
-	ntylog("ntyHttpQJKLocationGetAddressHandleResult size*nmemb:%d\n",nSize);
-	ntylog("ntyHttpQJKLocationGetAddressHandleResult --> fromId:%llx, toId:%llx\n", pMessageTag->fromId, pMessageTag->toId);
+	ntylog("ntyHttpQJKLocationGetAddressHandleResult size*nmemb:%d, data:%s\n", nSize, data);
+	
+	strncat(data, buffer, nSize);
+	
+	
+	return size * nmemb;
+}
 
-	U8 *jsonstring = (U8 *)malloc( nSize+1 );
-	if ( jsonstring == NULL ){
-		if (pMessageTag->Tag != NULL) {
-			free(pMessageTag->Tag);
-		}
-		free( pMessageTag );
-		ntylog( "ntyHttpQJKLocationGetAdressHandleResult jsonstring malloc failed\n");	
-		return size * nmemb;
-	}
-	memset( jsonstring, 0, nSize+1 );
-	memcpy( jsonstring, buffer, nSize );
-	ntylog( "ntyHttpQJKLocationGetAdressHandleResult json --> %s\n", jsonstring );
-	if ( pMessageTag->Tag != NULL ) {
-		ntylog("ntyHttpQJKLocationHandleResult url --> %s\n", pMessageTag->Tag);
-	}
 
+int ntyQJKLocationGetAddressHandle(U8 *jsonstring, MessageTag *pMessageTag) {
+	if (jsonstring == NULL || pMessageTag == NULL) return NTY_RESULT_ERROR;
+	
 	JSON_Value *json = ntyMallocJsonValue( jsonstring );
 	AMap *pAMap = (AMap *)malloc( sizeof(AMap) );
 	if ( pAMap == NULL || json == NULL ) {
-		if (pMessageTag->Tag != NULL) {
-			free(pMessageTag->Tag);
-		}
-		free( pMessageTag );
-		if ( json == NULL ){
-			ntylog("ntyHttpQJKLocationGetAdressHandleResult get the error jsonstring\n");
-		}
-		free( jsonstring );
-		return size * nmemb;
+		ntylog("ntyQJKLocationGetAddressHandle --> %s:%d\n", __FILE__, __LINE__);
+		return NTY_RESULT_FAILED;
 	}
 	memset( pAMap, 0, sizeof(AMap) );
 	ntyJsonAMapGetAddress( json, pAMap );
@@ -748,13 +732,10 @@ static size_t ntyHttpQJKLocationGetAddressHandleResult(void* buffer, size_t size
 	size_t len_LocationAck = sizeof(LocationAck);
 	LocationAck *pLocationAck = malloc(len_LocationAck);
 	if (pLocationAck == NULL) {
-		if (pMessageTag->Tag != NULL) {
-			free(pMessageTag->Tag);
-		}
-		free(pMessageTag);
+		
 		free(pAMap);
-		free( jsonstring );
-		return size * nmemb;
+		
+		return NTY_RESULT_FAILED;
 	}
 	memset(pLocationAck, 0, len_LocationAck);
 	
@@ -786,13 +767,10 @@ static size_t ntyHttpQJKLocationGetAddressHandleResult(void* buffer, size_t size
 	U8 *urlCode = (U8 *)malloc( length*3+1 ); //becourse of the function ntyUrlEncode.
 	if ( urlCode == NULL ){
 		ntylog( "ntyHttpQJKLocationGetAdressHandleResult jsonstring malloc failed\n");
-		if (pMessageTag->Tag != NULL) {
-			free(pMessageTag->Tag);
-		}
-		free(pMessageTag);
+		
 		free(pAMap);
-		free( jsonstring );
-		return size * nmemb;
+		
+		return NTY_RESULT_FAILED;
 	}
 	int res = ntyUrlEncode(pAMap->result.desc, urlCode, length);  //strlen(urlCode) = length * 3 +1
 	ntydbg("urlCode : %s\n", urlCode);
@@ -828,20 +806,111 @@ static size_t ntyHttpQJKLocationGetAddressHandleResult(void* buffer, size_t size
 exit:
 	free(pLocationAck);
 	free(pAMap);
-	free( jsonstring );
 	free( urlCode );
-#if 1 //Release Message
-	//nHttpRequest *req = (nHttpRequest *)pMessageTag->param;
-	
 
+	return NTY_RESULT_SUCCESS;
+}
+
+int ntyHttpQJKLocationGetAddress(void *arg) {
+	ntylog("**********ntyHttpQJKLocationGetAddress begin\n");
+	CURL *curl;	
+	CURLcode res;
+
+	MessageTag *pMessageTag = (MessageTag *)arg;
+	if (pMessageTag == NULL) return NTY_RESULT_ERROR;
+	ntylog("ntyHttpQJKLocationGetAddress --> fromId:%llx, toId:%llx\n", pMessageTag->fromId, pMessageTag->toId);
+	
+	U8 *tag = pMessageTag->Tag;
+#if 0
+	CURLcode return_code;
+	return_code = curl_global_init(CURL_GLOBAL_ALL);
+	if (CURLE_OK != return_code) {
+		ntylog("init libcurl failed.\n");		
+		return -1;
+	}
+#endif
+	curl_version_info_data *info=curl_version_info(CURLVERSION_NOW);
+	if (info->features & CURL_VERSION_ASYNCHDNS) {
+		ntylog("ares enabled\n");
+	} else {
+		ntylog("ares NOT enabled\n");
+	}
+#if 0
+	curl = curl_easy_init();
+#else
+	nHttpRequest *req = ntyHttpRequestGetCURL();
+	if (req == NULL) { 
+
+		if (pMessageTag->Tag != NULL) {
+			free(pMessageTag->Tag);
+		}
+		free(pMessageTag);
+		
+		return NTY_RESULT_ERROR;
+	}
+	curl = req->curl;
+	//pMessageTag->param = req;
+#endif
+	if (!curl)	{		
+		ntylog("curl init failed\n");
+
+		if (pMessageTag->Tag != NULL) {
+			free(pMessageTag->Tag);
+		}
+		free(pMessageTag);
+		
+		return NTY_RESULT_ERROR;	
+	}
+
+	ntylog("get address QJK url:%s\n", tag);
+
+	U8 *data = (U8*)malloc(2*1024);
+	memset(data, 0, 2*1024);
+
+	curl_easy_setopt(curl, CURLOPT_URL, tag);
+	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, NTY_CURL_TIMEOUT);
+#if 1
+	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
+#endif
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ntyHttpQJKLocationGetAddressHandleResult); 
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, data); 
+
+	res = curl_easy_perform(curl);	
+	if (res != CURLE_OK)	{		
+		switch(res)		{
+			case CURLE_UNSUPPORTED_PROTOCOL:			
+				ntylog("CURLE_UNSUPPORTED_PROTOCOL\n");	
+			case CURLE_COULDNT_CONNECT:
+				ntylog("CURLE_COULDNT_CONNECT\n");	
+			case CURLE_HTTP_RETURNED_ERROR:				
+				ntylog("CURLE_HTTP_RETURNED_ERROR\n");			
+			case CURLE_READ_ERROR:				
+				ntylog("CURLE_READ_ERROR\n");			
+			default:				
+				ntylog("default %d\n",res);		
+		}		
+		//return -3;	
+	}
+
+	ntyQJKLocationGetAddressHandle(data, pMessageTag);
+
+#if 0	
+	curl_easy_cleanup(curl);
+#endif
+	ntyHttpRequestResetCURL(req);
+#if 1
 	if (pMessageTag->Tag != NULL) {
 		free(pMessageTag->Tag);
 	}
 	free(pMessageTag);
-#endif
 	
-	return size * nmemb;
+	free(data);
+#endif
+	return 0;
 }
+
+
 
 static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
 	MessageTag *pMessageTag = (MessageTag *)stream;
@@ -969,96 +1038,6 @@ exit:
 	return size * nmemb;
 }
 
-int ntyHttpQJKLocationGetAddress(void *arg) {
-	ntylog("**********ntyHttpQJKLocationGetAddress begin\n");
-	CURL *curl;	
-	CURLcode res;
-
-	MessageTag *pMessageTag = (MessageTag *)arg;
-	if (pMessageTag == NULL) return NTY_RESULT_ERROR;
-	ntylog("ntyHttpQJKLocationGetAddress --> fromId:%llx, toId:%llx\n", pMessageTag->fromId, pMessageTag->toId);
-	
-	U8 *tag = pMessageTag->Tag;
-#if 0
-	CURLcode return_code;
-	return_code = curl_global_init(CURL_GLOBAL_ALL);
-	if (CURLE_OK != return_code) {
-		ntylog("init libcurl failed.\n");		
-		return -1;
-	}
-#endif
-	curl_version_info_data *info=curl_version_info(CURLVERSION_NOW);
-	if (info->features & CURL_VERSION_ASYNCHDNS) {
-		ntylog("ares enabled\n");
-	} else {
-		ntylog("ares NOT enabled\n");
-	}
-#if 0
-	curl = curl_easy_init();
-#else
-	nHttpRequest *req = ntyHttpRequestGetCURL();
-	if (req == NULL) { 
-
-		if (pMessageTag->Tag != NULL) {
-			free(pMessageTag->Tag);
-		}
-		free(pMessageTag);
-		
-		return NTY_RESULT_ERROR;
-	}
-	curl = req->curl;
-	//pMessageTag->param = req;
-#endif
-	if (!curl)	{		
-		ntylog("curl init failed\n");
-
-		if (pMessageTag->Tag != NULL) {
-			free(pMessageTag->Tag);
-		}
-		free(pMessageTag);
-		
-		return NTY_RESULT_ERROR;	
-	}
-
-	ntylog("get address QJK url:%s\n", tag);
-
-	curl_easy_setopt(curl, CURLOPT_URL, tag);
-	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
-	curl_easy_setopt(curl, CURLOPT_TIMEOUT, NTY_CURL_TIMEOUT);
-#if 1
-	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
-#endif
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ntyHttpQJKLocationGetAddressHandleResult); 
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, arg); 
-
-	res = curl_easy_perform(curl);	
-	if (res != CURLE_OK)	{		
-		switch(res)		{
-			case CURLE_UNSUPPORTED_PROTOCOL:			
-				ntylog("CURLE_UNSUPPORTED_PROTOCOL\n");	
-			case CURLE_COULDNT_CONNECT:
-				ntylog("CURLE_COULDNT_CONNECT\n");	
-			case CURLE_HTTP_RETURNED_ERROR:				
-				ntylog("CURLE_HTTP_RETURNED_ERROR\n");			
-			case CURLE_READ_ERROR:				
-				ntylog("CURLE_READ_ERROR\n");			
-			default:				
-				ntylog("default %d\n",res);		
-		}		
-		//return -3;	
-	}
-#if 0	
-	curl_easy_cleanup(curl);
-#endif
-	ntyHttpRequestResetCURL(req);
-#if 0	
-	if (tag != NULL) {
-		free(tag);
-		tag = NULL;
-	}
-#endif
-	return 0;
-}
 
 
 int ntyHttpQJKLocation(void *arg) {
@@ -1751,19 +1730,28 @@ int ntyHttpQJKCommon(void *arg) {
 
 
 #if 0
-#define QJK_URL "GET http://shangshousoft.applinzi.com/api?m=health&a=falldown&deviceid=123456&platform=4&timestamp=20160809125623&token=d9066e2359acd0e41529482c44de7a39"
+//#define QJK_URL "GET http://shangshousoft.applinzi.com/api?m=health&a=falldown&deviceid=123456&platform=4&timestamp=20160809125623&token=d9066e2359acd0e41529482c44de7a39"
+//gcc -o NattyHttpCurl NattyHttpCurl.c  NattyTcpServer.c NattyHash.c NattyThreadPool.c NattyAbstractClass.c NattyHBD.c NattyUdpServer.c NattyBPlusTree.c NattyRBTree.c NattyUtils.c NattyLetter.c NattyDBOperator.c NattyConnectionPool.c NattyVector.c NattyFilter.c NattyJson.c NattyServAction.c NattySession.c NattyMulticast.c NattyPush.c NattySqlHandle.c DaveMQ/NattyDaveMQ.c NattyMessage.c  ../json/parson.c -lev -lcrypto -lssl -lmysqlclient -lpthread -lcurl  -I ../include/
+
+
+#define QJK_URL		"http://restapi.amap.com/v3/geocode/regeo?key=fb44f91d1a1df4d4b6356f43183a329f&location=113.2409402,23.1326885"
 
 int main(void) {
+
+	ntyHttpCurlGlobalInit();
+
 	VALUE_TYPE *tag = (VALUE_TYPE*)malloc(sizeof(VALUE_TYPE));
 
 	tag->Type = MSG_TYPE_QJK_FALLEN;
 	tag->fromId = 1;
 	tag->length = strlen(QJK_URL);
+	tag->Tag = malloc(256);
+	memset(tag->Tag, 0, 256);
 	memcpy(tag->Tag, QJK_URL, tag->length);
 
-	ntyHttpQJKFallen(tag);
+	ntyHttpQJKLocationGetAddress(tag);
 
-	while(1);
+	getchar();
 }
 
 #endif
