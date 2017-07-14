@@ -728,6 +728,13 @@ int ntyQJKLocationGetAddressHandle(U8 *jsonstring, MessageTag *pMessageTag) {
 	}
 	memset( pAMap, 0, sizeof(AMap) );
 	ntyJsonAMapGetAddress( json, pAMap );
+	
+	//the data of location should be match the rule.
+	if ( pAMap->result.location==NULL || pAMap->result.desc==NULL ){
+		free( pAMap );
+		ntylog("ntyHttpQJKLocationGetAddressHandleResult location is NULL\n");
+		return size * nmemb;
+	}
 
 	size_t len_LocationAck = sizeof(LocationAck);
 	LocationAck *pLocationAck = malloc(len_LocationAck);
@@ -944,6 +951,21 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 	}
 	memset(pAMap, 0, len_AMap);
 	ntyJsonAMap(json, pAMap);
+	
+	//the data of location should be match the rule.
+	if ( pAMap->result.location==NULL || pAMap->result.desc==NULL ){
+		free( pAMap );
+		ntylog("ntyHttpQJKLocationHandleResult location is NULL\n");
+		return size * nmemb;
+	}
+	
+	//the data of location should be match the rule.
+	if ( pAMap->result.location==NULL || pAMap->result.desc==NULL ){
+		free( pMessageTag );
+		free( pAMap );
+		ntylog("ntyHttpQJKLocationHandleResult location is NULL\n");
+		return size * nmemb;
+	}	
 
 	size_t len_LocationAck = sizeof(LocationAck);
 	LocationAck *pLocationAck = malloc(len_LocationAck);
