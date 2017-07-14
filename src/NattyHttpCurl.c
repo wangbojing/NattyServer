@@ -733,7 +733,7 @@ int ntyQJKLocationGetAddressHandle(U8 *jsonstring, MessageTag *pMessageTag) {
 	if ( pAMap->result.location==NULL || pAMap->result.desc==NULL ){
 		free( pAMap );
 		ntylog("ntyHttpQJKLocationGetAddressHandleResult location is NULL\n");
-		return size * nmemb;
+		return NTY_RESULT_FAILED;
 	}
 
 	size_t len_LocationAck = sizeof(LocationAck);
