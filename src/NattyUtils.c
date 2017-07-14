@@ -468,5 +468,20 @@ int ntyUrlEncode(const char *desc, char *out, int len) {
 }
 
 
+struct hostent *gethostnameinfo(const char *host) {
+	struct hostent hostbuf, *hp;
+	size_t hstbuflen = 1024;
+	char tmphstbuf[1024] = {0};
+
+	int res = -1;
+	int herr;
+
+	res = gethostbyname_r(host, &hostbuf, tmphstbuf, hstbuflen, &hp, &herr);
+	if (res || hp == NULL) return NULL;
+
+	return hp;
+	
+}
+
 
 

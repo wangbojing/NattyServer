@@ -87,6 +87,7 @@ int ntyWriteDat(const char *filename, const char *data, int len);
 
 
 int ntyUrlEncode(const char *desc, char *out, int len);
+struct hostent *gethostnameinfo(const char *host);
 
 #endif
 

@@ -44,6 +44,7 @@
 #include <pthread.h>
 #include <poll.h>
 
+#include "NattyUtils.h"
 #include "NattyResult.h"
 #include "NattyPush.h"
 #include "NattyAbstractClass.h"
@@ -832,13 +833,13 @@ static int ntyPushTcpConnect(void *self, U8 mode) {
 	if (mode == NTY_PUSH_CLIENT_DEVELOPMENT || mode == NTY_PUSH_CLIENT_DEVELOPMENT_B) {
 		ntylog("gethostbyname : %s\n", APPLE_HOST_DEVELOPMENT_NAME);
 		
-		if (!(hp = gethostbyname(APPLE_HOST_DEVELOPMENT_NAME))) {
+		if (!(hp = gethostnameinfo(APPLE_HOST_DEVELOPMENT_NAME))) {
 			return NTY_RESULT_FAILED;
 		}
 	} else {
 		ntylog("gethostbyname : %s\n", APPLE_HOST_PRODUCTION_NAME);
 		
-		if (!(hp = gethostbyname(APPLE_HOST_PRODUCTION_NAME))) {
+		if (!(hp = gethostnameinfo(APPLE_HOST_PRODUCTION_NAME))) {
 			return NTY_RESULT_FAILED;
 		}
 	}
