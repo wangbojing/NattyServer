@@ -274,4 +274,42 @@ int ntyTimerDel(void *self, void *timer) {
 }
 
 
+#if 0
+
+static NWTimer *nHeartBeatTimer = NULL;
+static NWTimer *nReconnectTimer = NULL;
+static NWTimer *nBigBufferSendTimer = NULL;
+static NWTimer *nBigBufferRecvTimer = NULL;
+static NWTimer *nRunTimer = NULL;
+
+static int rIndex = 0;
+
+static int ntyHeartBeatCb (NITIMER_ID id, void *user_data, int len) {
+	ntydbg("ntyHeartBeatCb \n");
+}
+
+static int ntyReconnectCb (NITIMER_ID id, void *user_data, int len) {
+	ntydbg("ntyReconnectCb \n");
+
+	if (rIndex ++ == 5) {
+		void *nTimerList = ntyTimerInstance();
+		ntyTimerDel(nTimerList, nReconnectTimer);
+		nReconnectTimer = NULL;
+	}
+}
+
+
+
+int main() {
+	
+	void *nTimerList = ntyTimerInstance();
+	nHeartBeatTimer = ntyTimerAdd(nTimerList, 60, ntyHeartBeatCb, NULL, 0);
+
+	nReconnectTimer = ntyTimerAdd(nTimerList, 30, ntyReconnectCb, NULL, 0);
+
+	getchar();
+}
+
+#endif
+
 

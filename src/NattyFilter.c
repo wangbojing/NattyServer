@@ -2542,6 +2542,8 @@ void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length, 
 		Client* pClient = Record->value;
 		if (pClient == NULL) return ;
 		
+		ntylog(" ntyProtocolFilterProcess --> prepare to recreate voice packet\n");
+		
 		if (1 /*&& client->connectType == PROTO_TYPE_TCP*/) { //have part data
 			
 			int bCopy = 0;
