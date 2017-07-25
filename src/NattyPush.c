@@ -50,6 +50,7 @@
 #include "NattyAbstractClass.h"
 
 
+
 static int ntyPushTcpConnect(void *self, U8 mode);
 static SSL* ntyPushSSLConnect(void *self, int sockfd, U8 mode);
 
@@ -784,10 +785,13 @@ static SSL* ntyPushSSLConnect(void *self, int sockfd, U8 mode) {
 	} else {
 		return ssl;
 	}
-	
+#if 0
 	BIO *bio = BIO_new_socket(sockfd, BIO_NOCLOSE);
 
 	SSL_set_bio(ssl, bio, bio);
+#else
+	int ret = SSL_set_fd(ssl, sockfd);
+#endif
 	if (SSL_connect(ssl) <= 0) {
 		return NULL;
 	}
