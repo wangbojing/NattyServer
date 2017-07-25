@@ -187,6 +187,12 @@ static int ntyHeartBeatDetectItem(void *client, C_DEVID clientId) {
 	if (dur_time > NATTY_HEARTBEAT_THRESHOLD && pClient->deviceType == NTY_PROTO_CLIENT_WATCH) { //timeout
 		ntylog("ntyHeartBeatDetectItem timeout --> %lld, prepare to cleanup client \n", clientId);
 		ntyClientCleanup(client);
+	} else if ( dur_time > (NATTY_HEARTBEAT_THRESHOLD * 5)  && 
+		(pClient->deviceType == NTY_PROTO_CLIENT_ANDROID || pClient->deviceType == NTY_PROTO_CLIENT_IOS 
+		|| pClient->deviceType == NTY_PROTO_CLIENT_IOS_PUBLISH || pClient->deviceType == NTY_PROTO_CLIENT_IOS_APP_B
+		|| pClient->deviceType == NTY_PROTO_CLIENT_IOS_APP_B_PUBLISH)) { //timeout
+		ntylog("ntyHeartBeatDetectItem App Client timeout --> %lld, prepare to cleanup client \n", clientId);
+		ntyClientCleanup(client);
 	}
 
 	return 0;
