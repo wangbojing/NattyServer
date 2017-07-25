@@ -484,4 +484,34 @@ struct hostent *gethostnameinfo(const char *host) {
 }
 
 
+U8 ntyIsAppClient(U8 deviceType) {
+	if (deviceType == NTY_PROTO_CLIENT_ANDROID || deviceType == NTY_PROTO_CLIENT_IOS
+		|| deviceType == NTY_PROTO_CLIENT_IOS_PUBLISH || deviceType == NTY_PROTO_CLIENT_IOS_APP_B 
+		|| deviceType == NTY_PROTO_CLIENT_IOS_APP_B_PUBLISH) {
+		return 1;
+	}
+
+	return 0;
+}
+
+U8 ntyIsPacketHeader(U8 protoType) {
+	if (protoType == NTY_PROTO_VERSION_A || protoType == NTY_PROTO_VERSION_B) {
+		return 1;
+	}
+	return 0;
+}
+
+U8 ntyIsVoicePacketHeader(U8 msgType) {
+	if (msgType == NTY_PROTO_VOICE_DATA_REQ) {
+		return 1;
+	}
+	return 0;
+}
+
+
+U32 ntyVoicePacketLength(U8 *buffer) {
+	return (*(U32*)(buffer+NTY_PROTO_VOICE_DATA_REQ_PKTLENGTH_IDX) + NTY_VOICEREQ_HEADER_LENGTH + NTY_CRCNUM_LENGTH);
+	
+}
+
 

@@ -89,5 +89,9 @@ int ntyWriteDat(const char *filename, const char *data, int len);
 int ntyUrlEncode(const char *desc, char *out, int len);
 struct hostent *gethostnameinfo(const char *host);
 
+U8 ntyIsAppClient(U8 deviceType);
+U8 ntyIsPacketHeader(U8 protoType);
+U32 ntyVoicePacketLength(U8 *buffer);
+
 #endif
 

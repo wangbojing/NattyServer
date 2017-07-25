@@ -2550,36 +2550,70 @@ void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length, 
 			int bIndex = 0, bLength = pClient->rLength;
 			U8 bBuffer[PACKET_BUFFER_SIZE] = {0};
 
+
 			do {
-				
-				bCopy = (length > PACKET_BUFFER_SIZE ? PACKET_BUFFER_SIZE : length);					
-				bCopy = (((bLength + bCopy) > PACKET_BUFFER_SIZE) ? (PACKET_BUFFER_SIZE - bLength) : bCopy);
-				
-				pthread_mutex_lock(&pClient->bMutex);
-				memcpy(pClient->recvBuffer+pClient->rLength, buffer+bIndex, bCopy);
-				pClient->rLength %= PACKET_BUFFER_SIZE;
-				pClient->rLength += bCopy;
 
-				memset(bBuffer, 0, PACKET_BUFFER_SIZE);
-				memcpy(bBuffer, pClient->recvBuffer, pClient->rLength);
-				bLength = pClient->rLength;
-				pthread_mutex_unlock(&pClient->bMutex);
+				if(ntyIsPacketHeader(buffer[NTY_PROTO_VERSION_IDX]) && ntyIsVoicePacketHeader(buffer[NTY_PROTO_MSGTYPE_IDX])) {
 
-				U32 uCrc = ntyGenCrcValue(bBuffer, bLength-4);
-				U32 uClientCrc = *((U32*)(bBuffer+bLength-4));
+					bCopy = ntyVoicePacketLength(buffer);
+					if (bCopy < length) {
+						ntylog(" complete voice packet bCopy :%d\n", bCopy);
+						u32Crc = ntyGenCrcValue(buffer, bCopy-4);
+						u32ClientCrc = *((U32*)(buffer+bCopy-4));
 
-				if (uCrc == uClientCrc)	{
-					ntylog(" CMD:%x, Version:[%c]\n", bBuffer[NTY_PROTO_MSGTYPE_IDX], bBuffer[NTY_PROTO_DEVTYPE_IDX]);
-					ntyHandleRequest(_filter, bBuffer, bLength, obj);
+						if (u32Crc == u32ClientCrc) {
+							ntylog(" CMD:%x, Version:[%c]\n", buffer[NTY_PROTO_MSGTYPE_IDX], buffer[NTY_PROTO_DEVTYPE_IDX]);
+							ntyHandleRequest(_filter, buffer, bCopy, obj);
 
-					ntyClientBufferRelease(pClient);
-				} 
-				
-				length -= bCopy;
-				bIndex += bCopy;
+							ntyClientBufferRelease(pClient);
+						}
+
+						memcpy(pClient->recvBuffer, buffer+bCopy, length-bCopy);
+						pClient->rLength = length-bCopy;
+					} else if (bCopy == length) {
+						ntylog(" u32Crc == u32ClientCrc, must be error\n");
+						return ntyHandleRequest(_filter, buffer, length, obj);
+					} else {
+						ntylog(" no-complete voice packet\n");
+						memcpy(pClient->recvBuffer, buffer, length);
+						pClient->rLength = length;
+					}
+					length -= bCopy;
+					buffer += bCopy;
+					
+				} else {		
+			
+					bCopy = (length > PACKET_BUFFER_SIZE ? PACKET_BUFFER_SIZE : length);					
+					bCopy = (((bLength + bCopy) > PACKET_BUFFER_SIZE) ? (PACKET_BUFFER_SIZE - bLength) : bCopy);
+					
+					pthread_mutex_lock(&pClient->bMutex);
+					memcpy(pClient->recvBuffer+pClient->rLength, buffer+bIndex, bCopy);
+					pClient->rLength %= PACKET_BUFFER_SIZE;
+					pClient->rLength += bCopy;
+
+					memset(bBuffer, 0, PACKET_BUFFER_SIZE);
+					memcpy(bBuffer, pClient->recvBuffer, pClient->rLength);
+					bLength = pClient->rLength;
+					pthread_mutex_unlock(&pClient->bMutex);
+
+					U32 uCrc = ntyGenCrcValue(bBuffer, bLength-4);
+					U32 uClientCrc = *((U32*)(bBuffer+bLength-4));
+
+					if (uCrc == uClientCrc)	{
+						ntylog(" CMD:%x, Version:[%c]\n", bBuffer[NTY_PROTO_MSGTYPE_IDX], bBuffer[NTY_PROTO_DEVTYPE_IDX]);
+						ntyHandleRequest(_filter, bBuffer, bLength, obj);
+
+						ntyClientBufferRelease(pClient);
+					} 
+					
+					length -= bCopy;
+					bIndex += bCopy;
+					
+				}
+				bCopy = 0;
 				
 			} while (length);
-
+		
 			return ;
 
 		}
