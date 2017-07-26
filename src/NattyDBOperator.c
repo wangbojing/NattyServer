@@ -2429,6 +2429,7 @@ int ntyExecuteLocationReportInsert(void *self, C_DEVID did, U8 type, const char 
 			ret = -1;
 		} else {
 			ntylog(" ntyExecuteLocationReportInsert --> start\n");
+#if 0
 			U32 nLength = strlen( info );
 			U8 *sqlStr = (U8 *)malloc( nLength + 256 ); //add more 256 bytes.
 			if ( sqlStr == NULL ){
@@ -2437,7 +2438,7 @@ int ntyExecuteLocationReportInsert(void *self, C_DEVID did, U8 type, const char 
 			}
 			snprintf(sqlStr, nLength+256, NTY_DB_INSERT_LOCATIONREPORT, did, type, info, lnglat, detatils);		
 			ntylog("%s", sqlStr);
-			
+#endif			
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_LOCATIONREPORT, did, type, info, lnglat, detatils);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
@@ -2447,9 +2448,11 @@ int ntyExecuteLocationReportInsert(void *self, C_DEVID did, U8 type, const char 
 					ntylog("ntyExecuteHeartReportInsert msgId : %d\n", *msg);
 				}
 			}
+#if 0
 			if ( sqlStr != NULL ){
 				free(sqlStr);
 			}
+#endif
 		}
 	}
 	CATCH(SQLException) 
