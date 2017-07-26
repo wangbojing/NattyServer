@@ -2550,7 +2550,6 @@ void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length, 
 			int bIndex = 0, bLength = pClient->rLength;
 			U8 bBuffer[PACKET_BUFFER_SIZE] = {0};
 
-
 			do {
 
 				if(ntyIsPacketHeader(buffer[NTY_PROTO_VERSION_IDX]) && ntyIsVoicePacketHeader(buffer[NTY_PROTO_MSGTYPE_IDX])) {
@@ -2570,6 +2569,7 @@ void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length, 
 
 						memcpy(pClient->recvBuffer, buffer+bCopy, length-bCopy);
 						pClient->rLength = length-bCopy;
+
 					} else if (bCopy == length) {
 						ntylog(" u32Crc == u32ClientCrc, must be error\n");
 						return ntyHandleRequest(_filter, buffer, length, obj);
@@ -2577,6 +2577,8 @@ void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length, 
 						ntylog(" no-complete voice packet\n");
 						memcpy(pClient->recvBuffer, buffer, length);
 						pClient->rLength = length;
+
+						break;
 					}
 					length -= bCopy;
 					buffer += bCopy;
