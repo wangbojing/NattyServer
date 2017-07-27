@@ -219,12 +219,12 @@ int ntyAddRelationMap(MessagePacket *msg) {
 			ntyJsonCommonResult(msg->client->devId, NATTY_RESULT_CODE_ERR_REPEAT_CLIENTID);
 #endif
 
-#if 0 //before socket set 0x0. this status as accept
+#if 1 //set msg->watcher->fd and client id
 			void *hash = ntyHashTableInstance();
-			Payload *load = ntyHashTableSearch(hash, value->watcher->fd);
-			if (load != NULL) {
-				load->id = NATTY_NULL_DEVID;
-			}
+			Payload payload;
+			payload.id = msg->client->devId;
+
+			ret = ntyHashTableUpdate(hash, msg->watcher->fd, &payload);
 #endif
 			
 #if ENABLE_EV_WATCHER_MODE
