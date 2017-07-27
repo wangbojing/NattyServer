@@ -219,7 +219,7 @@ int ntyAddRelationMap(MessagePacket *msg) {
 			ntyJsonCommonResult(msg->client->devId, NATTY_RESULT_CODE_ERR_REPEAT_CLIENTID);
 #endif
 
-#if 1 //before socket set 0x0. this status as accept
+#if 0 //before socket set 0x0. this status as accept
 			void *hash = ntyHashTableInstance();
 			Payload *load = ntyHashTableSearch(hash, value->watcher->fd);
 			if (load != NULL) {
@@ -451,6 +451,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		if (load == NULL) {
 			ntyU8ArrayToU64(&buffer[NTY_PROTO_DEVID_IDX], &msg->client->devId);
 		} else {
+			ntylog(" TcpRecv : ntyHashTableSearch --> %lld\n", load->id);
 			if (load->id == NATTY_NULL_DEVID) {
 				ntyU8ArrayToU64(&buffer[NTY_PROTO_DEVID_IDX], &msg->client->devId);
 			} else {
