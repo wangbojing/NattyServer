@@ -167,6 +167,51 @@ void error(char *msg) {
 }
 
 
+
+static int ntySend(int sockfd, const void *buffer, int length, int flags) {
+
+	int wrotelen = 0;
+	int writeret = 0;
+
+	unsigned char *p = (unsigned char *)buffer;
+
+	struct pollfd pollfds = {0};
+	pollfds.fd = sockfd;
+	pollfds.events = ( POLLOUT | POLLERR | POLLHUP );
+
+	do {
+		int result = poll( &pollfds, 1, 5);
+		if (pollfds.revents & POLLHUP) {
+			
+			ntylog(" ntySend errno:%d, revent:%x\n", errno, pollfds.revents);
+			return NTY_RESULT_FAILED;
+		}
+
+		if (result < 0) {
+			if (errno == EINTR) continue;
+
+			ntylog(" ntySend errno:%d, result:%d\n", errno, result);
+			return NTY_RESULT_FAILED;
+		} else if (result == 0) {
+		
+			ntylog(" ntySend errno:%d, socket timeout \n", errno);
+			return NTY_RESULT_FAILED;
+		}
+
+		writeret = send( sockfd, p + wrotelen, length - wrotelen, flags );
+		if( writeret <= 0 )
+		{
+			break;
+		}
+		wrotelen += writeret ;
+
+	} while (wrotelen < length);
+	
+	return wrotelen;
+}
+
+
+
 static int ntyClientStartup(Network *network, const char *host, const char *service) {
 	int res = -1;
 	struct addrinfo *result, *rp;
@@ -270,8 +315,11 @@ static int ntyClientSocketSendFrame(void *self, U8 *buffer, int len) {
 	ClientSocket *nSocket = self;
 	buffer[NTY_PROTO_DEVTYPE_IDX] = NTY_PROTO_SELFTYPE;
 	*(U32*)(&buffer[len-sizeof(U32)]) = ntyGenCrcValue(buffer, len-sizeof(U32));
-	
+#if 0	
 	return send(nSocket->sockfd, buffer, len, 0);
+#else
+	return ntySend(nSocket->sockfd, buffer, len, 0);
+#endif
 }
 
 static int ntyClientSocketRecvFrame(void *self, U8 *buffer, int len) {

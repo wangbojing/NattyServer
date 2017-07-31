@@ -299,6 +299,108 @@ int ntySendBuffer(const UdpClient *client, unsigned char *buffer, int length) {
 #else
 
 
+static int ntySend(int sockfd, const void *buffer, int length, int flags) {
+
+	int wrotelen = 0;
+	int writeret = 0;
+
+	unsigned char *p = (unsigned char *)buffer;
+
+	struct pollfd pollfds = {0};
+	pollfds.fd = sockfd;
+	pollfds.events = ( POLLOUT | POLLERR | POLLHUP );
+
+	do {
+		int result = poll( &pollfds, 1, 5);
+		if (pollfds.revents & POLLHUP) {
+			
+			ntylog(" ntySend errno:%d, revent:%x\n", errno, pollfds.revents);
+			return NTY_RESULT_FAILED;
+		}
+
+		if (result < 0) {
+			if (errno == EINTR) continue;
+
+			ntylog(" ntySend errno:%d, result:%d\n", errno, result);
+			return NTY_RESULT_FAILED;
+		} else if (result == 0) {
+		
+			ntylog(" ntySend errno:%d, socket timeout \n", errno);
+			return NTY_RESULT_FAILED;
+		}
+
+		writeret = send( sockfd, p + wrotelen, length - wrotelen, flags );
+		if( writeret <= 0 )
+		{
+			break;
+		}
+		wrotelen += writeret ;
+
+	} while (wrotelen < length);
+	
+	return wrotelen;
+}
+
+
+static int ntyRecv(int sockfd, void *data, size_t length, int *count) {
+	int left_bytes;
+	int read_bytes;
+	int res;
+	int ret_code;
+
+	unsigned char *p;
+
+	struct pollfd pollfds;
+	pollfds.fd = sockfd;
+	pollfds.events = ( POLLIN | POLLERR | POLLHUP );
+
+	read_bytes = 0;
+	ret_code = 0;
+	p = (unsigned char *)data;
+	left_bytes = length;
+
+	while (left_bytes > 0) {
+
+		read_bytes = recv(sockfd, p, left_bytes, 0);
+		if (read_bytes > 0) {
+			left_bytes -= read_bytes;
+			p += read_bytes;
+			continue;
+ 		} else if (read_bytes < 0) {
+			if (!(errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)) {
+				ret_code = (errno != 0 ? errno : EINTR);
+			}
+		} else {
+			ret_code = ENOTCONN;
+			break;
+		}
+
+		res = poll(&pollfds, 1, 5);
+		if (pollfds.revents & POLLHUP) {
+			ret_code = ENOTCONN;
+			break;
+		}
+
+		if (res < 0) {
+			if (errno == EINTR) {
+				continue;
+			}
+			ret_code = (errno != 0 ? errno : EINTR);
+		} else if (res == 0) {
+			ret_code = ETIMEDOUT;
+			break;
+		}
+
+	}
+
+	if (count != NULL) {
+		*count = length - left_bytes;
+	}
+
+	return ret_code;
+}
+
+
 
 int ntySendBuffer(ClientSocket *client, unsigned char *buffer, int length) {
 	if (client == NULL) return NTY_RESULT_FAILED;
@@ -320,8 +422,12 @@ int ntySendBuffer(ClientSocket *client, unsigned char *buffer, int length) {
 		return NTY_RESULT_FAILED;
 #endif
 	} else if (client->connectType == PROTO_TYPE_TCP) {
+#if 0
 		int ret = send(sockfd, buffer, length, 0);
-		if (ret == -1) {
+#else
+		int ret = ntySend(sockfd, buffer, length, 0);
+#endif
+		if (ret == NTY_RESULT_FAILED) {
 			ntylog(" tcp send errno : %d\n", errno);
 			//delete client all fromId;
 			//ntyClientCleanup(client);
