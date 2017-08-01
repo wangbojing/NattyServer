@@ -1284,7 +1284,11 @@ nSnailsSet* ntyConnPoolExecuteQuery(nShrimp *shrimp, const char *format, ...) {
 	va_start(ap, format);
 	va_end(ap);
 
+#if 0
 	vsprintf(sql, format, ap);
+#else
+	vsnprintf(sql, MAX_SQL_BUFFER_SIZE, format, ap);
+#endif
 
 	return ntyShrimpExecuteQuery(shrimp, sql, strlen(sql));
 
