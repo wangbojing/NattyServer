@@ -654,10 +654,12 @@ int ntyHttpRequestResetCURL(nHttpRequest *req) {
 	if (req == NULL) return NTY_RESULT_ERROR;
 	if (nReqMoter == NULL) return NTY_RESULT_ERROR;
 
+	ntylog(" ntyHttpRequestResetCURL --> index:%d\n", req->index);
+
 	if(0 == cmpxchg(&nReqMoter->request[req->index].req_lock, 0, 1, WORD_WIDTH)) {
 
-		nReqMoter->request[i].enable = 1;
-		nReqMoter->request[i].req_lock = 0;
+		nReqMoter->request[req->index].enable = 1;
+		nReqMoter->request[req->index].req_lock = 0;
 	}
 
 	return NTY_RESULT_SUCCESS;
@@ -898,9 +900,9 @@ int ntyHttpQJKLocationGetAddress(void *arg) {
 				ntylog("default %d\n",res);		
 		}		
 		//return -3;	
+	} else {
+		ntyQJKLocationGetAddressHandle(data, pMessageTag);
 	}
-
-	ntyQJKLocationGetAddressHandle(data, pMessageTag);
 
 #if 0	
 	curl_easy_cleanup(curl);
