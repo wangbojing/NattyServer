@@ -183,18 +183,18 @@ static int ntySend(int sockfd, const void *buffer, int length, int flags) {
 		int result = poll( &pollfds, 1, 5);
 		if (pollfds.revents & POLLHUP) {
 			
-			ntylog(" ntySend errno:%d, revent:%x\n", errno, pollfds.revents);
+			ntydbg(" ntySend errno:%d, revent:%x\n", errno, pollfds.revents);
 			return NTY_RESULT_FAILED;
 		}
 
 		if (result < 0) {
 			if (errno == EINTR) continue;
 
-			ntylog(" ntySend errno:%d, result:%d\n", errno, result);
+			ntydbg(" ntySend errno:%d, result:%d\n", errno, result);
 			return NTY_RESULT_FAILED;
 		} else if (result == 0) {
 		
-			ntylog(" ntySend errno:%d, socket timeout \n", errno);
+			ntydbg(" ntySend errno:%d, socket timeout \n", errno);
 			return NTY_RESULT_FAILED;
 		}
 
