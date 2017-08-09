@@ -1961,7 +1961,7 @@ void ntyJsonEfenceReportAction(ActionParam *pActionParam) {
  * http://app.quanjiakan.com/familycare/api?m=health&a=falldown&deviceid=352315052834187&lat=23.13245960031104&lng=113.24134987677577&type=1 
  *
  */
-void ntyJsonFallDownReportAction(ActionParam *pActionParam) {	
+int ntyJsonFallDownReportAction(ActionParam *pActionParam) {	
 	ntylog(" ntyJsonFallDownReportAction begin --> \n");
 	if (pActionParam == NULL) {
 		return NTY_RESULT_FAILED;
@@ -2044,6 +2044,7 @@ void ntyJsonFallDownReportAction(ActionParam *pActionParam) {
 	*/
 	
 	ntydbg(" ntyJsonFallDownReportAction end --> \n");
+	return NTY_RESULT_SUCCESS;
 }
 
 void ntyJsonWearStatusAction(ActionParam *pActionParam) {

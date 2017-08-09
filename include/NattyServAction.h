@@ -133,7 +133,7 @@ void ntyJsonHeartReportAction(ActionParam *pActionParam);
 
 void ntyJsonEfenceReportAction(ActionParam *pActionParam);
 
-void ntyJsonFallDownReportAction(ActionParam *pActionParam);
+int ntyJsonFallDownReportAction(ActionParam *pActionParam);
 
 void ntyJsonWearStatusAction(ActionParam *pActionParam);
 
