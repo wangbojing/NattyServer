@@ -82,7 +82,7 @@ int checkStringIsDouble(const char *content) {
 	size_t i;
 	for (i=0; i<len; i++) {
 		char c = content[i];
-		if ((c<0x30 || c>0x39) || c == 0x2E) {
+		if ((c<0x30 || c>0x39) || c != 0x2E) {
 			return -1;
 		}
 	}
