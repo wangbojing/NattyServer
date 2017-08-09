@@ -72,6 +72,25 @@ int checkStringIsAllNumber(const char *content) {
 	return 1;
 }
 
+
+int checkStringIsDouble(const char *content) {
+	if (content == NULL) {
+		return 0;
+	}
+
+	size_t len = strlen(content);
+	size_t i;
+	for (i=0; i<len; i++) {
+		char c = content[i];
+		if ((c<0x30 || c>0x39) || c == 0x2E) {
+			return -1;
+		}
+	}
+
+	return 1;
+}
+
+
 int checkStringIsAllTimeChar(const char *content) {
 	if (content == NULL) {
 		return 0;
@@ -1978,7 +1997,23 @@ int ntyJsonFallDownReportAction(ActionParam *pActionParam) {
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;
 
-
+	double longitude = 0.0;
+	double latitude = 0.0;
+	int fdtype = 1;
+	int check_lng = checkStringIsDouble(pFalldown->results.falldownReport.longitude);
+	if (check_lng == 1) {
+		longitude = atof(pFalldown->results.falldownReport.longitude);
+	}
+	int check_lat = checkStringIsDouble(pFalldown->results.falldownReport.latitude);
+	if (check_lat == 1) {
+		latitude = atof(pFalldown->results.falldownReport.latitude);
+	}
+	int check_type = checkStringIsAllNumber(pFalldown->results.falldownReport.type);
+	if (check_type == 1) {
+		fdtype = atoi(pFalldown->results.falldownReport.type);
+	}
+	
+	
 	ntylog("-----------ntyJsonFallDownReportAction falldownbuf----------- \n");
 	U8 falldownbuf[PACKET_BUFFER_SIZE] = {0};
 	sprintf(falldownbuf, "%s/familycare/api?m=health&a=falldown&deviceid=%s&lat=%s&lng=%s&type=%s", 
@@ -2017,17 +2052,19 @@ int ntyJsonFallDownReportAction(ActionParam *pActionParam) {
 	memcpy(pMessageTag->Tag, falldownbuf, length);
 #endif
 	pMessageTag->cb = ntyHttpQJKFalldown;
-	int check_index = checkStringIsAllNumber(pFalldown->results.falldownReport.type);
-	if (check_index == 1) {
-		pMessageTag->u8LocationType = atoi(pFalldown->results.falldownReport.type);
-	} else {
-		pMessageTag->u8LocationType = 1;
-	}
+	
+	
+	pMessageTag->u8LocationType = fdtype;
 
 	int ret = ntyDaveMqPushMessage(pMessageTag);
 	free(pFalldown);
 
-	/*
+
+	ntylog("-----------ntyJsonFallDownReportAction natty ----------- \n");
+	
+	int id = 0;
+	ret = ntyExecuteFalldownInsertHandle(fromId, toId, longitude, latitude, fdtype,	&id);
+
 	//广播跌倒数据到相应的用户
 	U32 msg = 0;
 	int ret = ntyExecuteCommonMsgInsertHandle(fromId, toId, pActionParam->jsonstring, &msg);
@@ -2041,7 +2078,6 @@ int ntyJsonFallDownReportAction(ActionParam *pActionParam) {
 			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
 		}
 	}
-	*/
 	
 	ntydbg(" ntyJsonFallDownReportAction end --> \n");
 	return NTY_RESULT_SUCCESS;

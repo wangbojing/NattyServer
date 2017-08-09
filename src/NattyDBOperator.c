@@ -1698,6 +1698,50 @@ int ntyExecuteEfenceInsert(void *self, C_DEVID aid, C_DEVID did, int index, int 
 }
 
 
+
+//NTY_DB_INSERT_FALLDOWN
+int ntyExecuteFalldownInsert(void *self, C_DEVID aid, C_DEVID did, double lng, double lat, U8 type, int *id) {
+	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = -1;
+	U8 u8PhNum[20] = {0};
+
+	TRY 
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			ntylog("ntyExecuteFalldownInsert --> executeQuery\n");
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_FALLDOWN, did, lng, lat, type);
+
+			if (r != NULL) {
+				if (ResultSet_next(r)) {
+					*id = ResultSet_getInt(r, 1);
+					ret = 0;
+				}
+			}
+		}
+	} 
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+
+
+
 //NTY_DB_DELETE_EFENCE
 int ntyExecuteEfenceDelete(void *self, C_DEVID aid, C_DEVID did, int index) {
 	ConnectionPool *pool = self;
@@ -3172,6 +3216,11 @@ int ntyExecuteAppLogoutUpdateHandle(C_DEVID aid) {
 int ntyExecuteEfenceInsertHandle(C_DEVID aid, C_DEVID did, int index, int num, U8 *points, U8 *runtime, int *id) {
 	void *pool = ntyConnectionPoolInstance();
 	return ntyExecuteEfenceInsert(pool, aid, did, index, num, points, runtime, id);
+}
+
+int ntyExecuteFalldownInsertHandle(C_DEVID aid, C_DEVID did, double lng, double lat, U8 type, int *id) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteFalldownInsert(pool, aid, did, lng, lat, type, id);
 }
 
 int ntyExecuteEfenceDeleteHandle(C_DEVID aid, C_DEVID did, int index) {

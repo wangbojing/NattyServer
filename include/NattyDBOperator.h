@@ -103,6 +103,8 @@
 
 /* ** **** ******** **************** Natty V3.2 **************** ******** **** ** */
 
+#define NTY_DB_INSERT_FALLDOWN				"CALL PROC_INSERT_FALLDOWN(%lld, %lf, %lf, %d);"
+
 #define NTY_DB_INSERT_EFENCE				"CALL PROC_INSERT_EFENCE(%lld, %d, %d, '%s', '%s');"
 
 #define NTY_DB_DELETE_EFENCE				"CALL PROC_DELETE_EFENCE(%lld, %d)"
@@ -311,6 +313,8 @@ int ntyExecuteStepsReportInsertHandle(C_DEVID did, int step, int *msg);
 int ntyExecuteHeartReportInsertHandle(C_DEVID did, int heart, int *msg);
 
 int ntyExecuteEfenceInsertHandle(C_DEVID aid, C_DEVID did, int index, int num, U8 *points, U8 *runtime, int *id);
+
+int ntyExecuteFalldownInsertHandle(C_DEVID aid, C_DEVID did, double lng, double lat, U8 type, int *id);
 
 int ntyExecuteEfenceDeleteHandle(C_DEVID aid, C_DEVID did, int index);
 

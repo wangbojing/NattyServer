@@ -826,13 +826,14 @@ void ntyJsonFalldown(JSON_Value *json,  Falldown *pFalldown) {
 	
 	JSON_Object *root_object = json_value_get_object(json);
 	JSON_Object *results_object = json_object_get_object(root_object, NATTY_USER_PROTOCOL_RESULTS);
-		
 	pFalldown->results.IMEI  = json_object_get_string(results_object, NATTY_USER_PROTOCOL_IMEI);
 	pFalldown->results.category = json_object_get_string(results_object, NATTY_USER_PROTOCOL_CATEGORY);
-	pFalldown->results.falldownReport.radius = json_object_get_string(results_object, NATTY_USER_PROTOCOL_RADIUS);
-	pFalldown->results.falldownReport.longitude = json_object_get_string(results_object, NATTY_USER_PROTOCOL_LONGITUDE);
-	pFalldown->results.falldownReport.latitude = json_object_get_string(results_object, NATTY_USER_PROTOCOL_LATITUDE);
-	pFalldown->results.falldownReport.type = json_object_get_string(results_object, NATTY_USER_PROTOCOL_TYPE);
+
+	JSON_Object *falldown_object = json_object_get_object(results_object, NATTY_USER_PROTOCOL_FALLDOWNREPORT);
+	pFalldown->results.falldownReport.radius = json_object_get_string(falldown_object, NATTY_USER_PROTOCOL_RADIUS);
+	pFalldown->results.falldownReport.longitude = json_object_get_string(falldown_object, NATTY_USER_PROTOCOL_LONGITUDE);
+	pFalldown->results.falldownReport.latitude = json_object_get_string(falldown_object, NATTY_USER_PROTOCOL_LATITUDE);
+	pFalldown->results.falldownReport.type = json_object_get_string(falldown_object, NATTY_USER_PROTOCOL_TYPE);
 }
 
 char * ntyJsonBind(JSON_Value *json, BindReq *pBindReq) {
