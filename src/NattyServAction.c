@@ -2013,7 +2013,7 @@ int ntyJsonFallDownReportAction(ActionParam *pActionParam) {
 		fdtype = atoi(pFalldown->results.falldownReport.type);
 	}
 	
-	
+	/*
 	ntylog("-----------ntyJsonFallDownReportAction falldownbuf----------- \n");
 	U8 falldownbuf[PACKET_BUFFER_SIZE] = {0};
 	sprintf(falldownbuf, "%s/familycare/api?m=health&a=falldown&deviceid=%s&lat=%s&lng=%s&type=%s", 
@@ -2052,18 +2052,15 @@ int ntyJsonFallDownReportAction(ActionParam *pActionParam) {
 	memcpy(pMessageTag->Tag, falldownbuf, length);
 #endif
 	pMessageTag->cb = ntyHttpQJKFalldown;
-	
-	
 	pMessageTag->u8LocationType = fdtype;
 
 	int ret = ntyDaveMqPushMessage(pMessageTag);
 	free(pFalldown);
-
-
 	ntylog("-----------ntyJsonFallDownReportAction natty ----------- \n");
+	*/
 	
 	int id = 0;
-	ret = ntyExecuteFalldownInsertHandle(fromId, toId, longitude, latitude, fdtype,	&id);
+	int ret = ntyExecuteFalldownInsertHandle(fromId, toId, longitude, latitude, fdtype,	&id);
 
 	//广播跌倒数据到相应的用户
 	U32 msg = 0;
