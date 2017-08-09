@@ -82,8 +82,10 @@ int checkStringIsDouble(const char *content) {
 	size_t i;
 	for (i=0; i<len; i++) {
 		char c = content[i];
-		if ((c<0x30 || c>0x39) || c != 0x2E) {
-			return -1;
+		if (c<0x30 || c>0x39) {
+			if (c!=0x2E) {
+				return -1;
+			}
 		}
 	}
 
@@ -2060,7 +2062,9 @@ int ntyJsonFallDownReportAction(ActionParam *pActionParam) {
 	free(pFalldown);
 	ntylog("-----------ntyJsonFallDownReportAction natty ----------- \n");
 	*/
-	ntylog("---longitude : %lf  latitude: %lf fdtype: %d  ----------- \n", longitude, latitude, fdtype);
+	
+	double longitude_test = 29.456456;
+	ntylog("---longitude : %lf  latitude: %lf   longitude_test:%lf fdtype: %d  ----------- \n", longitude, latitude,longitude_test, fdtype);
 	int id = 0;
 	int ret = ntyExecuteFalldownInsertHandle(fromId, toId, longitude, latitude, fdtype,	&id);
 
