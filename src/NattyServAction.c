@@ -2002,10 +2002,12 @@ int ntyJsonFallDownReportAction(ActionParam *pActionParam) {
 	int fdtype = 1;
 	int check_lng = checkStringIsDouble(pFalldown->results.falldownReport.longitude);
 	if (check_lng == 1) {
+		ntylog("---longitude is double ----------- \n");
 		longitude = atof(pFalldown->results.falldownReport.longitude);
 	}
 	int check_lat = checkStringIsDouble(pFalldown->results.falldownReport.latitude);
 	if (check_lat == 1) {
+		ntylog("---latitude is double ----------- \n");
 		latitude = atof(pFalldown->results.falldownReport.latitude);
 	}
 	int check_type = checkStringIsAllNumber(pFalldown->results.falldownReport.type);
@@ -2058,7 +2060,7 @@ int ntyJsonFallDownReportAction(ActionParam *pActionParam) {
 	free(pFalldown);
 	ntylog("-----------ntyJsonFallDownReportAction natty ----------- \n");
 	*/
-	
+	ntylog("---longitude : %lf  latitude: %lf fdtype: %d  ----------- \n", longitude, latitude, fdtype);
 	int id = 0;
 	int ret = ntyExecuteFalldownInsertHandle(fromId, toId, longitude, latitude, fdtype,	&id);
 
