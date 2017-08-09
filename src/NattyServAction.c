@@ -2067,7 +2067,7 @@ int ntyJsonFallDownReportAction(ActionParam *pActionParam) {
 
 	//广播跌倒数据到相应的用户
 	U32 msg = 0;
-	int ret = ntyExecuteCommonMsgInsertHandle(fromId, toId, pActionParam->jsonstring, &msg);
+	ret = ntyExecuteCommonMsgInsertHandle(fromId, toId, pActionParam->jsonstring, &msg);
 	if (ret == -1) {
 		ntylog(" ntyJsonFallDownReportAction --> DB Exception\n");
 	} else if (ret >= 0) {
