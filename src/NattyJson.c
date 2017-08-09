@@ -76,6 +76,19 @@ void ntyJsonSetLocationType(const char *locationType, int *u8LocationType) {
 	}
 }
 
+void ntyJsonSetFalldownType(const char *falldownType, int *u8FalldownType) {
+	if (strcmp(falldownType, NATTY_USER_PROTOCOL_FALLDOWN_TYPE1) == 0) {
+		*u8FalldownType = 1;
+	} else if (strcmp(falldownType, NATTY_USER_PROTOCOL_FALLDOWN_TYPE2) == 0) {
+		*u8FalldownType = 2;
+	} else if (strcmp(falldownType, NATTY_USER_PROTOCOL_FALLDOWN_TYPE3) == 0) {
+		*u8FalldownType = 3;
+	} else if (strcmp(falldownType, NATTY_USER_PROTOCOL_FALLDOWN_TYPE4) == 0) {
+		*u8FalldownType = 4;
+	}
+}
+
+
 void ntyJsonGetLocationType(const int u8LocationType, char* locationType) {
 	if (u8LocationType == 1) {
 		locationType = NATTY_USER_PROTOCOL_WIFI;
@@ -83,6 +96,7 @@ void ntyJsonGetLocationType(const int u8LocationType, char* locationType) {
 		locationType = NATTY_USER_PROTOCOL_LAB;
 	}
 }
+
 
 WeatherAck* ntyInitWeather() {
 	size_t len_WeatherAck = sizeof(WeatherAck);
@@ -468,6 +482,20 @@ void ntyJsonCommon(JSON_Value *json, CommonReq *pCommonReq) {
 	pCommonReq->action = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ACTION);
 }
 
+
+void ntyJsonCommonResponse(JSON_Value *json, CommonResponse *pCommonResponse) {
+	if (json == NULL || pCommonResponse == NULL) {
+		ntylog("param is null.\n");
+		return;
+	}
+
+	JSON_Object *root_object = json_value_get_object(json);
+	pCommonResponse->code = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CODE);
+	pCommonResponse->message = json_object_get_string(root_object, NATTY_USER_PROTOCOL_MESSAGE);
+}
+
+
+
 void ntyJsonCommonExtend(JSON_Value *json, CommonReqExtend *pCommonReqExtend) {
 	if (json == NULL || pCommonReqExtend == NULL) {
 		ntylog("param is null.\n");
@@ -790,6 +818,22 @@ void ntyJsonHeartReport(JSON_Value *json,  HeartReport *pHeartReport) {
 	pHeartReport->results.heartReport = json_object_get_string(results_object, NATTY_USER_PROTOCOL_HEARTREPORT);
 }
 
+void ntyJsonFalldown(JSON_Value *json,  Falldown *pFalldown) {
+	if (json == NULL || pFalldown == NULL) {
+		ntylog("param is null.\n");
+		return;
+	}
+	
+	JSON_Object *root_object = json_value_get_object(json);
+	JSON_Object *results_object = json_object_get_object(root_object, NATTY_USER_PROTOCOL_RESULTS);
+		
+	pFalldown->results.IMEI  = json_object_get_string(results_object, NATTY_USER_PROTOCOL_IMEI);
+	pFalldown->results.category = json_object_get_string(results_object, NATTY_USER_PROTOCOL_CATEGORY);
+	pFalldown->results.falldownReport.radius = json_object_get_string(results_object, NATTY_USER_PROTOCOL_RADIUS);
+	pFalldown->results.falldownReport.longitude = json_object_get_string(results_object, NATTY_USER_PROTOCOL_LONGITUDE);
+	pFalldown->results.falldownReport.latitude = json_object_get_string(results_object, NATTY_USER_PROTOCOL_LATITUDE);
+	pFalldown->results.falldownReport.type = json_object_get_string(results_object, NATTY_USER_PROTOCOL_TYPE);
+}
 
 char * ntyJsonBind(JSON_Value *json, BindReq *pBindReq) {
 	if (json == NULL || pBindReq == NULL) {

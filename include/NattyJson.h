@@ -130,6 +130,8 @@ void ntyJsonICCID(JSON_Value *json, ICCIDReq *pICCIDReq);
 
 void ntyJsonCommon(JSON_Value *json, CommonReq *pCommonReq);
 
+void ntyJsonCommonResponse(JSON_Value *json, CommonResponse *pCommonResponse);
+
 //add by luoby. ntyClientReqJsonParse
 
 int ntyClientReqJsonParse( JSON_Value *json, ClientSelectReq *pclientSelectReq );
@@ -184,6 +186,8 @@ void ntyJsonLocationReport(JSON_Value *json,  LocationReport *pLocationReport);
 void ntyJsonStepsReport(JSON_Value *json,  StepsReport *pStepsReport);
 
 void ntyJsonHeartReport(JSON_Value *json,  HeartReport *pHeartReport);
+
+void ntyJsonFalldown(JSON_Value *json,  Falldown *pFalldown);
 
 
 char * ntyJsonBind(JSON_Value *json, BindReq *pBindReq);

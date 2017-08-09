@@ -109,6 +109,12 @@
 #define NATTY_USER_PROTOCOL_HEARTREPORT		"HeartReport"
 
 
+#define NATTY_USER_PROTOCOL_FALLDOWN_TYPE1	"1"
+#define NATTY_USER_PROTOCOL_FALLDOWN_TYPE2	"2"
+#define NATTY_USER_PROTOCOL_FALLDOWN_TYPE3	"3"
+#define NATTY_USER_PROTOCOL_FALLDOWN_TYPE4	"4"
+
+
 #define NATTY_USER_PROTOCOL_WIFI			"WIFI"
 #define NATTY_USER_PROTOCOL_SSID			"SSID"
 #define NATTY_USER_PROTOCOL_MAC				"MAC"
@@ -203,6 +209,12 @@
 #define NATTY_USER_PROTOCOL_WATCHNAME 		"WatchName"
 #define NATTY_USER_PROTOCOL_WATCHIMAGE 		"WatchImage"
 #define NATTY_USER_PROTOCOL_USERIMAGE 		"UserImage"
+
+
+//#define NATTY_USER_PROTOCOL_RADIUS			"Radius"
+#define NATTY_USER_PROTOCOL_LONGITUDE 		"Longitude"
+#define NATTY_USER_PROTOCOL_LATITUDE 		"Latitude"
+#define NATTY_USER_PROTOCOL_FALLDOWNREPORT 	"FalldownReport"
 
 
 #define NATTY_AMAP_PROTOCOL_STATUS 			"status"
@@ -319,8 +331,6 @@ typedef struct _AMap {
 	AMapResult result;
 } AMap;
 
-
-
 typedef struct _WeatherLocation {
 	const char *id;
 	const char *name;
@@ -385,7 +395,7 @@ typedef struct _ICCIDSet {
 typedef struct _CommonResult {
 	const char *code;
 	const char *message;
-} CommonResult;
+} CommonResult, CommonResponse;
 
 typedef struct _CommonAck {
 	CommonResult result;
@@ -905,6 +915,24 @@ typedef struct _HeartReportResults {
 typedef struct _HeartReport {
 	HeartReportResults results;
 } HeartReport;
+
+
+typedef struct _FalldownReport {
+	const char *radius;
+	const char *longitude;
+	const char *latitude;
+	const char *type;
+} FalldownReport;
+
+typedef struct _FalldownResults {
+	const char *IMEI;
+	const char *category;
+	FalldownReport falldownReport;
+} FalldownResults;
+
+typedef struct _Falldown {
+	FalldownResults results;
+} Falldown, FalldownAck;
 
 
 // add by luoyb add begin

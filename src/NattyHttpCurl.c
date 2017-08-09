@@ -1153,6 +1153,198 @@ int ntyHttpQJKLocation(void *arg) {
 	return 0;
 }
 
+
+
+
+
+
+
+static size_t ntyHttpQJKFalldownHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
+	MessageTag *pMessageTag = (MessageTag *)stream;
+	if (pMessageTag == NULL) return NTY_RESULT_PROCESS;
+
+	U32 nSize = size*nmemb;
+	ntylog("ntyHttpQJKFalldownHandleResult size*nmemb:%d\n",nSize);
+	U8 *jsonstring = (U8 *)malloc( nSize + 1 );
+	if( jsonstring == NULL ){
+		free( pMessageTag );
+		ntylog("ntyHttpQJKFalldownHandleResult jsonstring malloc failed.\n");
+		return size*nmemb;
+	}
+	memset( jsonstring, 0, nSize+1 );
+	memcpy( jsonstring, buffer, nSize );
+		
+	ntylog("ntyHttpQJKFalldownHandleResult json --> %s\n", jsonstring);
+	if (pMessageTag->Tag != NULL) {
+		ntylog("ntyHttpQJKFalldownHandleResult url --> %s\n", pMessageTag->Tag);
+	}
+
+	JSON_Value *json = ntyMallocJsonValue(jsonstring);
+	size_t len_CommonResponse = sizeof(CommonResponse);
+	CommonResponse *pCommonResponse = malloc(len_CommonResponse);
+	if (pCommonResponse == NULL) {
+		if (pMessageTag->Tag != NULL) {
+			free(pMessageTag->Tag);
+		}
+		free(pMessageTag);
+		return size * nmemb;
+	}
+	memset(pCommonResponse, 0, len_CommonResponse);
+	ntyJsonCommonResponse(json, pCommonResponse);
+	
+	//the data of location should be match the rule.
+	if ( pCommonResponse->code==NULL){
+		free( pCommonResponse );
+		ntylog("ntyHttpQJKFalldownHandleResult location is NULL\n");
+		return size * nmemb;
+	}
+
+	if (strcmp(pCommonResponse->code, "200") == 0) {
+		//success
+	} else {
+		ntylog("Falldown failed\n");
+	}
+	
+	/*
+	size_t len_FalldownAck = sizeof(FalldownAck);
+	FalldownAck *pFalldownAck = malloc(len_FalldownAck);
+	if (pFalldownAck == NULL) {
+		if (pMessageTag->Tag != NULL) {
+			free(pMessageTag->Tag);
+		}
+		free(pMessageTag);
+		free(pCommonResponse);
+		return size * nmemb;
+	}
+	memset(pFalldownAck, 0, len_FalldownAck);
+	
+	char bufIMEI[50] = {0};
+	sprintf(bufIMEI, "%llx", pMessageTag->fromId);
+	ntydbg("bufIMEI %s %lld %lld\n", bufIMEI, pMessageTag->fromId, pMessageTag->toId);
+	pFalldownAck->results.IMEI = bufIMEI;
+
+	pFalldownAck->results.category = NATTY_USER_PROTOCOL_FALLDOWNREPORT;
+	pFalldownAck->results.falldownReport.radius = "500";
+	pFalldownAck->results.falldownReport.longitude = "dd";
+	pFalldownAck->results.falldownReport.latitude = "adasdf";
+	pFalldownAck->results.falldownReport.type = "1";
+	free(pFalldownAck);
+	*/
+	
+exit:
+	free(pCommonResponse);
+	free(jsonstring);
+#if 1 //Release Message
+	//nHttpRequest *req = (nHttpRequest *)pMessageTag->param;
+	
+	if (pMessageTag->Tag != NULL) {
+		free(pMessageTag->Tag);
+	}
+	free(pMessageTag);
+#endif
+	
+	return size * nmemb;
+}
+
+
+
+
+
+
+
+int ntyHttpQJKFalldown(void *arg) {
+	CURL *curl;	
+	CURLcode res;
+
+	MessageTag *pMessageTag = (MessageTag *)arg;
+	if (pMessageTag == NULL) return NTY_RESULT_ERROR;
+	
+	U8 *tag = pMessageTag->Tag;
+#if 0
+	CURLcode return_code;
+	return_code = curl_global_init(CURL_GLOBAL_ALL);
+	if (CURLE_OK != return_code) {
+		ntylog("init libcurl failed.\n");		
+		return -1;
+	}
+#endif
+	curl_version_info_data *info=curl_version_info(CURLVERSION_NOW);
+	if (info->features & CURL_VERSION_ASYNCHDNS) {
+		ntylog("ares enabled\n");
+	} else {
+		ntylog("ares NOT enabled\n");
+	}
+#if 0
+	curl = curl_easy_init();
+#else
+	nHttpRequest *req = ntyHttpRequestGetCURL();
+	if (req == NULL) { 
+
+		if (pMessageTag->Tag != NULL) {
+			free(pMessageTag->Tag);
+		}
+		free(pMessageTag);
+		
+		return NTY_RESULT_ERROR;
+	}
+	curl = req->curl;
+	//pMessageTag->param = req;
+#endif
+	if (!curl)	{		
+		ntylog("curl init failed\n");
+
+		if (pMessageTag->Tag != NULL) {
+			free(pMessageTag->Tag);
+		}
+		free(pMessageTag);
+		
+		return NTY_RESULT_ERROR;	
+	}
+
+	ntylog("QJK url:%s\n", tag);
+
+	curl_easy_setopt(curl, CURLOPT_URL, tag);
+	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, NTY_CURL_TIMEOUT);
+#if 1
+	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
+#endif
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ntyHttpQJKFalldownHandleResult); 
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, arg); 
+
+	res = curl_easy_perform(curl);	
+	if (res != CURLE_OK)	{		
+		switch(res)		{
+			case CURLE_UNSUPPORTED_PROTOCOL:			
+				ntylog("CURLE_UNSUPPORTED_PROTOCOL\n");	
+			case CURLE_COULDNT_CONNECT:
+				ntylog("CURLE_COULDNT_CONNECT\n");	
+			case CURLE_HTTP_RETURNED_ERROR:				
+				ntylog("CURLE_HTTP_RETURNED_ERROR\n");			
+			case CURLE_READ_ERROR:				
+				ntylog("CURLE_READ_ERROR\n");			
+			default:				
+				ntylog("default %d\n",res);		
+		}		
+		//return -3;	
+	}
+#if 0	
+	curl_easy_cleanup(curl);
+#endif
+	ntyHttpRequestResetCURL(req);
+#if 0	
+	if (tag != NULL) {
+		free(tag);
+		tag = NULL;
+	}
+#endif
+	return 0;
+}
+
+
+
+
+
 #if 0
 int ntyStringReplace(char res[], char from[], char to[]) {
     int i,flag = 0;

@@ -73,6 +73,9 @@ int ntyHttpQJKFallen(void *arg);
 int ntyHttpQJKLocation(void *arg);
 int ntyHttpQJKLocationGetAddress(void *arg);
 
+int ntyHttpQJKFalldown(void *arg);
+
+
 int ntyHttpQJKWeatherLocation(void *arg);
 int ntyHttpQJKWeather(void *arg);
 

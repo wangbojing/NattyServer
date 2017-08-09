@@ -133,6 +133,8 @@ void ntyJsonHeartReportAction(ActionParam *pActionParam);
 
 void ntyJsonEfenceReportAction(ActionParam *pActionParam);
 
+void ntyJsonFallDownReportAction(ActionParam *pActionParam);
+
 void ntyJsonWearStatusAction(ActionParam *pActionParam);
 
 void ntyBindAgreeAction(char *imei, C_DEVID fromId, C_DEVID proposerId, C_DEVID toId, char *phonenum, U32 msgId);
