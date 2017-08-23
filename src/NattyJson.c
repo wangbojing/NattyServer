@@ -817,6 +817,21 @@ void ntyJsonHeartReport(JSON_Value *json,  HeartReport *pHeartReport) {
 	pHeartReport->results.heartReport = json_object_get_string(results_object, NATTY_USER_PROTOCOL_HEARTREPORT);
 }
 
+
+void ntyJsonBloodReport(JSON_Value *json,  BloodReport *pBloodReport) {
+	if (json == NULL || pBloodReport == NULL) {
+		ntylog("param is null.\n");
+		return;
+	}
+	
+	JSON_Object *root_object = json_value_get_object(json);
+	JSON_Object *results_object = json_object_get_object(root_object, NATTY_USER_PROTOCOL_RESULTS);
+	pBloodReport->results.IMEI  = json_object_get_string(results_object, NATTY_USER_PROTOCOL_IMEI);
+	pBloodReport->results.category = json_object_get_string(results_object, NATTY_USER_PROTOCOL_CATEGORY);
+	pBloodReport->results.bloodReport = json_object_get_string(results_object, NATTY_USER_PROTOCOL_BLOODREPORT);
+}
+
+
 void ntyJsonFalldown(JSON_Value *json,  Falldown *pFalldown) {
 	if (json == NULL || pFalldown == NULL) {
 		ntylog("param is null.\n");

@@ -107,6 +107,7 @@
 #define NATTY_USER_PROTOCOL_GPS				"GPS"
 #define NATTY_USER_PROTOCOL_STEPSREPORT		"StepsReport"
 #define NATTY_USER_PROTOCOL_HEARTREPORT		"HeartReport"
+#define NATTY_USER_PROTOCOL_BLOODREPORT		"BloodReport"
 
 
 #define NATTY_USER_PROTOCOL_FALLDOWN_TYPE1	"1"
@@ -221,6 +222,8 @@
 #define NATTY_USER_PROTOCOL_LONGITUDE 		"Longitude"
 #define NATTY_USER_PROTOCOL_LATITUDE 		"Latitude"
 #define NATTY_USER_PROTOCOL_FALLDOWNREPORT 	"FalldownReport"
+#define NATTY_USER_PROTOCOL_SAFETYREPORT 	"SafetyReport"
+
 
 
 #define NATTY_AMAP_PROTOCOL_STATUS 			"status"
@@ -280,7 +283,7 @@
 #define NATTY_ALARM_PROTOCOL_SAFETY 		 		"SafetyAlarm"
 #define NATTY_ALARM_PROTOCOL_WEARSTATUS		 		"WearStatusAlarm"
 #define NATTY_ALARM_PROTOCOL_HEART 			 		"HeartAlarm"
-
+#define NATTY_ALARM_PROTOCOL_BLOOD 			 		"BloodAlarm"
 
 
 typedef struct _WIFIItem {
@@ -930,6 +933,19 @@ typedef struct _HeartReportResults {
 typedef struct _HeartReport {
 	HeartReportResults results;
 } HeartReport;
+
+
+
+typedef struct _BloodReportResults {
+	const char *IMEI;
+	const char *category;
+	const char *bloodReport;
+	const char *time;
+} BloodReportResults;
+
+typedef struct _BloodReport {
+	BloodReportResults results;
+} BloodReport;
 
 
 typedef struct _FalldownReport {

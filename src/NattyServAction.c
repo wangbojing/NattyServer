@@ -541,12 +541,16 @@ void ntyCommonReqAction(ActionParam *pActionParam) {
 			ntyJsonStepsReportAction(pActionParam);
 		} else if (strcmp(watch_category, NATTY_USER_PROTOCOL_HEARTREPORT) == 0) {
 			ntyJsonHeartReportAction(pActionParam);
+		} else if (strcmp(watch_category, NATTY_USER_PROTOCOL_BLOODREPORT) == 0) {
+			ntyJsonBloodReportAction(pActionParam);
 		} else if (strcmp(watch_category, NATTY_USER_PROTOCOL_EFENCEREPORT) == 0) {
 			ntyJsonEfenceReportAction(pActionParam);
 		} else if (strcmp(watch_category, NATTY_USER_PROTOCOL_WEARSTATUS) == 0) {
 			ntyJsonWearStatusAction(pActionParam);
 		} else if (strcmp(watch_category, NATTY_USER_PROTOCOL_FALLDOWNREPORT) == 0) {
 			ntyJsonFallDownReportAction(pActionParam);
+		} else if (strcmp(watch_category, NATTY_USER_PROTOCOL_SAFETYREPORT) == 0) {
+			ntyJsonSafetyReportReportAction(pActionParam);
 		} else {
 			ntylog("Can't find watch category with: %s\n", watch_category);
 		}
@@ -1783,8 +1787,10 @@ void ntyJsonAlarmAction(char *category, char *content) {
 		eventType = 4;
 	} else if (strcmp(category, NATTY_ALARM_PROTOCOL_HEART) == 0) {
 		eventType = 5;
-	} else if (strcmp(category, NATTY_ALARM_PROTOCOL_WEARSTATUS) == 0) {
+	} else if (strcmp(category, NATTY_ALARM_PROTOCOL_BLOOD) == 0) {
 		eventType = 6;
+	} else if (strcmp(category, NATTY_ALARM_PROTOCOL_WEARSTATUS) == 0) {
+		eventType = 7;
 	}
 	pDeviceEvent->eventType = eventType;
 
@@ -1792,6 +1798,7 @@ void ntyJsonAlarmAction(char *category, char *content) {
 	C_DEVID qjkTomcat = 71111101;
 	ntyJsonCommonContextResult(qjkTomcat, jsonresult);
 	ntyJsonFree(jsonresult);
+	
 	free(pDeviceEvent);
 }
 
@@ -1838,7 +1845,11 @@ void ntyJsonHeartReportAction(ActionParam *pActionParam) {
 	if (ret == -1) {
 		ntylog(" ntyJsonHeartReportAction --> DB Exception\n");
 	} else if (ret >= 0) {
-		ntyJsonAlarmAction(NATTY_ALARM_PROTOCOL_HEART, pActionParam->jsonstring);
+		int heartReport_min = 20;
+		int heartReport_max = 200;
+		if (heartReport < heartReport_min || heartReport > heartReport_max) {
+			ntyJsonAlarmAction(NATTY_ALARM_PROTOCOL_HEART, pActionParam->jsonstring);
+		}
 		ret = ntyJsonBroadCastRecvResult(fromId, toId, pActionParam->jsonstring, msg);
 		if (ret >= 0) {
 			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
@@ -1846,8 +1857,55 @@ void ntyJsonHeartReportAction(ActionParam *pActionParam) {
 			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
 		}
 	}
+
+	if ( pHeartReport != NULL ){
+		free( pHeartReport );
+		pHeartReport = NULL;
+	}
 }
 
+
+void ntyJsonBloodReportAction(ActionParam *pActionParam) {
+	C_DEVID fromId = pActionParam->fromId;
+	C_DEVID toId = pActionParam->toId;
+
+	BloodReport *pBloodReport = malloc(sizeof(BloodReport));
+	if (pBloodReport == NULL) {
+		ntylog("ntyJsonBloodReportAction --> malloc failed BloodReport\n");
+		return;
+	}
+	memset(pBloodReport, 0, sizeof(BloodReport));
+	ntyJsonBloodReport(pActionParam->json, pBloodReport);
+
+	int bloodReport = 0;
+	int bloodReport_check = checkStringIsAllNumber(pBloodReport->results.bloodReport);
+	if (bloodReport_check == 1) {
+		bloodReport = atoi(pBloodReport->results.bloodReport);
+	}
+
+	U32 msg = 0;
+	int ret = ntyExecuteHeartReportInsertHandle(toId, bloodReport, &msg);
+	if (ret == -1) {
+		ntylog(" ntyJsonHeartReportAction --> DB Exception\n");
+	} else if (ret >= 0) {
+		int bloodReport_min = 20;
+		int bloodReport_max = 200;
+		if (bloodReport < bloodReport_min || bloodReport > bloodReport_max) {
+			ntyJsonAlarmAction(NATTY_ALARM_PROTOCOL_BLOOD, pActionParam->jsonstring);
+		}
+		ret = ntyJsonBroadCastRecvResult(fromId, toId, pActionParam->jsonstring, msg);
+		if (ret >= 0) {
+			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
+		} else {
+			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
+		}
+	}
+
+	if ( pBloodReport != NULL ){
+		free( pBloodReport );	
+		pBloodReport = NULL;
+	}
+}
 
 void ntyJsonEfenceReportAction(ActionParam *pActionParam) {
 	C_DEVID fromId = pActionParam->fromId;
@@ -1974,8 +2032,33 @@ int ntyJsonFallDownReportAction(ActionParam *pActionParam) {
 		}
 	}
 	
+	if ( pFalldown != NULL ){
+		free( pFalldown );	
+		pFalldown = NULL;
+	}
+	
 	ntydbg(" ntyJsonFallDownReportAction end --> \n");
 	return NTY_RESULT_SUCCESS;
+}
+
+int ntyJsonSafetyReportReportAction(ActionParam *pActionParam) {
+	C_DEVID fromId = pActionParam->fromId;
+	C_DEVID toId = pActionParam->toId;
+
+	U32 msg = 0;
+	int ret = ntyExecuteCommonMsgInsertHandle(fromId, toId, pActionParam->jsonstring, &msg);
+	if (ret == -1) {
+		ntylog(" ntyJsonSafetyReportReportAction --> DB Exception\n");
+	} else if (ret >= 0) {
+		ntyJsonAlarmAction(NATTY_ALARM_PROTOCOL_SAFETY, pActionParam->jsonstring);
+	
+		ret = ntyJsonBroadCastRecvResult(fromId, toId, pActionParam->jsonstring, msg);
+		if (ret >= 0) {
+			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
+		} else {
+			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
+		}
+	}
 }
 
 void ntyJsonLocationReportAction(ActionParam *pActionParam) {
@@ -2123,6 +2206,11 @@ void ntyJsonStepsReportAction(ActionParam *pActionParam) {
 		} else {
 			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
 		}
+	}
+
+	if ( pStepsReport != NULL ){
+		free( pStepsReport );	
+		pStepsReport = NULL;
 	}
 }
 

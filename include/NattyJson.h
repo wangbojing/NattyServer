@@ -187,6 +187,8 @@ void ntyJsonStepsReport(JSON_Value *json,  StepsReport *pStepsReport);
 
 void ntyJsonHeartReport(JSON_Value *json,  HeartReport *pHeartReport);
 
+void ntyJsonBloodReport(JSON_Value *json,  BloodReport *pBloodReport);
+
 void ntyJsonFalldown(JSON_Value *json,  Falldown *pFalldown);
 
 

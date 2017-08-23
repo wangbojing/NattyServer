@@ -129,9 +129,13 @@ void ntyJsonSOSReportAction(ActionParam *pActionParam);
 
 void ntyJsonHeartReportAction(ActionParam *pActionParam);
 
+void ntyJsonBloodReportAction(ActionParam *pActionParam);
+
 void ntyJsonEfenceReportAction(ActionParam *pActionParam);
 
 int ntyJsonFallDownReportAction(ActionParam *pActionParam);
+
+int ntyJsonSafetyReportReportAction(ActionParam *pActionParam);
 
 void ntyJsonLocationReportAction(ActionParam *pActionParam);
 
