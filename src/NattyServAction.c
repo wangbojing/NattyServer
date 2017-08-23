@@ -1884,9 +1884,9 @@ void ntyJsonBloodReportAction(ActionParam *pActionParam) {
 	}
 
 	U32 msg = 0;
-	int ret = ntyExecuteHeartReportInsertHandle(toId, bloodReport, &msg);
+	int ret = ntyExecuteBloodReportInsertHandle(toId, bloodReport, &msg);
 	if (ret == -1) {
-		ntylog(" ntyJsonHeartReportAction --> DB Exception\n");
+		ntylog(" ntyJsonBloodReportAction --> DB Exception\n");
 	} else if (ret >= 0) {
 		int bloodReport_min = 20;
 		int bloodReport_max = 200;

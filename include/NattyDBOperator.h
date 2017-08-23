@@ -210,6 +210,8 @@
 
 #define NTY_DB_INSERT_HEARTREPORT			"CALL PROC_INSERT_HEARTREPORT(%lld, %d)"
 
+#define NTY_DB_INSERT_BLOODREPORT			"CALL PROC_INSERT_BLOODREPORT(%lld, %d)"
+
 
 #define NTY_DB_INSERT_COMMON_MSG_REJECT		"CALL PROC_INSERT_COMMON_MSG_REJECT(%lld, %lld, '%s')"
 
@@ -311,6 +313,8 @@ int ntyExecuteLocationReportInsertHandle(C_DEVID did, U8 type, const char *info,
 int ntyExecuteStepsReportInsertHandle(C_DEVID did, int step, int *msg);
 
 int ntyExecuteHeartReportInsertHandle(C_DEVID did, int heart, int *msg);
+
+int ntyExecuteBloodReportInsertHandle(C_DEVID did, int blood, int *msg);
 
 int ntyExecuteEfenceInsertHandle(C_DEVID aid, C_DEVID did, int index, int num, U8 *points, U8 *runtime, int *id);
 

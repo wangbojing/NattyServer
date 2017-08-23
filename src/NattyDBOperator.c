@@ -2600,6 +2600,51 @@ int ntyExecuteHeartReportInsert(void *self, C_DEVID did, int heart, int *msg) {
 	return ret;
 }
 
+
+//NTY_DB_INSERT_BLOODREPORT
+int ntyExecuteBloodReportInsert(void *self, C_DEVID did, int blood, int *msg) {
+	ConnectionPool *pool = self;
+	if (pool == NULL) return NTY_RESULT_BUSY;
+	Connection_T con = ConnectionPool_getConnection(pool->nPool);
+	int ret = -1;
+	U8 u8PhNum[20] = {0};
+
+	TRY
+	{
+		con = ntyCheckConnection(self, con);
+		if (con == NULL) {
+			ret = -1;
+		} else {
+			ntylog(" ntyExecuteBloodReportInsert --> start\n");
+			
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_BLOODREPORT, did, blood);
+			if (r != NULL) {
+				while (ResultSet_next(r)) {
+					*msg = ResultSet_getInt(r, 1);	
+					ret = 0;
+
+					ntylog("ntyExecuteBloodReportInsert msgId : %d\n", *msg);
+				}
+			}
+		}
+	}
+	CATCH(SQLException) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -1;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(con);
+	}
+	END_TRY;
+
+	return ret;
+}
+
+
+
 //NTY_DB_INSERT_COMMON_ITEM_MSG
 int ntyExecuteCommonItemMsgInsert(void *self, C_DEVID sid, C_DEVID gid, char *details, int *msg) {
 	ConnectionPool *pool = self;
@@ -3335,6 +3380,10 @@ int ntyExecuteHeartReportInsertHandle(C_DEVID did, int heart, int *msg) {
 	return ntyExecuteHeartReportInsert(pool, did, heart, msg);
 }
 
+int ntyExecuteBloodReportInsertHandle(C_DEVID did, int blood, int *msg) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteBloodReportInsert(pool, did, blood, msg);
+}
 
 
 int ntyExecuteCommonItemMsgInsertHandle(C_DEVID sid, C_DEVID gid, char *details, int *msg) {
