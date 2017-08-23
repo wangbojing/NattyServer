@@ -1788,10 +1788,10 @@ void ntyJsonAlarmAction(char *category, char *content) {
 	}
 	pDeviceEvent->eventType = eventType;
 
-	char *json = ntyJsonDeviceEvent(pDeviceEvent);
+	char *jsonresult = ntyJsonDeviceEvent(pDeviceEvent);
 	C_DEVID qjkTomcat = 71111101;
-	ntyJsonCommonContextResult(qjkTomcat, json);
-	
+	ntyJsonCommonContextResult(qjkTomcat, jsonresult);
+	ntyJsonFree(jsonresult);
 	free(pDeviceEvent);
 }
 
