@@ -1845,11 +1845,11 @@ void ntyJsonHeartReportAction(ActionParam *pActionParam) {
 	if (ret == -1) {
 		ntylog(" ntyJsonHeartReportAction --> DB Exception\n");
 	} else if (ret >= 0) {
-		int heartReport_min = 20;
-		int heartReport_max = 200;
-		if (heartReport < heartReport_min || heartReport > heartReport_max) {
+		//int heartReport_min = 20;
+		//int heartReport_max = 200;
+		//if (heartReport < heartReport_min || heartReport > heartReport_max) {
 			ntyJsonAlarmAction(NATTY_ALARM_PROTOCOL_HEART, pActionParam->jsonstring);
-		}
+		//}
 		ret = ntyJsonBroadCastRecvResult(fromId, toId, pActionParam->jsonstring, msg);
 		if (ret >= 0) {
 			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
@@ -1888,11 +1888,11 @@ void ntyJsonBloodReportAction(ActionParam *pActionParam) {
 	if (ret == -1) {
 		ntylog(" ntyJsonBloodReportAction --> DB Exception\n");
 	} else if (ret >= 0) {
-		int bloodReport_min = 20;
-		int bloodReport_max = 200;
-		if (bloodReport < bloodReport_min || bloodReport > bloodReport_max) {
+		//int bloodReport_min = 20;
+		//int bloodReport_max = 200;
+		//if (bloodReport < bloodReport_min || bloodReport > bloodReport_max) {
 			ntyJsonAlarmAction(NATTY_ALARM_PROTOCOL_BLOOD, pActionParam->jsonstring);
-		}
+		//}
 		ret = ntyJsonBroadCastRecvResult(fromId, toId, pActionParam->jsonstring, msg);
 		if (ret >= 0) {
 			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
