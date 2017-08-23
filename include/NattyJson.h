@@ -214,6 +214,8 @@ char * ntyJsonWriteLAB(LABAck *pLABAck);
 
 char * ntyJsonWriteLocation(LocationAck *pLocationAck);
 
+char * ntyJsonDeviceEvent(DeviceEvent *pDeviceEvent);
+
 char * ntyJsonWriteWeather(WeatherAck *pWeatherAck);
 
 char * ntyJsonWriteAddEfence(AddEfenceAck *pAddEfenceAck);

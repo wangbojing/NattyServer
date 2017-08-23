@@ -774,7 +774,6 @@ void ntyJsonDelContacts(JSON_Value *json, DelContactsReq *pDelContactsReq) {
 	pDelContactsReq->id = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ID);
 }
 
-
 void ntyJsonLocationReport(JSON_Value *json,  LocationReport *pLocationReport) {
 	if (json == NULL || pLocationReport == NULL) {
 		ntylog("param is null.\n");
@@ -1078,6 +1077,25 @@ char *ntyJsonWriteLocation(LocationAck *pLocationAck) {
 	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_LOCATION, pLocationAck->results.location);
 	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_IMEI, pLocationAck->results.IMEI);
 
+	char *jsonstring =  json_serialize_to_string(schema);
+	json_value_free(schema);
+	return jsonstring;
+}
+
+
+char *ntyJsonDeviceEvent(DeviceEvent *pDeviceEvent) {
+	if (pDeviceEvent == NULL) {
+		return NULL;
+	}
+	
+	JSON_Value *schema = json_value_init_object();
+	JSON_Object *schema_obj = json_value_get_object(schema);
+
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_ACTION, pDeviceEvent->action);
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_CATEGORY, pDeviceEvent->category);
+	json_object_set_number(schema_obj, NATTY_USER_PROTOCOL_EVENTTYPE, pDeviceEvent->eventType);
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_CONTENT, pDeviceEvent->content);
+	
 	char *jsonstring =  json_serialize_to_string(schema);
 	json_value_free(schema);
 	return jsonstring;

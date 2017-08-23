@@ -123,17 +123,19 @@ void ntyJsonICCIDAction(ActionParam *pActionParam);
 
 void ntyJsonOfflineMsgReqAction(ActionParam *pActionParam);
 
+void ntyJsonAlarmAction(char *eventType, char *content);
+
 void ntyJsonSOSReportAction(ActionParam *pActionParam);
-
-void ntyJsonLocationReportAction(ActionParam *pActionParam);
-
-void ntyJsonStepsReportAction(ActionParam *pActionParam);
 
 void ntyJsonHeartReportAction(ActionParam *pActionParam);
 
 void ntyJsonEfenceReportAction(ActionParam *pActionParam);
 
 int ntyJsonFallDownReportAction(ActionParam *pActionParam);
+
+void ntyJsonLocationReportAction(ActionParam *pActionParam);
+
+void ntyJsonStepsReportAction(ActionParam *pActionParam);
 
 void ntyJsonWearStatusAction(ActionParam *pActionParam);
 

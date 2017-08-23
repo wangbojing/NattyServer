@@ -1758,6 +1758,43 @@ exit:
 	free(pDelContactsReq);
 }
 
+void ntyJsonAlarmAction(char *category, char *content) {
+	DeviceEvent *pDeviceEvent = (DeviceEvent*)malloc(sizeof(DeviceEvent));
+	if (pDeviceEvent == NULL) {
+		ntylog("ntyJsonAlarmAction --> malloc DeviceEvent failed\n");
+		return;
+	}
+	memset(pDeviceEvent, 0, sizeof(DeviceEvent));
+	pDeviceEvent->category = category;
+	pDeviceEvent->action = NATTY_USER_PROTOCOL_ALARM;
+	
+	char szjson[512] = {0};
+	memcpy(szjson, content, strlen(content));
+	pDeviceEvent->content = szjson;
+	int eventType = 0;
+
+	if (strcmp(category, NATTY_ALARM_PROTOCOL_SOS) == 0) {
+		eventType = 1;
+	} else if (strcmp(category, NATTY_ALARM_PROTOCOL_EFENCE) == 0) {
+		eventType = 2;
+	} else if (strcmp(category, NATTY_ALARM_PROTOCOL_FALLDOWN) == 0) {
+		eventType = 3;
+	} else if (strcmp(category, NATTY_ALARM_PROTOCOL_SAFETY) == 0) {
+		eventType = 4;
+	} else if (strcmp(category, NATTY_ALARM_PROTOCOL_HEART) == 0) {
+		eventType = 5;
+	} else if (strcmp(category, NATTY_ALARM_PROTOCOL_WEARSTATUS) == 0) {
+		eventType = 6;
+	}
+	pDeviceEvent->eventType = eventType;
+
+	char *json = ntyJsonDeviceEvent(pDeviceEvent);
+	C_DEVID qjkTomcat = 71111101;
+	ntyJsonCommonContextResult(qjkTomcat, json);
+	
+	free(pDeviceEvent);
+}
+
 void ntyJsonSOSReportAction(ActionParam *pActionParam) {
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;
@@ -1767,6 +1804,8 @@ void ntyJsonSOSReportAction(ActionParam *pActionParam) {
 	if (ret == -1) {
 		ntylog(" ntyJsonSOSReportAction --> DB Exception\n");
 	} else if (ret >= 0) {
+		ntyJsonAlarmAction(NATTY_ALARM_PROTOCOL_SOS, pActionParam->jsonstring);
+	
 		ret = ntyJsonBroadCastRecvResult(fromId, toId, pActionParam->jsonstring, msg);
 		if (ret >= 0) {
 			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
@@ -1774,6 +1813,169 @@ void ntyJsonSOSReportAction(ActionParam *pActionParam) {
 			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
 		}
 	}
+}
+
+void ntyJsonHeartReportAction(ActionParam *pActionParam) {
+	C_DEVID fromId = pActionParam->fromId;
+	C_DEVID toId = pActionParam->toId;
+
+	HeartReport *pHeartReport = malloc(sizeof(HeartReport));
+	if (pHeartReport == NULL) {
+		ntylog("ntyJsonHeartReportAction --> malloc failed HeartReport\n");
+		return;
+	}
+	memset(pHeartReport, 0, sizeof(HeartReport));
+	ntyJsonHeartReport(pActionParam->json, pHeartReport);
+
+	int heartReport = 0;
+	int heartReport_check = checkStringIsAllNumber(pHeartReport->results.heartReport);
+	if (heartReport_check == 1) {
+		heartReport = atoi(pHeartReport->results.heartReport);
+	}
+
+	U32 msg = 0;
+	int ret = ntyExecuteHeartReportInsertHandle(toId, heartReport, &msg);
+	if (ret == -1) {
+		ntylog(" ntyJsonHeartReportAction --> DB Exception\n");
+	} else if (ret >= 0) {
+		ntyJsonAlarmAction(NATTY_ALARM_PROTOCOL_HEART, pActionParam->jsonstring);
+		ret = ntyJsonBroadCastRecvResult(fromId, toId, pActionParam->jsonstring, msg);
+		if (ret >= 0) {
+			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
+		} else {
+			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
+		}
+	}
+}
+
+
+void ntyJsonEfenceReportAction(ActionParam *pActionParam) {
+	C_DEVID fromId = pActionParam->fromId;
+	C_DEVID toId = pActionParam->toId;
+
+	U32 msg = 0;
+	int ret = ntyExecuteCommonMsgInsertHandle(fromId, toId, pActionParam->jsonstring, &msg);
+	if (ret == -1) {
+		ntylog(" ntyJsonSOSReportAction --> DB Exception\n");
+		ret = 4;
+	} else if (ret >= 0) {
+		ntyJsonAlarmAction(NATTY_ALARM_PROTOCOL_EFENCE, pActionParam->jsonstring);
+	
+		ret = ntyJsonBroadCastRecvResult(fromId, toId, pActionParam->jsonstring, msg);
+		if (ret >= 0) {
+			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
+		} else {
+			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
+		}
+	}
+}
+
+
+/**
+ *
+ * http://app.quanjiakan.com/familycare/api?m=health&a=falldown&deviceid=352315052834187&lat=23.13245960031104&lng=113.24134987677577&type=1 
+ *
+ */
+int ntyJsonFallDownReportAction(ActionParam *pActionParam) {	
+	ntylog(" ntyJsonFallDownReportAction begin --> \n");
+	if (pActionParam == NULL) {
+		return NTY_RESULT_FAILED;
+	}
+	
+	Falldown *pFalldown = (Falldown*)malloc(sizeof(Falldown));
+	if (pFalldown== NULL) {
+		return NTY_RESULT_ERROR;
+	}
+	memset(pFalldown, 0, sizeof(Falldown));
+	
+	ntyJsonFalldown(pActionParam->json, pFalldown);
+	
+	C_DEVID fromId = pActionParam->fromId;
+	C_DEVID toId = pActionParam->toId;
+
+	double longitude = 0.0;
+	double latitude = 0.0;
+	int fdtype = 1;
+	int check_lng = checkStringIsDouble(pFalldown->results.falldownReport.longitude);
+	if (check_lng == 1) {
+		longitude = atof(pFalldown->results.falldownReport.longitude);
+	}
+	int check_lat = checkStringIsDouble(pFalldown->results.falldownReport.latitude);
+	if (check_lat == 1) {
+		latitude = atof(pFalldown->results.falldownReport.latitude);
+	}
+	int check_type = checkStringIsAllNumber(pFalldown->results.falldownReport.type);
+	if (check_type == 1) {
+		fdtype = atoi(pFalldown->results.falldownReport.type);
+	}
+	
+	/*
+	ntylog("-----------ntyJsonFallDownReportAction falldownbuf----------- \n");
+	U8 falldownbuf[PACKET_BUFFER_SIZE] = {0};
+	sprintf(falldownbuf, "%s/familycare/api?m=health&a=falldown&deviceid=%s&lat=%s&lng=%s&type=%s", 
+		HTTP_QJK_BASE_URL, 
+		pFalldown->results.IMEI, 
+		pFalldown->results.falldownReport.latitude, 
+		pFalldown->results.falldownReport.longitude,
+		pFalldown->results.falldownReport.type);
+	ntylog(" falldownbuf --> %s\n", falldownbuf);
+	int length = strlen(falldownbuf);
+
+	MessageTag *pMessageTag = malloc(sizeof(MessageTag));
+	if (pMessageTag == NULL) {
+		free(pFalldown);
+		return NTY_RESULT_ERROR;
+	}
+	memset(pMessageTag, 0, sizeof(MessageTag));
+	
+	pMessageTag->Type = MSG_TYPE_FALLDOWN_API;
+	pMessageTag->fromId = fromId;
+	pMessageTag->toId = toId;
+
+	pMessageTag->length = length;
+
+#if ENABLE_DAVE_MSGQUEUE_MALLOC
+	pMessageTag->Tag = malloc((length+1)*sizeof(U8));
+	if (pMessageTag->Tag == NULL) {
+		free(pFalldown);
+		free(pMessageTag);
+		return NTY_RESULT_ERROR;
+	}
+	memset(pMessageTag->Tag, 0, length+1);
+	memcpy(pMessageTag->Tag, falldownbuf, length);
+#else
+	memset(pMessageTag->Tag, 0, length+1);
+	memcpy(pMessageTag->Tag, falldownbuf, length);
+#endif
+	pMessageTag->cb = ntyHttpQJKFalldown;
+	pMessageTag->u8LocationType = fdtype;
+
+	int ret = ntyDaveMqPushMessage(pMessageTag);
+	free(pFalldown);
+	ntylog("-----------ntyJsonFallDownReportAction natty ----------- \n");
+	*/
+	
+	int id = 0;
+	int ret = ntyExecuteFalldownInsertHandle(fromId, toId, longitude, latitude, fdtype,	&id);
+
+	//广播跌倒数据到相应的用户
+	U32 msg = 0;
+	ret = ntyExecuteCommonMsgInsertHandle(fromId, toId, pActionParam->jsonstring, &msg);
+	if (ret == -1) {
+		ntylog(" ntyJsonFallDownReportAction --> DB Exception\n");
+	} else if (ret >= 0) {
+		ntyJsonAlarmAction(NATTY_ALARM_PROTOCOL_FALLDOWN, pActionParam->jsonstring);
+	
+		ret = ntyJsonBroadCastRecvResult(fromId, toId, pActionParam->jsonstring, msg);
+		if (ret >= 0) {
+			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
+		} else {
+			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
+		}
+	}
+	
+	ntydbg(" ntyJsonFallDownReportAction end --> \n");
+	return NTY_RESULT_SUCCESS;
 }
 
 void ntyJsonLocationReportAction(ActionParam *pActionParam) {
@@ -1922,164 +2124,6 @@ void ntyJsonStepsReportAction(ActionParam *pActionParam) {
 			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
 		}
 	}
-}
-
-void ntyJsonHeartReportAction(ActionParam *pActionParam) {
-	C_DEVID fromId = pActionParam->fromId;
-	C_DEVID toId = pActionParam->toId;
-
-	HeartReport *pHeartReport = malloc(sizeof(HeartReport));
-	if (pHeartReport == NULL) {
-		ntylog("ntyJsonHeartReportAction --> malloc failed HeartReport\n");
-		return;
-	}
-	memset(pHeartReport, 0, sizeof(HeartReport));
-	ntyJsonHeartReport(pActionParam->json, pHeartReport);
-
-	int heartReport = 0;
-	int heartReport_check = checkStringIsAllNumber(pHeartReport->results.heartReport);
-	if (heartReport_check == 1) {
-		heartReport = atoi(pHeartReport->results.heartReport);
-	}
-
-	U32 msg = 0;
-	int ret = ntyExecuteHeartReportInsertHandle(toId, heartReport, &msg);
-	if (ret == -1) {
-		ntylog(" ntyJsonHeartReportAction --> DB Exception\n");
-	} else if (ret >= 0) {
-		ret = ntyJsonBroadCastRecvResult(fromId, toId, pActionParam->jsonstring, msg);
-		if (ret >= 0) {
-			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
-		} else {
-			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
-		}
-	}
-}
-
-
-void ntyJsonEfenceReportAction(ActionParam *pActionParam) {
-	C_DEVID fromId = pActionParam->fromId;
-	C_DEVID toId = pActionParam->toId;
-
-	U32 msg = 0;
-	int ret = ntyExecuteCommonMsgInsertHandle(fromId, toId, pActionParam->jsonstring, &msg);
-	if (ret == -1) {
-		ntylog(" ntyJsonSOSReportAction --> DB Exception\n");
-		ret = 4;
-	} else if (ret >= 0) {
-		ret = ntyJsonBroadCastRecvResult(fromId, toId, pActionParam->jsonstring, msg);
-		if (ret >= 0) {
-			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
-		} else {
-			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
-		}
-	}
-}
-
-
-/**
- *
- * http://app.quanjiakan.com/familycare/api?m=health&a=falldown&deviceid=352315052834187&lat=23.13245960031104&lng=113.24134987677577&type=1 
- *
- */
-int ntyJsonFallDownReportAction(ActionParam *pActionParam) {	
-	ntylog(" ntyJsonFallDownReportAction begin --> \n");
-	if (pActionParam == NULL) {
-		return NTY_RESULT_FAILED;
-	}
-	
-	Falldown *pFalldown = (Falldown*)malloc(sizeof(Falldown));
-	if (pFalldown== NULL) {
-		return NTY_RESULT_ERROR;
-	}
-	memset(pFalldown, 0, sizeof(Falldown));
-	
-	ntyJsonFalldown(pActionParam->json, pFalldown);
-	
-	C_DEVID fromId = pActionParam->fromId;
-	C_DEVID toId = pActionParam->toId;
-
-	double longitude = 0.0;
-	double latitude = 0.0;
-	int fdtype = 1;
-	int check_lng = checkStringIsDouble(pFalldown->results.falldownReport.longitude);
-	if (check_lng == 1) {
-		longitude = atof(pFalldown->results.falldownReport.longitude);
-	}
-	int check_lat = checkStringIsDouble(pFalldown->results.falldownReport.latitude);
-	if (check_lat == 1) {
-		latitude = atof(pFalldown->results.falldownReport.latitude);
-	}
-	int check_type = checkStringIsAllNumber(pFalldown->results.falldownReport.type);
-	if (check_type == 1) {
-		fdtype = atoi(pFalldown->results.falldownReport.type);
-	}
-	
-	/*
-	ntylog("-----------ntyJsonFallDownReportAction falldownbuf----------- \n");
-	U8 falldownbuf[PACKET_BUFFER_SIZE] = {0};
-	sprintf(falldownbuf, "%s/familycare/api?m=health&a=falldown&deviceid=%s&lat=%s&lng=%s&type=%s", 
-		HTTP_QJK_BASE_URL, 
-		pFalldown->results.IMEI, 
-		pFalldown->results.falldownReport.latitude, 
-		pFalldown->results.falldownReport.longitude,
-		pFalldown->results.falldownReport.type);
-	ntylog(" falldownbuf --> %s\n", falldownbuf);
-	int length = strlen(falldownbuf);
-
-	MessageTag *pMessageTag = malloc(sizeof(MessageTag));
-	if (pMessageTag == NULL) {
-		free(pFalldown);
-		return NTY_RESULT_ERROR;
-	}
-	memset(pMessageTag, 0, sizeof(MessageTag));
-	
-	pMessageTag->Type = MSG_TYPE_FALLDOWN_API;
-	pMessageTag->fromId = fromId;
-	pMessageTag->toId = toId;
-
-	pMessageTag->length = length;
-
-#if ENABLE_DAVE_MSGQUEUE_MALLOC
-	pMessageTag->Tag = malloc((length+1)*sizeof(U8));
-	if (pMessageTag->Tag == NULL) {
-		free(pFalldown);
-		free(pMessageTag);
-		return NTY_RESULT_ERROR;
-	}
-	memset(pMessageTag->Tag, 0, length+1);
-	memcpy(pMessageTag->Tag, falldownbuf, length);
-#else
-	memset(pMessageTag->Tag, 0, length+1);
-	memcpy(pMessageTag->Tag, falldownbuf, length);
-#endif
-	pMessageTag->cb = ntyHttpQJKFalldown;
-	pMessageTag->u8LocationType = fdtype;
-
-	int ret = ntyDaveMqPushMessage(pMessageTag);
-	free(pFalldown);
-	ntylog("-----------ntyJsonFallDownReportAction natty ----------- \n");
-	*/
-	
-	int id = 0;
-	int ret = ntyExecuteFalldownInsertHandle(fromId, toId, longitude, latitude, fdtype,	&id);
-
-	//广播跌倒数据到相应的用户
-	U32 msg = 0;
-	ret = ntyExecuteCommonMsgInsertHandle(fromId, toId, pActionParam->jsonstring, &msg);
-	if (ret == -1) {
-		ntylog(" ntyJsonFallDownReportAction --> DB Exception\n");
-	} else if (ret >= 0) {
-		ret = ntyJsonBroadCastRecvResult(fromId, toId, pActionParam->jsonstring, msg);
-		if (ret >= 0) {
-			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
-		} else {
-			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
-		}
-	}
-	
-	ntydbg(" ntyJsonFallDownReportAction end --> \n");
-	return NTY_RESULT_SUCCESS;
 }
 
 void ntyJsonWearStatusAction(ActionParam *pActionParam) {

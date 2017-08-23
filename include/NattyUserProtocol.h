@@ -163,6 +163,11 @@
 #define NATTY_USER_PROTOCOL_OFF 			"Off"
 #define NATTY_USER_PROTOCOL_TIME 			"Time"
 
+
+#define NATTY_USER_PROTOCOL_EVENTTYPE 		"EventType"
+#define NATTY_USER_PROTOCOL_CONTENT 		"Content"
+
+
 #define NATTY_USER_PROTOCOL_ID 				"Id"
 #define NATTY_USER_PROTOCOL_MSG 			"MSG"
 #define NATTY_USER_PROTOCOL_ACTION 			"Action"
@@ -209,6 +214,7 @@
 #define NATTY_USER_PROTOCOL_WATCHNAME 		"WatchName"
 #define NATTY_USER_PROTOCOL_WATCHIMAGE 		"WatchImage"
 #define NATTY_USER_PROTOCOL_USERIMAGE 		"UserImage"
+#define NATTY_USER_PROTOCOL_ALARM			"Alarm"
 
 
 //#define NATTY_USER_PROTOCOL_RADIUS			"Radius"
@@ -265,6 +271,15 @@
 #define NATTY_WEATHER_PROTOCOL_WIND_SCALE 			 "wind_scale"
 
 #define NATTY_WEATHER_PROTOCOL_LAST_UPDATE 			 "last_update"
+
+
+
+#define NATTY_ALARM_PROTOCOL_SOS 			 		"SOSAlarm"
+#define NATTY_ALARM_PROTOCOL_EFENCE 		 		"EfenceAlarm"
+#define NATTY_ALARM_PROTOCOL_FALLDOWN		 		"FalldownAlarm"
+#define NATTY_ALARM_PROTOCOL_SAFETY 		 		"SafetyAlarm"
+#define NATTY_ALARM_PROTOCOL_WEARSTATUS		 		"WearStatusAlarm"
+#define NATTY_ALARM_PROTOCOL_HEART 			 		"HeartAlarm"
 
 
 
@@ -1051,6 +1066,14 @@ typedef struct _ClientURLAck{
 	const char *Category;
 	ClientURLAckItem objClientURLAckItem;
 }ClientURLAck;
+
+
+typedef struct _DeviceEvent{
+	const char *action;
+	const char *category;
+	int eventType;
+	const char *content;
+}DeviceEvent;
 
 
 //add end
