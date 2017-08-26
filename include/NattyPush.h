@@ -99,6 +99,7 @@
 #define NTY_PUSH_EFENCEREPORT_MSG_CONTEXT			"全家康 \n 您收到了电子围栏越界消息"
 #define NTY_PUSH_BINDCONFIRM_MSG_CONTEXT			"全家康 \n 您收到了申请确认消息"
 #define NTY_PUSH_POLICE_MSG_CONTEXT			"警务通 \n 您收到了报警消息"
+#define NTY_PUSH_MSG_CONTEXT_MATTRESS		"平安通 \n 您收到了安全告警消息"
 
 
 typedef struct _Push_Context {

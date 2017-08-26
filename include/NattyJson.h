@@ -70,6 +70,7 @@ typedef enum {
 	NTY_CATEGORY_LOCATIONREPORT,
 	NTY_CATEGORY_STEPSREPORT,
 	NTY_CATEGORY_EFENCEREPORT,
+	NTY_CATEGORY_MATTRESSREPORT,
 	NTY_CATEGORY_WEARSTATUS,
 	NTY_CATEGORY_END = NTY_CATEGORY_WEARSTATUS,
 	NTY_CATEGORY_VOICE,
@@ -190,7 +191,7 @@ void ntyJsonHeartReport(JSON_Value *json,  HeartReport *pHeartReport);
 void ntyJsonBloodReport(JSON_Value *json,  BloodReport *pBloodReport);
 
 void ntyJsonFalldown(JSON_Value *json,  Falldown *pFalldown);
-
+void ntyJsonMonitorSleepReport( JSON_Value *json, CommonReq *pCommonReq           );
 
 char * ntyJsonBind(JSON_Value *json, BindReq *pBindReq);
 
@@ -265,6 +266,7 @@ char * ntyJsonWriteBindOfflineMsgToAdmin(BindOfflineMsgToAdmin *pMsgToAdmin, cha
 char * ntyJsonWriteBindOfflineMsgToProposer(BindOfflineMsgToProposer *pMsgToProposer);
 
 char * ntyJsonWriteBindAgree(BindAgreeAck *pBindAgreeAck);
+char *ntyMonitorSleepJsonCompose(     CommonReq      *pCommonReq );
 
 #endif
 

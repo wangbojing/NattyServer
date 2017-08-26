@@ -585,6 +585,30 @@ int ntySendDataResult(C_DEVID fromId, U8 *json, int length, U16 status) {
 	
 }
 
+int ntySendMonitorSleepDataResult(C_DEVID fromId, U8 *json, int length, U16 status) {
+	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
+	U16 bLength = length;
+	U16 bStatus = (U16)status;
+	
+
+	buffer[NTY_PROTO_VERSION_IDX] = 0x45;
+	buffer[NTY_PROTO_DEVTYPE_IDX] = 0x44;
+	buffer[NTY_PROTO_PROTOTYPE_IDX] = 0x04;
+	buffer[NTY_PROTO_MSGTYPE_IDX] = 0xD2;
+
+	memcpy(&buffer[NTY_PROTO_DATA_RESULT_STATUS_IDX] , &bStatus, sizeof(U16));
+	memcpy(&buffer[8] , &bLength, sizeof(U16));
+	memcpy(&buffer[10], json, length);
+
+	bLength = NTY_PROTO_DATA_RESULT_JSON_CONTENT_IDX + length + sizeof(U32);
+
+	void *map = ntyMapInstance();
+	ClientSocket *client = ntyMapSearch(map, fromId);
+	return ntySendBuffer(client, buffer, bLength);
+	
+}
+
+
 int ntySendUserDataAck(C_DEVID fromId, U8 *json, int length) {
 #if 0
 	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
@@ -737,12 +761,18 @@ int ntyClassifyCategoryPushNotify(C_DEVID toId, C_DEVID gId, U8 *json, int lengt
 	ntylog("ntyClassifyCategoryPushNotify --> category:%d, json:%s\n", category, json);
 	
 	if (category == NTY_CATEGORY_SOSREPORT) {
+		ntylog(" ntyClassifyCategoryPushNotify SOS report\n");
 		return ntySendPushNotify(toId, gId, NTY_PUSH_SOSREPORT_MSG_CONTEXT, category);
 	} else if (category == NTY_CATEGORY_EFENCEREPORT) {
+		ntylog(" ntyClassifyCategoryPushNotify EFENCE report\n");
 		return ntySendPushNotify(toId, gId, NTY_PUSH_EFENCEREPORT_MSG_CONTEXT, category);
 	} else if (category == NTY_CATEGORY_WEARSTATUS) {
+		ntylog(" ntyClassifyCategoryPushNotify WEASTATUS report\n");
 		return ntySendPushNotify(toId, gId, NTY_PUSH_MSG_CONTEXT, category);
-	}
+	}else if (category == NTY_CATEGORY_MATTRESSREPORT) {
+		ntylog(" ntyClassifyCategoryPushNotify MATTRESS report\n");
+		return ntySendPushNotify(toId, gId, NTY_PUSH_MSG_CONTEXT_MATTRESS, category);
+	}else{}
 }
 
 int ntySendCommonBroadCastItem(C_DEVID selfId, C_DEVID toId, C_DEVID gId, U8 *json, int length, U32 msgId) {
@@ -912,6 +942,36 @@ int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int leng
 #endif	
 }
 
+
+//selfId,gId stand for devid
+int ntySendCommonBroadCastMonitorSleepResult( C_DEVID selfId, C_DEVID gId, U8 *json, int length, int index ) {
+	void *group = ntyVectorCreator();
+	if ( group == NULL ){ 
+		ntylog( "ntySendCommonBroadCastMonitorSleepResult group==NULL\n" );
+		return NTY_RESULT_FAILED;
+	}
+	if( -1 == ntyQueryAppIDListSelectHandle(gId, group) ) {
+		ntylog(" ntySendCommonBroadCastMonitorSleepResult ntyQueryWatchIDListSelectHandle Failed \n");
+		return NTY_RESULT_FAILED;
+	}
+
+	InterMsg *msg = (InterMsg*)malloc(sizeof(InterMsg));
+	if ( msg == NULL ){ 
+		ntylog(" ntySendCommonBroadCastMonitorSleepResult InterMsg malloc Failed \n");
+		return NTY_RESULT_FAILED;
+	}
+	msg->buffer = json;
+	msg->length = length;
+	msg->group = &gId;
+	msg->self = &selfId;
+	msg->arg = index;
+
+	ntyVectorIterator( group, ntySendCommonBroadCastIter, msg );
+	free( msg );
+	ntyVectorDestory( group );
+		
+	return NTY_RESULT_SUCCESS;
+}
 
 //
 int ntySendCommonReq(C_DEVID fromId, C_DEVID toId, U8 *json, int length, int msgId) {

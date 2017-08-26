@@ -585,6 +585,37 @@ int ntyProtoClientCommonReq(void *_self, C_DEVID gId, U8 *json, U16 length) {
 	return ntySendFrame(pNetwork, buf, length);
 }
 
+int ntyProtoClientMonitorSleepReq(void *_self, C_DEVID gId, U8 *json, U16 length) {
+	ntydbg("******ntyProtoClientMonitorSleepReq begin:\n");
+
+	NattyProto *proto = _self;
+	U8 buf[RECV_BUFFER_SIZE] = {0}; 
+
+	U16 packetLen = 20+length;
+	buf[0] = 0x45;
+	buf[1] = 0x44;  //ntySendFrame function change the value 0x44
+	buf[2] = 0x09;
+	buf[3] = 0x52;
+	
+	memcpy(&buf[4], &proto->selfId, sizeof(C_DEVID));
+	memcpy(&buf[12], &packetLen, sizeof(U16));
+	memcpy(&buf[14], &length, sizeof(U16));
+	memcpy(&buf[16], json, length);
+
+	buf[16+length] = 0x13;
+	buf[17+length] = 0x24;
+	buf[18+length] = 0x57;
+	buf[19+length] = 0x68;
+	
+	//length = NTY_PROTO_COMMON_REQ_JSON_CONTENT_IDX+length+sizeof(U32);
+	length = packetLen + sizeof(U32);
+	ntydbg("******ntyProtoClientMonitorSleepReq packet length:%d\n",packetLen);
+	
+	void *pNetwork = ntyNetworkInstance();
+	return ntySendFrame(pNetwork, buf, length);
+}
+
+
 int ntyProtoClientLocationReq(void *_self, C_DEVID gId, U8 *json, U16 length) {
 	NattyProto *proto = _self;
 	U8 buf[RECV_BUFFER_SIZE] = {0}; 
@@ -1130,6 +1161,16 @@ int ntyCommonReqClient(C_DEVID gId, U8 *json, U16 length) {
 	}
 	return -1;
 }
+
+int ntyMonitorSleepReqClient(C_DEVID gId, U8 *json, U16 length){
+	ntydbg("******ntyMonitorSleepReqClient\n");
+	NattyProto* proto = ntyProtoGetInstance();
+	if (proto) {
+		return ntyProtoClientMonitorSleepReq(proto, gId, json, length);
+	}
+	return -1;
+}
+
 
 int ntyLocationReqClient(C_DEVID gId, U8 *json, U16 length) {
 	NattyProto* proto = ntyProtoGetInstance();

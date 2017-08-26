@@ -51,12 +51,13 @@
 
 
 void ntyUserRecvCb(int len) {
-	//int i = 0;
+	int i = 0;
 	U8 *buffer = ntyGetRecvBuffer();
 
-	//for (i = 0;i < len;i ++) {
-	//ntydbg(" devid:%lld, len:%d, %s ", devid, len, buffer);
-	//}
+	for (i = 0;i < len;i ++) {
+		//ntydbg(" devid:%lld, len:%d, %s ", devid, len, buffer);
+		ntydbg( "receive data:buffer[%d]=%c\n",i,buffer[i] );
+	}
 	ntydbg("\n");
 }
 
@@ -183,7 +184,7 @@ void ntyBindConfirmResult(DEVID fromId, U8 *json, int length) {
 //DEVID g_devid = 0x355637050066828;
 //DEVID g_devid = 0x355637052238805;
 //DEVID g_devid = 0x355637053172771;
-DEVID g_devid = 0x355637052788450;
+DEVID g_devid = 0x8661040260208520;
 
 int main() {
 	//DEVID AppId = 13579;
@@ -218,7 +219,7 @@ int main() {
 	
 	
 	ntyStartupClient(&result);
-	sleep(5);
+	sleep(10);
 	
 	//ntyBindClient(0xEDFF12342345613);
 	//ntyUnBindClient(0xEDFF12342345613);
@@ -369,10 +370,13 @@ int main() {
 		//ntyCommonReqClient(g_devid,json_common,strlen(json_common));
 		//sleep(30);
 
-		char *json_common = "{\"IMEI\":\"355637052788450\",\"Category\":\"AuthorizeReply\",\"AuthorizeType\":\"HealthArchives\",\"Answer\":\"Agree\"}";
-		ntyCommonReqClient(AppId,json_common,strlen(json_common));
-		sleep(30);
-		
+		//char *json_common = "{\"IMEI\":\"355637052788450\",\"Category\":\"AuthorizeReply\",\"AuthorizeType\":\"HealthArchives\",\"Answer\":\"Agree\"}";
+		//ntyCommonReqClient(AppId,json_common,strlen(json_common));
+		//sleep(30);
+		char *json_monitor = "{\"IMEI\":\"8661040260208520\",\"Category\":\"Mattress\",\"Action\":\"1\"}";
+		ntydbg("send msg:%s\n",json_monitor);
+		ntyMonitorSleepReqClient(g_devid,json_monitor,strlen(json_monitor));
+		sleep(20);
 
 		//char *json_userdata = "{\"IMEI\":\"355637052329596\",\"Category\":\"ICCID\",\"Action\":\"Set\",\"ICCID\":\"1642510065118\",\"PhoneNum\":\"15889650380\"}";
 		//ntyUserDataReqClient(json_userdata, strlen(json_userdata));

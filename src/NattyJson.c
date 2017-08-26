@@ -850,6 +850,18 @@ void ntyJsonFalldown(JSON_Value *json,  Falldown *pFalldown) {
 	pFalldown->results.falldownReport.type = json_object_get_string(falldown_object, NATTY_USER_PROTOCOL_TYPE);
 }
 
+void ntyJsonMonitorSleepReport( JSON_Value *json, CommonReq *pCommonReq           ){
+	if( json == NULL || pCommonReq == NULL ){
+		ntylog("ntyJsonMonitorSleepReport param is null.\n");
+		return;
+	}
+	JSON_Object *root_object = json_value_get_object( json );
+	pCommonReq->IMEI = json_object_get_string( root_object, NATTY_USER_PROTOCOL_IMEI );
+	pCommonReq->category = json_object_get_string( root_object, NATTY_USER_PROTOCOL_CATEGORY );
+	pCommonReq->action = json_object_get_string( root_object, NATTY_USER_PROTOCOL_ACTION );	
+}
+
+
 char * ntyJsonBind(JSON_Value *json, BindReq *pBindReq) {
 	if (json == NULL || pBindReq == NULL) {
 		ntylog("param is null.\n");
@@ -1736,6 +1748,27 @@ char * ntyJsonWriteBindAgree(BindAgreeAck *pBindAgreeAck) {
 	return jsonstring;
 }
 
+char *ntyMonitorSleepJsonCompose(          CommonReq *pCommonReq ){
+	if ( pCommonReq == NULL ){
+		ntylog( "ntyMonitorSleepJsonCompose pCommonReq==NULL\n" );
+		return NULL;
+	}
+	JSON_Value *schema = json_value_init_object();
+	JSON_Object *schema_obj = json_value_get_object( schema );
+	json_object_set_value( schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object() );
+	
+	JSON_Object *results_obj = json_object_get_object( schema_obj, NATTY_USER_PROTOCOL_RESULTS );
+	json_object_set_string( results_obj, NATTY_USER_PROTOCOL_IMEI, pCommonReq->IMEI );
+	json_object_set_string( results_obj, NATTY_USER_PROTOCOL_CATEGORY, pCommonReq->category );
+	json_object_set_string( results_obj, NATTY_USER_PROTOCOL_ACTION, pCommonReq->action );
+
+	char *jsonstring =	json_serialize_to_string( schema );
+	json_value_free(schema);
+	
+	return jsonstring;
+}
+
+
 
 //add by luoyb.add begin
 /*************************************************************************************************
@@ -2274,6 +2307,7 @@ const U8 *u8CategoryToken[] = {
 	NATTY_USER_PROTOCOL_LOCATIONREPORT,
 	NATTY_USER_PROTOCOL_STEPSREPORT,
 	NATTY_USER_PROTOCOL_EFENCEREPORT,
+	NATTY_USER_PROTOCOL_MATTRESS_REPORT,
 	NATTY_USER_PROTOCOL_WEARSTATUS,
 }; 
 

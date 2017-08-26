@@ -2325,6 +2325,68 @@ void ntyMessagePushPacketHandleRequest(const void *_self, unsigned char *buffer,
 }
 
 
+void ntyMonitorSleepPacketHandleRequest(const void *_self, unsigned char *buffer, int length,const void* obj) {
+	
+	//if ( buffer[NTY_PROTO_MSGTYPE_IDX] == 0x52 ) {
+		ntylog("====================begin ntyMonitorSleepPacketHandleRequest action ==========================\n");
+		int nRet = 0;
+		const MessagePacket *msg = (const MessagePacket*)obj;
+		if ( msg == NULL ) return ;
+
+		C_DEVID fromId = *(C_DEVID*)(buffer+4);
+		U16 jsonLength = *(U16*)( buffer+14 );
+		const Client *client = msg->client;
+		C_DEVID toId = client->devId;		
+
+		U8 *jsonstring = (U8*)malloc( jsonLength+1 );
+		if ( jsonstring == NULL ) { 
+			ntylog("ntyMonitorSleepPacketHandleRequest --> malloc failed jsonstring buffer\n");
+			return ;
+		}
+		memset( jsonstring, 0, jsonLength+1 );
+		memcpy( jsonstring, buffer+16, jsonLength );		
+		ntylog( "ntyMessagePushPacketHandleRequest receive json--> fromId:%lld,toId:%lld,json:%s,jsonlength:%d\n", fromId,toId,jsonstring, jsonLength );		
+		JSON_Value *json = ntyMallocJsonValue( jsonstring );
+		if ( json == NULL ) { //JSON Error and send Code to FromId Device
+			ntylog( "ntyMessagePushPacketHandleRequest json malloc failed." );
+			free( jsonstring );
+			return;
+		}
+		//parse jsonstring
+		CommonReq *pCommonReq = malloc( sizeof(CommonReq) );
+		if ( pCommonReq == NULL ){
+			ntylog(" %s --> malloc failed CommonReq", __func__ );
+			free( jsonstring );
+			return;
+		}
+		ntyJsonMonitorSleepReport( json, pCommonReq );
+		//compose jsonstring to new jsonstring
+		char *jsonNewStr = ntyMonitorSleepJsonCompose( pCommonReq );
+		JSON_Value *jsonNewObj = ntyMallocJsonValue( jsonNewStr );
+		U16 jsonNewLen = strlen(jsonNewStr);
+		ntylog( "ntyMessagePushPacketHandleRequest compose json --> fromId:%lld,toId:%lld,json:%s,jsonlength:%d\n", fromId,toId,jsonNewStr, jsonNewLen );
+		
+		size_t len_ActionParam = sizeof( ActionParam );
+		ActionParam *pActionParam = malloc( len_ActionParam );
+		if ( pActionParam == NULL ) {
+			ntylog( " %s --> malloc failed ActionParam", __func__ );
+			free( jsonstring );
+			free( pCommonReq );
+			return ;
+		}
+		memset( pActionParam, 0, len_ActionParam );			 
+		pActionParam->fromId = fromId;
+		pActionParam->toId = toId;
+		pActionParam->json = jsonNewObj;
+		pActionParam->jsonstring = jsonNewStr;
+		pActionParam->jsonlen = jsonNewLen;
+		pActionParam->index = 0;
+
+		ntyMonitorSleepReqAction( pActionParam );
+		ntylog("====================end ntyMonitorSleepPacketHandleRequest action ==========================\n");
+} 
+
+
 static const ProtocolFilter ntyMessagePushPacketFilter = {
 	sizeof(Packet),
 	ntyPacketCtor,
@@ -2512,6 +2574,20 @@ static void ntyClientBufferRelease(Client *client) {
 }
 
 void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length, const void *obj) {
+	ntylog("******receive buffer:%s\n",buffer);
+	ntylog("******receive buffer buffer[0]:%x,buffer[1]:%x,buffer[2]:%x,buffer[3]:%x\n",buffer[0],buffer[1],buffer[2],buffer[3]);
+	if ( buffer[0]==0x45 && buffer[1]==0x44 && buffer[2]==0x09  ){
+		ntylog("**********ntyProtocolFilterProcess the 3th protocol begin**************\n");
+		//ntylog("******the 3th protocol receive buffer:%s\n",buffer);
+		if ( buffer[3]==0x52 ){
+			ntylog("**********ntyProtocolFilterProcess the 3th protocol 0x52**************\n");
+			ntyMonitorSleepPacketHandleRequest( _filter, buffer, length, obj );
+			return;
+		}else if ( buffer[3]==0x01 ){  //login
+			ntylog("**********ntyProtocolFilterProcess the 3th protocol 0x01**************\n");
+		}else{}
+	}
+
 #if 1
 	//data crc is right, and encryto
 	U32 u32Crc = ntyGenCrcValue(buffer, length-4);

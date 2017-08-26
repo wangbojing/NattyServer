@@ -147,6 +147,35 @@ void ntyJsonCommonResult(C_DEVID devId, const char * code) {
 	free(pCommonAck);
 }
 
+void ntyJsonMonitorSleepCommonResult(C_DEVID devId, const char * code) {
+	CommonAck *pCommonAck = (CommonAck*)malloc(sizeof(CommonAck));
+	if (pCommonAck == NULL) {
+		ntylog("ntyJsonMonitorSleepCommonResult --> malloc CommonAck failed ");
+		return ;
+	}
+	memset(pCommonAck, 0, sizeof(CommonAck));
+
+	ntylog("ntyJsonMonitorSleepCommonResult --> ntyCommonResultMessage \n");
+	pCommonAck->result.code = code;
+#if 0
+	pCommonAck->result.message = ntyCommonResultMessage(pCommonAck->result.code);
+#else
+	char message[128] = {0};
+	ntyCommonResultMessage(pCommonAck->result.code, message);
+	pCommonAck->result.message = message;
+#endif
+
+	ntylog("ntyJsonMonitorSleepCommonResult --> ntyJsonWriteCommon : %s\n", message);
+
+	char *jsonresult = ntyJsonWriteCommon(pCommonAck);
+	ntylog("ntyJsonMonitorSleepCommonResult %s -> %lld, %s  %d\n", code, devId, jsonresult, (int)strlen(jsonresult));
+	
+	ntySendMonitorSleepDataResult(devId, (U8*)jsonresult, strlen(jsonresult), 200);
+	ntyJsonFree(jsonresult);
+	free(pCommonAck);
+}
+
+
 void ntyJsonCommonContextResult(C_DEVID devId, const char *context) {
 	ntylog("ntyJsonCommonExtendResult -> %s  %d \n", context, (int)strlen(context));
 	ntySendDataResult(devId, (U8*)context, strlen(context), 200);
@@ -3555,6 +3584,69 @@ int ntyLocatorUnBindReqAction( C_DEVID appId, C_DEVID devId ){
 	nRet = ntyExecuteLocatorUnBindDeleteHandle( appId, devId );
 	return nRet;
 }
+
+int ntyMonitorSleepReqAction( ActionParam *pActionParam  ){
+	if ( pActionParam == NULL ){
+		ntylog( "ntyMonitorSleepReqAction pActionParam==NULL" );
+		return -1;
+	}
+	//Push to MessageQueue
+	MessageTag *pMessageTag = (MessageTag *)malloc(sizeof(MessageTag));
+	if ( pMessageTag == NULL ) {
+		ntylog("ntyMonitorSleepReqAction MessageTag malloc failed\n");
+		return -1;
+	}
+	memset( pMessageTag, 0, sizeof(MessageTag) );
+	
+	pMessageTag->Type = MSG_TYPE_COMMON_REQ_HANDLE;
+	pMessageTag->fromId = pActionParam->fromId;
+	pMessageTag->toId = pActionParam->toId;
+	pMessageTag->length = pActionParam->jsonlen;
+
+	char *jsonstr = pActionParam->jsonstring;
+	
+	#if ENABLE_DAVE_MSGQUEUE_MALLOC
+		pMessageTag->Tag = malloc( (pMessageTag->length+1)*sizeof(U8) );
+		if ( pMessageTag->Tag == NULL ) {
+			ntylog( "ntyMonitorSleepReqAction --> malloc failed pMessageTag->Tag\n" );
+			free( pMessageTag );
+			return;
+		}
+		memset( pMessageTag->Tag, 0, pMessageTag->length+1 );
+		if( jsonstr != NULL ){
+			memcpy( pMessageTag->Tag, jsonstr, pMessageTag->length );
+		}
+	#else
+		memset( pMessageTag->Tag, 0, pMessageTag->length+1 );
+		if( jsonstr != NULL ){
+			memcpy( pMessageTag->Tag, jsonstr, pMessageTag->length );
+		}
+	#endif
+	
+		pMessageTag->cb = ntyMonitorSleepDaveMqCallback;
+		int ret = ntyDaveMqPushMessage( pMessageTag );
+		if ( ret < 0 ) {
+			ntylog(" ntyMonitorSleepReqAction ntyDaveMqPushMessage error\n");
+		} else{
+			//send back receive sucess
+			ntyJsonMonitorSleepCommonResult( pMessageTag->fromId, NATTY_RESULT_CODE_SUCCESS );
+		}
+		
+
+	
+}
+
+int ntyMonitorSleepDaveMqCallback( void *arg ){
+	MessageTag *pMessageTag = (MessageTag *)arg;
+	ntylog( "ntyMonitorSleepDaveMqCallback begin,fromId:%lld,toId:%lld,Json:%s\n",pMessageTag->fromId,pMessageTag->toId,pMessageTag->Tag );
+	//send to tomcat client
+	ntyJsonCommonContextResult( NATTY_USER_PROTOCOL_TOMCAT_CLIENTID, pMessageTag->Tag );
+	//broadcast
+	int ret = ntySendCommonBroadCastMonitorSleepResult( pMessageTag->fromId, pMessageTag->toId, pMessageTag->Tag, pMessageTag->length, 0 );
+	
+	return NTY_RESULT_SUCCESS;
+}
+
 
 //end
 

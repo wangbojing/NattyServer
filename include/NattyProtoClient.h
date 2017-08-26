@@ -131,6 +131,8 @@ int ntyVoiceAckClient(U32 msgId, U8 *json, U16 length);
 int ntyVoiceDataReqClient(DEVID gId, U8 *data, int length);
 
 int ntyCommonReqClient(DEVID gId, U8 *json, U16 length);
+int ntyMonitorSleepReqClient(DEVID gId, U8 *json, U16 length);
+
 int ntyCommonAckClient(U32 msgId, U8 *json, U16 length);
 int ntyDataRouteClient(DEVID toId, U8 *json, U16 length);
 

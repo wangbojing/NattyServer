@@ -72,6 +72,8 @@ void ntyJsonRecvResult(C_DEVID devId, char *jsonresult);
 int ntyJsonBroadCastRecvResult(C_DEVID fromId, C_DEVID toId, char *jsonresult, U32 index);
 
 void ntyJsonCommonResult(C_DEVID devId, const char *code);
+void ntyJsonMonitorSleepCommonResult(C_DEVID devId, const char *code);
+
 
 void ntyJsonCommonContextResult(C_DEVID devId, const char *context);
 
@@ -176,6 +178,10 @@ int ntyJsonRestoreAction( ActionParam *pActionParam );
 int ntyAppIdToDeviceIdDeleteCb( void *self, void *arg );
 int ntyLocatorBindReqAction( ClientActionParam *pClientActionParam, LocatorBindReq *pLocatorBindReq );
 int ntyLocatorUnBindReqAction( C_DEVID appId, C_DEVID devId );
+
+int ntyMonitorSleepReqAction( ActionParam *pActionParam  );
+int ntyMonitorSleepDaveMqCallback( void *arg );
+
 
 #endif // __NATTY_SERVACTION_H__
 
