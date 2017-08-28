@@ -190,7 +190,10 @@ void ntyJsonHeartReport(JSON_Value *json,  HeartReport *pHeartReport);
 
 void ntyJsonBloodReport(JSON_Value *json,  BloodReport *pBloodReport);
 
-void ntyJsonFalldown(JSON_Value *json,  Falldown *pFalldown);
+void ntyJsonFalldownReport(JSON_Value *json,  FalldownReport *pFalldownReport);
+
+void ntyJsonEfenceReport(JSON_Value *json,  EfenceReport *pEfenceReport);
+
 void ntyJsonMonitorSleepReport( JSON_Value *json, CommonReq *pCommonReq           );
 
 char * ntyJsonBind(JSON_Value *json, BindReq *pBindReq);

@@ -1,5 +1,5 @@
 /*
- *  Author : luopeng , email : hibroad@hotmail.com
+ *  Author : luopeng , email : hanaper@qq.com
  * 
  *  Copyright Statement:
  *  --------------------
@@ -54,6 +54,29 @@
 
 #include <string.h>
 #include <time.h>
+
+
+int checkStringIsLocation(const char *content) {
+	if (content == NULL) {
+		return 0;
+	}
+
+	size_t len = strlen(content);
+	size_t i;
+	for (i=0; i<len; i++) {
+		char c = content[i];
+		if (c<0x30 || c>0x39) {
+			if (c!=0x2E) {
+				if (c!=0x2C) {
+					return -1;
+				}
+			}
+		}
+	}
+
+	return 1;
+}
+
 
 int checkStringIsAllNumber(const char *content) {
 	if (content == NULL) {
@@ -1792,6 +1815,7 @@ exit:
 }
 
 void ntyJsonAlarmAction(char *category, char *content) {
+/*
 	DeviceEvent *pDeviceEvent = (DeviceEvent*)malloc(sizeof(DeviceEvent));
 	if (pDeviceEvent == NULL) {
 		ntylog("ntyJsonAlarmAction --> malloc DeviceEvent failed\n");
@@ -1818,17 +1842,15 @@ void ntyJsonAlarmAction(char *category, char *content) {
 		eventType = 5;
 	} else if (strcmp(category, NATTY_ALARM_PROTOCOL_BLOOD) == 0) {
 		eventType = 6;
-	} else if (strcmp(category, NATTY_ALARM_PROTOCOL_WEARSTATUS) == 0) {
-		eventType = 7;
 	}
 	pDeviceEvent->eventType = eventType;
-
-	char *jsonresult = ntyJsonDeviceEvent(pDeviceEvent);
-	C_DEVID qjkTomcat = 71111101;
-	ntyJsonCommonContextResult(qjkTomcat, jsonresult);
-	ntyJsonFree(jsonresult);
+*/
+	//char *jsonresult = ntyJsonDeviceEvent(pDeviceEvent);
+	//ntyJsonCommonContextResult(NATTY_USER_PROTOCOL_TOMCAT_CLIENTID, jsonresult);
+	ntyJsonCommonContextResult(NATTY_USER_PROTOCOL_TOMCAT_CLIENTID, content);
+	//ntyJsonFree(jsonresult);
 	
-	free(pDeviceEvent);
+	//free(pDeviceEvent);
 }
 
 void ntyJsonSOSReportAction(ActionParam *pActionParam) {
@@ -1874,16 +1896,17 @@ void ntyJsonHeartReportAction(ActionParam *pActionParam) {
 	if (ret == -1) {
 		ntylog(" ntyJsonHeartReportAction --> DB Exception\n");
 	} else if (ret >= 0) {
-		//int heartReport_min = 20;
-		//int heartReport_max = 200;
-		//if (heartReport < heartReport_min || heartReport > heartReport_max) {
+		int minValue = 0;
+		int maxValue = 100;
+		ntyExecuteClientSelectThresholdHandle(toId, 2, &minValue, &maxValue);
+		if (heartReport < minValue || heartReport > maxValue) {
 			ntyJsonAlarmAction(NATTY_ALARM_PROTOCOL_HEART, pActionParam->jsonstring);
-		//}
-		ret = ntyJsonBroadCastRecvResult(fromId, toId, pActionParam->jsonstring, msg);
-		if (ret >= 0) {
-			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
-		} else {
-			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
+			ret = ntyJsonBroadCastRecvResult(fromId, toId, pActionParam->jsonstring, msg);
+			if (ret >= 0) {
+				ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
+			} else {
+				ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
+			}
 		}
 	}
 
@@ -1917,16 +1940,17 @@ void ntyJsonBloodReportAction(ActionParam *pActionParam) {
 	if (ret == -1) {
 		ntylog(" ntyJsonBloodReportAction --> DB Exception\n");
 	} else if (ret >= 0) {
-		//int bloodReport_min = 20;
-		//int bloodReport_max = 200;
-		//if (bloodReport < bloodReport_min || bloodReport > bloodReport_max) {
+		int minValue = 0;
+		int maxValue = 100;
+		ntyExecuteClientSelectThresholdHandle(toId, 1, &minValue, &maxValue);
+		if (bloodReport < minValue || bloodReport > maxValue) {
 			ntyJsonAlarmAction(NATTY_ALARM_PROTOCOL_BLOOD, pActionParam->jsonstring);
-		//}
-		ret = ntyJsonBroadCastRecvResult(fromId, toId, pActionParam->jsonstring, msg);
-		if (ret >= 0) {
-			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
-		} else {
-			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
+			ret = ntyJsonBroadCastRecvResult(fromId, toId, pActionParam->jsonstring, msg);
+			if (ret >= 0) {
+				ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
+			} else {
+				ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
+			}
 		}
 	}
 
@@ -1936,18 +1960,35 @@ void ntyJsonBloodReportAction(ActionParam *pActionParam) {
 	}
 }
 
-void ntyJsonEfenceReportAction(ActionParam *pActionParam) {
+int ntyJsonEfenceReportAction(ActionParam *pActionParam) {
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;
 
+/*
+	EfenceReport *pEfenceReport = (EfenceReport*)malloc(sizeof(EfenceReport));
+	if (pEfenceReport== NULL) {
+		return NTY_RESULT_ERROR;
+	}
+	memset(pEfenceReport, 0, sizeof(EfenceReport));
+
+	ntyJsonEfenceReport(pActionParam->json, pEfenceReport);
+*/
 	U32 msg = 0;
 	int ret = ntyExecuteCommonMsgInsertHandle(fromId, toId, pActionParam->jsonstring, &msg);
 	if (ret == -1) {
 		ntylog(" ntyJsonSOSReportAction --> DB Exception\n");
-		ret = 4;
 	} else if (ret >= 0) {
+		/*
+		//产生电子围栏报警
+		const char *bounds = pEfenceReport->results.efenceReport.bounds;
+		if (bounds != NULL) {
+			if (strcmp(bounds, NATTY_USER_PROTOCOL_OUT) == 0) {
+				ntyJsonAlarmAction(NATTY_ALARM_PROTOCOL_EFENCE, pActionParam->jsonstring);
+			}
+		}
+		*/
 		ntyJsonAlarmAction(NATTY_ALARM_PROTOCOL_EFENCE, pActionParam->jsonstring);
-	
+		
 		ret = ntyJsonBroadCastRecvResult(fromId, toId, pActionParam->jsonstring, msg);
 		if (ret >= 0) {
 			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
@@ -1955,6 +1996,13 @@ void ntyJsonEfenceReportAction(ActionParam *pActionParam) {
 			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
 		}
 	}
+/*
+	if ( pEfenceReport != NULL ){
+		free( pEfenceReport );	
+		pEfenceReport = NULL;
+	}
+*/	
+	return NTY_RESULT_SUCCESS;
 }
 
 
@@ -1969,17 +2017,18 @@ int ntyJsonFallDownReportAction(ActionParam *pActionParam) {
 		return NTY_RESULT_FAILED;
 	}
 	
-	Falldown *pFalldown = (Falldown*)malloc(sizeof(Falldown));
-	if (pFalldown== NULL) {
-		return NTY_RESULT_ERROR;
-	}
-	memset(pFalldown, 0, sizeof(Falldown));
-	
-	ntyJsonFalldown(pActionParam->json, pFalldown);
-	
 	C_DEVID fromId = pActionParam->fromId;
 	C_DEVID toId = pActionParam->toId;
 
+	/*
+	FalldownReport *pFalldownReport = (FalldownReport*)malloc(sizeof(FalldownReport));
+	if (pFalldownReport== NULL) {
+		return NTY_RESULT_ERROR;
+	}
+	memset(pFalldownReport, 0, sizeof(FalldownReport));
+	ntyJsonFalldownReport(pActionParam->json, pFalldownReport);
+
+	
 	double longitude = 0.0;
 	double latitude = 0.0;
 	int fdtype = 1;
@@ -1996,7 +2045,6 @@ int ntyJsonFallDownReportAction(ActionParam *pActionParam) {
 		fdtype = atoi(pFalldown->results.falldownReport.type);
 	}
 	
-	/*
 	ntylog("-----------ntyJsonFallDownReportAction falldownbuf----------- \n");
 	U8 falldownbuf[PACKET_BUFFER_SIZE] = {0};
 	sprintf(falldownbuf, "%s/familycare/api?m=health&a=falldown&deviceid=%s&lat=%s&lng=%s&type=%s", 
@@ -2042,12 +2090,12 @@ int ntyJsonFallDownReportAction(ActionParam *pActionParam) {
 	ntylog("-----------ntyJsonFallDownReportAction natty ----------- \n");
 	*/
 	
-	int id = 0;
-	int ret = ntyExecuteFalldownInsertHandle(fromId, toId, longitude, latitude, fdtype,	&id);
+	//int id = 0;
+	//int ret = ntyExecuteFalldownInsertHandle(fromId, toId, longitude, latitude, fdtype,	&id);
 
 	//广播跌倒数据到相应的用户
 	U32 msg = 0;
-	ret = ntyExecuteCommonMsgInsertHandle(fromId, toId, pActionParam->jsonstring, &msg);
+	int ret = ntyExecuteCommonMsgInsertHandle(fromId, toId, pActionParam->jsonstring, &msg);
 	if (ret == -1) {
 		ntylog(" ntyJsonFallDownReportAction --> DB Exception\n");
 	} else if (ret >= 0) {
@@ -2060,11 +2108,13 @@ int ntyJsonFallDownReportAction(ActionParam *pActionParam) {
 			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
 		}
 	}
-	
-	if ( pFalldown != NULL ){
-		free( pFalldown );	
-		pFalldown = NULL;
+
+	/*
+	if ( pFalldownReport != NULL ){
+		free( pFalldownReport );
+		pFalldownReport = NULL;
 	}
+	*/
 	
 	ntydbg(" ntyJsonFallDownReportAction end --> \n");
 	return NTY_RESULT_SUCCESS;
@@ -2080,7 +2130,6 @@ int ntyJsonSafetyReportReportAction(ActionParam *pActionParam) {
 		ntylog(" ntyJsonSafetyReportReportAction --> DB Exception\n");
 	} else if (ret >= 0) {
 		ntyJsonAlarmAction(NATTY_ALARM_PROTOCOL_SAFETY, pActionParam->jsonstring);
-	
 		ret = ntyJsonBroadCastRecvResult(fromId, toId, pActionParam->jsonstring, msg);
 		if (ret >= 0) {
 			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_SUCCESS);
@@ -2088,6 +2137,7 @@ int ntyJsonSafetyReportReportAction(ActionParam *pActionParam) {
 			ntyJsonCommonResult(toId, NATTY_RESULT_CODE_ERR_BROADCAST);
 		}
 	}
+	return NTY_RESULT_SUCCESS;
 }
 
 void ntyJsonLocationReportAction(ActionParam *pActionParam) {
@@ -2104,7 +2154,15 @@ void ntyJsonLocationReportAction(ActionParam *pActionParam) {
 		return;
 	}
 	memset( pLocationReport, 0, sizeof(LocationReport) );
-	ntyJsonLocationReport( pActionParam->json, pLocationReport );	
+	ntyJsonLocationReport( pActionParam->json, pLocationReport );
+
+	//验证经纬度有效性
+	int location_check = checkStringIsLocation(pLocationReport->results.locationReport.location);
+	if (location_check == -1) {
+		free( pLocationReport );
+		return;
+	}
+
 	
 	U8 httpBuf[1024] = {0};
 	sprintf( httpBuf, "%s/v3/geocode/regeo?key=%s&location=%s", 

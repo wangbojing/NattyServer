@@ -815,9 +815,11 @@ void ntyJsonHeartReport(JSON_Value *json,  HeartReport *pHeartReport) {
 	pHeartReport->results.IMEI  = json_object_get_string(results_object, NATTY_USER_PROTOCOL_IMEI);
 	pHeartReport->results.category = json_object_get_string(results_object, NATTY_USER_PROTOCOL_CATEGORY);
 	pHeartReport->results.heartReport = json_object_get_string(results_object, NATTY_USER_PROTOCOL_HEARTREPORT);
+	pHeartReport->results.location = json_object_get_string(results_object, NATTY_USER_PROTOCOL_LOCATION);
+	pHeartReport->results.type = json_object_get_string(results_object, NATTY_USER_PROTOCOL_TYPE);
 }
 
-
+// {"Results":{"IMEI":"352315052834187","Category":"BloodReport","BloodReport":"86""Type":"WIFI","Location":"113.2418077,23.1313968"}}
 void ntyJsonBloodReport(JSON_Value *json,  BloodReport *pBloodReport) {
 	if (json == NULL || pBloodReport == NULL) {
 		ntylog("param is null.\n");
@@ -829,26 +831,49 @@ void ntyJsonBloodReport(JSON_Value *json,  BloodReport *pBloodReport) {
 	pBloodReport->results.IMEI  = json_object_get_string(results_object, NATTY_USER_PROTOCOL_IMEI);
 	pBloodReport->results.category = json_object_get_string(results_object, NATTY_USER_PROTOCOL_CATEGORY);
 	pBloodReport->results.bloodReport = json_object_get_string(results_object, NATTY_USER_PROTOCOL_BLOODREPORT);
+	pBloodReport->results.location = json_object_get_string(results_object, NATTY_USER_PROTOCOL_LOCATION);
+	pBloodReport->results.type = json_object_get_string(results_object, NATTY_USER_PROTOCOL_TYPE);
 }
 
-
-void ntyJsonFalldown(JSON_Value *json,  Falldown *pFalldown) {
-	if (json == NULL || pFalldown == NULL) {
+void ntyJsonFalldownReport(JSON_Value *json,  FalldownReport *pFalldownReport) {
+	if (json == NULL || pFalldownReport == NULL) {
 		ntylog("param is null.\n");
 		return;
 	}
 	
 	JSON_Object *root_object = json_value_get_object(json);
 	JSON_Object *results_object = json_object_get_object(root_object, NATTY_USER_PROTOCOL_RESULTS);
-	pFalldown->results.IMEI  = json_object_get_string(results_object, NATTY_USER_PROTOCOL_IMEI);
-	pFalldown->results.category = json_object_get_string(results_object, NATTY_USER_PROTOCOL_CATEGORY);
+	pFalldownReport->results.IMEI  = json_object_get_string(results_object, NATTY_USER_PROTOCOL_IMEI);
+	pFalldownReport->results.category = json_object_get_string(results_object, NATTY_USER_PROTOCOL_CATEGORY);
 
 	JSON_Object *falldown_object = json_object_get_object(results_object, NATTY_USER_PROTOCOL_FALLDOWNREPORT);
-	pFalldown->results.falldownReport.radius = json_object_get_string(falldown_object, NATTY_USER_PROTOCOL_RADIUS);
-	pFalldown->results.falldownReport.longitude = json_object_get_string(falldown_object, NATTY_USER_PROTOCOL_LONGITUDE);
-	pFalldown->results.falldownReport.latitude = json_object_get_string(falldown_object, NATTY_USER_PROTOCOL_LATITUDE);
-	pFalldown->results.falldownReport.type = json_object_get_string(falldown_object, NATTY_USER_PROTOCOL_TYPE);
+	pFalldownReport->results.falldownReport.radius = json_object_get_string(falldown_object, NATTY_USER_PROTOCOL_RADIUS);
+	pFalldownReport->results.falldownReport.location = json_object_get_string(falldown_object, NATTY_USER_PROTOCOL_LOCATION);
+	//pFalldownReport->results.falldownReport.longitude = json_object_get_string(falldown_object, NATTY_USER_PROTOCOL_LONGITUDE);
+	//pFalldownReport->results.falldownReport.latitude = json_object_get_string(falldown_object, NATTY_USER_PROTOCOL_LATITUDE);
+	pFalldownReport->results.falldownReport.type = json_object_get_string(falldown_object, NATTY_USER_PROTOCOL_TYPE);
 }
+
+
+void ntyJsonEfenceReport(JSON_Value *json,  EfenceReport *pEfenceReport) {
+	if (json == NULL || pEfenceReport == NULL) {
+		ntylog("param is null.\n");
+		return;
+	}
+	
+	JSON_Object *root_object = json_value_get_object(json);
+	JSON_Object *results_object = json_object_get_object(root_object, NATTY_USER_PROTOCOL_RESULTS);
+	pEfenceReport->results.IMEI  = json_object_get_string(results_object, NATTY_USER_PROTOCOL_IMEI);
+	pEfenceReport->results.category = json_object_get_string(results_object, NATTY_USER_PROTOCOL_CATEGORY);
+
+	JSON_Object *efence_object = json_object_get_object(results_object, NATTY_USER_PROTOCOL_FALLDOWNREPORT);
+	pEfenceReport->results.efenceReport.type = json_object_get_string(efence_object, NATTY_USER_PROTOCOL_TYPE);
+	pEfenceReport->results.efenceReport.radius = json_object_get_string(efence_object, NATTY_USER_PROTOCOL_RADIUS);
+	pEfenceReport->results.efenceReport.location = json_object_get_string(efence_object, NATTY_USER_PROTOCOL_LOCATION);
+	pEfenceReport->results.efenceReport.bounds = json_object_get_string(efence_object, NATTY_USER_PROTOCOL_BOUNDS);
+	pEfenceReport->results.efenceReport.index = json_object_get_string(efence_object, NATTY_USER_PROTOCOL_INDEX);
+}
+
 
 void ntyJsonMonitorSleepReport( JSON_Value *json, CommonReq *pCommonReq           ){
 	if( json == NULL || pCommonReq == NULL ){

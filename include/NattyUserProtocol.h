@@ -135,6 +135,9 @@
 #define NATTY_USER_PROTOCOL_RESULTS			"Results"
 //#define NATTY_USER_PROTOCOL_RESULT			"Result"
 #define NATTY_USER_PROTOCOL_TYPE			"Type"
+#define NATTY_USER_PROTOCOL_BOUNDS			"Bounds"
+#define NATTY_USER_PROTOCOL_IN				"In"
+#define NATTY_USER_PROTOCOL_OUT				"Out"
 #define NATTY_USER_PROTOCOL_RADIUS			"Radius"
 #define NATTY_USER_PROTOCOL_LOCATION		"Location"
 #define NATTY_USER_PROTOCOL_SOSREPORT		"SOSReport"
@@ -927,6 +930,8 @@ typedef struct _HeartReportResults {
 	const char *IMEI;
 	const char *category;
 	const char *heartReport;
+	const char *location;
+	const char *type;
 	const char *time;
 } HeartReportResults;
 
@@ -940,6 +945,8 @@ typedef struct _BloodReportResults {
 	const char *IMEI;
 	const char *category;
 	const char *bloodReport;
+	const char *location;
+	const char *type;
 	const char *time;
 } BloodReportResults;
 
@@ -948,22 +955,45 @@ typedef struct _BloodReport {
 } BloodReport;
 
 
-typedef struct _FalldownReport {
+typedef struct _FalldownReportItem {
 	const char *radius;
 	const char *longitude;
 	const char *latitude;
+	const char *location;
 	const char *type;
-} FalldownReport;
+} FalldownReportItem;
 
 typedef struct _FalldownResults {
 	const char *IMEI;
 	const char *category;
-	FalldownReport falldownReport;
+	FalldownReportItem falldownReport;
 } FalldownResults;
 
-typedef struct _Falldown {
+typedef struct _FalldownReport {
 	FalldownResults results;
-} Falldown, FalldownAck;
+} FalldownReport, FalldownReportAck;
+
+
+
+typedef struct _EfenceReportItem {
+	const char *type;
+	const char *radius;
+	const char *location;
+	const char *bounds;
+	const char *timestamp;
+	const char *index;
+} EfenceReportItem;
+
+typedef struct _EfenceEventResults {
+	const char *IMEI;
+	const char *category;
+	EfenceReportItem efenceReport;
+} EfenceEventResults;
+
+typedef struct _EfenceReport {
+	EfenceEventResults results;
+} EfenceReport;
+
 
 
 // add by luoyb add begin

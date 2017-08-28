@@ -958,7 +958,7 @@ int ntySendCommonBroadCastMonitorSleepResult( C_DEVID selfId, C_DEVID gId, U8 *j
 	InterMsg *msg = (InterMsg*)malloc(sizeof(InterMsg));
 	if ( msg == NULL ){ 
 		ntylog(" ntySendCommonBroadCastMonitorSleepResult InterMsg malloc Failed \n");
-		return NTY_RESULT_FAILED;
+		return NTY_RESULT_FAILED;	
 	}
 	msg->buffer = json;
 	msg->length = length;

@@ -113,6 +113,8 @@
 
 #define NTY_DB_SELECT_EFENCE				"CALL PROC_SELECT_EFENCE(%lld)"
 
+#define NTY_DB_SELECT_THRESHOLD				"CALL PROC_SELECT_THRESHOLD(%lld, %d)"
+
 
 #define NTY_DB_SELECT_ICCID					"CALL PROC_SELECT_ICCID('%s')"
 
@@ -371,6 +373,9 @@ int ntyExecuteClientSelectLocationHandle(C_DEVID aid, C_DEVID did, void *contain
 int ntyExecuteClientSelectLocation( void *self, C_DEVID aid, C_DEVID did, void *container);
 int ntyExecuteClientSelectEfenceHandle(C_DEVID aid, C_DEVID did, void *container);
 int ntyExecuteClientSelectEfence( void *self, C_DEVID aid, C_DEVID did, void *container);
+int ntyExecuteClientSelectThresholdHandle(C_DEVID did, int type, int *minValue, int *maxValue);
+int ntyExecuteClientSelectThreshold( void *self, C_DEVID did, int type, int *minValue, int *maxValue);
+
 
 
 int ntyExecuteTimeTablesUpdateHandle(C_DEVID aid, C_DEVID did, const char *morning, U8 morning_turn, const char *afternoon,  U8 afternoon_turn, const char *daily, int *result);

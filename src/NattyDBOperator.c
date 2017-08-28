@@ -4025,6 +4025,55 @@ int ntyExecuteClientSelectEfence( void *self, C_DEVID aid, C_DEVID did, void *co
 	return ret;
 }
 
+int ntyExecuteClientSelectThresholdHandle(C_DEVID did, int type, int *minValue, int *maxValue) {
+	void *pool = ntyConnectionPoolInstance();
+	return ntyExecuteClientSelectThreshold( pool, did, type, minValue, maxValue);
+}
+
+int ntyExecuteClientSelectThreshold( void *self, C_DEVID did, int type, int *minValue, int *maxValue) {
+	ConnectionPool *pool = self;
+	if ( pool == NULL ) return NTY_RESULT_BUSY;
+	Connection_T conn = ConnectionPool_getConnection( pool->nPool );
+	int ret = -1;
+	
+	TRY
+	{
+		conn = ntyCheckConnection( self, conn );
+		if ( conn == NULL ) {
+			ntylog( "ntyExecuteClientSelectThreshold database connection pool is NULL\n" );
+			ret = -1;
+		} else {
+			U8 sql[256] = {0};		
+			sprintf(sql, NTY_DB_SELECT_THRESHOLD, did, type);
+			ntylog("ntyExecuteClientSelectThreshold -> sql: %s\n", sql);
+			
+			ResultSet_T r = Connection_executeQuery( conn, NTY_DB_SELECT_THRESHOLD, did, type );
+			if ( r != NULL ) {
+				while ( ResultSet_next(r) ) {
+					*minValue = ResultSet_getInt(r, 2);
+					*maxValue = ResultSet_getInt(r, 3);
+				}
+			}
+			ret = 0;
+		}
+	} 
+	CATCH( SQLException ) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -2;
+	}
+	FINALLY
+	{
+		ntylog(" %s --> Connection_close\n", __func__);
+		ntyConnectionClose(conn);
+	}
+	END_TRY;
+
+	return ret;
+
+}
+
+
 int ntyExecuteResetHandle( C_DEVID aid, C_DEVID did ){
 	void *pool = ntyConnectionPoolInstance();
 	return ntyExecuteReset( pool, aid, did );

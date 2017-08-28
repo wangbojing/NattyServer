@@ -1,5 +1,5 @@
 /*
- *  Author : luopeng , email : hibroad@hotmail.com
+ *  Author : luopeng , email : hanaper@qq.com
  * 
  *  Copyright Statement:
  *  --------------------
@@ -133,7 +133,7 @@ void ntyJsonHeartReportAction(ActionParam *pActionParam);
 
 void ntyJsonBloodReportAction(ActionParam *pActionParam);
 
-void ntyJsonEfenceReportAction(ActionParam *pActionParam);
+int ntyJsonEfenceReportAction(ActionParam *pActionParam);
 
 int ntyJsonFallDownReportAction(ActionParam *pActionParam);
 

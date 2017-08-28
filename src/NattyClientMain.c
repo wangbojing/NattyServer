@@ -373,11 +373,23 @@ int main() {
 		//char *json_common = "{\"IMEI\":\"355637052788450\",\"Category\":\"AuthorizeReply\",\"AuthorizeType\":\"HealthArchives\",\"Answer\":\"Agree\"}";
 		//ntyCommonReqClient(AppId,json_common,strlen(json_common));
 		//sleep(30);
-		char *json_monitor = "{\"IMEI\":\"8661040260208520\",\"Category\":\"Mattress\",\"Action\":\"1\"}";
+		char *json_monitor = "{\"IMEI\":\"866104026020852\",\"Category\":\"Mattress\",\"Action\":\"1\"}";
 		ntydbg("send msg:%s\n",json_monitor);
 		ntyMonitorSleepReqClient(g_devid,json_monitor,strlen(json_monitor));
 		sleep(20);
+		sleep(100);
 
+		char *json_bloodreport = "{\"Results\":{\"IMEI\":\"352315052834187\",\"Category\":\"BloodReport\",\"BloodReport\":\"86\",\"Type\":\"WIFI\",\"Location\":\"113.2418077,23.1313968\"}}";
+		ntydbg("send msg:%s\n",json_bloodreport);
+		ntyCommonReqClient(g_devid,json_bloodreport,strlen(json_bloodreport));
+		sleep(20);
+		sleep(100);
+
+		char *json_heartreport = "{\"Results\":{\"IMEI\":\"352315052834187\",\"Category\":\"HeartReport\",\"HeartReport\":\"58\",\"Type\":\"WIFI\",\"Location\":\"113.2418077,23.1313968\"}}";
+		ntydbg("send msg:%s\n",json_heartreport);
+		ntyCommonReqClient(g_devid,json_heartreport,strlen(json_heartreport));
+		sleep(100);
+		
 		//char *json_userdata = "{\"IMEI\":\"355637052329596\",\"Category\":\"ICCID\",\"Action\":\"Set\",\"ICCID\":\"1642510065118\",\"PhoneNum\":\"15889650380\"}";
 		//ntyUserDataReqClient(json_userdata, strlen(json_userdata));
 		//sleep(30);

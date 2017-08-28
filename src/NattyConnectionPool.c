@@ -71,9 +71,9 @@ const unsigned int dbPort = 3306;
 
 #else
 
-const char *hostName = "112.93.116.191";
+const char *hostName = "120.76.41.223";
 const char *userName = "watch_server";
-const char *password = "123456";
+const char *password = "";
 const char *dbName = "NATTYDB";
 const unsigned int dbPort = 3306;
 
