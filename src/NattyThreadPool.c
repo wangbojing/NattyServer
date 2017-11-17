@@ -68,11 +68,12 @@ static void *ntyRunner(void *arg) {
 		pthread_mutex_lock(&worker->workqueue->jobs_mutex);
 		while (worker->workqueue->waiting_jobs == NULL) {
 			if (worker->terminate) break;
+			//ntylog("*****ntyRunner mq thread cond_wait before\n");
 			pthread_cond_wait(&worker->workqueue->jobs_cond, &worker->workqueue->jobs_mutex);
+			//ntylog("*****ntyRunner mq thread cond_wait after\n");
 		}
-
-		if (worker->terminate) break;
-
+		ntylog("*****ntyRunner pthread_cond_wait after, get worker->num=%d\n",worker->num);
+		if (worker->terminate) break;	
 		job = worker->workqueue->waiting_jobs;
 		if (job != NULL) {
 			QUEUE_REMOVE(job, worker->workqueue->waiting_jobs);
@@ -80,8 +81,10 @@ static void *ntyRunner(void *arg) {
 		pthread_mutex_unlock(&worker->workqueue->jobs_mutex);
 
 		if (job == NULL) continue;
+		ntylog( "*****ntyRunner  pthread_cond_wait after, do job begin and run callback function\n" );
 		job->job_function(job);
-		//usleep(1);
+		usleep(1);
+		//usleep(10);
 	}
 	free(worker);
 	pthread_exit(NULL);
@@ -104,7 +107,17 @@ static int ntyWorkQueueInit(WorkQueue *wq, int numWorkers) {
 			return 1;
 		}
 		memset(worker, 0, sizeof(Worker));
+		
+		//add 2017-10-12 begin
+		//worker->workqueue->workers = malloc( sizeof(Worker) );
+		//memset(worker->workqueue->workers, 0, sizeof(Worker));
+		//worker->workqueue->waiting_jobs = malloc( sizeof(Job) );
+		//memset(worker->workqueue->waiting_jobs, 0, sizeof(Job));
+		//add end
+
 		worker->workqueue = wq;
+		worker->num = i;
+		//QUEUE_ADD(worker, worker->workqueue->workers); //add here 2017-09-30
 		if (pthread_create(&worker->thread, NULL, ntyRunner, (void*)worker)) {
 			perror("Failed to start all worker threads");
 			free(worker);
@@ -133,6 +146,7 @@ static void ntyWorkQueueShutdown(WorkQueue *wq) {
 static void ntyWorkQueueAddJob(WorkQueue *wq, Job *job) {
 	pthread_mutex_lock(&wq->jobs_mutex);
 	QUEUE_ADD(job, wq->waiting_jobs);
+	ntylog("ntyWorkQueueAddJob queue add after and broadcast begin\n");
 	pthread_cond_broadcast(&wq->jobs_cond);
 	pthread_mutex_unlock(&wq->jobs_mutex);
 }
@@ -143,6 +157,12 @@ void* ntyThreadPoolCtor(void *_self, va_list *params) {
 	ThreadPool *pool = (ThreadPool*)_self;
 
 	pool->wq = (WorkQueue*)malloc(sizeof(WorkQueue));
+	//add 2017-09-29 begin
+	pool->wq->workers = malloc(sizeof(Worker));
+	memset(pool->wq->workers, 0, sizeof(Worker));
+	pool->wq->waiting_jobs = malloc(sizeof(Job));
+	memset(pool->wq->waiting_jobs, 0, sizeof(Job));
+	//add end
 
 	int arg = va_arg(params, int);
 	if (arg == 1) {

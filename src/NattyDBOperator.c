@@ -45,6 +45,7 @@
 #include "NattyDBOperator.h"
 #include "NattyRBTree.h"
 #include "NattyResult.h"
+#include "NattyFilter.h"
 
 #include <string.h>
 #include <wchar.h>
@@ -247,19 +248,28 @@ static int ntyExecuteWatchInsert(void *self, U8 *imei) {
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteWatchInsert conn NULL\n" );
 			ret = -1;
 		} else {
-			Connection_execute(con, NTY_DB_WATCH_INSERT_FORMAT, imei);
+			//Connection_execute(con, NTY_DB_WATCH_INSERT_FORMAT, imei);
+			ResultSet_T r =  Connection_executeQuery(con, NTY_DB_WATCH_INSERT_FORMAT, imei);
+			if ( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog(" ntyExecuteWatchInsert--> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -273,37 +283,43 @@ static int ntyQueryAppIDListSelect(void *self, C_DEVID did, void *container) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
+	int ret = 0;
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyQueryAppIDListSelect conn NULL\n" );
 			ret = -1;
 		} else {
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_APPIDLIST_SELECT_FORMAT, did);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
 					C_DEVID id = ResultSet_getLLong(r, 1);
-					ntylog("app: %lld\n", id);
+					ntylog("query list of bind deviceid:%lld appid: %lld\n",did,id);
 #if 1
 					ntyVectorInsert(container, &id, sizeof(C_DEVID));
 #else
 					ntyFriendsTreeInsert(tree, id);
-#endif
-					ret = 0;
+#endif				
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
+			
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog(" ntyQueryAppIDListSelect --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -317,12 +333,13 @@ static int ntyQueryWatchIDListSelect(void *self, C_DEVID aid, void *container) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
+	int ret = 0;
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyQueryWatchIDListSelect conn NULL\n" );
 			ret = -1;
 		} else {
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_WATCHIDLIST_SELECT_FORMAT, aid);
@@ -334,20 +351,24 @@ static int ntyQueryWatchIDListSelect(void *self, C_DEVID aid, void *container) {
 					ntyVectorInsert(container, &id, sizeof(C_DEVID));
 #else
 					ntyFriendsTreeInsert(tree, id);
-#endif
-					ret = 0;
+#endif					
 				}
-			}
+				ret = 0;
+			}else{
+				ret = -1;
+			}	
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog(" ntyQueryWatchIDListSelect --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -360,12 +381,13 @@ static int ntyQueryDevAppRelationInsert(void *self, C_DEVID aid, U8 *imei) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
+	int ret = 0;
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyQueryDevAppRelationInsert conn NULL\n" );
 			ret = -1;
 		} else {
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_DEV_APP_INSERT_FORMAT, aid, imei);
@@ -374,17 +396,21 @@ static int ntyQueryDevAppRelationInsert(void *self, C_DEVID aid, U8 *imei) {
 					ret = ResultSet_getInt(r, 1);
 				}
 				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
-	} 
+	}
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog(" ntyQueryDevAppRelationInsert --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -403,19 +429,28 @@ static int ntyExecuteDevAppRelationDelete(void *self, C_DEVID aid, C_DEVID did) 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteDevAppRelationDelete conn NULL\n" );
 			ret = -1;
 		} else {
-			Connection_execute(con, NTY_DB_DEV_APP_DELETE_FORMAT, aid, did);
+			//Connection_execute(con, NTY_DB_DEV_APP_DELETE_FORMAT, aid, did);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_DEV_APP_DELETE_FORMAT, aid, did);
+			if ( r != NULL ){ 
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog(" ntyExecuteDevAppRelationDelete --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -429,31 +464,36 @@ static int ntyQueryDevAppGroupInsert(void *self, C_DEVID aid, C_DEVID imei, U8 *
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
+	int ret = 0;
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyQueryDevAppGroupInsert conn NULL\n" );
 			ret = -1;
 		} else {
-
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_GROUP, imei, aid, name);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
-					ret = ResultSet_getInt(r, 1);
+					int nRet = ResultSet_getInt(r, 1);
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog(" ntyQueryDevAppGroupInsert --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -466,33 +506,35 @@ static int ntyQueryDevAppGroupCheckSelect(void *self, C_DEVID aid, C_DEVID imei)
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
+	int ret = 0;
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyQueryDevAppGroupCheckSelect conn NULL\n" );
 			ret = -1;
 		} else {
-
-			ntylog(" ntyQueryDevAppGroupCheckSelect ...\n");
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_CHECK_GROUP, imei, aid);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
 					ret = ResultSet_getInt(r, 1);
-					ntylog(" ntyQueryDevAppGroupCheckSelect ...\n");
-				}
+				}	
+			}else{
+				ret = -1;
 			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog(" ntyQueryDevAppGroupCheckSelect --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -506,56 +548,61 @@ static int ntyExecuteDevAppGroupBindInsert(void *self, int msgId, C_DEVID *propo
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
+	int ret = 0;
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteDevAppGroupBindInsert conn NULL\n" );
 			ret = -1;
 		} else {
-		
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_BIND_GROUP, msgId);
 			if (r != NULL) {
-				while (ResultSet_next(r)) {
-					ret = ResultSet_getInt(r, 1);
-					
+				while (ResultSet_next(r)) {		
 					*proposerId = ResultSet_getLLong(r, 2);
-					const char *num = ResultSet_getString(r, 3);
-					ntylog("ntyExecuteDevAppGroupBindInsert --> num:%s, proposerId:%lld\n", num, *proposerId);
-					if (num != NULL) {
-						memcpy(phonenum, num, strlen(num));
+					const char *num = ResultSet_getString(r, 3);				
+					if ( num != NULL ) {
+						size_t num_len = strlen(num);
+						//ntyCopyString( &phonenum, num, num_len );
+						memcpy( phonenum, num, num_len );
+						ntylog("ntyExecuteDevAppGroupBindInsert --> num:%s,copy:%s,proposerId:%lld\n", num,phonenum,*proposerId);
 					}
-
 					*pid = ResultSet_getInt(r, 4);
-
 					const char *r_name = ResultSet_getString(r, 5);
-					if (r_name != NULL) {
+					if ( r_name != NULL ) {
 						size_t name_len = strlen(r_name);
-						memcpy(pname, r_name, name_len);
+						//ntyCopyString( &pname, r_name, name_len );
+						memcpy( pname, r_name, name_len );
 						ntylog("ntyExecuteDevAppGroupBindAndAgreeInsert --> r_name:%s\n", pname);
 					}
 
 					const char *r_image = ResultSet_getString(r, 6);
-					if (r_image != NULL) {
+					if ( r_image != NULL ) {
 						size_t image_len = strlen(r_image);
-						memcpy(pimage, r_image, image_len);
+						//ntyCopyString( &pimage, r_image, image_len );
+						memcpy( pimage, r_image, image_len );
 						ntylog("ntyExecuteDevAppGroupBindAndAgreeInsert --> r_image:%s\n", pimage);
 					}
 					
 					ntylog("ntyExecuteDevAppGroupBindInsert --> ret:%d, proposerId:%lld, pid:%d\n", ret, *proposerId, *pid);
 				}
+					ret = 0;
+				}else{
+					ret = -1;
 			}
 		}
-	} 
+	}
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog(" ntyExecuteDevAppGroupBindInsert --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -568,72 +615,57 @@ static int ntyExecuteDevAppGroupBindAndAgreeInsert(void *self, int msgId, C_DEVI
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
+	int ret = 0;
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteDevAppGroupBindAndAgreeInsert conn NULL\n" );
 			ret = -1;
 		} else {
-			U8 sql[512] = {0};
-			sprintf(sql, NTY_DB_INSERT_BIND_AGREE, msgId);
-			ntylog("%s\n", sql);
-
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_BIND_AGREE, msgId);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
 					ret = ResultSet_getInt(r, 1);
 					*proposerId = ResultSet_getLLong(r, 2);
-
 					const char *r_phonenum = ResultSet_getString(r, 3);
 					if (r_phonenum != NULL) {
 						size_t phonenum_len = strlen(r_phonenum);
-						//phonenum = malloc(phonenum_len+1);
-						//if (phonenum != NULL) {
-						//	memset(phonenum, 0, phonenum_len+1);
-							memcpy(phonenum, r_phonenum, phonenum_len);
+							ntyCopyString( &phonenum, r_phonenum, phonenum_len );
 							ntylog("ntyExecuteDevAppGroupBindAndAgreeInsert --> r_phonenum:%s\n", phonenum);
-						//}
-					}
-					
+					}				
 					*pid = ResultSet_getInt(r, 4);
-
 					const char *r_name = ResultSet_getString(r, 5);
 					if (r_name != NULL) {
 						size_t name_len = strlen(r_name);
-						//pname = malloc(name_len+1);
-						//if (pname != NULL) {
-						//	memset(pname, 0, name_len+1);
-							memcpy(pname, r_name, name_len);
+							ntyCopyString( &pname, r_name, name_len );
 							ntylog("ntyExecuteDevAppGroupBindAndAgreeInsert --> r_name:%s\n", pname);
-						//}
 					}
-
 					const char *r_image = ResultSet_getString(r, 6);
 					if (r_image != NULL) {
 						size_t image_len = strlen(r_image);
-						//pimage = malloc(image_len+1);
-						//if (pimage != NULL) {
-						//	memset(pimage, 0, image_len+1);
-							memcpy(pimage, r_image, image_len);
+							ntyCopyString( &pimage, r_name, image_len );
 							ntylog("ntyExecuteDevAppGroupBindAndAgreeInsert --> r_image:%s\n", pimage);
-						//}
-					}
-					
+					}			
 					ntylog("ntyExecuteDevAppGroupBindAndAgreeInsert --> ret:%d, proposerId:%lld, pid:%d\n", ret, *proposerId, *pid);
 				}
+					ret = 0;
+				}else{
+					ret = -1;
 			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog(" ntyExecuteDevAppGroupBindAndAgreeInsert --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -647,39 +679,43 @@ static int ntyExecuteBindConfirmDelete(void *self, int msgId, char *phonenum, C_
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
+	int ret = 0;
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteBindConfirmDelete conn NULL\n" );
 			ret = -1;
 		} else {
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_DELETE_BIND_GROUP, msgId);
 			if (r != NULL) {
-				while (ResultSet_next(r)) {
+				while  ( ResultSet_next(r) ) {
 					*id = ResultSet_getLLong(r, 1);
-
 					const char *r_phonenum = ResultSet_getString(r, 2);
-					if (r_phonenum != NULL) {
-						size_t phonenum_len = strlen(r_phonenum);
-						memcpy(phonenum, r_phonenum, phonenum_len);
+					if ( r_phonenum != NULL ) {
+						size_t phonenum_len = strlen( r_phonenum );
+						//ntyCopyString( &phonenum, r_phonenum, phonenum_len );
+						memcpy( phonenum, r_phonenum, phonenum_len );
 					}
-
-					ntylog("ntyExecuteBindConfirmDelete -->  id:%lld\n", *id);
-					ret = 0;
+					ntylog("ntyExecuteBindConfirmDelete -->  id:%lld,phonenum:%s\n", *id, phonenum);				
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog(" ntyExecuteBindConfirmDelete --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -699,19 +735,28 @@ static int ntyExecuteCommonOfflineMsgDelete(void *self, int msgId, C_DEVID clien
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteCommonOfflineMsgDelete conn NULL\n" );
 			ret = -1;
 		} else {
-			Connection_execute(con, NTY_DB_DELETE_COMMON_OFFLINE_MSG, msgId, clientId);
+			//Connection_execute(con, NTY_DB_DELETE_COMMON_OFFLINE_MSG, msgId, clientId);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_DELETE_COMMON_OFFLINE_MSG, msgId, clientId);
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog(" ntyExecuteCommonOfflineMsgDelete --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -725,35 +770,31 @@ static int ntyQueryCommonOfflineMsgSelect(void *self, C_DEVID deviceId, void *co
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
+	int ret = 0;
 
 	TRY
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyQueryCommonOfflineMsgSelect conn NULL\n" );
 			ret = -1;
 		} else {
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_COMMON_OFFLINE_MSG, deviceId);
-
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
 					int msgId = ResultSet_getInt(r, 1);
 					C_DEVID r_senderId = ResultSet_getLLong(r, 2);
 					C_DEVID r_groupId = ResultSet_getLLong(r, 3);
-					const char *r_details = ResultSet_getString(r, 4);
-					
-					
+					const char *r_details = ResultSet_getString(r, 4);	
 					CommonOfflineMsg *pCommonOfflineMsg = malloc(sizeof(CommonOfflineMsg));
 					if (pCommonOfflineMsg == NULL) {
 						ntylog(" %s --> malloc failed CommonOfflineMsg. \n", __func__);
 						break;
 					}
-					memset(pCommonOfflineMsg, 0, sizeof(CommonOfflineMsg));
-					
+					memset(pCommonOfflineMsg, 0, sizeof(CommonOfflineMsg));		
 					pCommonOfflineMsg->msgId = msgId;
 					pCommonOfflineMsg->senderId = r_senderId;
 					pCommonOfflineMsg->groupId = r_groupId;
-
 					if (r_details != NULL) {
 						size_t details_len = strlen(r_details);
 						ntyCopyString(&pCommonOfflineMsg->details, r_details, details_len);
@@ -770,20 +811,24 @@ static int ntyQueryCommonOfflineMsgSelect(void *self, C_DEVID deviceId, void *co
 					memcpy(pCommonOfflineMsg->details, r_details, details_len);
 					*/
 					
-					ntyVectorInsert(container, pCommonOfflineMsg, sizeof(CommonOfflineMsg));
-					ret = 0;
+					ntyVectorInsert(container, pCommonOfflineMsg, sizeof(CommonOfflineMsg));			
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
 	}
+	#if 0 
 	CATCH(SQLException)
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyQueryCommonOfflineMsgSelect --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -802,11 +847,9 @@ static int ntyQueryVoiceOfflineMsgSelect(void *self, C_DEVID fromId, void *conta
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyQueryVoiceOfflineMsgSelect conn NULL\n" );
 			ret = -1;
-		} else {
-			
-			ret = -1;
-			
+		} else {					
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_VOICE_OFFLINE_MSG, fromId);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
@@ -815,19 +858,16 @@ static int ntyQueryVoiceOfflineMsgSelect(void *self, C_DEVID fromId, void *conta
 					C_DEVID r_groupId = ResultSet_getLLong(r, 3);
 					const char *r_details = ResultSet_getString(r, 4);
 					long timeStamp = ResultSet_getTimestamp(r, 5);
-
 					nOfflineMsg *pOfflineMsg = malloc(sizeof(nOfflineMsg));
 					if (pOfflineMsg == NULL) {
 						ntylog(" %s --> malloc nOfflineMsg.details error. \n", __func__);
 						break;
 					}
 					memset(pOfflineMsg, 0, sizeof(nOfflineMsg));
-					
 					pOfflineMsg->msgId = msgId;
 					pOfflineMsg->senderId = r_senderId;
 					pOfflineMsg->groupId = r_groupId;
 					pOfflineMsg->timeStamp = timeStamp;
-
 					if (r_details != NULL) {
 						size_t details_len = strlen(r_details);
 						ntyCopyString(&pOfflineMsg->details, r_details, details_len);
@@ -839,22 +879,25 @@ static int ntyQueryVoiceOfflineMsgSelect(void *self, C_DEVID fromId, void *conta
 						memset(pOfflineMsg->details, 0, details_len+1);
 						memcpy(pOfflineMsg->details, r_details, details_len);
 					}
-					*/
-					
-					ntyVectorInsert(container, pOfflineMsg, sizeof(CommonOfflineMsg));
-					ret = 0;
+					*/		
+					ntyVectorInsert(container, pOfflineMsg, sizeof(CommonOfflineMsg));				
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
 	}
+	#if 0
 	CATCH(SQLException)
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog(" ntyQueryVoiceOfflineMsgSelect --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -875,65 +918,45 @@ static int ntyQueryPhonebookBindAgreeSelect(void *self, C_DEVID did, C_DEVID pro
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyQueryPhonebookBindAgreeSelect conn NULL\n" );
 			ret = -1;
-		} else {
-			ret = -1;
-			
-			U8 sql[512] = {0};
-			sprintf(sql, NTY_DB_SELECT_PHONEBOOK_BINDAGREE, did, phonenum, proposerId);	
-			ntylog("%s\n", sql);
-			
+		} else {			
+			//U8 sql[512] = {0};
+			//sprintf(sql, NTY_DB_SELECT_PHONEBOOK_BINDAGREE, did, phonenum, proposerId);	
+			//ntylog("%s\n", sql);	
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_PHONEBOOK_BINDAGREE, did, phonenum, proposerId);
 			if (r != NULL) {
-				while (ResultSet_next(r)) {
-					
+				while (ResultSet_next(r)) {		
 					int r_id = ResultSet_getInt(r, 1);
 					const char *r_name = ResultSet_getString(r, 2);
-					const char *r_image = ResultSet_getString(r, 3);
-					
+					const char *r_image = ResultSet_getString(r, 3);				
 					*pid = r_id;
-
 					if (r_name != NULL) {
 						size_t name_len = strlen(r_name);
-						ntyCopyString(&pname, r_name, name_len);
-						
-						/*
-						size_t name_len = strlen(r_name);
-						pname = malloc(name_len+1);
-						if (pname != NULL) {
-							memset(pname, 0, name_len+1);
-							memcpy(pname, r_name, name_len);
-						}
-						*/
+						ntyCopyString(&pname, r_name, name_len);						
 					}
 
 					if (r_image != NULL) {
 						size_t image_len = strlen(r_image);
 						ntyCopyString(&pimage, r_image, image_len);
-
-						/*
-						size_t image_len = strlen(r_image);
-						pimage = malloc(image_len+1);
-						if (pimage != NULL) {
-							memset(pimage, 0, image_len+1);
-							memcpy(pimage, r_image, image_len);
-						}
-						*/
-					}
-					
-					ret = 0;
+					}				
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
 	}
+	#if 0
 	CATCH(SQLException)
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyQueryPhonebookBindAgreeSelect --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -954,6 +977,7 @@ static int ntyQueryCommonMsgSelect(void *self, C_DEVID msgId, C_DEVID *senderId,
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyQueryCommonMsgSelect conn NULL\n" );
 			ret = -1;
 		} else {
 		/*
@@ -970,16 +994,19 @@ static int ntyQueryCommonMsgSelect(void *self, C_DEVID msgId, C_DEVID *senderId,
 				*groupId = r_groupId;
 			}
 			*/
+			ret = 0;
 		}
 	} 
+	#if 0
 	CATCH(SQLException)
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog(" ntyQueryCommonMsgSelect --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;	
@@ -993,34 +1020,39 @@ static int ntyQueryBindConfirmInsert(void *self, C_DEVID admin, C_DEVID imei, U8
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
+	int ret = 0;
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyQueryBindConfirmInsert conn NULL\n" );
 			ret = -1;
 		} else {
-			U8 sql[512] = {0};
-			sprintf(sql, NTY_DB_INSERT_BIND_CONFIRM, admin, imei, name, wimage, proposer, call, uimage);			
-			ntylog("%s\n", sql);	
+			//U8 sql[512] = {0};
+			//sprintf(sql, NTY_DB_INSERT_BIND_CONFIRM, admin, imei, name, wimage, proposer, call, uimage);			
+			//ntylog("%s\n", sql);	
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_BIND_CONFIRM, admin, imei, name, wimage, proposer, call, uimage);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
-					*msgId = ResultSet_getInt(r, 1);
-					ret = 0;
+					*msgId = ResultSet_getInt(r, 1);					
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyQueryBindConfirmInsert --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -1033,36 +1065,43 @@ static int ntyQueryPhoneBookSelect(void *self, C_DEVID imei, C_DEVID userId, cha
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
-	
+	int ret = 0;
+	int len = 0;
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyQueryPhoneBookSelect conn NULL\n" );
 			ret = -1;
-		} else {
-			
+		} else {	
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_PHONE_NUMBER, imei, userId);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
-					const char *pnum = ResultSet_getString(r, 1);
-					ntylog(" ntyQueryPhoneBookSelect --> PhoneNum:%s\n", pnum);
-					memcpy(phonenum, pnum, strlen(pnum));
-
-					ret = 0;
+					const char *pnum = ResultSet_getString(r, 1);				
+					if( pnum != NULL ){
+						len = strlen( pnum );
+						//ntyCopyString( &phonenum, pnum, len );
+						memcpy( phonenum, pnum, len );
+						ntylog(" ntyQueryPhoneBookSelect --> PhoneNum:%s\n", phonenum);
+					}
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog(" ntyQueryPhoneBookSelect --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -1075,15 +1114,15 @@ static int ntyQueryAdminSelect(void *self, C_DEVID did, C_DEVID *appid) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
+	int ret = 0;
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyQueryAdminSelect conn NULL\n" );
 			ret = -1;
 		} else {
-
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_ADMIN, did);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
@@ -1091,20 +1130,24 @@ static int ntyQueryAdminSelect(void *self, C_DEVID did, C_DEVID *appid) {
 					ret = ResultSet_getInt(r, 1);
 #else
 					*appid = ResultSet_getLLong(r, 1);
-#endif
-					ret = 0;
+#endif				
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyQueryAdminSelect --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -1125,38 +1168,33 @@ static int ntyQueryBindOfflineMsgToAdminSelect(void *self, C_DEVID fromId, void 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyQueryBindOfflineMsgToAdminSelect conn NULL\n" );
 			ret = -1;
 		} else {
-			ret = -1;
-
-			U8 sql[256] = {0};		
-			sprintf(sql, NTY_DB_SELECT_BIND_OFFLINE_MSG_TO_ADMIN, fromId);			
-			ntylog("%s\n", sql);
+			//U8 sql[256] = {0};		
+			//sprintf(sql, NTY_DB_SELECT_BIND_OFFLINE_MSG_TO_ADMIN, fromId);			
+			//ntylog("%s\n", sql);
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_BIND_OFFLINE_MSG_TO_ADMIN, fromId);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
-					int bId = ResultSet_getInt(r, 1);
-					
+					int bId = ResultSet_getInt(r, 1);					
 					C_DEVID r_admin = ResultSet_getLLong(r, 2);
 					C_DEVID r_imei = ResultSet_getLLong(r, 3);
 					const char *r_watchname = ResultSet_getString(r, 4);
 					const char *r_watchimage = ResultSet_getString(r, 5);
 					C_DEVID r_proposer = ResultSet_getLLong(r, 6);
 					const char *r_usercall = ResultSet_getString(r, 7);
-					const char *r_userimage = ResultSet_getString(r, 8);
-					
+					const char *r_userimage = ResultSet_getString(r, 8);			
 					BindOfflineMsgToAdmin *pMsgToAdmin = malloc(sizeof(BindOfflineMsgToAdmin));
 					if (pMsgToAdmin == NULL) {
 						ntylog(" %s --> malloc BindOfflineMsgToAdmin error. \n", __func__);
 						break;
 					}
-					memset(pMsgToAdmin, 0, sizeof(BindOfflineMsgToAdmin));
-					
+					memset(pMsgToAdmin, 0, sizeof(BindOfflineMsgToAdmin));					
 					pMsgToAdmin->msgId = bId;
 					pMsgToAdmin->IMEI = r_imei;
 					pMsgToAdmin->admin = r_admin;
 					pMsgToAdmin->proposer = r_proposer;
-
 					if (r_watchname != NULL) {
 						size_t watchname_len = strlen(r_watchname);
 						ntyCopyString(&pMsgToAdmin->watchName, r_watchname, watchname_len);
@@ -1173,7 +1211,6 @@ static int ntyQueryBindOfflineMsgToAdminSelect(void *self, C_DEVID fromId, void 
 						size_t userimage_len = strlen(r_userimage);
 						ntyCopyString(&pMsgToAdmin->userImage, r_userimage, userimage_len);
 					}
-
 					/*
 					pMsgToAdmin->watchName = malloc(watchname_len+1);
 					if (pMsgToAdmin->watchName != NULL) {
@@ -1196,22 +1233,25 @@ static int ntyQueryBindOfflineMsgToAdminSelect(void *self, C_DEVID fromId, void 
 						memset(pMsgToAdmin->userImage, 0, userimage_len+1);
 						memcpy(pMsgToAdmin->userImage, r_userimage, userimage_len);
 					}
-					*/
-						
-					ntyVectorInsert(container, pMsgToAdmin, sizeof(BindOfflineMsgToAdmin));	
-					ret = 0;
+					*/				
+					ntyVectorInsert(container, pMsgToAdmin, sizeof(BindOfflineMsgToAdmin));					
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
 	}
+	#if 0
 	CATCH(SQLException)
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyQueryBindOfflineMsgToAdminSelect --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -1225,50 +1265,51 @@ static int ntyQueryBindOfflineMsgToProposerSelect(void *self, C_DEVID fromId, vo
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
+	int ret = 0;
 
 	TRY
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyQueryBindOfflineMsgToProposerSelect conn NULL\n" );
 			ret = -1;
 		} else {
-			ret = -1;
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_BIND_OFFLINE_MSG_TO_PROPOSER, fromId);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
 					int bId = ResultSet_getInt(r, 1);
-
 					C_DEVID r_admin = ResultSet_getLLong(r, 2);
 					C_DEVID r_imei = ResultSet_getLLong(r, 3);
 					const char *r_watchname = ResultSet_getString(r, 4);
 					const char *r_watchimage = ResultSet_getString(r, 5);
-
 					BindOfflineMsgToProposer *pMsgToProposer = malloc(sizeof(BindOfflineMsgToProposer));
 					if (pMsgToProposer == NULL) {
 						ntylog(" %s --> malloc BindOfflineMsgToProposer.details error. \n", __func__);
 						break;
 					}
-					memset(pMsgToProposer, 0, sizeof(BindOfflineMsgToProposer));
-										
+					memset(pMsgToProposer, 0, sizeof(BindOfflineMsgToProposer));							
 					//pMsgToProposer->msgId = bId;
 					//pMsgToProposer->IMEI = r_imei;
 					//pMsgToProposer->admin = r_admin;
 					//pMsgToProposer->proposer = r_proposer;
-					ntyVectorAdd(container, pMsgToProposer, sizeof(BindOfflineMsgToProposer));
-					ret = 0;
+					ntyVectorAdd(container, pMsgToProposer, sizeof(BindOfflineMsgToProposer));				
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
 	}
+	#if 0
 	CATCH(SQLException)
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyQueryBindOfflineMsgToProposerSelect --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -1289,6 +1330,7 @@ static int ntyExecuteDevAppGroupDelete(void *self, C_DEVID aid, C_DEVID did, int
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteDevAppGroupDelete conn NULL\n" );
 			ret = -1;
 		} else {
 #if 0
@@ -1297,20 +1339,24 @@ static int ntyExecuteDevAppGroupDelete(void *self, C_DEVID aid, C_DEVID did, int
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_DELETE_GROUP, did, aid);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
-					*pid = ResultSet_getInt(r, 1);
-					ret = 0;
+					*pid = ResultSet_getInt(r, 1);			
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteDevAppGroupDelete --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -1328,24 +1374,35 @@ static int ntyExecuteLocationInsert(void *self, C_DEVID did, U8 *lng, U8 *lat, U
 	TRY
 	{		
 		con = ntyCheckConnection(self, con);		
-		if (con == NULL) {			
+		if (con == NULL) {	
+			ntylog( "ntyExecuteLocationInsert conn NULL\n" );
 			ret = -1;		
 		} else {
-			U8 sql[256] = {0};
-			Connection_execute(con, NTY_DB_NAMES_UTF8_SET_FORMAT);			
-			sprintf(sql, NTY_DB_LOCATION_INSERT_FORMAT, did, lng, lat, type, info);			
-			ntylog("%s", sql);			
-			Connection_execute(con, NTY_DB_LOCATION_INSERT_FORMAT, did, lng, lat, type, info);		
+			//U8 sql[256] = {0};
+			//Connection_execute(con, NTY_DB_NAMES_UTF8_SET_FORMAT);	
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_NAMES_UTF8_SET_FORMAT);	
+			//sprintf(sql, NTY_DB_LOCATION_INSERT_FORMAT, did, lng, lat, type, info);			
+			//ntylog("%s", sql);			
+			//Connection_execute(con, NTY_DB_LOCATION_INSERT_FORMAT, did, lng, lat, type, info);
+			ResultSet_T rs = Connection_executeQuery(con, NTY_DB_LOCATION_INSERT_FORMAT, did, lng, lat, type, info);
+			if( rs != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}	
 	}
+	#if 0
 	CATCH(SQLException)
 	{		
 		ntylog(" SQLException --> %s\n", Exception_frame.message);		
 		ret = -1;	
 	}
 	FINALLY
+	#endif
 	{		
-		ntylog(" %s --> Connection_close\n", __func__);		ntyConnectionClose(con);	
+		ntylog("ntyExecuteLocationInsert --> Connection_close\n");		
+		ntyConnectionClose(con);	
 	}	
 	END_TRY;	
 	return ret;
@@ -1364,19 +1421,28 @@ static int ntyExecuteLocationNewInsert(void *self, C_DEVID did, U8 type, const c
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteLocationNewInsert conn NULL\n" );
 			ret = -1;
 		} else {
-			Connection_execute(con, NTY_DB_INSERT_LOCATION, did, type, lnglat, info, desc);
+			//Connection_execute(con, NTY_DB_INSERT_LOCATION, did, type, lnglat, info, desc);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_LOCATION, did, type, lnglat, info, desc);
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteLocationNewInsert --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -1397,19 +1463,28 @@ static int ntyExecuteStepInsert(void *self, C_DEVID did, int value) {
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteStepInsert conn NULL\n" );
 			ret = -1;
 		} else {
-			Connection_execute(con, NTY_DB_STEP_INSERT_FORMAT, did, value);
+			//Connection_execute(con, NTY_DB_STEP_INSERT_FORMAT, did, value);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_STEP_INSERT_FORMAT, did, value);
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteStepInsert --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -1430,19 +1505,28 @@ int ntyExecuteHeartRateInsert(void *self, C_DEVID did, int value) {
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteHeartRateInsert conn NULL\n" );
 			ret = -1;
 		} else {
-			Connection_execute(con, NTY_DB_HEARTRATE_INSERT_FORMAT, did, value);
+			//Connection_execute(con, NTY_DB_HEARTRATE_INSERT_FORMAT, did, value);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_HEARTRATE_INSERT_FORMAT, did, value);
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}	
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteHeartRateInsert--> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -1462,19 +1546,28 @@ int ntyExecuteDeviceLoginUpdate(void *self, C_DEVID did) {
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteDeviceLoginUpdate conn NULL\n" );
 			ret = -1;
 		} else {
-			Connection_execute(con, NTY_DB_DEVICELOGIN_UPDATE_FORMAT, did);
+			//Connection_execute(con, NTY_DB_DEVICELOGIN_UPDATE_FORMAT, did);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_DEVICELOGIN_UPDATE_FORMAT, did);
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteDeviceLoginUpdate--> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -1493,19 +1586,28 @@ int ntyExecuteDeviceLogoutUpdate(void *self, C_DEVID did) {
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteDeviceLogoutUpdate conn NULL\n" );
 			ret = -1;
 		} else {
-			Connection_execute(con, NTY_DB_DEVICELOGOUT_UPDATE_FORMAT, did);
+			//Connection_execute(con, NTY_DB_DEVICELOGOUT_UPDATE_FORMAT, did);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_DEVICELOGOUT_UPDATE_FORMAT, did);
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteDeviceLogoutUpdate--> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -1518,38 +1620,41 @@ int ntyQueryPhNumSelect(void *self, C_DEVID did, U8 *iccid, U8 *phnum) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
-	//U8 u8PhNum[20] = {0};
+	int ret = 0;
+	int len = 0;
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyQueryPhNumSelect conn NULL\n" );
 			ret = -1;
 		} else {
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_PHNUM_VALUE_SELECT_FORMAT, did, iccid);
-
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
 					const char *u8pNum = ResultSet_getString(r, 1);
-					int len = strlen(u8pNum);
-					ntylog(" ntyQueryPhNumSelect --> len:%d\n", len);
-					if (len < 20) {
-						memcpy(phnum, u8pNum, len);
+					if( u8pNum != NULL ){
+						len = strlen( u8pNum );
+						ntyCopyString( &phnum, u8pNum, len );
 					}
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
-			//strcpy(phnum, u8PhNum);
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyQueryPhNumSelect--> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -1563,25 +1668,30 @@ int ntyExecuteDeviceStatusReset(void *self) {
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
-	U8 u8PhNum[20] = {0};
+	//U8 u8PhNum[20] = {0};
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteDeviceStatusReset conn NULL\n" );
 			ret = -1;
 		} else {
 			Connection_execute(con, NTY_DB_DEVICE_STATUS_RESET_FORMAT);
+			//ResultSet_T r = Connection_executeQuery(con, NTY_DB_DEVICE_STATUS_RESET_FORMAT);
+			ret = 0;
 		}
-	} 
+	}
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteDeviceStatusReset --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -1596,25 +1706,34 @@ int ntyExecuteAppLoginUpdate(void *self, C_DEVID aid) {
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
-	U8 u8PhNum[20] = {0};
+	//U8 u8PhNum[20] = {0};
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteDeviceStatusReset conn NULL\n" );
 			ret = -1;
 		} else {
-			Connection_execute(con, NTY_DB_APPLOGIN_UPDATE_FORMAT, aid);
+			//Connection_execute(con, NTY_DB_APPLOGIN_UPDATE_FORMAT, aid);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_APPLOGIN_UPDATE_FORMAT, aid);
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
-	} 
+	}
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteAppLoginUpdate --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -1628,26 +1747,34 @@ int ntyExecuteAppLogoutUpdate(void *self, C_DEVID aid) {
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
-	U8 u8PhNum[20] = {0};
+	//U8 u8PhNum[20] = {0};
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteAppLogoutUpdate conn NULL\n" );
 			ret = -1;
 		} else {
-			ntylog("ntyExecuteAppLogoutUpdate --> execute\n");
-			Connection_execute(con, NTY_DB_APPLOGOUT_UPDATE_FORMAT, aid);
+			//Connection_execute(con, NTY_DB_APPLOGOUT_UPDATE_FORMAT, aid);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_APPLOGOUT_UPDATE_FORMAT, aid);
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteAppLogoutUpdate --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -1662,34 +1789,38 @@ int ntyExecuteEfenceInsert(void *self, C_DEVID aid, C_DEVID did, int index, int 
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
-	U8 u8PhNum[20] = {0};
+	int ret = 0;
+	//U8 u8PhNum[20] = {0};
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteEfenceInsert conn NULL\n" );
 			ret = -1;
 		} else {
 			ntylog("ntyExecuteEfenceInsert --> executeQuery\n");
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_EFENCE, did, index, num, points, runtime);
-
 			if (r != NULL) {
 				if (ResultSet_next(r)) {
-					*id = ResultSet_getInt(r, 1);
-					ret = 0;
+					*id = ResultSet_getInt(r, 1);			
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
-	} 
+	}
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteEfenceInsert --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -1704,34 +1835,38 @@ int ntyExecuteFalldownInsert(void *self, C_DEVID aid, C_DEVID did, double lng, d
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
-	U8 u8PhNum[20] = {0};
+	int ret = 0;
+	//U8 u8PhNum[20] = {0};
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteFalldownInsert conn NULL\n" );
 			ret = -1;
 		} else {
 			ntylog("ntyExecuteFalldownInsert --> executeQuery\n");
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_FALLDOWN, did, lng, lat, type);
-
 			if (r != NULL) {
 				if (ResultSet_next(r)) {
-					*id = ResultSet_getInt(r, 1);
-					ret = 0;
+					*id = ResultSet_getInt(r, 1);			
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteFalldownInsert --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -1748,30 +1883,37 @@ int ntyExecuteEfenceDelete(void *self, C_DEVID aid, C_DEVID did, int index) {
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
-	U8 u8PhNum[20] = {0};
+	//U8 u8PhNum[20] = {0};
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteEfenceDelete conn NULL\n" );
 			ret = -1;
 		} else {
-			ntylog("ntyExecuteEfenceDelete --> execute\n");
-
-			U8 sql[512] = {0};		
-			sprintf(sql, NTY_DB_DELETE_EFENCE, did, index);
-			ntylog("%s", sql);
-			Connection_execute(con, NTY_DB_DELETE_EFENCE, did, index);
+			//U8 sql[512] = {0};		
+			//sprintf(sql, NTY_DB_DELETE_EFENCE, did, index);
+			//ntylog("%s", sql);
+			//Connection_execute(con, NTY_DB_DELETE_EFENCE, did, index);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_DELETE_EFENCE, did, index);
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteEfenceDelete --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -1785,40 +1927,44 @@ int ntyQueryICCIDSelect(void *self, C_DEVID did, const char *iccid, char *phonen
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
-	U8 u8PhNum[20] = {0};
+	int ret = 0;
+	//U8 u8PhNum[20] = {0};
+	int len = 0;
+	int length = 0;
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyQueryICCIDSelect conn NULL\n" );
 			ret = -1;
 		} else {
-			ntylog("ntyQueryICCIDSelect --> executeQuery\n");
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_PHNUM_VALUE_SELECT, did, iccid);
-
 			if (r != NULL) {
 				if (ResultSet_next(r)) {
-					ntylog("ntyQueryICCIDSelect --> ResultSet_getString\n");
-					const char *temp = ResultSet_getString(r, 1);
-					ntylog("ntyQueryICCIDSelect --> ResultSet_getString : %s\n", temp);
-					if (temp != NULL) {
-						memcpy(phonenum, temp, strlen(temp));
+					const char *phonenumTemp = ResultSet_getString(r, 1);
+					if( phonenumTemp != NULL ){			
+						len = strlen( phonenumTemp );
+						ntyCopyString( &phonenum, phonenumTemp, len );
+						ntylog("ntyQueryICCIDSelect --> ResultSet_getString : %s\n", phonenum);
 					}
-
-					ret = 0;
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
-		}
+		 }
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyQueryICCIDSelect --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -1828,22 +1974,23 @@ int ntyQueryICCIDSelect(void *self, C_DEVID did, const char *iccid, char *phonen
 
 
 //NTY_DB_SET_ICCID
-int ntyExecuteICCIDSetInsert(void *self, C_DEVID did, const char *iccid, char *phonenum) {
+int ntyExecuteICCIDSetUpdate(void *self, C_DEVID did, const char *iccid, const char *phonenum, const char *version, int deviceType, int simOperator) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
-	U8 u8PhNum[20] = {0};
+	int ret = 0;
+	//U8 u8PhNum[20] = {0};
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteICCIDSetInsert conn NULL\n" );
 			ret = -1;
 		} else {
-			U8 sql[512] = {0};
-			sprintf(sql, NTY_DB_SET_ICCID, did, iccid, phonenum);			
-			ntylog("%s\n", sql);	
+			//U8 sql[512] = {0};
+			//sprintf(sql, NTY_DB_SET_ICCID, did, iccid, phonenum);			
+			//ntylog("%s\n", sql);	
 #if 0
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SET_ICCID, did, iccid, phonenum);
 			if (r != NULL) {
@@ -1857,19 +2004,26 @@ int ntyExecuteICCIDSetInsert(void *self, C_DEVID did, const char *iccid, char *p
 				}
 			}
 #else
-			Connection_execute(con, NTY_DB_SET_ICCID, did, iccid, phonenum);
-			ret = 0;
+			//Connection_execute(con, NTY_DB_SET_ICCID, did, iccid, phonenum);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SET_ICCID, did, iccid, phonenum, version, deviceType, simOperator);
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 #endif
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteICCIDSetUpdate --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -1879,31 +2033,39 @@ int ntyExecuteICCIDSetInsert(void *self, C_DEVID did, const char *iccid, char *p
 
 
 //NTY_DB_UPDATE_RUNTIME
-int ntyExecuteRuntimeUpdate(void *self, C_DEVID aid, C_DEVID did, int auto_conn, U8 loss_report, U8 light_panel, const char *bell, int target_step) {
+int ntyExecuteRuntimeUpdate(void *self, C_DEVID aid, C_DEVID did, U16 auto_conn, U16 loss_report, U16 light_panel, const char *bell, U16 target_step, U16 model, U16 powerSaving) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
-	U8 u8PhNum[20] = {0};
+	//U8 u8PhNum[20] = {0};
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteRuntimeUpdate conn NULL\n" );
 			ret = -1;
-		} else {
-			
-			Connection_execute(con, NTY_DB_UPDATE_RUNTIME, did, auto_conn, loss_report, light_panel, bell, target_step);
+		} else {	
+			//Connection_execute(con, NTY_DB_UPDATE_RUNTIME, did, auto_conn, loss_report, light_panel, bell, target_step);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_UPDATE_RUNTIME, did, auto_conn, loss_report, light_panel, bell, target_step, model, powerSaving);
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
-	} 
+	}
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteRuntimeUpdate --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -1917,26 +2079,35 @@ int ntyExecuteRuntimeAutoConnUpdate(void *self, C_DEVID aid, C_DEVID did, int ru
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
-	U8 u8PhNum[20] = {0};
+	//U8 u8PhNum[20] = {0};
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteRuntimeAutoConnUpdate conn NULL\n" );
 			ret = -1;
 		} else {
 			
-			Connection_execute(con, NTY_DB_UPDATE_RUNTIME_AUTOCONN, did, runtime_param);
+			//Connection_execute(con, NTY_DB_UPDATE_RUNTIME_AUTOCONN, did, runtime_param);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_UPDATE_RUNTIME_AUTOCONN, did, runtime_param);
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
-	} 
+	}
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteRuntimeAutoConnUpdate --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -1951,28 +2122,34 @@ int ntyExecuteRuntimeLossReportUpdate(void *self, C_DEVID aid, C_DEVID did, U8 r
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
-	U8 u8PhNum[20] = {0};
+	//U8 u8PhNum[20] = {0};
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteRuntimeLossReportUpdate conn NULL\n" );
 			ret = -1;
 		} else {
-			
-			ntylog(" Connection_execute before ntyExecuteRuntimeLossReportUpdate \n");
-			Connection_execute(con, NTY_DB_UPDATE_RUNTIME_LOSSREPORT, did, runtime_param);
-			ntylog(" Connection_execute after ntyExecuteRuntimeLossReportUpdate \n");
+			//Connection_execute(con, NTY_DB_UPDATE_RUNTIME_LOSSREPORT, did, runtime_param);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_UPDATE_RUNTIME_LOSSREPORT, did, runtime_param);
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteRuntimeLossReportUpdate --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -1987,26 +2164,34 @@ int ntyExecuteRuntimeLightPanelUpdate(void *self, C_DEVID aid, C_DEVID did, U8 r
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
-	U8 u8PhNum[20] = {0};
+	//U8 u8PhNum[20] = {0};
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteRuntimeLightPanelUpdate conn NULL\n" );
 			ret = -1;
-		} else {
-			
-			Connection_execute(con, NTY_DB_UPDATE_RUNTIME_LIGHTPANEL, did, runtime_param);
+		} else {	
+			//Connection_execute(con, NTY_DB_UPDATE_RUNTIME_LIGHTPANEL, did, runtime_param);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_UPDATE_RUNTIME_LIGHTPANEL, did, runtime_param);
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteRuntimeLightPanelUpdate --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -2021,26 +2206,34 @@ int ntyExecuteRuntimeBellUpdate(void *self, C_DEVID aid, C_DEVID did, const char
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
-	U8 u8PhNum[20] = {0};
+	//U8 u8PhNum[20] = {0};
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteRuntimeBellUpdate conn NULL\n" );
 			ret = -1;
-		} else {
-			
-			Connection_execute(con, NTY_DB_UPDATE_RUNTIME_BELL, did, runtime_param);
+		} else {	
+			//Connection_execute(con, NTY_DB_UPDATE_RUNTIME_BELL, did, runtime_param);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_UPDATE_RUNTIME_BELL, did, runtime_param);
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteRuntimeBellUpdate --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -2054,28 +2247,34 @@ int ntyExecuteRuntimeTargetStepUpdate(void *self, C_DEVID aid, C_DEVID did, int 
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
-	U8 u8PhNum[20] = {0};
+	//U8 u8PhNum[20] = {0};
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteRuntimeTargetStepUpdate conn NULL\n" );
 			ret = -1;
 		} else {
-			
-			ntylog(" ntyExecuteRuntimeTargetStepUpdate -->  before Connection_execute\n");
-			Connection_execute(con, NTY_DB_UPDATE_RUNTIME_TARGETSTEP, did, runtime_param);
-			ntylog(" ntyExecuteRuntimeTargetStepUpdate -->  after Connection_execute\n");
+			///Connection_execute(con, NTY_DB_UPDATE_RUNTIME_TARGETSTEP, did, runtime_param);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_UPDATE_RUNTIME_TARGETSTEP, did, runtime_param);
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteRuntimeTargetStepUpdate --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -2089,28 +2288,34 @@ int ntyExecuteRuntimeModelUpdate( void *self, C_DEVID aid, C_DEVID did, int runt
 	if (pool == NULL) return NTY_RESULT_ERROR;
 	Connection_T con = ConnectionPool_getConnection( pool->nPool );
 	int ret = 0;
-	U8 u8PhNum[20] = {0};
+	//U8 u8PhNum[20] = {0};
 
 	TRY 
 	{
 		con = ntyCheckConnection( self, con );
 		if ( con == NULL ) {
+			ntylog( "ntyExecuteRuntimeModelUpdate conn NULL\n" );
 			ret = -1;
 		} else {
-			
-			ntylog(" ntyExecuteRuntimeModelUpdate -->  before Connection_execute\n");
-			Connection_execute( con, NTY_DB_UPDATE_RUNTIME_MODEL, did, runtime_param );
-			ntylog(" ntyExecuteRuntimeModelUpdate -->  after Connection_execute\n");
+			//Connection_execute( con, NTY_DB_UPDATE_RUNTIME_MODEL, did, runtime_param );
+			ResultSet_T r = Connection_executeQuery( con, NTY_DB_UPDATE_RUNTIME_MODEL, did, runtime_param );
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
-	} 
+	}
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteRuntimeModelUpdate --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -2125,28 +2330,34 @@ int ntyExecuteTurnUpdate(void *self, C_DEVID aid, C_DEVID did, U8 status, const 
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
-	U8 u8PhNum[20] = {0};
+	//U8 u8PhNum[20] = {0};
 
 	TRY
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteTurnUpdate conn NULL\n" );
 			ret = -1;
 		} else {
-			
-			ntylog(" ntyExecuteTurnUpdate --> before Connection_execute\n ");
-			Connection_execute(con, NTY_DB_UPDATE_TURN, did, status, ontime, offtime);
-			ntylog(" ntyExecuteTurnUpdate --> after Connection_execute\n ");
+			//Connection_execute(con, NTY_DB_UPDATE_TURN, did, status, ontime, offtime);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_UPDATE_TURN, did, status, ontime, offtime);
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
-	} 
+	}
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteTurnUpdate --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -2160,35 +2371,38 @@ int ntyExecuteContactsInsert(void *self, C_DEVID aid, C_DEVID did, Contacts *con
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
-	U8 u8PhNum[20] = {0};
+	int ret = 0;
+	//U8 u8PhNum[20] = {0};
 
 	TRY
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteContactsInsert conn NULL\n" );
 			ret = -1;
-		} else {
-			
-			ResultSet_T r = Connection_executeQuery(con, 
-				NTY_DB_INSERT_PHONEBOOK, aid,did,contacts->image,contacts->name,contacts->telphone);
+		} else {	
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_PHONEBOOK, aid,did,contacts->image,contacts->name,contacts->telphone);
 			if (r != NULL) {
 				if (ResultSet_next(r)) {
 					int tempId = ResultSet_getInt(r, 1);
-					*contactsId = tempId;
-					ret = 0;
+					*contactsId = tempId;			
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
 	}
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteContactsInsert --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -2205,26 +2419,34 @@ int ntyExecuteContactsUpdate(void *self, C_DEVID aid, C_DEVID did, Contacts *con
 	if (contacts == NULL) return NTY_RESULT_FAILED;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
-	U8 u8PhNum[20] = {0};
+	//U8 u8PhNum[20] = {0};
 
 	TRY
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteContactsUpdate conn NULL\n" );
 			ret = -1;
-		} else {
-			
-			Connection_execute(con, NTY_DB_UPDATE_PHONEBOOK, aid,did,contacts->image,contacts->name,contacts->telphone, contactsId);
+		} else {	
+			//Connection_execute(con, NTY_DB_UPDATE_PHONEBOOK, aid,did,contacts->image,contacts->name,contacts->telphone, contactsId);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_UPDATE_PHONEBOOK, aid,did,contacts->image,contacts->name,contacts->telphone, contactsId);
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
 	}
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteContactsUpdate --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -2239,26 +2461,34 @@ int ntyExecuteContactsDelete(void *self, C_DEVID aid, C_DEVID did, int contactsI
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
-	U8 u8PhNum[20] = {0};
+	//U8 u8PhNum[20] = {0};
 
 	TRY
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteContactsDelete conn NULL\n" );
 			ret = -1;
-		} else {
-			
-			Connection_execute(con, NTY_DB_DELETE_PHONEBOOK, did, contactsId);
+		} else {		
+			//Connection_execute(con, NTY_DB_DELETE_PHONEBOOK, did, contactsId);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_DELETE_PHONEBOOK, did, contactsId);
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
 	}
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteContactsDelete --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -2272,34 +2502,38 @@ int ntyExecuteScheduleInsert(void *self, C_DEVID aid, C_DEVID did, const char *d
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
-	U8 u8PhNum[20] = {0};
+	int ret = 0;
+	//U8 u8PhNum[20] = {0};
 
 	TRY
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteScheduleInsert conn NULL\n" );
 			ret = -1;
-		} else {
-			
+		} else {		
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_SCHEDULE, did, daily, time, status, details);
 			if (r != NULL) {
 				if (ResultSet_next(r)) {
 					int tempId = ResultSet_getInt(r, 1);
-					*scheduleId = tempId;
-					ret = 0;
+					*scheduleId = tempId;					
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
 	}
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteScheduleInsert --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -2313,26 +2547,34 @@ int ntyExecuteScheduleDelete(void *self, C_DEVID aid, C_DEVID did, int scheduleI
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
-	U8 u8PhNum[20] = {0};
+	//U8 u8PhNum[20] = {0};
 
 	TRY
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteScheduleDelete conn NULL\n" );
 			ret = -1;
-		} else {
-			
-			Connection_execute(con, NTY_DB_DELETE_SCHEDULE, did, scheduleId);
+		} else {		
+			//Connection_execute(con, NTY_DB_DELETE_SCHEDULE, did, scheduleId);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_DELETE_SCHEDULE, did, scheduleId);
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteScheduleDelete --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -2346,26 +2588,35 @@ int ntyExecuteScheduleUpdate(void *self, C_DEVID aid, C_DEVID did, int scheduleI
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
 	int ret = 0;
-	U8 u8PhNum[20] = {0};
+	//U8 u8PhNum[20] = {0};
 
 	TRY
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteScheduleDelete conn NULL\n" );
 			ret = -1;
 		} else {
 			ntylog(" ntyExecuteScheduleUpdate --> execute\n");
-			Connection_execute(con, NTY_DB_UPDATE_SCHEDULE, did, scheduleId, daily, time, status, details);
+			//Connection_execute(con, NTY_DB_UPDATE_SCHEDULE, did, scheduleId, daily, time, status, details);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_UPDATE_SCHEDULE, did, scheduleId, daily, time, status, details);
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
-	} 
+	}
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteScheduleUpdate --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -2378,36 +2629,38 @@ int ntyExecuteTimeTablesUpdate(void *self, C_DEVID aid, C_DEVID did, const char 
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
-	U8 u8PhNum[20] = {0};
+	int ret = 0;
+	//U8 u8PhNum[20] = {0};
 
 	TRY
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteTimeTablesUpdate conn NULL\n" );
 			ret = -1;
-		} else {
-			
+		} else {			
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_UPDATE_TIMETABLE, did, morning, morning_turn, afternoon, afternoon_turn, daily);
-			ntylog(" ntyExecuteTimeTablesUpdate ntyExecuteTimeTablesUpdate --> r ::: \n");
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
 					int temp = ResultSet_getInt(r, 1);
-					*result = temp;
-					ntylog(" ntyExecuteTimeTablesUpdate temp --> r ::: %d\n", temp);
-					ret = 0;
+					*result = temp;			
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
-	} 
+	}
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteTimeTablesUpdate --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -2420,36 +2673,37 @@ int ntyExecuteCommonMsgInsert(void *self, C_DEVID sid, C_DEVID gid, char *detail
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
-	U8 u8PhNum[20] = {0};
+	int ret = 0;
+	//U8 u8PhNum[20] = {0};
 
 	TRY
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteCommonMsgInsert conn NULL\n" );
 			ret = -1;
-		} else {
-			ntylog(" ntyExecuteCommonMsgInsert --> sid:%lld, gid:%lld, details:%s\n", sid, gid, details);
-			
+		} else {			
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_COMMON_MSG, sid, gid, details);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
-					*msg = ResultSet_getInt(r, 1);	
-					ret = 0;
-
-					ntylog("ntyExecuteCommonMsgInsert msgId : %d\n", *msg);
+					*msg = ResultSet_getInt(r, 1);					
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
 	}
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteCommonMsgInsert --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -2463,13 +2717,14 @@ int ntyExecuteLocationReportInsert(void *self, C_DEVID did, U8 type, const char 
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
-	U8 u8PhNum[20] = {0};
+	int ret = 0;
+	//U8 u8PhNum[20] = {0};
 
-	TRY
-	{
+	//TRY
+	//{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog("ntyExecuteLocationReportInsert connpool NULL\n");
 			ret = -1;
 		} else {
 			ntylog(" ntyExecuteLocationReportInsert --> start\n");
@@ -2482,34 +2737,38 @@ int ntyExecuteLocationReportInsert(void *self, C_DEVID did, U8 type, const char 
 			}
 			snprintf(sqlStr, nLength+256, NTY_DB_INSERT_LOCATIONREPORT, did, type, info, lnglat, detatils);		
 			ntylog("%s", sqlStr);
-#endif			
+#endif		
+			//usleep(100000);
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_LOCATIONREPORT, did, type, info, lnglat, detatils);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
-					*msg = ResultSet_getInt(r, 1);	
-					ret = 0;
-
+					*msg = ResultSet_getInt(r, 1);					
 					ntylog("ntyExecuteHeartReportInsert msgId : %d\n", *msg);
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 #if 0
 			if ( sqlStr != NULL ){
 				free(sqlStr);
-			}
+			}		
 #endif
 		}
-	}
+//	}
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
-	{
-		ntylog(" %s --> Connection_close\n", __func__);
+	#endif
+//	{
+		ntylog("ntyExecuteLocationReportInsert --> Connection_close\n");
 		ntyConnectionClose(con);
-	}
-	END_TRY;
+//	}
+//	END_TRY;
 
 	return ret;
 }
@@ -2520,36 +2779,39 @@ int ntyExecuteStepsReportInsert(void *self, C_DEVID did, int step, int *msg) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
-	U8 u8PhNum[20] = {0};
+	int ret = 0;
+	//U8 u8PhNum[20] = {0};
 
 	TRY
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteStepsReportInsert conn NULL\n" );
 			ret = -1;
 		} else {
-			ntylog(" ntyExecuteStepsReportInsert --> start\n");
-			
+			//ntylog(" ntyExecuteStepsReportInsert --> start\n");		
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_STEPSREPORT, did, step);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
 					*msg = ResultSet_getInt(r, 1);	
-					ret = 0;
-
 					ntylog("ntyExecuteStepsReportInsert msgId : %d\n", *msg);
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
 	}
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteStepsReportInsert --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -2563,36 +2825,39 @@ int ntyExecuteHeartReportInsert(void *self, C_DEVID did, int heart, int *msg) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
-	U8 u8PhNum[20] = {0};
+	int ret = 0;
+	//U8 u8PhNum[20] = {0};
 
 	TRY
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteHeartReportInsert conn NULL\n" );
 			ret = -1;
 		} else {
-			ntylog(" ntyExecuteHeartReportInsert --> start\n");
-			
+			//ntylog(" ntyExecuteHeartReportInsert --> start\n");	
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_HEARTREPORT, did, heart);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
 					*msg = ResultSet_getInt(r, 1);	
-					ret = 0;
-
 					ntylog("ntyExecuteHeartReportInsert msgId : %d\n", *msg);
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
 	}
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteHeartReportInsert --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -2602,40 +2867,43 @@ int ntyExecuteHeartReportInsert(void *self, C_DEVID did, int heart, int *msg) {
 
 
 //NTY_DB_INSERT_BLOODREPORT
-int ntyExecuteBloodReportInsert(void *self, C_DEVID did, int blood, int *msg) {
+int ntyExecuteBloodReportInsert(void *self, C_DEVID did, int bloodReport, int diastoleReport, int shrinkReport, int *msg) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
-	U8 u8PhNum[20] = {0};
+	int ret = 0;
+	//U8 u8PhNum[20] = {0};
 
 	TRY
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteBloodReportInsert conn NULL\n" );
 			ret = -1;
 		} else {
-			ntylog(" ntyExecuteBloodReportInsert --> start\n");
-			
-			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_BLOODREPORT, did, blood);
+			//ntylog(" ntyExecuteBloodReportInsert --> start\n");	
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_BLOODREPORT, did, bloodReport, diastoleReport, shrinkReport);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
 					*msg = ResultSet_getInt(r, 1);	
-					ret = 0;
-
 					ntylog("ntyExecuteBloodReportInsert msgId : %d\n", *msg);
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
 	}
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteBloodReportInsert --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -2650,38 +2918,39 @@ int ntyExecuteCommonItemMsgInsert(void *self, C_DEVID sid, C_DEVID gid, char *de
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
-	U8 u8PhNum[20] = {0};
+	int ret = 0;
+	//U8 u8PhNum[20] = {0};
 
 	TRY
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteCommonItemMsgInsert conn NULL\n" );
 			ret = -1;
 		} else {
-			ntylog(" ntyExecuteCommonItemMsgInsert --> sid:%lld, gid:%lld, details:%s\n", sid, gid, details);
-			
+			//ntylog(" ntyExecuteCommonItemMsgInsert --> sid:%lld, gid:%lld, details:%s\n", sid, gid, details);		
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_COMMON_ITEM_MSG, sid, gid, details);
 			if (r != NULL) {
-				while (ResultSet_next(r)) {
-					ntylog("ntyExecuteCommonItemMsgInsert --> getInt\n");
-					
+				while (ResultSet_next(r)) {		
 					*msg = ResultSet_getInt(r, 1);	
-					ret = 0;
-
-					ntylog("ntyExecuteCommonMsgInsert msgId : %d\n", *msg);
+					//ntylog("ntyExecuteCommonMsgInsert msgId : %d\n", *msg);
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
 	}
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteCommonItemMsgInsert --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -2695,29 +2964,36 @@ int ntyExecuteCommonItemMsgDelete(void *self, int msgId) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
-	U8 u8PhNum[20] = {0};
+	int ret = 0;
+	//U8 u8PhNum[20] = {0};
 
 	TRY
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteCommonItemMsgDelete conn NULL\n" );
 			ret = -1;
 		} else {
-			ntylog(" ntyExecuteCommonItemMsgDelete --> start\n");
-			
-			Connection_execute(con, NTY_DB_DELETE_COMMON_ITEM_MSG, msgId);
-			ret = 0;
+			//ntylog(" ntyExecuteCommonItemMsgDelete --> start\n");	
+			//Connection_execute(con, NTY_DB_DELETE_COMMON_ITEM_MSG, msgId);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_DELETE_COMMON_ITEM_MSG, msgId);
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
 	}
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteCommonItemMsgDelete --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -2732,36 +3008,38 @@ int ntyExecuteCommonMsgToProposerInsert(void *self, C_DEVID sid, C_DEVID gid, co
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
-	U8 u8PhNum[20] = {0};
+	int ret = 0;
+	//U8 u8PhNum[20] = {0};
 
 	TRY
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteCommonMsgToProposerInsert conn NULL\n" );
 			ret = -1;
 		} else {
-
-			ntylog(" ntyExecuteCommonMsgToProposerInsert --> executeQuery\n");
-			
+			//ntylog(" ntyExecuteCommonMsgToProposerInsert --> executeQuery\n");		
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_COMMON_MSG_REJECT, sid, gid, detatils);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
-					*msg = ResultSet_getInt(r, 1);	
-					ret = 0;
+					*msg = ResultSet_getInt(r, 1);						
 				}
-				
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
-	} 
+	}
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteCommonMsgToProposerInsert --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -2775,27 +3053,36 @@ int ntyExecuteChangeDeviceOnlineStatus(void *self, C_DEVID did, int status) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
-	U8 u8PhNum[20] = {0};
+	int ret = 0;
+	//U8 u8PhNum[20] = {0};
 
 	TRY
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteChangeDeviceOnlineStatus conn NULL\n" );
 			ret = -1;
 		} else {
-			ntylog(" ntyExecuteChangeDeviceOnlineStatus --> Connection_execute\n");
-			Connection_execute(con, NTY_DB_UPDATE_DEVICE_STATUS, did, status);
+			//ntylog(" ntyExecuteChangeDeviceOnlineStatus --> Connection_execute\n");
+			//Connection_execute(con, NTY_DB_UPDATE_DEVICE_STATUS, did, status);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_UPDATE_DEVICE_STATUS, did, status);
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
-	} 
+	}
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteChangeDeviceOnlineStatus --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -2808,32 +3095,37 @@ int ntyQueryDeviceOnlineStatus(void *self, C_DEVID did, int *online) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
-	U8 u8PhNum[20] = {0};
+	int ret = 0;
+	//U8 u8PhNum[20] = {0};
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyQueryDeviceOnlineStatus conn NULL\n" );
 			ret = -1;
 		} else {
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_DEVICE_STATUS_SELECT_FORMAT, did);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
-					*online = ResultSet_getInt(r, 1);	
-					ret = 0;
+					*online = ResultSet_getInt(r, 1);					
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyQueryDeviceOnlineStatus --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -2846,32 +3138,37 @@ int ntyQueryAppOnlineStatus(void *self, C_DEVID aid, int *online) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
-	U8 u8PhNum[20] = {0};
+	int ret = 0;
+	//U8 u8PhNum[20] = {0};
 
 	TRY 
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyQueryAppOnlineStatus conn NULL\n" );
 			ret = -1;
 		} else {
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_APP_STATUS_SELECT_FORMAT, aid);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
-					*online = ResultSet_getInt(r, 1);	
-					ret = 0;
+					*online = ResultSet_getInt(r, 1);				
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyQueryAppOnlineStatus --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -2884,32 +3181,38 @@ int ntyQueryVoiceMsgInsert(void *self, C_DEVID senderId, C_DEVID gId, char *file
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
-	U8 u8PhNum[20] = {0};
-
+	int ret = 0;
+	//U8 u8PhNum[20] = {0};
+	
 	TRY
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyQueryVoiceMsgInsert conn NULL\n" );
 			ret = -1;
 		} else {
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_INSERT_VOICE_MSG, senderId, gId, filename);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
-					*msgId = ResultSet_getInt(r, 1);
-					ret = 0;				
+					*msgId = ResultSet_getInt(r, 1);							
+					ntylog("ntyQueryVoiceMsgInsert voice msgid=%d\n",*msgId);
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyQueryVoiceMsgInsert --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -2928,19 +3231,28 @@ int ntyExecuteVoiceOfflineMsgDelete(void *self, int index, C_DEVID userId) {
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyExecuteVoiceOfflineMsgDelete conn NULL\n" );
 			ret = -1;
 		} else {
-			Connection_execute(con, NTY_DB_DELETE_VOICE_OFFLINE_MSG, index, userId);
+			//Connection_execute(con, NTY_DB_DELETE_VOICE_OFFLINE_MSG, index, userId);
+			ResultSet_T r = Connection_executeQuery(con, NTY_DB_DELETE_VOICE_OFFLINE_MSG, index, userId);
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteVoiceOfflineMsgDelete --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -2952,48 +3264,50 @@ int ntyQueryVoiceMsgSelect(void *self, int index,C_DEVID *senderId, C_DEVID *gId
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
-	U8 u8PhNum[20] = {0};
+	int ret = 0;
+	int length = 0;
+	int nlen = 0;
+	//U8 u8PhNum[20] = {0};
 
 	TRY
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyQueryVoiceMsgSelect conn NULL\n" );
 			ret = -1;
-		} else {
-			
+		} else {		
 			ResultSet_T r =Connection_executeQuery(con, NTY_DB_SELECT_VOICE_MSG, index);
-
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
 					//*id = ResultSet_getInt(r, 1);	
 					*senderId = ResultSet_getLLong(r, 2);
 					*gId = ResultSet_getLLong(r, 3);
-
-					const char *details = ResultSet_getString(r, 4);
-					int length = strlen(details);
-
+					const char *details = ResultSet_getString(r, 4);				
 					time_t nStamp = ResultSet_getTimestamp(r, 5);
 					*stamp = nStamp;
-
-					memcpy(filename, details, length);
-
-					ntylog(" ntyQueryVoiceMsgSelect --> sender:%lld, gId:%lld\n", *senderId, *gId);
-					ntylog(" ntyQueryVoiceMsgSelect --> details : %s\n", details);
-
-					ret = 0;
+					if ( details!=NULL ){
+						length = strlen( details );
+						//ntyCopyString( &filename, details, length );
+						memcpy( filename, details, length );
+					}
+					ntylog(" ntyQueryVoiceMsgSelect --> sender:%lld, gId:%lld, filename:%s\n", *senderId, *gId, filename );
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyQueryVoiceMsgSelect --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -3012,31 +3326,34 @@ int ntyQueryAuthorizeAdmin(void *self, C_DEVID devId, C_DEVID *adminId) {
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyQueryAuthorizeAdmin conn NULL\n" );
 			ret = -1;
 		} else {
-			ret = -1;
-
-			U8 sql[256] = {0};		
-			sprintf(sql, NTY_DB_SELECT_AUTHORIZE_ADMIN, devId);			
-			ntylog("%s\n", sql);
+			//U8 sql[256] = {0};		
+			//sprintf(sql, NTY_DB_SELECT_AUTHORIZE_ADMIN, devId);			
+			//ntylog("%s\n", sql);
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_AUTHORIZE_ADMIN, devId);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
 					C_DEVID r_admin = ResultSet_getLLong(r, 1);
-					*adminId = r_admin;
-					ret = 0;
+					*adminId = r_admin;			
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
 	}
+	#if 0
 	CATCH(SQLException)
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyQueryAuthorizeAdmin --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -3051,36 +3368,45 @@ int ntyQueryAdminGroupInsert(void *self, C_DEVID devId, U8 *bname, C_DEVID fromI
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
+	int ret = 0;
+	int nlength = 0;
+	int nlen = 0;
+	
 	TRY
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyQueryAdminGroupInsert conn NULL\n" );
 			ret = -1;
-		} else {
-			
+		} else {		
 			ResultSet_T r =Connection_executeQuery(con, NTY_DB_INSERT_ADMIN_GROUP, devId, bname, fromId, userCall, wimage, uimage);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
 					ret = ResultSet_getInt(r, 1);	
 					*msgId = ResultSet_getInt(r, 4);
-
-					const char *pnum = ResultSet_getString(r, 3);
-					if (pnum != NULL) {
-						memcpy(phnum, pnum, strlen(pnum));
+					const char *num = ResultSet_getString(r, 3);
+					if ( num != NULL ) {
+						nlength = strlen( num );
+						//ntyCopyString( phnum, num, nlength );
+						memcpy( phnum, num, nlength );
 					}
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyQueryAdminGroupInsert --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -3092,32 +3418,36 @@ int ntyQueryOfflineMsgCounterSelect(void *self, C_DEVID appId, U32 *counter) {
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
+	int ret = 0;
 
 	TRY
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
+			ntylog( "ntyQueryOfflineMsgCounterSelect conn NULL\n" );
 			ret = -1;
-		} else {
-			
+		} else {		
 			ResultSet_T r =Connection_executeQuery(con, NTY_DB_SELECT_OFFLINEMSG_COUNTER, appId);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
-					*counter = ResultSet_getInt(r, 1);	
-					ret = 0;
+					*counter = ResultSet_getInt(r, 1);					
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyQueryOfflineMsgCounterSelect --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -3278,14 +3608,14 @@ int ntyExecuteICCIDSelectHandle(C_DEVID did, const char *iccid, char *phonenum) 
 	return ntyQueryICCIDSelect(pool, did, iccid, phonenum);
 }
 
-int ntyExecuteICCIDSetInsertHandle(C_DEVID did, const char *iccid, char *phonenum) {
+int ntyExecuteICCIDSetUpdateHandle(C_DEVID did, const char *iccid, const char *phonenum, const char *version,  int deviceType, int simOperator) {
 	void *pool = ntyConnectionPoolInstance();
-	return ntyExecuteICCIDSetInsert(pool, did, iccid, phonenum);
+	return ntyExecuteICCIDSetUpdate(pool, did, iccid, phonenum, version, deviceType, simOperator);
 }
 
-int ntyExecuteRuntimeUpdateHandle(C_DEVID aid, C_DEVID did, int auto_conn, U8 loss_report, U8 light_panel, const char *bell, int target_step) {
+int ntyExecuteRuntimeUpdateHandle(C_DEVID aid, C_DEVID did, U16 auto_conn, U16 loss_report, U16 light_panel, const char *bell, U16 target_step, U16 model, U16 powerSaving) {
 	void *pool = ntyConnectionPoolInstance();
-	return ntyExecuteRuntimeUpdate(pool, aid, did, auto_conn, loss_report, light_panel, bell, target_step);
+	return ntyExecuteRuntimeUpdate(pool, aid, did, auto_conn, loss_report, light_panel, bell, target_step, model, powerSaving);
 }
 
 int ntyExecuteRuntimeAutoConnUpdateHandle(C_DEVID aid, C_DEVID did, int runtime_param) {
@@ -3380,9 +3710,9 @@ int ntyExecuteHeartReportInsertHandle(C_DEVID did, int heart, int *msg) {
 	return ntyExecuteHeartReportInsert(pool, did, heart, msg);
 }
 
-int ntyExecuteBloodReportInsertHandle(C_DEVID did, int blood, int *msg) {
+int ntyExecuteBloodReportInsertHandle(C_DEVID did, int bloodReport, int diastoleReport, int shrinkReport, int *msg) {
 	void *pool = ntyConnectionPoolInstance();
-	return ntyExecuteBloodReportInsert(pool, did, blood, msg);
+	return ntyExecuteBloodReportInsert(pool, did, bloodReport, diastoleReport, shrinkReport, msg);
 }
 
 
@@ -3408,8 +3738,21 @@ int ntyExecuteVoiceOfflineMsgDeleteHandle(U32 index, C_DEVID userId) {
 }
 
 int ntyQueryVoiceMsgSelectHandle(U32 index, C_DEVID *senderId, C_DEVID *gId, U8 *filename, long *stamp) {
+	int ret = 0;
+/*	
+	U8 filenameTmp[NTY_VOICE_FILENAME_LENGTH] = {0};
 	void *pool = ntyConnectionPoolInstance();
-	return ntyQueryVoiceMsgSelect(pool, index, senderId, gId, filename, stamp);
+	ret = ntyQueryVoiceMsgSelect(pool, index, senderId, gId, filenameTmp, stamp);
+	if ( filename != NULL && filenameTmp != NULL ){
+		memcpy( filename, filenameTmp, strlen(filenameTmp) );
+		ntylog( "ntyQueryVoiceMsgSelectHandle filename:%s,filenameTmp:%s,len:%d\n", filename,filenameTmp,strlen(filenameTmp) );
+	}
+*/
+	void *pool = ntyConnectionPoolInstance();
+	ret = ntyQueryVoiceMsgSelect(pool, index, senderId, gId, filename, stamp);
+	ntylog( "ntyQueryVoiceMsgSelectHandle filename:%s\n",filename );
+
+	return ret;
 }
 
 
@@ -3492,20 +3835,19 @@ int ntyExecuteClientSelectSchedule(void *self, C_DEVID aid, C_DEVID did, void *c
 	ConnectionPool *pool = self;
 	if (pool == NULL) return NTY_RESULT_BUSY;
 	Connection_T con = ConnectionPool_getConnection(pool->nPool);
-	int ret = -1;
-	U8 u8PhNum[32] = {0};
+	int ret = 0;
+	//U8 u8PhNum[32] = {0};
 
 	TRY
 	{
 		con = ntyCheckConnection(self, con);
 		if (con == NULL) {
-			ntylog("ntyExecuteClientSelectSchedule --> database connection pool is NULL\n");
+			ntylog( "ntyExecuteClientSelectSchedule conn NULL\n" );
 			ret = -1;
 		} else {
-			U8 sql[256] = {0};		
-			sprintf(sql, NTY_DB_SELECT_SCHEDULE, did);
-			ntylog("ntyExecuteClientSelectSchedule -> sql: %s\n", sql);
-
+			//U8 sql[256] = {0};		
+			//sprintf(sql, NTY_DB_SELECT_SCHEDULE, did);
+			//ntylog("ntyExecuteClientSelectSchedule -> sql: %s\n", sql);
 			ResultSet_T r = Connection_executeQuery(con, NTY_DB_SELECT_SCHEDULE, did);
 			if (r != NULL) {
 				while (ResultSet_next(r)) {
@@ -3515,7 +3857,6 @@ int ntyExecuteClientSelectSchedule(void *self, C_DEVID aid, C_DEVID did, void *c
 						break;
 					}
 					memset(objScheduleSelectItem, 0, sizeof(ScheduleSelectItem));
-
 					const char *r_id = ResultSet_getString(r, 1);
 					const char *r_daily = ResultSet_getString(r, 3);
 					const char *r_time = ResultSet_getString(r, 4);
@@ -3542,21 +3883,25 @@ int ntyExecuteClientSelectSchedule(void *self, C_DEVID aid, C_DEVID did, void *c
 						size_t len_status = strlen(r_status);
 						ntyCopyString(&objScheduleSelectItem->status, r_status, len_status);
 					}					
-
 					ntyVectorInsert(container, objScheduleSelectItem, sizeof(ScheduleSelectItem));	
 				}
+				ret = 0;
 			}	
-			ret = 0;
+			else{
+				ret = -1;
+			}
 		}
 	} 
+	#if 0
 	CATCH(SQLException) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -2;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteClientSelectSchedule --> Connection_close\n");
 		ntyConnectionClose(con);
 	}
 	END_TRY;
@@ -3573,19 +3918,18 @@ int ntyExecuteClientSelectContacts(void *self,C_DEVID aid, C_DEVID did, void *co
 	ConnectionPool *pool = self;
 	if ( pool == NULL ) return NTY_RESULT_BUSY;
 	Connection_T conn = ConnectionPool_getConnection( pool->nPool );
-	int ret = -1;
+	int ret = 0;
 
 	TRY
 	{
 		conn = ntyCheckConnection( self, conn );
 		if ( conn == NULL ) {
-			ntylog( "ntyExecuteClientSelectContacts database connection pool is NULL\n" );
+			ntylog( "ntyExecuteClientSelectContacts conn NULL\n" );
 			ret = -1;
 		} else {
-			U8 sql[256] = {0};		
-			sprintf(sql, NTY_DB_SELECT_PHONEBOOK, did);
-			ntylog("ntyExecuteClientSelectContacts -> sql: %s\n", sql);
-
+			//U8 sql[256] = {0};		
+			//sprintf(sql, NTY_DB_SELECT_PHONEBOOK, did);
+			//ntylog("ntyExecuteClientSelectContacts -> sql: %s\n", sql);
 			ResultSet_T r = Connection_executeQuery( conn, NTY_DB_SELECT_PHONEBOOK, did );
 			if ( r != NULL ) {
 				while ( ResultSet_next(r) ) {
@@ -3595,14 +3939,12 @@ int ntyExecuteClientSelectContacts(void *self,C_DEVID aid, C_DEVID did, void *co
 						break;
 					}
 					memset(objClientContactsAckItem, 0, sizeof(ClientContactsAckItem));
-
 					const char *r_Id = ResultSet_getString(r, 1);
 					const char *r_Name = ResultSet_getString(r, 3);
 					const char *r_Image = ResultSet_getString(r, 4);
 					const char *r_Tel = ResultSet_getString(r, 6);
 					const char *r_Admin = ResultSet_getString(r, 7);
 					const char *r_App = ResultSet_getString(r, 8);
-
 					if (r_Id != NULL) {
 						size_t len_id = strlen(r_Id);
 						ntyCopyString(&objClientContactsAckItem->Id, r_Id, len_id);
@@ -3613,7 +3955,12 @@ int ntyExecuteClientSelectContacts(void *self,C_DEVID aid, C_DEVID did, void *co
 					}
 					if (r_Image != NULL) {
 						size_t len_image = strlen(r_Image);
-						ntyCopyString(&objClientContactsAckItem->Image, r_Image, len_image);
+						if( len_image > 2 ){
+							const char *default_Image = "1";	//default image send to device
+							ntyCopyString(&objClientContactsAckItem->Image, default_Image, len_image);
+						}else{
+							ntyCopyString(&objClientContactsAckItem->Image, r_Image, len_image);
+						}
 					}
 					if (r_Tel != NULL) {
 						size_t len_tel = strlen(r_Tel);
@@ -3626,22 +3973,25 @@ int ntyExecuteClientSelectContacts(void *self,C_DEVID aid, C_DEVID did, void *co
 					if (r_App != NULL) {
 						size_t len_app = strlen(r_App);
 						ntyCopyString(&objClientContactsAckItem->App, r_App, len_app);
-					}
-					
+					}				
 					ntyVectorInsert(container, objClientContactsAckItem, sizeof(BindOfflineMsgToAdmin));	
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
-			ret = 0;
 		}
 	} 
+	#if 0
 	CATCH( SQLException ) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -2;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteClientSelectContacts --> Connection_close\n");
 		ntyConnectionClose(conn);
 	}
 	END_TRY;
@@ -3658,19 +4008,18 @@ int ntyExecuteClientSelectTurn(void *self,C_DEVID aid, C_DEVID did, void *contai
 	ConnectionPool *pool = self;
 	if ( pool == NULL ) return NTY_RESULT_BUSY;
 	Connection_T conn = ConnectionPool_getConnection( pool->nPool );
-	int ret = -1;
+	int ret = 0;
 	
 	TRY
 	{
 		conn = ntyCheckConnection( self, conn );
 		if ( conn == NULL ) {
-			ntylog( "ntyExecuteClientSelectTurn database connection pool is NULL\n" );
+			ntylog( "ntyExecuteClientSelectTurn conn NULL\n" );
 			ret = -1;
 		} else {
-			U8 sql[256] = {0};		
-			sprintf(sql, NTY_DB_SELECT_SETUP, did);
-			ntylog("ntyExecuteClientSelectTurn -> sql: %s\n", sql);
-			
+			//U8 sql[256] = {0};		
+			//sprintf(sql, NTY_DB_SELECT_SETUP, did);
+			//ntylog("ntyExecuteClientSelectTurn -> sql: %s\n", sql);	
 			ResultSet_T r = Connection_executeQuery( conn, NTY_DB_SELECT_SETUP, did );
 			if ( r != NULL ) {
 				while ( ResultSet_next(r) ) {
@@ -3680,11 +4029,9 @@ int ntyExecuteClientSelectTurn(void *self,C_DEVID aid, C_DEVID did, void *contai
 						break;
 					}
 					memset(objClientTurnAckItem, 0, sizeof(ClientTurnAckItem));
-
 					const char *r_Status = ResultSet_getString(r, 3);
 					const char *r_On = ResultSet_getString(r, 4);
 					const char *r_Off = ResultSet_getString(r, 5);
-
 					if (r_Status != NULL) {
 						size_t len_Status = strlen(r_Status);
 						ntyCopyString(&objClientTurnAckItem->Status, r_Status, len_Status);
@@ -3697,21 +4044,24 @@ int ntyExecuteClientSelectTurn(void *self,C_DEVID aid, C_DEVID did, void *contai
 						size_t len_Off = strlen(r_Off);
 						ntyCopyString(&objClientTurnAckItem->Off, r_Off, len_Off);
 					}
-
 					ntyVectorInsert(container, objClientTurnAckItem, sizeof(ClientTurnAckItem));	
-				}							
+				}				
+				ret = 0;
+			}else{
+				ret = -1;
 			}
-			ret = 0;
 		}
 	} 
+	#if 0
 	CATCH( SQLException ) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -2;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteClientSelectTurn --> Connection_close\n");
 		ntyConnectionClose(conn);
 	}
 	END_TRY;
@@ -3729,19 +4079,18 @@ int ntyExecuteClientSelectRunTime( void *self, C_DEVID aid, C_DEVID did, void *c
 	ConnectionPool *pool = self;
 	if ( pool == NULL ) return NTY_RESULT_BUSY;
 	Connection_T conn = ConnectionPool_getConnection( pool->nPool );
-	int ret = -1;
+	int ret = 0;
 	
 	TRY
 	{
 		conn = ntyCheckConnection( self, conn );
 		if ( conn == NULL ) {
-			ntylog( "ntyExecuteClientSelectRunTime database connection pool is NULL\n" );
+			ntylog( "ntyExecuteClientSelectRunTime conn NULL\n" );
 			ret = -1;
 		} else {
-			U8 sql[256] = {0};		
-			sprintf(sql, NTY_DB_SELECT_RUNTIME, did);
-			ntylog("ntyExecuteClientSelectRunTime -> sql: %s\n", sql);
-
+			//U8 sql[256] = {0};		
+			//sprintf(sql, NTY_DB_SELECT_RUNTIME, did);
+			//ntylog("ntyExecuteClientSelectRunTime -> sql: %s\n", sql);
 			ResultSet_T r = Connection_executeQuery( conn, NTY_DB_SELECT_RUNTIME, did );
 			if ( r != NULL ) {
 				while ( ResultSet_next(r) ) {	
@@ -3751,13 +4100,13 @@ int ntyExecuteClientSelectRunTime( void *self, C_DEVID aid, C_DEVID did, void *c
 						break;
 					}
 					memset(objClientRunTimeAckItem, 0, sizeof(ClientRunTimeAckItem));
-
 					const char *r_AutoConnection = ResultSet_getString(r, 3);
 					const char *r_LossReport = ResultSet_getString(r, 4);
 					const char *r_LightPanel = ResultSet_getString(r, 5);
 					const char *r_WatchBell = ResultSet_getString(r, 6);
 					const char *r_TagetStep = ResultSet_getString(r, 7);
-					const char *r_Model = ResultSet_getString(r, 8);
+					const char *r_PowerSaving = ResultSet_getString(r, 8);
+					const char *r_Model = ResultSet_getString(r, 9);
 
 					if (r_AutoConnection != NULL) {
 						size_t len_autoConnection = strlen(r_AutoConnection);
@@ -3779,6 +4128,11 @@ int ntyExecuteClientSelectRunTime( void *self, C_DEVID aid, C_DEVID did, void *c
 						size_t len_tagetStep = strlen(r_TagetStep);
 						ntyCopyString(&objClientRunTimeAckItem->TagetStep, r_TagetStep, len_tagetStep);
 					}
+					if (r_PowerSaving != NULL) {
+						size_t len_PowerSaving = strlen(r_Model);
+						ntyCopyString(&objClientRunTimeAckItem->PowerSaving, r_PowerSaving, len_PowerSaving);
+					}
+
 					if (r_Model != NULL) {
 						size_t len_Model = strlen(r_Model);
 						ntyCopyString(&objClientRunTimeAckItem->Model, r_Model, len_Model);
@@ -3786,18 +4140,22 @@ int ntyExecuteClientSelectRunTime( void *self, C_DEVID aid, C_DEVID did, void *c
 
 					ntyVectorInsert(container, objClientRunTimeAckItem, sizeof(ClientRunTimeAckItem));	
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
-			ret = 0;
 		}
 	} 
+	#if 0
 	CATCH( SQLException ) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -2;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteClientSelectRunTime --> Connection_close\n");
 		ntyConnectionClose(conn);
 	}
 	END_TRY;
@@ -3814,19 +4172,18 @@ int ntyExecuteClientSelectTimeTables( void *self, C_DEVID aid, C_DEVID did, void
 	ConnectionPool *pool = self;
 	if ( pool == NULL ) return NTY_RESULT_BUSY;
 	Connection_T conn = ConnectionPool_getConnection( pool->nPool );
-	int ret = -1;
+	int ret = 0;
 
 	TRY
 	{
 		conn = ntyCheckConnection( self, conn );
 		if ( conn == NULL ) {
-			ntylog( "ntyExecuteClientSelectTimeTables database connection pool is NULL\n" );
+			ntylog( "ntyExecuteClientSelectRunTime conn NULL\n" );
 			ret = -1;
 		} else {
-			U8 sql[256] = {0};		
-			sprintf(sql, NTY_DB_SELECT_TIMETABLE, did);
-			ntylog("ntyExecuteClientSelectTimeTables -> sql: %s\n", sql);
-			
+			//U8 sql[256] = {0};		
+			//sprintf(sql, NTY_DB_SELECT_TIMETABLE, did);
+			//ntylog("ntyExecuteClientSelectTimeTables -> sql: %s\n", sql);	
 			ResultSet_T r = Connection_executeQuery( conn, NTY_DB_SELECT_TIMETABLE, did );
 			if ( r != NULL ) {
 				while ( ResultSet_next(r) ) {
@@ -3836,13 +4193,11 @@ int ntyExecuteClientSelectTimeTables( void *self, C_DEVID aid, C_DEVID did, void
 						break;
 					}
 					memset(objClientTimeTablesAckItem, 0, sizeof(ClientTimeTablesAckItem));
-
 					const char *r_Morning = ResultSet_getString(r, 3);
 					const char *r_MorningTurn = ResultSet_getString(r, 4);
 					const char *r_Afternoon = ResultSet_getString(r, 5);
 					const char *r_AfternoonTurn = ResultSet_getString(r, 6);
 					const char *r_Daily = ResultSet_getString(r, 7);
-
 					if (r_Morning != NULL) {
 						size_t len_Morning = strlen(r_Morning);
 						ntyCopyString(&objClientTimeTablesAckItem->Morning, r_Morning, len_Morning);
@@ -3863,21 +4218,24 @@ int ntyExecuteClientSelectTimeTables( void *self, C_DEVID aid, C_DEVID did, void
 						size_t len_Daily = strlen(r_Daily);
 						ntyCopyString(&objClientTimeTablesAckItem->Daily, r_Daily, len_Daily);
 					}
-
 					ntyVectorInsert(container, objClientTimeTablesAckItem, sizeof(ClientTimeTablesAckItem));	
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
-			ret = 0;
 		}
-	} 
+	}
+	#if 0
 	CATCH( SQLException ) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -2;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteClientSelectTimeTables --> Connection_close\n");
 		ntyConnectionClose(conn);
 	}
 	END_TRY;
@@ -3896,19 +4254,18 @@ int ntyExecuteClientSelectLocation( void *self, C_DEVID aid, C_DEVID did, void *
 	ConnectionPool *pool = self;
 	if ( pool == NULL ) return NTY_RESULT_BUSY;
 	Connection_T conn = ConnectionPool_getConnection( pool->nPool );
-	int ret = -1;
+	int ret = 0;
 
 	TRY
 	{
 		conn = ntyCheckConnection( self, conn );
 		if ( conn == NULL ) {
-			ntylog( "ntyExecuteClientSelectLocation database connection pool is NULL\n" );
+			ntylog( "ntyExecuteClientSelectLocation conn NULL\n" );
 			ret = -1;
 		} else {
-			U8 sql[256] = {0};		
-			sprintf(sql, NTY_DB_SELECT_LOCATION, did);
-			ntylog("ntyExecuteClientSelectLocation -> sql: %s\n", sql);	
-	
+			//U8 sql[256] = {0};		
+			//sprintf(sql, NTY_DB_SELECT_LOCATION, did);
+			//ntylog("ntyExecuteClientSelectLocation -> sql: %s\n", sql);	
 			ResultSet_T r = Connection_executeQuery( conn, NTY_DB_SELECT_LOCATION, did );
 			if ( r != NULL ) {
 				while ( ResultSet_next(r) ) {
@@ -3918,11 +4275,9 @@ int ntyExecuteClientSelectLocation( void *self, C_DEVID aid, C_DEVID did, void *
 						break;
 					}
 					memset(pClientLocationAckResults, 0, sizeof(ClientLocationAckResults));
-
 					int r_Type = ResultSet_getInt(r, 3);
 					const char *r_Radius = ResultSet_getString(r, 4);
 					const char *r_Location = ResultSet_getString(r, 5);
-
 					pClientLocationAckResults->Type = r_Type;
 					if (r_Radius != NULL) {
 						size_t len_Radius = strlen(r_Radius);
@@ -3935,18 +4290,22 @@ int ntyExecuteClientSelectLocation( void *self, C_DEVID aid, C_DEVID did, void *
 
 					ntyVectorInsert(container, pClientLocationAckResults, sizeof(ClientLocationAckResults));
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
-			ret = 0;
 		}
 	} 
+	#if 0
 	CATCH( SQLException ) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -2;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteClientSelectLocation --> Connection_close\n");
 		ntyConnectionClose(conn);
 	}
 	END_TRY;
@@ -3964,18 +4323,18 @@ int ntyExecuteClientSelectEfence( void *self, C_DEVID aid, C_DEVID did, void *co
 	ConnectionPool *pool = self;
 	if ( pool == NULL ) return NTY_RESULT_BUSY;
 	Connection_T conn = ConnectionPool_getConnection( pool->nPool );
-	int ret = -1;
+	int ret = 0;
 	
 	TRY
 	{
 		conn = ntyCheckConnection( self, conn );
 		if ( conn == NULL ) {
-			ntylog( "ntyExecuteClientSelectEfence database connection pool is NULL\n" );
+			ntylog( "ntyExecuteClientSelectEfence conn NULL\n" );
 			ret = -1;
 		} else {
-			U8 sql[256] = {0};		
-			sprintf(sql, NTY_DB_SELECT_EFENCE, did);
-			ntylog("ntyExecuteClientSelectEfence -> sql: %s\n", sql);
+			//U8 sql[256] = {0};		
+			//sprintf(sql, NTY_DB_SELECT_EFENCE, did);
+			//ntylog("ntyExecuteClientSelectEfence -> sql: %s\n", sql);
 			
 			ResultSet_T r = Connection_executeQuery( conn, NTY_DB_SELECT_EFENCE, did );
 			if ( r != NULL ) {
@@ -3985,12 +4344,10 @@ int ntyExecuteClientSelectEfence( void *self, C_DEVID aid, C_DEVID did, void *co
 						ntylog(" %s --> malloc objClientEfenceListItem error. \n", __func__);
 						break;
 					}
-					memset(objClientEfenceListItem, 0, sizeof(ClientEfenceListItem));
-					
+					memset(objClientEfenceListItem, 0, sizeof(ClientEfenceListItem));		
 					const char *r_Index = ResultSet_getString(r, 3);
 					const char *r_Num = ResultSet_getString(r, 4);
 					const char *r_Points = ResultSet_getString(r, 5);
-
 					if (r_Index != NULL) {
 						size_t len_Index = strlen(r_Index);
 						ntyCopyString(&objClientEfenceListItem->index, r_Index, len_Index);
@@ -4006,18 +4363,22 @@ int ntyExecuteClientSelectEfence( void *self, C_DEVID aid, C_DEVID did, void *co
 
 					ntyVectorInsert(container, objClientEfenceListItem, sizeof(ClientEfenceListItem));
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
-			ret = 0;
 		}
 	} 
+	#if 0
 	CATCH( SQLException ) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -2;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteClientSelectEfence --> Connection_close\n");
 		ntyConnectionClose(conn);
 	}
 	END_TRY;
@@ -4034,37 +4395,40 @@ int ntyExecuteClientSelectThreshold( void *self, C_DEVID did, int type, int *min
 	ConnectionPool *pool = self;
 	if ( pool == NULL ) return NTY_RESULT_BUSY;
 	Connection_T conn = ConnectionPool_getConnection( pool->nPool );
-	int ret = -1;
+	int ret = 0;
 	
 	TRY
 	{
 		conn = ntyCheckConnection( self, conn );
 		if ( conn == NULL ) {
-			ntylog( "ntyExecuteClientSelectThreshold database connection pool is NULL\n" );
+			ntylog( "ntyExecuteClientSelectThreshold conn NULL\n" );
 			ret = -1;
 		} else {
-			U8 sql[256] = {0};		
-			sprintf(sql, NTY_DB_SELECT_THRESHOLD, did, type);
-			ntylog("ntyExecuteClientSelectThreshold -> sql: %s\n", sql);
-			
+			//U8 sql[256] = {0};		
+			//sprintf(sql, NTY_DB_SELECT_THRESHOLD, did, type);
+			//ntylog("ntyExecuteClientSelectThreshold -> sql: %s\n", sql);	
 			ResultSet_T r = Connection_executeQuery( conn, NTY_DB_SELECT_THRESHOLD, did, type );
 			if ( r != NULL ) {
 				while ( ResultSet_next(r) ) {
 					*minValue = ResultSet_getInt(r, 2);
 					*maxValue = ResultSet_getInt(r, 3);
 				}
+				ret = 0;
+			}else{
+				ret = -1;
 			}
-			ret = 0;
 		}
 	} 
+	#if 0
 	CATCH( SQLException ) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -2;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog(" %s --> Connection_close\n", __func__);
+		ntylog("ntyExecuteClientSelectThreshold --> Connection_close\n");
 		ntyConnectionClose(conn);
 	}
 	END_TRY;
@@ -4073,6 +4437,167 @@ int ntyExecuteClientSelectThreshold( void *self, C_DEVID did, int type, int *min
 
 }
 
+int ntyExecuteClientSelectServiceHandle(C_DEVID aid, C_DEVID did, char *customerNum, char *doctorNum, char *alarmFreq, char *alarmTime)
+{
+	int ret = 0;
+/*	
+	U8 cNum[32] = {0};
+	U8 dNum[32] = {0};
+	U8 alarmFq[32] = {0};
+	U8 alarmTm[32] = {0};
+	void *pool = ntyConnectionPoolInstance();
+	ret = ntyExecuteClientSelectService( pool, aid, did, cNum, dNum, alarmFreq, alarmTime );
+	ntylog("ntyExecuteClientSelectServiceHandle cNum:%s,dNum:%s\n",cNum,dNum);
+	if ( customerNum != NULL && cNum != NULL ){
+		memcpy( customerNum, cNum, strlen(cNum) );
+		ntylog("ntyExecuteClientSelectServiceHandle cNum:%s,copyNum:%s\n",cNum,customerNum);
+	}
+	if ( doctorNum != NULL && dNum != NULL ){
+		memcpy( doctorNum, dNum, strlen(dNum) );
+	}
+	if ( alarmFreq != NULL && alarmFq != NULL ){
+		memcpy( alarmFreq, alarmFq, strlen(alarmFq) );
+	}
+	if ( alarmTime != NULL && alarmTm != NULL ){
+		memcpy( alarmTime, alarmTm, strlen(alarmTm) );
+	}
+*/
+	void *pool = ntyConnectionPoolInstance();
+	ret = ntyExecuteClientSelectService( pool, aid, did, customerNum, doctorNum, alarmFreq, alarmTime );
+
+	return ret;
+}
+int ntyExecuteClientSelectService( void *self, C_DEVID aid, C_DEVID did, char *customerNum, char *doctorNum, char *alarmFreq, char *alarmTime )
+{
+	ConnectionPool *pool = self;
+	if ( pool == NULL ) return NTY_RESULT_BUSY;
+	Connection_T conn = ConnectionPool_getConnection( pool->nPool );
+	int ret = 0;
+	
+	TRY
+	{
+		conn = ntyCheckConnection( self, conn );
+		if ( conn == NULL ) {
+			ntylog( "ntyExecuteClientSelectService conn NULL\n" );
+			ret = -1;
+		} else {	
+			ResultSet_T r = Connection_executeQuery( conn, NTY_DB_SELECT_SERVICE, aid );
+			if ( r != NULL ) {
+				while ( ResultSet_next(r) ) {
+					const char *customerNumTmp = ResultSet_getString(r, 1);
+					const char *doctorNumTmp = ResultSet_getString(r, 2);
+					const char *alarmFreqTmp = ResultSet_getString(r, 3);
+					const char *alarmTimeTmp = ResultSet_getString(r, 4);
+					if ( customerNumTmp != NULL ){
+						ntylog( "ntyExecuteClientSelectService customerNumTmp:%s\n",customerNumTmp );
+						//ntyCopyString( &customerNum, customerNumTmp, strlen(customerNumTmp) );
+						memcpy(customerNum, customerNumTmp, strlen(customerNumTmp));
+						ntylog( "ntyExecuteClientSelectService customerNum:%s\n",customerNum );
+					}
+					if ( doctorNumTmp != NULL ){
+						//ntyCopyString( &doctorNum, doctorNumTmp, strlen(doctorNumTmp) );
+						memcpy(doctorNum, doctorNumTmp, strlen(doctorNumTmp));
+					}
+					if ( alarmFreqTmp != NULL ){
+						//ntyCopyString( &alarmFreq, alarmFreqTmp, strlen(alarmFreqTmp) );
+						memcpy(alarmFreq, alarmFreqTmp, strlen(alarmFreqTmp));
+					}
+					if ( alarmTimeTmp != NULL ){
+						//ntyCopyString( &alarmTime, alarmTimeTmp, strlen(alarmTimeTmp) );
+						memcpy(alarmTime, alarmTimeTmp, strlen(alarmTimeTmp));
+					}
+
+				}
+				ret = 0;
+			}else{
+				ret = -1;
+			}
+		}
+	} 
+	#if 0
+	CATCH( SQLException ) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -2;
+	}
+	FINALLY
+	#endif
+	{
+		ntylog("ntyExecuteClientSelectService --> Connection_close\n");
+		ntyConnectionClose(conn);
+	}
+	END_TRY;
+
+	return ret;	
+}
+
+int ntyExecuteClientSelectInitHandle(C_DEVID aid, C_DEVID did, char *initFlag)
+{
+	int ret = 0;
+/*	
+	U8 flag[16] = {0};	
+	void *pool = ntyConnectionPoolInstance();
+	ret = ntyExecuteClientSelectInit( pool, aid, did, flag );
+	if ( initFlag != NULL && flag != NULL ){
+		memcpy( initFlag, flag, strlen(flag) );
+		ntylog("ntyExecuteClientSelectInitHandle flag:%s,initFlag:%s\n",flag,initFlag);
+	}	
+*/
+	void *pool = ntyConnectionPoolInstance();
+	ret = ntyExecuteClientSelectInit( pool, aid, did, initFlag );
+
+	return ret;
+}
+int ntyExecuteClientSelectInit(void *self, C_DEVID aid, C_DEVID did, char *initFlag)
+{
+	ConnectionPool *pool = self;
+	if ( pool == NULL ) return NTY_RESULT_BUSY;
+	Connection_T conn = ConnectionPool_getConnection( pool->nPool );
+	int ret = 0;
+	
+	TRY
+	{
+		conn = ntyCheckConnection( self, conn );
+		if ( conn == NULL ) {
+			ntylog( "ntyExecuteClientSelectInit conn NULL\n" );
+			ret = -1;
+		} else {	
+			ResultSet_T r = Connection_executeQuery( conn, NTY_DB_SELECT_INIT, did );
+			if ( r != NULL ) {
+				while ( ResultSet_next(r) ) {
+					const char *initFlagTmp = ResultSet_getString(r, 1);
+					if ( initFlagTmp != NULL ){
+						ntylog( "ntyExecuteClientSelectInit initFlagTmp:%s\n",initFlagTmp );
+						//ntyCopyString( &initFlag, initFlagTmp, strlen(initFlagTmp) );
+						memcpy(initFlag, initFlagTmp, strlen(initFlagTmp));
+						ntylog( "ntyExecuteClientSelectInit initFlag:%s\n",initFlag );
+					}else{
+						ntylog( "ntyExecuteClientSelectInit initFlagTmp==NULL define 0\n" );
+						memcpy( initFlag, "0", 1 );
+					}
+				}
+				ret = 0;
+			}else{
+				ret = -1;
+			}
+		}
+	} 
+	#if 0
+	CATCH( SQLException ) 
+	{
+		ntylog(" SQLException --> %s\n", Exception_frame.message);
+		ret = -2;
+	}
+	FINALLY
+	#endif
+	{
+		ntylog("ntyExecuteClientSelectInit --> Connection_close\n");
+		ntyConnectionClose(conn);
+	}
+	END_TRY;
+
+	return ret;	
+}
 
 int ntyExecuteResetHandle( C_DEVID aid, C_DEVID did ){
 	void *pool = ntyConnectionPoolInstance();
@@ -4090,21 +4615,30 @@ int ntyExecuteReset( void *self, C_DEVID aid, C_DEVID did ){
 	{
 		conn = ntyCheckConnection( self, conn );
 		if ( conn == NULL ) {
+			ntylog( "ntyExecuteReset conn NULL\n" );
 			ret = -1;
 		} else {	
-			ntylog(" ntyExecuteReset --> before Connection_execute:CALL PROC_UPDATE_DEVICE_RESET(lld)\n ");
-			Connection_executeQuery( conn, NTY_DB_UPDATE_DEVICE_RESET, did );
-			ntylog(" ntyExecuteReset --> after Connection_execute:CALL PROC_UPDATE_DEVICE_RESET(lld)\n ");
+			//ntylog(" ntyExecuteReset --> before Connection_execute:CALL PROC_UPDATE_DEVICE_RESET(lld)\n ");
+			//Connection_executeQuery( conn, NTY_DB_UPDATE_DEVICE_RESET, did );
+			ResultSet_T r = Connection_executeQuery( conn, NTY_DB_UPDATE_DEVICE_RESET, did );
+			//ntylog(" ntyExecuteReset --> after Connection_execute:CALL PROC_UPDATE_DEVICE_RESET(lld)\n ");
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
-	} 
+	}
+	#if 0
 	CATCH( SQLException ) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog( " %s --> Connection_close\n", __func__ );
+		ntylog( "ntyExecuteReset --> Connection_close\n");
 		ntyConnectionClose( conn );
 	}
 	END_TRY;
@@ -4126,21 +4660,30 @@ int ntyExecuteRestore( void *self, C_DEVID aid, C_DEVID did ){
 	{
 		conn = ntyCheckConnection( self, conn );
 		if ( conn == NULL ) {
+			ntylog( "ntyExecuteRestore conn NULL\n" );
 			ret = -1;
 		} else {	
-			ntylog( "ntyExecuteRestore --> before Connection_execute:CALL PROC_UPDATE_DEVICE_CLEAR(%lld)\n ",did );
-			Connection_executeQuery( conn, NTY_DB_UPDATE_DEVICE_CLEAR, did );
-			ntylog( "ntyExecuteRestore --> after Connection_execute:CALL PROC_UPDATE_DEVICE_CLEAR(%lld)\n ",did );
+			//ntylog( "ntyExecuteRestore --> before Connection_execute:CALL PROC_UPDATE_DEVICE_CLEAR(%lld)\n ",did );
+			//Connection_executeQuery( conn, NTY_DB_UPDATE_DEVICE_CLEAR, did );
+			ResultSet_T r = Connection_executeQuery( conn, NTY_DB_UPDATE_DEVICE_CLEAR, did );
+			//ntylog( "ntyExecuteRestore --> after Connection_execute:CALL PROC_UPDATE_DEVICE_CLEAR(%lld)\n ",did );
+			if( r != NULL ){
+				ret = 0;
+			}else{
+				ret = -1;
+			}
 		}
 	} 
+	#if 0
 	CATCH( SQLException ) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		ret = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog( " %s --> Connection_close\n", __func__ );
+		ntylog( "ntyExecuteRestore --> Connection_close\n");
 		ntyConnectionClose( conn );
 	}
 	END_TRY;
@@ -4174,30 +4717,34 @@ int ntyExecuteLocatorBindInsert( void *self, C_DEVID appId, C_DEVID devId, Locat
 	{
 		conn = ntyCheckConnection( self, conn );
 		if ( conn == NULL ){
+			ntylog( "ntyExecuteLocatorBindInsert conn NULL\n" );
 			nRet = -1;
 		}else{
-			ntylog( "ntyExecuteLocatorBindInsert --> before Connection_execute:CALL PROC_INSERT_GROUP_LOCATOR\n" );
-			ResultSet_T r = Connection_executeQuery( conn, NTY_DB_INSERT_GROUP_LOCATOR,devId,appId,pLocatorBindReq->Name,pLocatorBindReq->PicURL,pLocatorBindReq->Type );
+			//ntylog( "ntyExecuteLocatorBindInsert --> before Connection_execute:CALL PROC_INSERT_GROUP_LOCATOR\n" );
+			ResultSet_T r = Connection_executeQuery( conn, NTY_DB_INSERT_GROUP_LOCATOR,devId,appId,pLocatorBindReq->Name,pLocatorBindReq->PicURL,pLocatorBindReq->NickName );
 			if ( r != NULL ){
 				while( ResultSet_next(r) ){
 					const char *r_result = ResultSet_getString(r, 1);
 					if ( r_result != NULL ){
 						nRet = atoi( r_result ); //CALL PROC_INSERT_GROUP_LOCATOR return 1,2,3,4,5, and 5 is ok
 					}
-				}			
-			}	
-			ntylog( "ntyExecuteLocatorBindInsert --> after Connection_execute:CALL PROC_INSERT_GROUP_LOCATOR nRet=%d\n",nRet );
-		}
-		
+				}
+			} else{
+				nRet = -1;
+			}
+			//ntylog( "ntyExecuteLocatorBindInsert --> after Connection_execute:CALL PROC_INSERT_GROUP_LOCATOR nRet=%d\n",nRet );		
+		}		
 	}
+	#if 0
 	CATCH( SQLException ) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		nRet = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog( " %s --> Connection_close\n", __func__ );
+		ntylog( "ntyExecuteLocatorBindInsert --> Connection_close\n");
 		ntyConnectionClose( conn );
 	}
 	END_TRY;
@@ -4231,9 +4778,10 @@ int ntyExecuteLocatorUnBindDelete( void *self, C_DEVID appId, C_DEVID devId ){
 	{
 		conn = ntyCheckConnection( self, conn );
 		if ( conn == NULL ){
+			ntylog( "ntyExecuteLocatorUnBindDelete conn NULL\n" );
 			nRet = -1;
 		}else{
-			ntylog( "ntyExecuteLocatorUnBindDelete --> before Connection_execute:CALL PROC_DELETE_GROUP_LOCATOR\n" );
+			//ntylog( "ntyExecuteLocatorUnBindDelete --> before Connection_execute:CALL PROC_DELETE_GROUP_LOCATOR\n" );
 			ResultSet_T r = Connection_executeQuery( conn, NTY_DB_DELETE_GROUP_LOCATOR,devId,appId );
 			if ( r != NULL ){
 				while( ResultSet_next(r) ){
@@ -4242,18 +4790,22 @@ int ntyExecuteLocatorUnBindDelete( void *self, C_DEVID appId, C_DEVID devId ){
 						nRet = atoi( r_result );  //CALL PROC_DELETE_GROUP_LOCATOR return 0
 					}
 				}			
-			}	
-			ntylog( "ntyExecuteLocatorUnBindDelete --> after Connection_execute:CALL PROC_DELETE_GROUP_LOCATOR nRet=%d\n",nRet );
+			}else{
+				nRet = -1;
+			}
+			//ntylog( "ntyExecuteLocatorUnBindDelete --> after Connection_execute:CALL PROC_DELETE_GROUP_LOCATOR nRet=%d\n",nRet );
 		}	
 	}
+	#if 0
 	CATCH( SQLException ) 
 	{
 		ntylog(" SQLException --> %s\n", Exception_frame.message);
 		nRet = -1;
 	}
 	FINALLY
+	#endif
 	{
-		ntylog( " %s --> Connection_close\n", __func__ );
+		ntylog( "ntyExecuteLocatorUnBindDelete --> Connection_close\n");
 		ntyConnectionClose( conn );
 	}
 	END_TRY;

@@ -431,7 +431,7 @@ int ntyDelClientHeap(C_DEVID clientId) {
 
 		ret = ntyBHeapDelete(heap, clientId);
 		if (ret == NTY_RESULT_FAILED) {
-			ASSERT(0);
+			ntylog("ntyDelClientHeap Delete Error\n");
 		} else if (ret == NTY_RESULT_NOEXIST) {
 			ntylog("ntyDelClientHeap Delete Error\n");
 		}
@@ -486,7 +486,6 @@ int ntyClientCleanup(ClientSocket *client) { //
 
 int ntyOfflineClientHeap(C_DEVID clientId) {
 	BPTreeHeap *heap = ntyBHeapInstance();
-	//ASSERT(heap != NULL);
 	NRecord *record = ntyBHeapSelect(heap, clientId);
 
 	if (record == NULL) {
@@ -522,7 +521,6 @@ int ntyOfflineClientHeap(C_DEVID clientId) {
 
 int ntyOnlineClientHeap(C_DEVID clientId) {
 	BPTreeHeap *heap = ntyBHeapInstance();
-	//ASSERT(heap != NULL);
 	NRecord *record = ntyBHeapSelect(heap, clientId);
 
 	if (record == NULL) {
@@ -552,7 +550,6 @@ int ntyOnlineClientHeap(C_DEVID clientId) {
 
 int ntyLogoutOfflineClientHeap(C_DEVID clientId) {
 	BPTreeHeap *heap = ntyBHeapInstance();
-	//ASSERT(heap != NULL);
 	NRecord *record = ntyBHeapSelect(heap, clientId);
 
 	if (record == NULL) {
@@ -699,7 +696,6 @@ void ntyLoginPacketHandleRequest(const void *_self, unsigned char *buffer, int l
 #endif
 			}
 		} else {	
-//			ASSERT(0);
 			ntylog(" BHeap in the Processs\n");
 			if (ret == NTY_RESULT_BUSY) {
 				ntyJsonCommonResult(client->devId, NATTY_RESULT_CODE_BUSY);
@@ -731,8 +727,7 @@ static const ProtocolFilter ntyLoginFilter = {
 /*
  * HeartBeatPacket
  */
-void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {
-	
+void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, int length, const void* obj) {	
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_HEARTBEAT_REQ) {
 		ntylog("====================begin ntyHeartBeatPacketHandleRequest action ==========================\n");
 		const MessagePacket *msg = (const MessagePacket*)obj;
@@ -748,22 +743,22 @@ void ntyHeartBeatPacketHandleRequest(const void *_self, unsigned char *buffer, i
 		memcpy(pMsg, msg, sizeof(MessagePacket));
 		
 		ntyAddRelationMap(pMsg);
-		free(pMsg);
+		ntyFree(pMsg);
 		
-
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_HEARTBEAT_REQ_DEVID_IDX);
 #if 1
 		int ret = NTY_RESULT_SUCCESS;
-
 		Client *pClient = ntyAddClientHeap(client, &ret);
 		if (pClient == NULL) {
-			ntylog(" ntyHeartBeatPacketHandleRequest --> Error\n");
+			ntylog(" ntyHeartBeatPacketHandleRequest --> Error return\n");
+			return;
 		}
 #else
 		ntyOnlineClientHeap(client->devId);
 #endif
-		ntySendHeartBeatResult(fromId);
-		
+		//if ( pClient->deviceType != NTY_PROTO_CLIENT_WATCH ){	//add by Rain 2017-10-31,do not reply all the clients.
+		//	ntySendHeartBeatResult(fromId);	
+		//}
 		ntylog("====================end ntyHeartBeatPacketHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
@@ -946,7 +941,7 @@ void ntyVoiceReqPacketHandleRequest(const void *_self, unsigned char *buffer, in
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_VOICE_REQ_DEVID_IDX);
 		U32 msgId = *(U32*)(buffer+NTY_PROTO_VOICE_REQ_MSGID_IDX);
 
-		ntylog(" ntyVoiceReqPacketHandleRequest --> %lld, msgId:%d\n", fromId, msgId);
+		ntylog(" ntyVoiceReqPacketHandleRequest -->fromId:%lld,msgId:%d\n", fromId, msgId);
 #if 0
 		ntyVoiceReqAction(fromId, msgId);
 #else
@@ -993,7 +988,7 @@ void ntyVoiceAckPacketHandleRequest(const void *_self, unsigned char *buffer, in
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_VOICE_ACK_DEVID_IDX);
 		U32 msgId = *(U32*)(buffer+NTY_PROTO_VOICE_ACK_MSGID_IDX);
 
-		ntylog(" ntyVoiceAckPacketHandleRequest --> %lld, msgId:%d\n", fromId, msgId);
+		ntylog(" ntyVoiceAckPacketHandleRequest -->fromId:%lld,msgId:%d\n", fromId, msgId);
 
 		ntyVoiceAckAction(fromId, msgId);
 		ntylog("====================end ntyVoiceAckPacketHandleRequest action ==========================\n");
@@ -1039,7 +1034,7 @@ void ntyCommonReqPacketHandleRequest(const void *_self, unsigned char *buffer, i
 		memset(jsonstring, 0, jsonlen+1);
 		memcpy(jsonstring, buffer+NTY_PROTO_COMMON_REQ_JSON_CONTENT_IDX, jsonlen);
 
-		ntylog("ntyCommonReqPacketHandleRequest --> fromId:%lld, toId:%lld, json : %s  %d\n", fromId, toId, jsonstring, jsonlen);
+		ntylog("ntyCommonReqPacketHandleRequest --> fromId:%lld,toId:%lld,json:%s,len:%d\n", fromId, toId, jsonstring, jsonlen);
 
 
 		VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
@@ -1182,7 +1177,7 @@ void ntyVoiceDataReqPacketHandleRequest(const void *_self, unsigned char *buffer
 		U16 Count = *(U16*)(&buffer[NTY_PROTO_VOICE_DATA_REQ_PKTTOTLE_IDX]);
 		U32 pktLength = *(U32*)(buffer+NTY_PROTO_VOICE_DATA_REQ_PKTLENGTH_IDX);
 
-		ntylog(" Count:%d, index:%d, pktLength:%d, length:%d, pktLength%d\n", 
+		ntylog("ntyVoiceDataReqPacketHandleRequest Count:%d, index:%d, pktLength:%d, length:%d, pktLength%d\n", 
 			Count, index, pktLength, length, NTY_PROTO_VOICE_DATA_REQ_PKTLENGTH_IDX);
 
 		void *heap = ntyBHeapInstance();
@@ -1218,11 +1213,11 @@ void ntyVoiceDataReqPacketHandleRequest(const void *_self, unsigned char *buffer
 			sprintf(filename, NTY_VOICE_FILENAME_FORMAT, gId, fromId, stamp);
 
 			U32 dataLength = NTY_VOICEREQ_DATA_LENGTH*(Count-1) + pktLength;
-			ntylog(" Voice FileName : %s, %d\n", filename, dataLength);
+			ntylog("ntyVoiceDataReqPacketHandleRequest Voice FileName:%s,len:%d,gId:%lld,fromId:%lld\n", filename, dataLength, gId, fromId );
 			ntyWriteDat(filename, pClient->rBuffer, dataLength);
 
 			//release rBuffer
-			free(pClient->rBuffer);
+			ntyFree(pClient->rBuffer);
 			pClient->rBuffer = NULL;
 
 /* enter to SrvAction
@@ -1232,9 +1227,7 @@ void ntyVoiceDataReqPacketHandleRequest(const void *_self, unsigned char *buffer
  * 2. prepare to offline voice data
  * 
  */			
-
  			ntyVoiceDataReqAction(fromId, gId, filename);
-
 
 		}
 
@@ -1313,9 +1306,8 @@ void ntyOfflineMsgReqPacketHandleRequest(const void *_self, unsigned char *buffe
 		const MessagePacket *msg = (const MessagePacket*)obj;
 		if (msg == NULL) return ;
 		const Client *client = msg->client;
-
 		C_DEVID fromId = *(C_DEVID*)(buffer+NTY_PROTO_OFFLINE_MSG_REQ_DEVICEID_IDX);
-		ntylog("ntyOfflineMsgReqPacketHandleRequest --> fromId : %lld\n", fromId);
+		ntylog("ntyOfflineMsgReqPacketHandleRequest --> fromId:%lld\n", fromId);
 
 		VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
 		if (tag == NULL) return ;
@@ -1324,7 +1316,6 @@ void ntyOfflineMsgReqPacketHandleRequest(const void *_self, unsigned char *buffe
 		tag->fromId = fromId;
 		tag->Type = MSG_TYPE_OFFLINE_MSG_REQ_HANDLE;
 		tag->cb = ntyOfflineMsgReqHandle;
-
 		ntyDaveMqPushMessage(tag);
 		
 		ntylog("====================end ntyOfflineMsgReqPacketHandleRequest action ==========================\n");
@@ -1419,27 +1410,26 @@ void ntyUnBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer
 			NRecord *record = ntyBHeapSelect(heap, AppId);
 			if (record != NULL) {
 				Client *aclient = (Client *)record->value;
-				ASSERT(aclient != NULL);
-
-				ntylog("ntyUnBindDevicePacketHandleRequest -> record != NULL AppId\n");
-
+				if ( aclient == NULL ){
+					ntylog("ntyUnBindDevicePacketHandleRequest ->aclient==NULL\n");
+					return ;
+				}
+				ntylog("ntyUnBindDevicePacketHandleRequest -> record!=NULL AppId\n");
 				retTemp = ntyVectorDelete(aclient->friends, &DeviceId);
-
 				ntylog("ntyVectorDelete AppId:%lld ret : %d\n", AppId, retTemp);
 			}
 
 			record = ntyBHeapSelect(heap, DeviceId);
 			if (record != NULL) {
 				Client *dclient = (Client *)record->value;
-				ASSERT(dclient != NULL);
-				ntylog("ntyUnBindDevicePacketHandleRequest -> record != NULL DeviceId\n");
-				
+				if ( dclient == NULL ){
+					ntylog("ntyUnBindDevicePacketHandleRequest ->aclient==NULL\n");
+					return ;
+				}
+				ntylog("ntyUnBindDevicePacketHandleRequest -> record!=NULL DeviceId\n");	
 				retTemp = ntyVectorDelete(dclient->friends, &AppId);
-
 				ntylog("ntyVectorDelete DeviceId:%lld ret : %d\n", DeviceId, retTemp);
 			}
-
-
 			DeviceDelContactsAck *pDeviceDelContactsAck = malloc(sizeof(DeviceDelContactsAck));
 			if (pDeviceDelContactsAck == NULL) { 
 				return;
@@ -1461,14 +1451,16 @@ void ntyUnBindDevicePacketHandleRequest(const void *_self, unsigned char *buffer
 			pDeviceDelContactsAck->id = contactsId;
 
 			char *jsonresult = ntyJsonWriteDeviceDelContacts(pDeviceDelContactsAck);
-			ntylog(" ntyUnBindDevicePacketHandleRequest json unbind: %s\n", jsonresult);
-			retTemp = ntySendRecodeJsonPacket(AppId, DeviceId, jsonresult, (int)strlen(jsonresult));
+			ntylog(" ntyUnBindDevicePacketHandleRequest json:%s\n", jsonresult);
+			if ( jsonresult != NULL ){
+				retTemp = ntySendRecodeJsonPacket(AppId, DeviceId, jsonresult, (int)strlen(jsonresult));
+			}
 			if (retTemp < 0) {
 				ntylog(" ntyUnBindDevicePacketHandleRequest --> SendCommonReq Exception\n");
 			}
 
 			ntyJsonFree(jsonresult);
-			free(pDeviceDelContactsAck);
+			ntyFree(pDeviceDelContactsAck);
 #endif		
 			ret = NTY_RESULT_SUCCESS;
 		}
@@ -1510,11 +1502,12 @@ void ntyBindConfirmReqPacketHandleRequest(const void *_self, unsigned char *buff
 
 		U32 msgId = *(U32*)(buffer+NTY_PROTO_BIND_CONFIRM_REQ_MSGID_IDX);
 		U8 *jsonstring = buffer+NTY_PROTO_BIND_CONFIRM_REQ_JSON_CONTENT_IDX;
+		//U8 *jsonstring = buffer+NTY_PROTO_BIND_CONFIRM_REQ_JSON_CONTENT_IDX-2;
 		U16 jsonLen = *(U16*)(buffer+NTY_PROTO_BIND_CONFIRM_REQ_JSON_LENGTH_IDX);
 
-		ntylog("ntyBindConfirmReqPacketHandleRequest --> json : %s  %d\n", jsonstring, jsonLen);
+		ntylog("ntyBindConfirmReqPacketHandleRequest --> json:%s,len:%d\n", jsonstring, jsonLen);
 
-		JSON_Value *json = ntyMallocJsonValue(jsonstring);
+		JSON_Value *json = ntyMallocJsonValue( jsonstring );
 		if (json == NULL) { //JSON Error and send Code to FromId Device
 			ntyJsonCommonResult(fromId, NATTY_RESULT_CODE_ERR_JSON_FORMAT);
 		} else {
@@ -1523,36 +1516,37 @@ void ntyBindConfirmReqPacketHandleRequest(const void *_self, unsigned char *buff
 				ntylog(" %s --> malloc failed BindConfirmReq. \n", __func__);
 				return ;
 			}
-			memset(pBindConfirmReq, 0, sizeof(BindConfirmReq));
-			ntyJsonBindConfirmReq(json, pBindConfirmReq);
+			memset( pBindConfirmReq, 0, sizeof(BindConfirmReq) );
+			ntyJsonBindConfirmReq( json, pBindConfirmReq );
 
-			if (strcmp(pBindConfirmReq->category, NATTY_USER_PROTOCOL_BINDCONFIRMREQ) == 0) {
+			if ( strcmp(pBindConfirmReq->category, NATTY_USER_PROTOCOL_BINDCONFIRMREQ) == 0 ) {
 				VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
 				if (tag == NULL) {
-					free(pBindConfirmReq);
+					ntyFree( pBindConfirmReq );
 					return ;
 				}
-				memset(tag, 0, sizeof(VALUE_TYPE));
+				memset( tag, 0, sizeof(VALUE_TYPE) );
 				
 				tag->fromId = fromId;
 				tag->toId = AppId;
-				tag->gId = DeviceId;
-				tag->cb = ntyBindConfirmReqHandle;
+				tag->gId = DeviceId;			
 				tag->arg = msgId;
 				tag->Type = MSG_TYPE_BIND_CONFIRM_REQ_HANDLE;
+				tag->cb = ntyBindConfirmReqHandle;
 				
 				if (strcmp(pBindConfirmReq->answer, NATTY_USER_PROTOCOL_AGREE) == 0) {
 					tag->u8LocationType = 1;
 				} else if (strcmp(pBindConfirmReq->answer, NATTY_USER_PROTOCOL_REJECT) == 0) {
 					tag->u8LocationType = 0;
 				} else {
-					ntylog("Can't find answer with: %s\n", pBindConfirmReq->answer);
+					ntylog("ntyBindConfirmReqPacketHandleRequest Can't find answer with: %s\n", pBindConfirmReq->answer);
 				}
 				
-				ntydbg("tag->answer:%s  \n", pBindConfirmReq->answer);
-				ntydbg("tag->u8LocationType:%d  \n", tag->u8LocationType);
-				ntyDaveMqPushMessage(tag);
-				free(pBindConfirmReq);
+				ntylog("ntyBindConfirmReqPacketHandleRequest tag->answer:%s\n", pBindConfirmReq->answer);
+				ntylog("ntyBindConfirmReqPacketHandleRequest tag->u8LocationType:%d\n", tag->u8LocationType);
+				
+				ntyDaveMqPushMessage( tag );
+				ntyFree( pBindConfirmReq );
 			
 			}
 
@@ -1768,8 +1762,9 @@ void ntyBindDevicePacketHandleVersionBRequest(const void *_self, unsigned char *
 		if( (nRet=strcmp(ptrLocatorBindReq->Category,NATTY_USER_PROTOCOL_BINGREQ)) == 0 ){
 			nRet = ntyLocatorBindReqAction( clientActionParamVal, ptrLocatorBindReq );
 			ntylog( "*********nRet=ntyLocatorBindReqAction():nRet=%d\n",nRet );
-			if ( nRet <= 0 ){	//error
-				nRet = NTY_BIND_ACK_ERROR;
+			if ( nRet == -1 ){	//error
+				//nRet = NTY_BIND_ACK_ERROR;
+				nRet = NTY_BIND_ACK_REJECT;
 			}
 			ntyProtoBindAck( fromId, toId, nRet );
 		}		
@@ -2112,7 +2107,7 @@ void ntyUserDataPacketReqHandleRequest(const void *_self, unsigned char *buffer,
 	const UdpClient *client = obj;
 	if (buffer[NTY_PROTO_MSGTYPE_IDX] == NTY_PROTO_DATAPACKET_REQ) {
 		ntylog("====================begin ntyUserDataPacketReqHandleRequest action ==========================\n");
-
+#if 1
 		const MessagePacket *msg = (const MessagePacket*)obj;
 		if (msg == NULL) return ;
 		const Client *client = msg->client;
@@ -2127,7 +2122,7 @@ void ntyUserDataPacketReqHandleRequest(const void *_self, unsigned char *buffer,
 		memset(jsonstring, 0, jsonLength+1);
 		memcpy(jsonstring, buffer+NTY_PROTO_USERDATA_PACKET_REQ_JSON_CONTENT_IDX, jsonLength);
 	
-		ntylog("ntyUserDataPacketReqHandleRequest --> fromId:%lld, json:%s   %d\n", fromId, jsonstring, jsonLength);
+		ntylog("ntyUserDataPacketReqHandleRequest --> fromId:%lld,json:%s,len:%d\n", fromId, jsonstring, jsonLength);
 
 		JSON_Value *json = ntyMallocJsonValue(jsonstring);
 		if (json == NULL) { //JSON Error and send Code to FromId Device
@@ -2153,7 +2148,7 @@ void ntyUserDataPacketReqHandleRequest(const void *_self, unsigned char *buffer,
 				return;
 			}
 			memset( clientActionParamVal, 0, sizeof(ClientActionParam) );		
-			clientActionParamVal->fromId = fromId;
+			clientActionParamVal->fromId = fromId;	//NTY_PROTO_DATAPACKET_REQ this protocol is the device select user data. 
 			clientActionParamVal->toId = fromId;
 			clientActionParamVal->jsonString = jsonstring;
 			clientActionParamVal->jsonObj = json;
@@ -2192,8 +2187,13 @@ void ntyUserDataPacketReqHandleRequest(const void *_self, unsigned char *buffer,
 			}else if( (nVal=strcmp(ptrclientSelectReq->Category,NATTY_USER_PROTOCOL_URL)) == 0 ){
 				ntylog("receive user data  ptrclientSelectReq->Category:URL,process\n");
 				ntyClientSelectURLReqAction( clientActionParamVal, ptrclientSelectReq );
-			}else{
-			}
+			}else if( (nVal=strcmp(ptrclientSelectReq->Category,NATTY_USER_PROTOCOL_SERVICE)) == 0 ){
+				ntylog("receive user data  ptrclientSelectReq->Category:Service,process\n");
+				ntyClientSelectServiceReqAction( clientActionParamVal, ptrclientSelectReq );
+			}else if( (nVal=strcmp(ptrclientSelectReq->Category,NATTY_USER_PROTOCOL_INIT)) == 0 ){
+				ntylog("receive user data  ptrclientSelectReq->Category:Init,process\n");
+				ntyClientSelectInitReqAction( clientActionParamVal, ptrclientSelectReq );
+			}else{}
 		} else {
 			size_t len_ActionParam = sizeof(ActionParam);
 			ActionParam *pActionParam = malloc(len_ActionParam);
@@ -2203,22 +2203,20 @@ void ntyUserDataPacketReqHandleRequest(const void *_self, unsigned char *buffer,
 				free(jsonstring);
 				return;
 			}
-			memset(pActionParam, 0, len_ActionParam);
-			 
+			memset(pActionParam, 0, len_ActionParam); 
 			pActionParam->fromId = fromId;
 			pActionParam->toId = 0;
 			pActionParam->json = json;
 			pActionParam->jsonstring = jsonstring;
 			pActionParam->jsonlen = jsonLength;
 			pActionParam->index = 0;
-
 			ntyUserDataReqAction(pActionParam);
 			free(pActionParam);
 		}
-	//and end
+	//add end
 		ntyFreeJsonValue(json);
 		free(jsonstring);
-
+#endif
 		ntylog("====================end ntyUserDataPacketReqHandleRequest action ==========================\n");
 	} else if (ntyPacketGetSuccessor(_self) != NULL) {
 		const ProtocolFilter * const *succ = ntyPacketGetSuccessor(_self);
@@ -2363,7 +2361,10 @@ void ntyMonitorSleepPacketHandleRequest(const void *_self, unsigned char *buffer
 		//compose jsonstring to new jsonstring
 		char *jsonNewStr = ntyMonitorSleepJsonCompose( pCommonReq );
 		JSON_Value *jsonNewObj = ntyMallocJsonValue( jsonNewStr );
-		U16 jsonNewLen = strlen(jsonNewStr);
+		U16 jsonNewLen = 0;
+		if ( jsonNewStr != NULL ){
+			jsonNewLen = strlen(jsonNewStr);
+		}
 		ntylog( "ntyMessagePushPacketHandleRequest compose json --> fromId:%lld,toId:%lld,json:%s,jsonlength:%d\n", fromId,toId,jsonNewStr, jsonNewLen );
 		
 		size_t len_ActionParam = sizeof( ActionParam );
@@ -2574,17 +2575,18 @@ static void ntyClientBufferRelease(Client *client) {
 }
 
 void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length, const void *obj) {
-	ntylog("******receive buffer:%s\n",buffer);
-	ntylog("******receive buffer buffer[0]:%x,buffer[1]:%x,buffer[2]:%x,buffer[3]:%x\n",buffer[0],buffer[1],buffer[2],buffer[3]);
+	//usleep(10); //many threads access
+	ntylog("******ntyProtocolFilterProcess receive buffer buffer[0]:%x,buffer[1]:%x,buffer[2]:%x,buffer[3]:%x\n",buffer[0],buffer[1],buffer[2],buffer[3]);
+	ntydbg("******ntyProtocolFilterProcess receive buffer buffer[0]:%x,buffer[1]:%x,buffer[2]:%x,buffer[3]:%x\n",buffer[0],buffer[1],buffer[2],buffer[3]);
+	//firstly parse the third parten
 	if ( buffer[0]==0x45 && buffer[1]==0x44 && buffer[2]==0x09  ){
-		ntylog("**********ntyProtocolFilterProcess the 3th protocol begin**************\n");
-		//ntylog("******the 3th protocol receive buffer:%s\n",buffer);
+		ntylog("**********ntyProtocolFilterProcess the third party protocol begin**************\n");
 		if ( buffer[3]==0x52 ){
-			ntylog("**********ntyProtocolFilterProcess the 3th protocol 0x52**************\n");
+			ntylog("**********ntyProtocolFilterProcess the third party protocol 0x52**************\n");
 			ntyMonitorSleepPacketHandleRequest( _filter, buffer, length, obj );
 			return;
 		}else if ( buffer[3]==0x01 ){  //login
-			ntylog("**********ntyProtocolFilterProcess the 3th protocol 0x01**************\n");
+			ntylog("**********ntyProtocolFilterProcess the 3th protocol 0x01 login**************\n");
 		}else{}
 	}
 
@@ -2594,9 +2596,15 @@ void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length, 
 	U32 u32ClientCrc = *((U32*)(buffer+length-4));
 
 	const MessagePacket *msg = (const MessagePacket*)obj;
-	if (msg == NULL) return ;
+	if ( msg == NULL ){ 
+		ntylog("ntyProtocolFilterProcess msg==NULL\n");
+		return ;
+	}
 	const Client *client = msg->client;
-	if (client == NULL) return ;
+	if ( client == NULL ){ 
+		ntylog("ntyProtocolFilterProcess client==NULL\n");
+		return ;
+	}
 #if 0	
 	struct sockaddr_in addr;
 	memcpy(&addr, &client->addr, sizeof(struct sockaddr_in));
@@ -2610,9 +2618,13 @@ void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length, 
 	//if (Record == NULL) return ;
 	
 	//ntydbg(" client:%x, server:%x, length:%d", u32ClientCrc, u32Crc, length);
+	//ntylog("ntyProtocolFilterProcess clientcrc:%x, servercrc:%x, buffer length:%d", u32ClientCrc, u32Crc, length);
 	if (u32Crc != u32ClientCrc || length < NTY_PROTO_MIN_LENGTH) {
+	//if ( u32Crc != u32ClientCrc ){	//modify by Rain 2017-10-16	crc is wrong
+	//	ntylog("ntyProtocolFilterProcess clientcrc:%x, servercrc:%x, buffer length:%d", u32ClientCrc, u32Crc, length);
+	//	return;
 #if 1 
-		ntylog(" ntyProtocolFilterProcess --> client:%x, server:%x, length:%d\n", u32ClientCrc, u32Crc, length);
+		ntylog("ntyProtocolFilterProcess clientcrc:%x, servercrc:%x, buffer length:%d", u32ClientCrc, u32Crc, length);
 		//const Client *client = obj;
 		if (Record == NULL) return ; //illeges record
 		Client* pClient = Record->value;
@@ -2701,15 +2713,16 @@ void ntyProtocolFilterProcess(void *_filter, unsigned char *buffer, U32 length, 
 		
 	}
 
-	if (Record != NULL) {
-		//if (Record->value != NULL) {
-		Client* pClient = Record->value;
-		if (pClient != NULL) {
-			pClient->rLength = 0;
+	if ( Record != NULL ) {
+		if ( Record->value != NULL ) {
+			Client* pClient = Record->value;
+			if ( pClient != NULL ) {
+				pClient->rLength = 0;
+			}
 		}
-		//}
 	}
 #endif	
+
 	return ntyHandleRequest(_filter, buffer, length, obj);
 }
 

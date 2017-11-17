@@ -92,14 +92,34 @@
 #define MAX_PAYLOAD_SIZE		256
 #define TOKEN_SIZE				32
 
-#define NTY_PUSH_MSG_CONTEXT			"全家康 \n 您收到了一条新消息"
-#define NTY_PUSH_VOICE_MSG_CONTEXT			"全家康 \n 您收到了一条语音消息"
-#define NTY_PUSH_EFENCE_MSG_CONTEXT			"全家康 \n 您收到了一条电子围栏设置消息"
-#define NTY_PUSH_SOSREPORT_MSG_CONTEXT			"全家康 \n 您收到了一条SOS消息"
-#define NTY_PUSH_EFENCEREPORT_MSG_CONTEXT			"全家康 \n 您收到了电子围栏越界消息"
-#define NTY_PUSH_BINDCONFIRM_MSG_CONTEXT			"全家康 \n 您收到了申请确认消息"
-#define NTY_PUSH_POLICE_MSG_CONTEXT			"警务通 \n 您收到了报警消息"
-#define NTY_PUSH_MSG_CONTEXT_MATTRESS		"平安通 \n 您收到了安全告警消息"
+#define NTY_PUSH_MSG_CONTEXT					"平安通 \n 您收到了新消息"
+#define NTY_PUSH_VOICE_MSG_CONTEXT				"平安通 \n 您收到了语音消息"
+#define NTY_PUSH_EFENCE_MSG_CONTEXT				"平安通 \n 您收到了电子围栏设置消息"
+#define NTY_PUSH_SOSREPORT_MSG_CONTEXT			"平安通 \n 您收到了SOS告警消息"
+#define NTY_PUSH_EFENCEREPORT_MSG_CONTEXT		"平安通 \n 您收到了电子围栏越界消息"
+#define NTY_PUSH_BINDCONFIRM_MSG_CONTEXT		"平安通 \n 您收到了绑定请求确认消息"
+#define NTY_PUSH_BINDCONFIRM_OK_MSG_CONTEXT		"平安通 \n 您收到了管理员通过绑定请求消息"
+#define NTY_PUSH_WEARSTATUS_MSG_CONTEXT			"平安通 \n 您收到了手表穿戴状态消息"
+#define NTY_PUSH_FALLDOWN_MSG_CONTEXT			"平安通 \n 您收到了跌倒告警消息"
+#define NTY_PUSH_BLOOD_MSG_CONTEXT				"平安通 \n 您收到了血压告警消息"
+#define NTY_PUSH_HEART_MSG_CONTEXT				"平安通 \n 您收到了心率告警消息"
+#define NTY_PUSH_MSG_CONTEXT_MATTRESS			"平安通 \n 您收到了安全告警消息"
+
+#define NTY_PUSH_MSG_CONTEXT_QJK				"全家康 \n 您收到了新消息"
+#define NTY_PUSH_VOICE_MSG_CONTEXT_QJK			"全家康  \n 您收到了语音消息"
+#define NTY_PUSH_EFENCE_MSG_CONTEXT_QJK			"全家康  \n 您收到了电子围栏设置消息"
+#define NTY_PUSH_SOSREPORT_MSG_CONTEXT_QJK		"全家康  \n 您收到了SOS告警消息"
+#define NTY_PUSH_EFENCEREPORT_MSG_CONTEXT_QJK	"全家康  \n 您收到了电子围栏越界消息"
+#define NTY_PUSH_BINDCONFIRM_MSG_CONTEXT_QJK	"全家康  \n 您收到了绑定请求确认消息"
+#define NTY_PUSH_BINDCONFIRM_OK_MSG_CONTEXT_QJK	"全家康 \n 您收到了管理员通过绑定请求消息"
+#define NTY_PUSH_WEARSTATUS_MSG_CONTEXT_QJK		"全家康  \n 您收到了手表穿戴状态消息"
+#define NTY_PUSH_FALLDOWN_MSG_CONTEXT_QJK		"全家康  \n 您收到了跌倒告警消息"
+#define NTY_PUSH_BLOOD_MSG_CONTEXT_QJK			"全家康 \n 您收到了血压告警消息"
+#define NTY_PUSH_HEART_MSG_CONTEXT_QJK			"全家康 \n 您收到了心率告警消息"
+#define NTY_PUSH_MSG_CONTEXT_MATTRESS_QJK		"全家康  \n 您收到了安全告警消息"
+
+#define NTY_PUSH_POLICE_MSG_CONTEXT				"警务通 \n 您收到了报警消息"
+
 
 
 typedef struct _Push_Context {

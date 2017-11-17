@@ -65,6 +65,7 @@
 #include "NattyTimer.h"
 
 #define NATTY_UDP_SERVER		8888	//Debug
+
 //#define NATTY_UDP_SERVER		1989	//Release
 
 #define RECV_BUFFER_SIZE 		1024

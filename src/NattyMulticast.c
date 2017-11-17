@@ -76,7 +76,10 @@ void *ntyMulticastServerInitialize(MulticastServer *server) {
 	inet_pton(AF_INET, NTY_MULTICAST_ADDRESS, &server->addr.sin_addr);
 	
 	if (bind(server->sockfd, (struct sockaddr*)&server->addr, sizeof(server->addr)) < 0) {
-		ntylog("natty tcp server bind failed\n");
+		ntydbg("natty multicast server bind failed,exit the program.\n");
+		ntylog("natty multicast server bind failed,exit the program.\n");
+		exit(1);
+
 		return NULL;
 	}
 

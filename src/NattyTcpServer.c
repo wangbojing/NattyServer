@@ -154,23 +154,19 @@ static int ntyTcpRecv(int fd, U8 *buffer, int length, struct ev_io *watcher, str
 	return rLen;
 }
 
-
-
-
 int ntyAddRelationMap(MessagePacket *msg) {
 	int ret = NTY_RESULT_SUCCESS;
-
 	void *map = ntyMapInstance();
 	ClientSocket * value = ntyMapSearch(map, msg->client->devId);
-	if (value == NULL) {
+	if ( value == NULL ) {
 		ClientSocket *nValue = (NValue*)malloc(sizeof(ClientSocket));
 		if (nValue == NULL) return NTY_RESULT_ERROR;
 		
-#if ENABLE_EV_WATCHER_MODE
+	#if ENABLE_EV_WATCHER_MODE
 		nValue->watcher = msg->watcher;
-#else
+	#else
 		nValue->sockfd = msg->watcher->fd;
-#endif
+	#endif
 		nValue->connectType = msg->connectType;
 
 		int nSize = sizeof(struct sockaddr_in);
@@ -190,53 +186,46 @@ int ntyAddRelationMap(MessagePacket *msg) {
 			void *hash = ntyHashTableInstance();
 			Payload payload;
 			payload.id = msg->client->devId;
-
-			ret = ntyHashTableUpdate(hash, msg->watcher->fd, &payload);
-			
-		}
+			ret = ntyHashTableUpdate(hash, msg->watcher->fd, &payload);		
+		}else{}
 		
 	} else {
-#if ENABLE_EV_WATCHER_MODE	
+	#if ENABLE_EV_WATCHER_MODE	
 		if (value->watcher != msg->watcher) 
-#else
+	#else
 		if (value->sockfd != msg->watcher->fd) 
-#endif
+	#endif
 		{
 			struct sockaddr_in client_addr;
 			int nSize = sizeof(struct sockaddr_in);
-
 			getpeername(value->watcher->fd, (struct sockaddr*)&client_addr, &nSize); 		
 			ntylog(" IP Addr Have Changed from: %d.%d.%d.%d:%d -->", *(unsigned char*)(&client_addr.sin_addr.s_addr), *((unsigned char*)(&client_addr.sin_addr.s_addr)+1),													
 				*((unsigned char*)(&client_addr.sin_addr.s_addr)+2), *((unsigned char*)(&client_addr.sin_addr.s_addr)+3),													
 				client_addr.sin_port);
-
 			getpeername(msg->watcher->fd, (struct sockaddr*)&client_addr, &nSize); 
 			ntylog(" to:%d.%d.%d.%d:%d\n", *(unsigned char*)(&client_addr.sin_addr.s_addr), *((unsigned char*)(&client_addr.sin_addr.s_addr)+1),													
 				*((unsigned char*)(&client_addr.sin_addr.s_addr)+2), *((unsigned char*)(&client_addr.sin_addr.s_addr)+3),													
 				client_addr.sin_port);
-
-#if 1 //Add Repeat clientId, logout the other client.
+	#if 1 //Add Repeat clientId, logout the other client.
 			ntyJsonCommonResult(msg->client->devId, NATTY_RESULT_CODE_ERR_REPEAT_CLIENTID);
-#endif
+	#endif
 
-#if 1 //set msg->watcher->fd and client id
+	#if 1 //set msg->watcher->fd and client id
 			void *hash = ntyHashTableInstance();
 			Payload payload;
 			payload.id = msg->client->devId;
-
 			ret = ntyHashTableUpdate(hash, msg->watcher->fd, &payload);
-#endif
+	#endif
 			
-#if ENABLE_EV_WATCHER_MODE
+	#if ENABLE_EV_WATCHER_MODE
 			//release before socket
 			//ntyReleaseSocket(tcp_mainloop, value->watcher);
 			//save new socket io
 			value->watcher = msg->watcher;
-#else
+	#else
 			value->sockfd = msg->watcher->fd;
-#endif
-			memcpy(&value->addr, &client_addr, nSize);
-			
+	#endif
+			memcpy(&value->addr, &client_addr, nSize);			
 		}
 	}
 
@@ -248,30 +237,26 @@ int ntyDelRelationMap(C_DEVID id) {
 	void *map = ntyMapInstance();
 	
 	NValue * value = ntyMapSearch(map, id);
-	if (value != NULL) {
+	if ( value != NULL ) {
 		int sockfd = value->watcher->fd;
 		//delete hash table
 		void *hash = ntyHashTableInstance();
-		ret = ntyHashTableDelete(hash, sockfd);
-		
+		ret = ntyHashTableDelete(hash, sockfd);	
 		//release client socket
 		ntyReleaseSocket(tcp_mainloop, value->watcher);
 		//release value
-		free(value);
+		ntyFree(value);
 		
 		ret = ntyMapDelete(map, id);
 		if (ret == NTY_RESULT_FAILED) {
-			ASSERT(0);
+			ntylog("Map Delete ret : %d", ret);
 		} else if (ret == NTY_RESULT_NOEXIST) {
 			ntylog("Map Delete ret : %d", ret);
-		}
-#if 1 
-		//Delete BHeap Table
-		
-		
-#endif
-		return ret;
-		
+		}else{}
+	#if 1 
+		//Delete BHeap Table		
+	#endif
+		return ret;	
 	} else {
 		ntylog(" Map Have No Id --> %lld\n", id);
 		return NTY_RESULT_NOEXIST;
@@ -292,7 +277,7 @@ static void ntyTcpServerJob(Job *job) {
 	ntyProtocolFilterProcess(pFilter, msg->buffer, msg->length, msg);
 #endif
 	freeRequestPacket(msg);
-	free(job);
+	ntyFree(job);
 }
 
 static void ntyReleaseClient(Job *job) {
@@ -354,12 +339,17 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 	memset(buffer, 0, RECV_BUFFER_SIZE);
 #if 1
 	rLen = recv(watcher->fd, buffer, RECV_BUFFER_SIZE, 0);
+	ntylog("ntyOnReadEvent recv after rLen=%d,errno:%d\n",rLen,errno);
+	ntydbg("ntyOnReadEvent recv after rLen=%d,errno:%d\n",rLen,errno);
 #else
 	rLen = ntyTcpRecv(watcher->fd, buffer, RECV_BUFFER_SIZE, watcher, loop);
 #endif
 	if (rLen < 0) {
+		ntylog("ntyOnReadEvent recv after rLen<0:%d,errno:%d\n",rLen,errno);
+		ntydbg("ntyOnReadEvent recv after rLen<0:%d,errno:%d\n",rLen,errno);
+	
+		#if 1
 		if (errno == EAGAIN) return ;
-
 		struct sockaddr_in client_addr;
 		getpeername(watcher->fd,(struct sockaddr*)&client_addr, &nSize); 
 		ntylog(" %d.%d.%d.%d:%d --> Recv Error\n", *(unsigned char*)(&client_addr.sin_addr.s_addr), *((unsigned char*)(&client_addr.sin_addr.s_addr)+1),													
@@ -367,7 +357,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 				client_addr.sin_port);
 		
 		if (errno == ETIMEDOUT || errno == EBADF || errno == ECONNRESET || errno == ENOTCONN) {
-			ntylog(" release client socket\n");
+			ntylog("ntyOnReadEvent release client socket\n");
 				
 			void *hash = ntyHashTableInstance();
 			Payload *load = ntyHashTableSearch(hash, watcher->fd);
@@ -386,9 +376,9 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 			if (ret = NTY_RESULT_SUCCESS) {
 				ntylog(" Release Client Success\n");
 			}
-		}
-		
-		ntylog("read error :%d :%s\n", errno, strerror(errno));
+		}	
+		ntylog("ntyOnReadEvent read error :%d :%s\n", errno, strerror(errno));
+		#endif
 	} else if (rLen == 0) {
 	
 		struct sockaddr_in client_addr;
@@ -409,7 +399,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		}
 
 		//ntyHashTableDelete(hash, watcher->fd);
-		ntylog("Client --> %lld Disconnected\n", load->id);
+		ntylog("ntyOnReadEvent Client --> %lld Disconnected\n", load->id);
 		int ret = ntyDelRelationMap(load->id);
 		if (ret == NTY_RESULT_NOEXIST) {
 			ntyReleaseSocket(loop, watcher);
@@ -432,7 +422,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		
 		struct sockaddr_in client_addr;
 		getpeername(watcher->fd,(struct sockaddr*)&client_addr, &nSize);
-		ntylog(" TcpRecv : %d.%d.%d.%d:%d, length:%d , sock:%d --> %x, id:%lld\n", *(unsigned char*)(&client_addr.sin_addr.s_addr), *((unsigned char*)(&client_addr.sin_addr.s_addr)+1),													
+		ntylog("ntyOnReadEvent TcpRecv : %d.%d.%d.%d:%d, length:%d , sock:%d --> %x, id:%lld\n", *(unsigned char*)(&client_addr.sin_addr.s_addr), *((unsigned char*)(&client_addr.sin_addr.s_addr)+1),													
 				*((unsigned char*)(&client_addr.sin_addr.s_addr)+2), *((unsigned char*)(&client_addr.sin_addr.s_addr)+3),													
 				client_addr.sin_port, rLen, watcher->fd, buffer[NTY_PROTO_MSGTYPE_IDX], *(C_DEVID*)(&buffer[NTY_PROTO_DEVID_IDX]));	
 #if 0
@@ -451,7 +441,7 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		if (load == NULL) {
 			ntyU8ArrayToU64(&buffer[NTY_PROTO_DEVID_IDX], &msg->client->devId);
 		} else {
-			ntylog(" TcpRecv : ntyHashTableSearch --> %lld\n", load->id);
+			ntylog("ntyOnReadEvent TcpRecv : ntyHashTableSearch --> %lld\n", load->id);
 			if (load->id == NATTY_NULL_DEVID) {
 				ntyU8ArrayToU64(&buffer[NTY_PROTO_DEVID_IDX], &msg->client->devId);
 			} else {
@@ -460,35 +450,31 @@ void ntyOnReadEvent(struct ev_loop *loop, struct ev_io *watcher, int revents) {
 		}
 #endif
 		//req->client->ackNum = ntyU8ArrayToU32(&buffer[NTY_PROTO_ACKNUM_IDX])+1;
-
 		msg->watcher = watcher;
 		msg->connectType = PROTO_TYPE_TCP;
 		msg->client->deviceType = buffer[NTY_PROTO_DEVTYPE_IDX];
 		msg->length = (U16)rLen;
 		msg->buffer = (U8*)malloc(rLen);
 		if (msg->buffer == NULL) {
-			ntylog("malloc Recv Buffer failed\n");
-
-			free(msg->client);
-			free(msg);
+			ntylog("ntyOnReadEvent malloc Recv Buffer failed\n");
+			ntyFree(msg->client);
+			ntyFree(msg);
 			return;
 		}
-
 		memset(msg->buffer, 0, rLen);
-		memcpy(msg->buffer, buffer, rLen); //xiao lv
+		memcpy(msg->buffer, buffer, rLen); 
 #if 0		
 		ntyAddRelationMap(msg);
 #endif
 		Job *job = (Job*)malloc(sizeof(*job));
 		if (job == NULL) {
-			ntylog("malloc Job failed\n");
+			ntylog("ntyOnReadEvent malloc Job failed\n");
 			freeRequestPacket(msg);
 			return;
 		}
 		job->job_function  = ntyTcpServerJob;
 		job->user_data = msg;
 		ntyThreadPoolPush(pThreadPool, job);
-
 	}
 
 	return;
@@ -535,32 +521,25 @@ void ntyOnAcceptEvent(struct ev_loop *loop, struct ev_io *watcher, int revents){
 		close(client_fd);
 		return ;
 	}
-
 	ntySetReUseAddr(client_fd);
-
 	ntySetAlive(client_fd);
 	
 	ntylog(" %d.%d.%d.%d:%d --> New Client Connected \n", 
 		*(unsigned char*)(&client_addr.sin_addr.s_addr), *((unsigned char*)(&client_addr.sin_addr.s_addr)+1),													
 		*((unsigned char*)(&client_addr.sin_addr.s_addr)+2), *((unsigned char*)(&client_addr.sin_addr.s_addr)+3),													
 		client_addr.sin_port);
-
 	// insert search hash table
-	
-#if 0 //Insert Hash table
+	#if 0 //Insert Hash table
 	int ret = ntyInsertNodeToHashTable(&client_addr, 0x1);
 	if (ret == 0) { 			
 		ntylog("Hash Table Node Insert Success\n");
 	} 
-#else
+	#else
 	void *hash = ntyHashTableInstance();
 	Payload payload;
-	payload.id = NATTY_NULL_DEVID;
-		
+	payload.id = NATTY_NULL_DEVID;	
 	int ret = ntyHashTableInsert(hash, client_fd, &payload);
-	ASSERT(ret == NTY_RESULT_SUCCESS || ret == NTY_RESULT_EXIST);
-#endif
-
+	#endif
 
 	ev_io_init(ev_client, ntyOnReadEvent, client_fd, EV_READ);
 	ev_io_start(loop, ev_client);
@@ -580,7 +559,9 @@ void *ntyTcpServerInitialize(TcpServer *server) {
 	server->addr.sin_addr.s_addr = INADDR_ANY;
 	server->addr.sin_port = htons(NATTY_TCP_SERVER_PORT);
 	if (bind(server->sockfd, (struct sockaddr*)&server->addr, sizeof(server->addr)) < 0) {
-		ntylog("natty tcp server bind failed\n");
+		ntydbg("natty tcp server bind failed,exit the program.\n");
+		ntylog("natty tcp server bind failed,exit the program.\n");
+		exit(1);
 		return NULL;
 	}
 
@@ -616,6 +597,7 @@ int ntyTcpServerProcess(const void *_self) {
 		ntylog("natty tcp set nonblock failed\n");
 		return -2;
 	}
+	
 	ntySetReUseAddr(server->sockfd);
 	
 	ev_io_init(&socket_accept, ntyOnAcceptEvent, server->sockfd, EV_READ);

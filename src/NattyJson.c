@@ -391,6 +391,7 @@ void ntyJsonWeather(JSON_Value *json, WeatherReq *pWeatherReq) {
 	JSON_Object *results_object = NULL;
 	JSON_Array *results_array = json_object_get_array(root_object, NATTY_WEATHER_PROTOCOL_RESULTS);
 	pWeatherReq->size = json_array_get_count(results_array);
+	ntylog( "ntyJsonWeather pWeatherReq->size:%d,sizeof(WeatherResults):%d\n",pWeatherReq->size,sizeof(WeatherResults) ); 
 	WeatherResults *pWeatherResults = malloc(sizeof(WeatherResults)*pWeatherReq->size);
 	pWeatherReq->pResults = pWeatherResults;
 	size_t i;
@@ -409,6 +410,7 @@ void ntyJsonWeather(JSON_Value *json, WeatherReq *pWeatherReq) {
 		JSON_Object *daily_object = NULL;
 		JSON_Array *daily_array = json_object_get_array(results_object, NATTY_WEATHER_PROTOCOL_DAILY);
 		pWeatherResults[i].size = json_array_get_count(daily_array);
+		ntylog( "ntyJsonWeather pWeatherResults[i].size:%d,sizeof(WeatherDaily):%d\n",pWeatherResults[i].size,sizeof(WeatherDaily) );
 		WeatherDaily *pWeatherDaily = malloc(sizeof(WeatherDaily)*pWeatherResults[i].size);
 		pWeatherResults[i].pDaily = pWeatherDaily;
 	
@@ -468,6 +470,9 @@ void ntyJsonICCIDSet(JSON_Value *json, ICCIDSet *pICCIDSet) {
 	pICCIDSet->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
 	pICCIDSet->ICCID = json_object_get_string(root_object, NATTY_USER_PROTOCOL_ICCID);
 	pICCIDSet->phone_num = json_object_get_string(root_object, NATTY_USER_PROTOCOL_PHONENUM);
+	pICCIDSet->SWVersion = json_object_get_string(root_object, NATTY_USER_PROTOCOL_SWVERSION);
+	pICCIDSet->DeviceType = json_object_get_string(root_object, NATTY_USER_PROTOCOL_DEVICETYPE);
+	pICCIDSet->SimOperator = json_object_get_string(root_object, NATTY_USER_PROTOCOL_SIMOPERATOR);
 }
 
 void ntyJsonCommon(JSON_Value *json, CommonReq *pCommonReq) {
@@ -588,15 +593,13 @@ void ntyJsonDelEfence(JSON_Value *json, DelEfenceReq *pDelEfenceReq) {
 
 void ntyJsonRuntime(JSON_Value *json, RunTimeReq *pRunTimeReq) {
 	if (json == NULL || pRunTimeReq == NULL) {
-		ntylog("param is null.\n");
+		ntylog("ntyJsonRuntime param is null.\n");
 		return;
 	}
 
 	JSON_Object *root_object = json_value_get_object(json);
 	pRunTimeReq->IMEI = json_object_get_string(root_object, NATTY_USER_PROTOCOL_IMEI);
-	pRunTimeReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);
-	//ntydbg("IMEI:%s   Category:%s\n", pRunTimeReq->IMEI, pRunTimeReq->category);
-	
+	pRunTimeReq->category = json_object_get_string(root_object, NATTY_USER_PROTOCOL_CATEGORY);	
 	JSON_Object *runtime_object = json_object_get_object(root_object, NATTY_USER_PROTOCOL_RUNTIME);
 	pRunTimeReq->runtime.auto_connection = json_object_get_string(runtime_object, NATTY_USER_PROTOCOL_AUTOCONNECTION);
 	pRunTimeReq->runtime.loss_report = json_object_get_string(runtime_object, NATTY_USER_PROTOCOL_LOSSREPORT);
@@ -604,14 +607,15 @@ void ntyJsonRuntime(JSON_Value *json, RunTimeReq *pRunTimeReq) {
 	pRunTimeReq->runtime.watch_bell = json_object_get_string(runtime_object, NATTY_USER_PROTOCOL_WATCHBELL);
 	pRunTimeReq->runtime.taget_step = json_object_get_string(runtime_object, NATTY_USER_PROTOCOL_TAGETSTEP);
 	pRunTimeReq->runtime.model = json_object_get_string(runtime_object, NATTY_USER_PROTOCOL_MODEL);
-	
-	ntydbg("AutoConnection:%s  LossReport:%s  LightPanel:%s  WatchBell:%s  TagetStep:%s Model:%s\n",
+	pRunTimeReq->runtime.PowerSaving = json_object_get_string(runtime_object, NATTY_USER_PROTOCOL_POWERSAVING);
+	/*ntylog("ntyJsonRuntime AutoConnection:%s  LossReport:%s  LightPanel:%s  WatchBell:%s  TagetStep:%s Model:%s powersaving:%s\n",
 		pRunTimeReq->runtime.auto_connection,
 		pRunTimeReq->runtime.loss_report,
 		pRunTimeReq->runtime.light_panel,
 		pRunTimeReq->runtime.watch_bell,
 		pRunTimeReq->runtime.taget_step,
-		pRunTimeReq->runtime.model);
+		pRunTimeReq->runtime.model,
+		pRunTimeReq->runtime.PowerSaving);*/
 }
 
 void ntyJsonTurn(JSON_Value *json, TurnReq *pTurnReq) {
@@ -830,7 +834,8 @@ void ntyJsonBloodReport(JSON_Value *json,  BloodReport *pBloodReport) {
 	JSON_Object *results_object = json_object_get_object(root_object, NATTY_USER_PROTOCOL_RESULTS);
 	pBloodReport->results.IMEI  = json_object_get_string(results_object, NATTY_USER_PROTOCOL_IMEI);
 	pBloodReport->results.category = json_object_get_string(results_object, NATTY_USER_PROTOCOL_CATEGORY);
-	pBloodReport->results.bloodReport = json_object_get_string(results_object, NATTY_USER_PROTOCOL_BLOODREPORT);
+	pBloodReport->results.diastoleReport = json_object_get_string(results_object, NATTY_USER_PROTOCOL_DIASTOLEREPORT);
+	pBloodReport->results.shrinkReport = json_object_get_string(results_object, NATTY_USER_PROTOCOL_SHRINKREPORT);
 	pBloodReport->results.location = json_object_get_string(results_object, NATTY_USER_PROTOCOL_LOCATION);
 	pBloodReport->results.type = json_object_get_string(results_object, NATTY_USER_PROTOCOL_TYPE);
 }
@@ -1266,6 +1271,7 @@ char * ntyJsonWriteRunTime(RunTimeAck *pRunTimeAck) {
 	json_object_set_string(runtime_obj, NATTY_USER_PROTOCOL_WATCHBELL, pRunTimeAck->result.runtime.watch_bell);
 	json_object_set_string(runtime_obj, NATTY_USER_PROTOCOL_TAGETSTEP, pRunTimeAck->result.runtime.taget_step);
 	json_object_set_string(runtime_obj, NATTY_USER_PROTOCOL_MODEL, pRunTimeAck->result.runtime.model);
+	json_object_set_string(runtime_obj, NATTY_USER_PROTOCOL_POWERSAVING, pRunTimeAck->result.runtime.PowerSaving);
 
 	char *jsonstring =  json_serialize_to_string(schema);
 	json_value_free(schema);
@@ -1685,12 +1691,12 @@ char * ntyJsonWriteBindBroadCast(BindBroadCast *pBindBroadCast) {
 
 	JSON_Value *schema = json_value_init_object();
 	JSON_Object *schema_obj = json_value_get_object(schema);
-	json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object());
-	JSON_Object *results_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULTS);
-	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_IMEI, pBindBroadCast->result.IMEI);
-	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_CATEGORY, pBindBroadCast->result.category);
-	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_PROPOSER, pBindBroadCast->result.proposer);
-	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_ANSWER, pBindBroadCast->result.answer);
+	//json_object_set_value(schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object());
+	//JSON_Object *results_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULTS);
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_IMEI, pBindBroadCast->result.IMEI);
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_CATEGORY, pBindBroadCast->result.category);
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_PROPOSER, pBindBroadCast->result.proposer);
+	json_object_set_string(schema_obj, NATTY_USER_PROTOCOL_ANSWER, pBindBroadCast->result.answer);
 
 	char *jsonstring =  json_serialize_to_string(schema);
 	json_value_free(schema);
@@ -1839,9 +1845,10 @@ int ntyLocatorBindReqJsonParse( JSON_Value *json, LocatorBindReq *ptrLocatorBind
 	ptrLocatorBindReq->Category = json_object_get_string( root_object, NATTY_USER_PROTOCOL_CATEGORY );
 
 	JSON_Object *BindReq_object = json_object_get_object( root_object, NATTY_USER_PROTOCOL_BINGREQ );
-	ptrLocatorBindReq->Name = json_object_get_string( BindReq_object, NATTY_USER_PROTOCOL_BINGREQ_NAME );
-	ptrLocatorBindReq->PicURL = json_object_get_string( BindReq_object, NATTY_USER_PROTOCOL_BINGREQ_PICURL);
-	ptrLocatorBindReq->Type = json_object_get_string( BindReq_object, NATTY_USER_PROTOCOL_BINGREQ_TYPE);
+	ptrLocatorBindReq->Name = json_object_get_string( BindReq_object, NATTY_USER_PROTOCOL_WATCHNAME );
+	ptrLocatorBindReq->NickName = json_object_get_string( BindReq_object, NATTY_USER_PROTOCOL_USERNAME);
+	ptrLocatorBindReq->PicURL = json_object_get_string( BindReq_object, NATTY_USER_PROTOCOL_WATCHIMAGE);
+	
 	
 	return 0;	
 }
@@ -1853,15 +1860,12 @@ int ntyClientContactsAckJsonCompose( ClientContactsAck *pClientContactsAck, unsi
 	}
 
 	JSON_Value *schema = json_value_init_object();
-	JSON_Object *schema_obj = json_value_get_object( schema );
-	
+	JSON_Object *schema_obj = json_value_get_object( schema );	
 	json_object_set_value( schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object() );
-	JSON_Object *results_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULTS );
-	
+	JSON_Object *results_obj = json_object_get_object(schema_obj, NATTY_USER_PROTOCOL_RESULTS );	
 	json_object_set_string( results_obj, NATTY_USER_PROTOCOL_IMEI, pClientContactsAck->IMEI );
 	json_object_set_string( results_obj, NATTY_USER_PROTOCOL_NUM, pClientContactsAck->Num );
 	json_object_set_string( results_obj, NATTY_USER_PROTOCOL_CATEGORY, pClientContactsAck->Category );
-
 	json_object_set_value( results_obj, NATTY_USER_PROTOCOL_CONTACTS, json_value_init_array() );
 	JSON_Array *contacts_arr = json_object_get_array( results_obj, NATTY_USER_PROTOCOL_CONTACTS );
 	
@@ -1876,29 +1880,30 @@ int ntyClientContactsAckJsonCompose( ClientContactsAck *pClientContactsAck, unsi
 		json_object_set_string( contacts_obj, NATTY_USER_PROTOCOL_NAME, pClientContactsAck->objClientContactsAckItem[i].Name );	
 		json_object_set_string( contacts_obj, NATTY_USER_PROTOCOL_TELPHONE, pClientContactsAck->objClientContactsAckItem[i].Tel );
 	}
-
 	ntylog("ntyClientContactsAckJsonCompose --> NATTY_USER_PROTOCOL_TELPHONE\n");
 
 	char *jsonstring =  json_serialize_to_string( schema );
-	if (jsonstring == NULL) { 
+	if ( jsonstring == NULL) { 
 		json_value_free( schema );
+		ntylog( "ntyClientContactsAckJsonCompose jsonstring==NULL error\n" );
 		return NTY_RESULT_ERROR;
 	}
 	
 	int jsonLength = strlen(jsonstring);
-	if (jsonLength > NTY_PACKET_BUFFER_SIZE-1) { 
-		
+	if (jsonLength > NTY_PACKET_BUFFER_SIZE-1) { 	
+		if( jsonstring != NULL ){
+			ntyJsonFree(jsonstring);
+		}
 		json_value_free( schema );
-		ntyJsonFree(jsonstring);
-		
+		ntylog( "ntyClientContactsAckJsonCompose compose jsonstring length outof defined buffer error\n" );
 		return NTY_RESULT_FAILED;
-	}
-	
+	}	
 	memcpy(buffer, jsonstring, jsonLength);
-	
 	ntylog("ntyClientContactsAckJsonCompose --> end:%s\n", buffer);
+	if( jsonstring != NULL ){
+		ntyJsonFree(jsonstring);
+	}
 	json_value_free( schema );
-	ntyJsonFree(jsonstring);
 
 	return jsonLength;
 }
@@ -1934,21 +1939,23 @@ int ntyClientTurnAckJsonCompose( ClientTurnAck *pClientTurnAck, unsigned char *b
 	char *jsonstring =  json_serialize_to_string( schema );
 	if (jsonstring == NULL) {
 		json_value_free( schema );
+		ntylog( "ntyClientTurnAckJsonCompose jsonstring==NULL error\n" );
 		return NTY_RESULT_ERROR;
 	}
-
 	int jsonLength = strlen(jsonstring);
 	if (jsonLength > NTY_PACKET_BUFFER_SIZE-1) {
+		if( jsonstring != NULL ){
+			ntyJsonFree(jsonstring);
+		}
 		json_value_free( schema );
-		ntyJsonFree(jsonstring);
-
+		ntylog( "ntyClientTurnAckJsonCompose outof defined buffer error\n" );
 		return NTY_RESULT_FAILED;
 	}
-
 	memcpy(buffer, jsonstring, jsonLength);
-
+	if( jsonstring != NULL ){
+		ntyJsonFree(jsonstring);
+	}
 	json_value_free( schema );
-	ntyJsonFree(jsonstring);
 
 #endif
 
@@ -1973,7 +1980,8 @@ int ntyClientRunTimeAckJsonCompose( ClientRunTimeAck *pClientRunTimeAck, unsigne
 	json_object_set_string( runtime_obj, NATTY_USER_PROTOCOL_LOSSREPORT, pClientRunTimeAck->objClientRunTimeAckItem->LossReport );
 	json_object_set_string( runtime_obj, NATTY_USER_PROTOCOL_LIGHTPANEL, pClientRunTimeAck->objClientRunTimeAckItem->LightPanel );
 	json_object_set_string( runtime_obj, NATTY_USER_PROTOCOL_WATCHBELL, pClientRunTimeAck->objClientRunTimeAckItem->WatchBell );
-	json_object_set_string( runtime_obj, NATTY_USER_PROTOCOL_TAGETSTEP, pClientRunTimeAck->objClientRunTimeAckItem->TagetStep );
+	json_object_set_string( runtime_obj, NATTY_USER_PROTOCOL_TAGETSTEP, pClientRunTimeAck->objClientRunTimeAckItem->TagetStep );	
+	json_object_set_string( runtime_obj, NATTY_USER_PROTOCOL_POWERSAVING, pClientRunTimeAck->objClientRunTimeAckItem->PowerSaving);
 	json_object_set_string( runtime_obj, NATTY_USER_PROTOCOL_MODEL, pClientRunTimeAck->objClientRunTimeAckItem->Model);
 
 #if 0
@@ -1983,22 +1991,24 @@ int ntyClientRunTimeAckJsonCompose( ClientRunTimeAck *pClientRunTimeAck, unsigne
 	char *jsonstring =  json_serialize_to_string( schema );
 	if (jsonstring == NULL) {
 		json_value_free( schema );
-
+		ntylog( "ntyClientRunTimeAckJsonCompose jsonstring==NULL error\n" );
 		return NTY_RESULT_ERROR;
 	}
-
 	int jsonLength = strlen(jsonstring);
 	if (jsonLength > NTY_PACKET_BUFFER_SIZE-1) {
+		if( jsonstring != NULL ){
+			ntyJsonFree(jsonstring);
+		}
 		json_value_free( schema );
+		ntylog( "ntyClientRunTimeAckJsonCompose outof defined buffer error\n" );
+		return NTY_RESULT_ERROR;
+	}
+	memcpy(buffer, jsonstring, jsonLength);
+	if( jsonstring != NULL ){
 		ntyJsonFree(jsonstring);
 	}
-
-	memcpy(buffer, jsonstring, jsonLength);
-
 	json_value_free( schema );
-	ntyJsonFree(jsonstring);
 #endif
-
 
 	return jsonLength;
 }
@@ -2104,22 +2114,25 @@ int ntyClientTimeTablesAckJsonCompose( ClientTimeTablesAck *pClientTimeTablesAck
 	char *jsonstring =  json_serialize_to_string( schema );
 	if (jsonstring == NULL) {
 		json_value_free( schema );
+		ntylog( "ntyClientTimeTablesAckJsonCompose jsonstring==NULL error\n" );
 		return NTY_RESULT_ERROR;
 	}
 	
 	int jsonLength = strlen(jsonstring);
 	if (jsonLength > NTY_PACKET_BUFFER_SIZE-1) {
+		if( jsonstring != NULL ){
+			ntyJsonFree(jsonstring);
+		}
 		json_value_free( schema );
-		ntyJsonFree(jsonstring);
-
+		ntylog( "ntyClientTimeTablesAckJsonCompose outof defined buffer error\n" );
 		return NTY_RESULT_ERROR;
 	}
-
-	memcpy(buffer, jsonstring, jsonLength);
-	
+	memcpy(buffer, jsonstring, jsonLength);	
+	if( jsonstring != NULL ){
+		ntyJsonFree(jsonstring);
+	}
 	json_value_free( schema );
-	ntyJsonFree(jsonstring);
-	
+
 #endif
 	
 	return jsonLength;
@@ -2215,22 +2228,24 @@ int ntyClientLocationAckJsonCompose( ClientLocationAck *pClientLocationAck, unsi
 	char *jsonstring =  json_serialize_to_string( schema );
 	if (jsonstring == NULL) {
 		json_value_free( schema );
+		ntylog( "ntyClientLocationAckJsonCompose jsonstring==NULL error\n" );
 		return NTY_RESULT_ERROR;
 	}
 	
 	int jsonLength = strlen(jsonstring);
 	if (jsonLength > NTY_PACKET_BUFFER_SIZE-1) {
+		if( jsonstring != NULL ){
+			ntyJsonFree(jsonstring);
+		}
 		json_value_free( schema );
-		ntyJsonFree(jsonstring);
-
+		ntylog( "ntyClientLocationAckJsonCompose outof defined buffer error\n" );
 		return NTY_RESULT_ERROR;
 	}
-
-	memcpy(buffer, jsonstring, jsonLength);
-	
-	json_value_free( schema );
-	ntyJsonFree(jsonstring);
-	
+	memcpy(buffer, jsonstring, jsonLength);	
+	if( jsonstring != NULL ){
+		ntyJsonFree(jsonstring);
+	}
+	json_value_free( schema );	
 	return jsonLength;
 }
 
@@ -2256,21 +2271,24 @@ int ntyClientURLAckJsonCompose( ClientURLAck *pClientURLAck , unsigned char *buf
 	char *jsonstring =  json_serialize_to_string( schema );
 	if (jsonstring == NULL) {
 		json_value_free( schema );
+		ntylog( "ntyClientURLAckJsonCompose jsonstring==NULL error\n" );
 		return NTY_RESULT_ERROR;
 	}
 
 	int jsonLength = strlen(jsonstring);
 	if (jsonLength > NTY_PACKET_BUFFER_SIZE-1) {
+		if( jsonstring != NULL ){
+			ntyJsonFree(jsonstring);
+		}
 		json_value_free( schema );
-		ntyJsonFree(jsonstring);
-
+		ntylog( "ntyClientURLAckJsonCompose outof defined buffer error\n" );
 		return NTY_RESULT_FAILED;
 	}
-
 	memcpy(buffer, jsonstring, jsonLength);
-
+	if( jsonstring != NULL ){
+		ntyJsonFree(jsonstring);
+	}
 	json_value_free( schema );
-	ntyJsonFree(jsonstring);
 #endif
 	return jsonLength;
 }
@@ -2320,7 +2338,52 @@ char *ntyClientEfenceAckJsonCompose( ClientEfenceAck *pClientEfenceAck ){
 	return jsonstring;
 }
 
+char *ntyClientServiceAckJsonCompose( ClientServiceAck *pClientServiceAck){
+	if ( pClientServiceAck == NULL ){
+		ntylog( "ntyClientServiceAckJsonCompose pClientServiceAck==NULL return NULL\n" );
+		return NULL;
+	}
+	JSON_Value *schema = json_value_init_object();
+	JSON_Object *schema_obj = json_value_get_object(schema);
+	json_object_set_value( schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object() );
+	JSON_Object *results_obj = json_object_get_object( schema_obj, NATTY_USER_PROTOCOL_RESULTS );
+	json_object_set_string( results_obj, NATTY_USER_PROTOCOL_IMEI, pClientServiceAck->IMEI );
+	json_object_set_string(results_obj, NATTY_USER_PROTOCOL_CATEGORY, pClientServiceAck->Category );
+	json_object_set_value( results_obj, NATTY_USER_PROTOCOL_SERVICE, json_value_init_object() );
+	JSON_Object *service_obj = json_object_get_object( results_obj, NATTY_USER_PROTOCOL_SERVICE );
+	json_object_set_string( service_obj, NATTY_USER_PROTOCOL_CUSTOMERNUM, pClientServiceAck->CustomerNum );
+	json_object_set_string( service_obj, NATTY_USER_PROTOCOL_DOCTORNUM, pClientServiceAck->DoctorNum );	
+	json_object_set_string( service_obj, NATTY_USER_PROTOCOL_ALARMFREQ, pClientServiceAck->alarmFreq );	
+	json_object_set_string( service_obj, NATTY_USER_PROTOCOL_ALARMTIME, pClientServiceAck->alarmTime );	
+	
+	char *jsonstring = json_serialize_to_string( schema );
+	json_value_free( schema );
+	
+	return jsonstring;
+}
 
+char *ntyClientInitAckJsonCompose( ClientInitAck *pClientInitAck){
+	if ( pClientInitAck == NULL ){
+		ntylog( "ntyClientInitAckJsonCompose pClientInitAck==NULL return NULL\n" );
+		return NULL;
+	}
+
+	JSON_Value *schema = json_value_init_object();
+	JSON_Object *schema_obj = json_value_get_object(schema);
+	json_object_set_value( schema_obj, NATTY_USER_PROTOCOL_RESULTS, json_value_init_object() );
+	JSON_Object *results_obj = json_object_get_object( schema_obj, NATTY_USER_PROTOCOL_RESULTS );
+	json_object_set_string( results_obj, NATTY_USER_PROTOCOL_IMEI, pClientInitAck->IMEI );
+	json_object_set_string( results_obj, NATTY_USER_PROTOCOL_CATEGORY, pClientInitAck->Category );
+	json_object_set_string( results_obj, NATTY_USER_PROTOCOL_INIT, pClientInitAck->Init );	
+	
+	char *jsonstring = json_serialize_to_string( schema );
+	json_value_free( schema );
+	
+	return jsonstring;
+}
+
+
+//match enum struct:EN_CATEGORY,find the words from string
 const U8 *u8CategoryToken[] = {
 	NATTY_USER_PROTOCOL_CATEGORY_EFENCE,
 	NATTY_USER_PROTOCOL_CATEGORY_RUNTIME,
@@ -2332,21 +2395,27 @@ const U8 *u8CategoryToken[] = {
 	NATTY_USER_PROTOCOL_LOCATIONREPORT,
 	NATTY_USER_PROTOCOL_STEPSREPORT,
 	NATTY_USER_PROTOCOL_EFENCEREPORT,
+	NATTY_USER_PROTOCOL_FALLDOWNREPORT,
+	NATTY_USER_PROTOCOL_BLOODREPORT,
+	NATTY_USER_PROTOCOL_HEARTREPORT,
+	NATTY_USER_PROTOCOL_BINDCONFIRMREQ,
 	NATTY_USER_PROTOCOL_MATTRESS_REPORT,
-	NATTY_USER_PROTOCOL_WEARSTATUS,
+	NATTY_USER_PROTOCOL_WEARSTATUS
 }; 
 
 int ntyCommonJsonCategory(char *json, int length) {
 	int i = 0;
 	U32 matches[128] = {0};
-
+	int plen = 0;
+	//be carefull the item of u8CategoryToken,match enum struct:EN_CATEGORY
 	for (i = NTY_CATEGORY_START+1;i < NTY_CATEGORY_END;i ++) {
-		int plen = strlen(u8CategoryToken[i]);
-		
+		if ( u8CategoryToken[i] != NULL ){
+		plen = strlen(u8CategoryToken[i]);
 		int ret = ntyKMP(json, length, u8CategoryToken[i], plen, matches);
 		if (ret > 0) {
 			return i;
 		}
+	 }
 	}
 
 	return NTY_RESULT_FAILED;

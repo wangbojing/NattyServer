@@ -209,9 +209,12 @@ static int ntyHttpGaodeGetLocationInfo(U8 *buffer, int len, U8 *lng, U8 *lat) {
 
 			k = 0;
 			while (location[k++] != ',');
-				
-			memcpy(lng, location, k-1);
-			memcpy(lat, location+k, strlen(location)-k);
+			if ( lng != NULL ){	
+				memcpy(lng, location, k-1);
+			}
+			if ( lat != NULL ){
+				memcpy(lat, location+k, strlen(location)-k);
+			}
 			
 			ntylog("lat:%s, lon:%s\n", lat, lng);
 			
@@ -734,7 +737,7 @@ int ntyQJKLocationGetAddressHandle(U8 *jsonstring, MessageTag *pMessageTag) {
 	//the data of location should be match the rule.
 	if ( pAMap->result.location==NULL || pAMap->result.desc==NULL ){
 		free( pAMap );
-		ntylog("ntyHttpQJKLocationGetAddressHandleResult location is NULL\n");
+		ntylog("ntyQJKLocationGetAddressHandle location is NULL\n");
 		return NTY_RESULT_FAILED;
 	}
 
@@ -750,7 +753,7 @@ int ntyQJKLocationGetAddressHandle(U8 *jsonstring, MessageTag *pMessageTag) {
 	
 	char bufIMEI[50] = {0};
 	sprintf(bufIMEI, "%llx", pMessageTag->fromId);
-	ntylog("*****ntyHttpQJKLocationGetAddressHandleResult IMEI:%s,fromId:%lld,toId:%lld\n", bufIMEI, pMessageTag->fromId, pMessageTag->toId);
+	ntylog("*****ntyQJKLocationGetAddressHandle IMEI:%s,fromId:%lld,toId:%lld\n", bufIMEI, pMessageTag->fromId, pMessageTag->toId);
 	pLocationAck->results.IMEI = bufIMEI;
 
 	U8 tb_location_type = 0; //the value of tb_location_type insert tb_location table
@@ -775,18 +778,18 @@ int ntyQJKLocationGetAddressHandle(U8 *jsonstring, MessageTag *pMessageTag) {
 	U32 length = strlen(pAMap->result.desc);	
 	U8 *urlCode = (U8 *)malloc( length*3+1 ); //becourse of the function ntyUrlEncode.
 	if ( urlCode == NULL ){
-		ntylog( "ntyHttpQJKLocationGetAdressHandleResult jsonstring malloc failed\n");
+		ntylog( "ntyQJKLocationGetAddressHandle jsonstring malloc failed\n");
 		
 		free(pAMap);
 		
 		return NTY_RESULT_FAILED;
 	}
 	int res = ntyUrlEncode(pAMap->result.desc, urlCode, length);  //strlen(urlCode) = length * 3 +1
-	ntydbg("urlCode : %s\n", urlCode);
+	ntylog("ntyQJKLocationGetAddressHandle urlCode : %s\n", urlCode);
 	int ret = ntyExecuteLocationReportInsertHandle( pMessageTag->toId, tb_location_type, urlCode, pAMap->result.location, pAMap->result.radius, &msgid );
 	if (ret == 0) {
 		char *jsonresult = ntyJsonWriteLocation(pLocationAck);
-		ntylog("******ntyHttpQJKLocationGetAddressHandleResult broadcast to app json:%s\n", jsonresult);
+		ntylog("******ntyQJKLocationGetAddressHandle broadcast to app json:%s\n", jsonresult);
 #if 0
 			
 			ntySendLocationBroadCastResult(pMessageTag->fromId, pMessageTag->toId, jsonresult, strlen(jsonresult));
@@ -800,7 +803,9 @@ int ntyQJKLocationGetAddressHandle(U8 *jsonstring, MessageTag *pMessageTag) {
 
 		tag->fromId = pMessageTag->fromId;
 		tag->gId = pMessageTag->toId;
-		tag->length = strlen(jsonresult);
+		if ( jsonresult != NULL ){
+			tag->length = strlen(jsonresult);
+		}
 		tag->Tag = malloc(tag->length+1);
 		memset(tag->Tag, 0, tag->length+1);
 		memcpy(tag->Tag, jsonresult, tag->length);
@@ -922,6 +927,7 @@ int ntyHttpQJKLocationGetAddress(void *arg) {
 
 
 static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t nmemb, void *stream) {
+	int ret = 0;
 	MessageTag *pMessageTag = (MessageTag *)stream;
 	if (pMessageTag == NULL) return NTY_RESULT_PROCESS;
 
@@ -983,7 +989,7 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 	
 	char bufIMEI[50] = {0};
 	sprintf(bufIMEI, "%llx", pMessageTag->fromId);
-	ntydbg("bufIMEI %s %lld %lld\n", bufIMEI, pMessageTag->fromId, pMessageTag->toId);
+	ntylog("ntyHttpQJKLocationHandleResult bufIMEI:%s,fromId:%lld,toId:%lld\n", bufIMEI, pMessageTag->fromId, pMessageTag->toId);
 	pLocationAck->results.IMEI = bufIMEI;
 
 	U8 tb_location_type = 0;	
@@ -1010,16 +1016,18 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 		return size*nmemb;
 	}
 	int res = ntyUrlEncode( pAMap->result.desc, urlCode, nLength );  //strlen(urlCode) = nLength * 3 +1
-	ntydbg("urlCode : %s\n", urlCode);
-	
-	int ret = ntyExecuteLocationNewInsertHandle(pMessageTag->toId, tb_location_type, pAMap->result.location, urlCode, pAMap->result.radius);
-	if (ret == 0) {
+	ntylog("urlCode : %s\n", urlCode);
+
+	//int ret = ntyExecuteLocationNewInsertHandle(pMessageTag->toId, tb_location_type, pAMap->result.location, urlCode, pAMap->result.radius);
+	//if (ret == 0) {
 		char *jsonresult = ntyJsonWriteLocation(pLocationAck);
 		ntylog("ntyHttpQJKLocationHandleResult jsonresult --> %s\n", jsonresult);
-		ret = ntySendLocationPushResult(pMessageTag->toId, jsonresult, strlen(jsonresult));
+		ntyJsonCommonContextResult( NATTY_USER_PROTOCOL_TOMCAT_CLIENTID, jsonresult );
+		if ( jsonresult != NULL ){
+			ret = ntySendLocationPushResult(pMessageTag->toId, jsonresult, strlen(jsonresult));
+		}
 		if (ret > 0) {
-#if 0
-			
+#if 0			
 			ntySendLocationBroadCastResult(pMessageTag->fromId, pMessageTag->toId, jsonresult, strlen(jsonresult));
 #else
 			size_t len_ValueType = sizeof(VALUE_TYPE);
@@ -1031,7 +1039,9 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 
 			tag->fromId = pMessageTag->fromId;
 			tag->gId = pMessageTag->toId;
-			tag->length = strlen(jsonresult);
+			if ( jsonresult != NULL ){
+				tag->length = strlen(jsonresult);
+			}
 			tag->Tag = malloc(tag->length+1);
 			memset(tag->Tag, 0, tag->length+1);
 			memcpy(tag->Tag, jsonresult, tag->length);
@@ -1042,7 +1052,7 @@ static size_t ntyHttpQJKLocationHandleResult(void* buffer, size_t size, size_t n
 
 #endif
 		}
-	}
+	//}
 
 exit:
 	free(pLocationAck);
@@ -1376,8 +1386,7 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	if (pMessageTag == NULL) return NTY_RESULT_ERROR;
 	
 	U8 *jsonstring = buffer;
-	ntylog("ntyHttpQJKWeatherLocationHandleResult json --> %s\n", jsonstring);
-	ntylog("ntyHttpQJKWeatherLocationHandleResult url --> %s\n", pMessageTag->Tag);
+	ntylog("ntyHttpQJKWeatherLocationHandleResult json:%s, url:%s\n", jsonstring,pMessageTag->Tag);
 	
 	JSON_Value *json = ntyMallocJsonValue(jsonstring);
 	size_t len_AMap = sizeof(AMap);
@@ -1473,12 +1482,10 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 	free(pLocationAck);
 #endif
 
-
-
 	U8 weatherbuf[500] = {0};
 	sprintf(weatherbuf, "%s/v3/weather/daily.json?key=%s&location=%s&language=zh-Hans&unit=c&start=0&days=2", 
 		HTTP_WEATHER_BASE_URL, HTTP_WEATHER_KEY, latlng);
-	ntylog(" weatherbuf --> %s\n", weatherbuf);
+	ntylog(" ntyHttpQJKWeatherLocationHandleResult weatherbuf:%s\n", weatherbuf);
 	int length = strlen(weatherbuf);
 
 	size_t len_MessageTag = sizeof(MessageTag);
@@ -1520,14 +1527,10 @@ static size_t ntyHttpQJKWeatherLocationHandleResult(void* buffer, size_t size, s
 #endif
 
 	pMessageSendTag->cb = ntyHttpQJKWeather;
-
 	ret = ntyDaveMqPushMessage(pMessageSendTag);
-	
 	ntylog("==================end ntyHttpQJKWeatherLocationHandleResult ============================\n");
 
-	
-#if 1 //Release Message
-	
+#if 0 //Release Message
 
 	if (pMessageTag->Tag != NULL) {
 		free(pMessageTag->Tag);
@@ -1635,14 +1638,17 @@ static size_t ntyHttpQJKWeatherHandleResult(void* buffer, size_t size, size_t nm
 	int flag = 0;
 	ntylog("==================begin ntyHttpQJKWeatherHandleResult ==========================\n");
 	MessageTag *pMessageTag = (MessageTag *)stream;
-	if (pMessageTag == NULL) return NTY_RESULT_ERROR;
+	if (pMessageTag == NULL){
+		ntylog( "ntyHttpQJKWeatherHandleResult pMessageTag==NULL return -2.............\n" );
+		return NTY_RESULT_ERROR;
+	}
 	
 	U8 *jsonstring = buffer;
-	ntylog("ntyHttpQJKWeatherHandleResult json --> %s\n", jsonstring);
-	ntylog("ntyHttpQJKWeatherHandleResult url --> %s\n", pMessageTag->Tag);
-
+	ntylog( "ntyHttpQJKWeatherHandleResult.............\n" );
+	ntylog("ntyHttpQJKWeatherHandleResult json:%s, url:%s\n", jsonstring,pMessageTag->Tag );
 	JSON_Value *json = ntyMallocJsonValue(jsonstring);
 	size_t len_WeatherReq = sizeof(WeatherReq);
+	ntylog( "ntyHttpQJKWeatherHandleResult len_WeatherReq:%d\n",len_WeatherReq );
 	WeatherReq *pWeatherReq = malloc(len_WeatherReq);
 	if (pWeatherReq == NULL) {
 		flag = -1;
@@ -1677,11 +1683,10 @@ static size_t ntyHttpQJKWeatherHandleResult(void* buffer, size_t size, size_t nm
 		flag = -1;
 		goto exit;
 	}
-	
 	int ret = ntySendWeatherPushResult(pMessageTag->fromId, jsonresult, strlen(jsonresult));
 	ntylog("ntyHttpQJKWeatherHandleResult --> ret:%d, json:%s\n", ret, jsonresult);
 	if (ret < 0) {
-		ntydbg("ntySendWeatherBroadCastResult ntySendWeatherPushResult failed\n");
+		ntylog("ntySendWeatherBroadCastResult ntySendWeatherPushResult failed\n");
 	}
 
 exit:
@@ -1783,15 +1788,11 @@ int ntyHttpQJKWeather(void *arg) {
 		if (pMessageTag->Tag != NULL) {
 			free(pMessageTag->Tag);
 		}
-		free(pMessageTag);
-		
-		
+		free(pMessageTag);	
 		return NTY_RESULT_ERROR;	
 	}
 
-	ntylog("QJK url:%s\n", tag);
-
-	
+	ntylog("ntyHttpQJKWeather QJK url:%s\n", tag);
 	//curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);	// 跳过证书检查  
 	//curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 1);	// 从证书中检查SSL加密算法是否存在  
 

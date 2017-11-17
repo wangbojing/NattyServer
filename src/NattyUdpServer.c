@@ -74,9 +74,12 @@ void* ntyUdpServerCtor(void *_self, va_list *params) {
 	self->addr.sin_addr.s_addr = htonl(INADDR_ANY);  
 	self->addr.sin_port = htons(port); 
 
-	if (bind(self->sockfd, (struct sockaddr *)&(self->addr), sizeof(struct sockaddr_in)) < 0)     
-		error("ERROR on binding"); 
-
+	if (bind(self->sockfd, (struct sockaddr *)&(self->addr), sizeof(struct sockaddr_in)) < 0) {    
+		//error("ERROR on binding");
+		ntydbg("natty udp server bind failed,exit the program.\n");
+		ntylog("natty udp server bind failed,exit the program.\n");
+		exit(1);
+	}
 	return self;
 }
 
@@ -403,6 +406,7 @@ static int ntyRecv(int sockfd, void *data, size_t length, int *count) {
 
 
 int ntySendBuffer(ClientSocket *client, unsigned char *buffer, int length) {
+	ntylog("ntySendBuffer send\n");
 	if (client == NULL) return NTY_RESULT_FAILED;
 #if ENABLE_EV_WATCHER_MODE
 	if (client->watcher == NULL) return NTY_RESULT_ERROR;
@@ -428,11 +432,11 @@ int ntySendBuffer(ClientSocket *client, unsigned char *buffer, int length) {
 		int ret = ntySend(sockfd, buffer, length, 0);
 #endif
 		if (ret == NTY_RESULT_FAILED) {
-			ntylog(" tcp send errno : %d\n", errno);
+			ntylog("ntySendBuffer tcp send errno : %d\n", errno);
 			//delete client all fromId;
 			//ntyClientCleanup(client);
 		} else {
-			ntylog(" tcp send success : %d\n", ret);
+			ntylog("ntySendBuffer tcp send success : %d\n", ret);
 		}
 		return ret;
 	}

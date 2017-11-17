@@ -184,7 +184,7 @@ void ntyBindConfirmResult(DEVID fromId, U8 *json, int length) {
 //DEVID g_devid = 0x355637050066828;
 //DEVID g_devid = 0x355637052238805;
 //DEVID g_devid = 0x355637053172771;
-DEVID g_devid = 0x8661040260208520;
+DEVID g_devid = 0x352315052834187;
 
 int main() {
 	//DEVID AppId = 13579;
@@ -282,8 +282,8 @@ int main() {
 
 		//char *json_str = "{\"IMEI\":\"355637052788650\",\"Category\":\"Schedule\",\"Action\":\"Add\",\"Schedule\":{\"Daily\":\"Monday|Tuesday| Wednesday|Thursday|Friday|Saturday|Sunday\",\"Time\":\"18:00:00\",\"Details\":\"3?¡¤1\"}}";
 		
-		char *json_str1 = "{\"IMEI\":\"355637052788650\",\"Category\":\"TimeTables\",\"TimeTables\":[{\"Daily\":\"Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday\",\"Morning\":{\"Status\":\"On\",\"StartTime\":\"08:00:00\",\"EndTime\":\"12:00:00\"},\"Afternoon\":{\"Status\":\"On\",\"StartTime\":\"13:00:00\",\"EndTime\":\"18:00:00\"}}]}";
-		char *json_str = "{\"IMEI\":\"355637052788650\",\"Category\":\"LAB\",\"LAB\":{\"Bts\":\"460,01,40977,2205409,-65\",\"Nearbts\":[{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"},{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"},{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"}]}}";
+		//char *json_str1 = "{\"IMEI\":\"355637052788650\",\"Category\":\"TimeTables\",\"TimeTables\":[{\"Daily\":\"Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday\",\"Morning\":{\"Status\":\"On\",\"StartTime\":\"08:00:00\",\"EndTime\":\"12:00:00\"},\"Afternoon\":{\"Status\":\"On\",\"StartTime\":\"13:00:00\",\"EndTime\":\"18:00:00\"}}]}";
+		//char *json_str = "{\"IMEI\":\"355637052788650\",\"Category\":\"LAB\",\"LAB\":{\"Bts\":\"460,01,40977,2205409,-65\",\"Nearbts\":[{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"},{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"},{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"}]}}";
 
 
 
@@ -373,23 +373,32 @@ int main() {
 		//char *json_common = "{\"IMEI\":\"355637052788450\",\"Category\":\"AuthorizeReply\",\"AuthorizeType\":\"HealthArchives\",\"Answer\":\"Agree\"}";
 		//ntyCommonReqClient(AppId,json_common,strlen(json_common));
 		//sleep(30);
+		
+		char *json_commonLocation = "{\"Results\":{\"IMEI\":\"352315052834187\",\"Category\":\"LocationReport\",\"LocationReport\":{\"Type\":\"GPS\",\"Radius\":\"550\",\"Location\":\"113.2409402,23.1326885\"}}}";
+		ntydbg("send msg:%s\n",json_commonLocation);
+		ntyCommonReqClient(g_devid,json_commonLocation,strlen(json_commonLocation));
+		sleep(1);
+		char *json_runtime = "{\"IMEI\":\"352315052834187\",\"Category\":\"RunTime\",\"RunTime\":{\"LightPanel\":\"5\"}}";
+		ntydbg("send msg:%s\n",json_runtime);
+		ntyCommonReqClient(g_devid,json_runtime,strlen(json_runtime));
+		sleep(1);
+
+/*
 		char *json_monitor = "{\"IMEI\":\"866104026020852\",\"Category\":\"Mattress\",\"Action\":\"1\"}";
 		ntydbg("send msg:%s\n",json_monitor);
 		ntyMonitorSleepReqClient(g_devid,json_monitor,strlen(json_monitor));
-		sleep(20);
-		sleep(100);
+		sleep(5);
 
-		char *json_bloodreport = "{\"Results\":{\"IMEI\":\"352315052834187\",\"Category\":\"BloodReport\",\"BloodReport\":\"86\",\"Type\":\"WIFI\",\"Location\":\"113.2418077,23.1313968\"}}";
+		char *json_bloodreport = "{\"Results\":{\"IMEI\":\"352315052834187\",\"Category\":\"BloodReport\",\"DiastoleReport\":\"86\",\"ShrinkReport\":\"86\",\"Type\":\"WIFI\",\"Location\":\"113.2418077,23.1313968\"}}";
 		ntydbg("send msg:%s\n",json_bloodreport);
 		ntyCommonReqClient(g_devid,json_bloodreport,strlen(json_bloodreport));
-		sleep(20);
-		sleep(100);
+		sleep(5);
 
 		char *json_heartreport = "{\"Results\":{\"IMEI\":\"352315052834187\",\"Category\":\"HeartReport\",\"HeartReport\":\"58\",\"Type\":\"WIFI\",\"Location\":\"113.2418077,23.1313968\"}}";
 		ntydbg("send msg:%s\n",json_heartreport);
 		ntyCommonReqClient(g_devid,json_heartreport,strlen(json_heartreport));
-		sleep(100);
-		
+		sleep(5);
+*/	
 		//char *json_userdata = "{\"IMEI\":\"355637052329596\",\"Category\":\"ICCID\",\"Action\":\"Set\",\"ICCID\":\"1642510065118\",\"PhoneNum\":\"15889650380\"}";
 		//ntyUserDataReqClient(json_userdata, strlen(json_userdata));
 		//sleep(30);
@@ -427,9 +436,7 @@ int main() {
 		//char *json_url = "{\"IMEI\":\"352315052834187\",\"Category\":\"URL\",\"Action\":\"Select\"}";
 		//ntydbg("send msg:%s\n",json_url);
 		//ntyUserDataReqClient(json_url,strlen(json_url));
-
-		
-		
+	
 
 		//char *json_location = "{\"IMEI\":\"355637052788650\",\"Category\":\"LAB\",\"LAB\":{\"Bts\":\"460,01,40977,2205409,-65\",\"Nearbts\":[{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"},{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"},{\"Cell\":\"460,01,40977,2205409\",\"Signal\":\"-65\"}]}}";
 		//char *json_location = "{\"IMEI\":\"135790246811220\",\"Category\":\"WIFI\",\"WIFI\":[{\"SSID\":\"TP-LINK_42ED\",\"MAC\":\"F4:83:CD:3A:42:ED\",\"V\":\"-37\"},{\"SSID\":\"EXT\",\"MAC\":\"04:95:E6:22:DA:48\",\"V\":\"-52\"}]}";
@@ -463,11 +470,7 @@ int main() {
 		//ntyBindClient(g_devid, json_bindreq, strlen(json_bindreq));
 		//sleep(30);
 
-
-		
-
-		break;
-		//sleep(3000);
+		//break;
 #endif
 	}
 #endif

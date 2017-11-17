@@ -112,7 +112,7 @@ int ntySendRecodeJsonPacketVersionB(C_DEVID fromId, C_DEVID toId, U8 *json, int 
 int ntySendBinBufferBroadCastResult(U8 *u8Buffer, int length, C_DEVID fromId, C_DEVID gId, U32 index);
 
 
-int ntySendBindConfirmPushResult(C_DEVID proposerId, C_DEVID adminId, U8 *json, int length);
+int ntySendBindConfirmPushResult(C_DEVID proposerId, C_DEVID devId, C_DEVID adminId, U8 *json, int length);
 
 int ntySendPushNotify(C_DEVID selfId, C_DEVID gId, U8 *msg, U32 type);
 int ntySendPushNotifyIos(C_DEVID selfId, C_DEVID gId, U8 *msg, U32 type);

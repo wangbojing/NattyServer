@@ -63,7 +63,7 @@ typedef long long C_DEVID;
 //typedef long long C_DEVID;
 #endif
 
-#define SERVER_HOSTNAME	"120.76.41.223"			//"watch.quanjiakan.com" 112.93.116.191 157.122.57.165 127.0.0.1 
+#define SERVER_HOSTNAME	"120.76.41.223"			//"watch.quanjiakan.com" 112.93.116.191 120.76.41.223 157.122.57.165 127.0.0.1 
 #define SERVER_PORT		8888
 #define RECV_BUFFER_SIZE	1024
 #define NORMAL_BUFFER_SIZE	128

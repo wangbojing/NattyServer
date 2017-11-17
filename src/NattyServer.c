@@ -77,7 +77,7 @@ int main() {
 	int i = 0, rc = -1;
 	pthread_t thread_id[PROTO_TYPE_COUNT] = {0}; 
 
-	ntylog(" ... Server Startup ...\n");	//must init zlog_init lib,because the created thread use it.
+	ntylog(" ... server startup ...\n");	//must init zlog_init lib,because the created thread use it.
 	ntyDisplay();
 	
 #if ENABLE_SIGNAL_SUBSYSTEM

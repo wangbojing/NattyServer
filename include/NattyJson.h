@@ -70,11 +70,14 @@ typedef enum {
 	NTY_CATEGORY_LOCATIONREPORT,
 	NTY_CATEGORY_STEPSREPORT,
 	NTY_CATEGORY_EFENCEREPORT,
+	NTY_CATEGORY_FALLDOWNREPORT,
+	NTY_CATEGORY_BLOODREPORT,
+	NTY_CATEGORY_HEARTREPORT,
+	NTY_CATEGORY_BINDCONFIRM,
 	NTY_CATEGORY_MATTRESSREPORT,
 	NTY_CATEGORY_WEARSTATUS,
-	NTY_CATEGORY_END = NTY_CATEGORY_WEARSTATUS,
-	NTY_CATEGORY_VOICE,
-	NTY_CATEGORY_BINDCONFIRM,
+	NTY_CATEGORY_END = NTY_CATEGORY_WEARSTATUS,	
+	NTY_CATEGORY_VOICE
 } EN_CATEGORY;
 
 int ntyCommonJsonCategory(char *json, int length);
@@ -144,6 +147,9 @@ int ntyClientTimeTablesAckJsonCompose( ClientTimeTablesAck *pClientTimeTablesAck
 int ntyClientLocationAckJsonCompose( ClientLocationAck *pClientLocationAck, unsigned char *buffer );
 
 char *ntyClientEfenceAckJsonCompose( ClientEfenceAck *pClientEfenceAck );
+char *ntyClientServiceAckJsonCompose( ClientServiceAck *pClientServiceAck);
+char *ntyClientInitAckJsonCompose(ClientInitAck *pClientInitAck);
+
 int ntyClientURLAckJsonCompose( ClientURLAck *pClientURLAck , unsigned char *buffer);
 int ntyLocatorBindReqJsonParse( JSON_Value *json, LocatorBindReq *ptrLocatorBindReq );
 

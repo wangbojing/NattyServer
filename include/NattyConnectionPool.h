@@ -106,13 +106,20 @@ typedef pthread_key_t	nThreadKey;
 #endif
 
 
-#define NTY_DEFAULT_CONNPOOL_MAX		64
-#define NTY_DEFAULT_CONNPOOL_MIN		30
+#define NTY_DEFAULT_CONNPOOL_MAX		48
+//#define NTY_DEFAULT_CONNPOOL_MIN		30
+#define NTY_DEFAULT_CONNPOOL_MIN		48
+
 #define NTY_DEFAULT_CONNPOOL_INC		4
 
-#define NTY_DEFAULT_CONNECTION_TIMEOUT	30
-#define NTY_DEFAULT_HANDLE_TIMEOUT		2
-#define NTY_DEFAULT_REAP_TIMEOUT		1
+//#define NTY_DEFAULT_CONNECTION_TIMEOUT	30
+//#define NTY_DEFAULT_HANDLE_TIMEOUT		2
+//#define NTY_DEFAULT_REAP_TIMEOUT		1
+
+#define NTY_DEFAULT_CONNECTION_TIMEOUT	600
+#define NTY_DEFAULT_HANDLE_TIMEOUT		300
+#define NTY_DEFAULT_REAP_TIMEOUT		300
+
 
 
 #define NTY_DEFAULT_CONNPOOL_RATIO		0.6
@@ -142,11 +149,11 @@ typedef struct NTY_MYSQL_CONN {
 	TIMESTAMP accessTime;
 	
 	void *arg;
-	U8 enable;
-	U8 status;
+	U16 enable;
+	U16 status;
 	U16 index;
 	
-	long con_lock;
+	U16 con_lock;
 	int error;
 	void *Pool;
 } nMysqlConn, nShrimp, *Shrimp;
@@ -159,14 +166,14 @@ typedef struct NTY_CONNECTION_POOL {
 	volatile int stopped; //0 stop, 1 run
 	nMutex mutex;
 
-	int connectTimeout;
-	int handleTimeout;
-	int reapInterval;
+	U32 connectTimeout;
+	U32 handleTimeout;
+	U32 reapInterval;
 	
-	int max_num;
-	int cur_num;
-	int min_num;
-	int active;
+	U32 max_num;
+	U32 cur_num;
+	U32 min_num;
+	U32 active;
 	nShrimp *ConnList;
 	
 } nConnPool, *ConnPool;
@@ -202,13 +209,15 @@ int ntyConnPoolGetActive(nConnPool *Pool);
 
 
 
+//#define TRY 		do {
+//#define CATCH(e)	goto next;
+//#define FINALLY		next:
+//#define END_TRY		} while(0)
 
-
-#define TRY 		do {
-#define CATCH(e)	goto next;
-#define FINALLY		next:
-#define END_TRY		} while(0)
-
+#define TRY 		//
+#define CATCH(e)	//
+#define FINALLY		//
+#define END_TRY		//
 
 
 typedef Shrimp Connection_T;

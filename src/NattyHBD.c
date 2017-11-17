@@ -193,7 +193,7 @@ static int ntyHeartBeatDetectItem(void *client, C_DEVID clientId) {
 		|| pClient->deviceType == NTY_PROTO_CLIENT_IOS_APP_B_PUBLISH)) { //timeout
 		ntylog("ntyHeartBeatDetectItem App Client timeout --> %lld, prepare to cleanup client \n", clientId);
 		ntyClientCleanup(client);
-	}
+	}else{}
 
 	return 0;
 }

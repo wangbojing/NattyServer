@@ -138,6 +138,7 @@ int ntyJsonEfenceReportAction(ActionParam *pActionParam);
 int ntyJsonFallDownReportAction(ActionParam *pActionParam);
 
 int ntyJsonSafetyReportReportAction(ActionParam *pActionParam);
+int ntyJsonRealTimeReportAction(ActionParam *pActionParam);
 
 void ntyJsonLocationReportAction(ActionParam *pActionParam);
 
@@ -173,6 +174,8 @@ int ntyClientSelectTimeTablesReqAction( ClientActionParam *pClientActionParam,Cl
 int ntyClientSelectLocationReqAction( ClientActionParam *pClientActionParam,ClientSelectReq *pClientSelectReq );
 int ntyClientSelectEfenceReqAction( ClientActionParam *pClientActionParam,ClientSelectReq *pClientSelectReq );
 int ntyClientSelectURLReqAction( ClientActionParam *pClientActionParam,ClientSelectReq *pClientSelectReq );
+int ntyClientSelectServiceReqAction( ClientActionParam *pClientActionParam,ClientSelectReq *pClientSelectReq );
+int ntyClientSelectInitReqAction( ClientActionParam *pClientActionParam,ClientSelectReq *pClientSelectReq );
 int ntyJsonResetAction( ActionParam *pActionParam );
 int ntyJsonRestoreAction( ActionParam *pActionParam );
 int ntyAppIdToDeviceIdDeleteCb( void *self, void *arg );

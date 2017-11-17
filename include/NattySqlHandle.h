@@ -59,6 +59,7 @@ int ntyVoiceReqHandle(void *arg);
 int ntyBindConfirmReqHandle(void *arg);
 
 int ntyOfflineMsgReqHandle(void *arg);
+int ntyOfflineMsgCommonReqHandle(void *arg);
 
 int ntyBindDeviceCheckStatusReqHandle(void *arg) ;
 

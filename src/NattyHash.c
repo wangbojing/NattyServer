@@ -715,7 +715,9 @@ int ntyHashUpdate(void *_self, U32 key, Payload* load) {
 		return NTY_RESULT_NOEXIST;
 	}
 
-	ASSERT(node->info);
+	if ( node->info == NULL ){
+		return NTY_RESULT_FAILED;
+	}
 	node->info->id = load->id;
 	
 	return NTY_RESULT_SUCCESS;

@@ -49,12 +49,15 @@
 #include <pthread.h>
 #include "NattyAbstractClass.h"
 
-#define NTY_THREAD_POOL_NUM		80
+//#define NTY_THREAD_POOL_NUM		80
+#define NTY_THREAD_POOL_NUM		32
+
 
 
 typedef struct _Worker {
 	pthread_t thread;
 	int terminate;
+	int num;
 	struct _WorkQueue *workqueue;
 	struct _Worker *prev;
 	struct _Worker *next;

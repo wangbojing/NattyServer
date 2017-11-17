@@ -610,6 +610,7 @@ int ntySendMonitorSleepDataResult(C_DEVID fromId, U8 *json, int length, U16 stat
 
 
 int ntySendUserDataAck(C_DEVID fromId, U8 *json, int length) {
+	ntylog( "ntySendUserDataAck send to fromId:%lld,json:%s\n", fromId, json );
 #if 0
 	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
 #else
@@ -635,6 +636,7 @@ int ntySendUserDataAck(C_DEVID fromId, U8 *json, int length) {
 	
 }
 
+//send to ios,do not judge the deviceType
 int ntySendPushNotifyIos(C_DEVID selfId, C_DEVID gId, U8 *msg, U32 type){
 #if 0
 		void *heap = ntyBHeapInstance();
@@ -710,45 +712,32 @@ int ntySendPushNotify(C_DEVID selfId, C_DEVID gId, U8 *msg, U32 type) {
 	
 	return NTY_RESULT_FAILED;//NTY_RESULT_FAILED
 #else
-
 	void *heap = ntyBHeapInstance();
 	NRecord *record = ntyBHeapSelect(heap, selfId);
 	if (record == NULL) return NTY_RESULT_NOEXIST;
 	Client *pClient = (Client *)record->value;
-
-	if (pClient->deviceType != NTY_PROTO_CLIENT_IOS && pClient->deviceType != NTY_PROTO_CLIENT_IOS_PUBLISH) {
-		
-		return ;
+	if ( pClient->deviceType != NTY_PROTO_CLIENT_IOS && pClient->deviceType != NTY_PROTO_CLIENT_IOS_PUBLISH ) {	
+		return NTY_RESULT_FAILED;
 	}
-
-	
 	VALUE_TYPE *tag = malloc(sizeof(VALUE_TYPE));
-	if (tag == NULL) return NTY_RESULT_ERROR;
-
-	memset(tag, 0, sizeof(VALUE_TYPE));
+	if ( tag == NULL ) return NTY_RESULT_ERROR;
+	memset( tag, 0, sizeof(VALUE_TYPE) );
 	ntylog("ntySendPushNotify --> begin");
-
-	if (msg != NULL) {
-		
+	if ( msg != NULL ) {	
 		tag->length = strlen(msg);
 		tag->Tag = malloc(tag->length+1);
 		memset(tag->Tag, 0, tag->length+1);
-		memcpy(tag->Tag, msg, tag->length);
-		
+		memcpy(tag->Tag, msg, tag->length);	
 	} else {
-	
 		tag->length = 0;
 		tag->Tag = NULL;
 	}
-
 	tag->gId = gId;
 	tag->arg = type;
-
 	tag->toId = selfId;
 	tag->Type = MSG_TYPE_IOS_PUSH_HANDLE;
 	tag->cb = ntyIOSPushHandle;
 	ntyDaveMqPushMessage(tag);
-
 	return NTY_RESULT_SUCCESS;
 	
 #endif
@@ -758,21 +747,37 @@ int ntyClassifyCategoryPushNotify(C_DEVID toId, C_DEVID gId, U8 *json, int lengt
 	if (json == NULL) return NTY_RESULT_ERROR;
 	
 	int category = ntyCommonJsonCategory(json, length);
-	ntylog("ntyClassifyCategoryPushNotify --> category:%d, json:%s\n", category, json);
+	ntylog("ntyClassifyCategoryPushNotify --> category:%d, json:%s,toId:%lld,gId:%lld\n", category, json,toId,gId);
 	
 	if (category == NTY_CATEGORY_SOSREPORT) {
 		ntylog(" ntyClassifyCategoryPushNotify SOS report\n");
 		return ntySendPushNotify(toId, gId, NTY_PUSH_SOSREPORT_MSG_CONTEXT, category);
-	} else if (category == NTY_CATEGORY_EFENCEREPORT) {
+	}else if (category == NTY_CATEGORY_EFENCEREPORT) {
 		ntylog(" ntyClassifyCategoryPushNotify EFENCE report\n");
 		return ntySendPushNotify(toId, gId, NTY_PUSH_EFENCEREPORT_MSG_CONTEXT, category);
-	} else if (category == NTY_CATEGORY_WEARSTATUS) {
+	}else if (category == NTY_CATEGORY_BLOODREPORT) {
+		ntylog(" ntyClassifyCategoryPushNotify BLOOD report\n");
+		//return ntySendPushNotify(toId, gId, NTY_PUSH_BLOOD_MSG_CONTEXT, category);
+	}else if (category == NTY_CATEGORY_HEARTREPORT) {
+		ntylog(" ntyClassifyCategoryPushNotify HEART report\n");
+		//return ntySendPushNotify(toId, gId, NTY_PUSH_HEART_MSG_CONTEXT, category);
+	}else if (category == NTY_CATEGORY_WEARSTATUS) {
 		ntylog(" ntyClassifyCategoryPushNotify WEASTATUS report\n");
-		return ntySendPushNotify(toId, gId, NTY_PUSH_MSG_CONTEXT, category);
-	}else if (category == NTY_CATEGORY_MATTRESSREPORT) {
+		return ntySendPushNotify(toId, gId, NTY_PUSH_WEARSTATUS_MSG_CONTEXT, category);
+	}else if (category == NTY_CATEGORY_FALLDOWNREPORT) {
+		ntylog(" ntyClassifyCategoryPushNotify FALLDOWN report\n");
+		return ntySendPushNotify(toId, gId, NTY_PUSH_FALLDOWN_MSG_CONTEXT, category);
+	}else if (category == NTY_CATEGORY_BINDCONFIRM) {
+		ntylog(" ntyClassifyCategoryPushNotify BINDCONFIRM for admin\n");
+		return ntySendPushNotify(toId, gId, NTY_PUSH_BINDCONFIRM_MSG_CONTEXT, category);
+	}else if (category == NTY_CATEGORY_MATTRESSREPORT) {	//mattress the third part server connect.
 		ntylog(" ntyClassifyCategoryPushNotify MATTRESS report\n");
-		return ntySendPushNotify(toId, gId, NTY_PUSH_MSG_CONTEXT_MATTRESS, category);
-	}else{}
+		return ntySendPushNotify(gId, toId, NTY_PUSH_MSG_CONTEXT_MATTRESS, category);
+	}else{
+		ntylog(" ntyClassifyCategoryPushNotify category not found\n");
+	}
+
+	return NTY_RESULT_SUCCESS;
 }
 
 int ntySendCommonBroadCastItem(C_DEVID selfId, C_DEVID toId, C_DEVID gId, U8 *json, int length, U32 msgId) {
@@ -785,7 +790,7 @@ int ntySendCommonBroadCastItem(C_DEVID selfId, C_DEVID toId, C_DEVID gId, U8 *js
 		return ntySendPushNotify(toId, NULL);
 	}
 #else
-	ntyClassifyCategoryPushNotify(toId, gId, json, length);
+	ntyClassifyCategoryPushNotify(toId, gId, json, length);	//ios app will be pushed message,others will not be pushed message.
 #endif
 
 	buffer[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
@@ -806,7 +811,6 @@ int ntySendCommonBroadCastItem(C_DEVID selfId, C_DEVID toId, C_DEVID gId, U8 *js
 
 int ntySendCommonBroadCastIter(void *self, void *arg) {
 	
-	
 	C_DEVID toId = 0, selfId = 0, gId = 0;
 	memcpy(&toId, self, sizeof(C_DEVID));
 
@@ -825,7 +829,7 @@ int ntySendCommonBroadCastIter(void *self, void *arg) {
 	U32 index = (U32)msg->arg;
 	memcpy(&selfId, msg->self, sizeof(C_DEVID));
 
-	ntylog(" toId:%lld, selfId:%lld\n", toId, selfId);
+	ntylog("ntySendCommonBroadCastIter toId:%lld, selfId:%lld\n", toId, selfId);
 	if (toId == selfId) return NTY_RESULT_SUCCESS;
 #if 0
 	void *map = ntyMapInstance();
@@ -858,20 +862,22 @@ int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int leng
 #if BHEAP_VECTOR_ENABLE
 	void *heap = ntyBHeapInstance();
 	NRecord *record = ntyBHeapSelect(heap, gId);
-	if (record == NULL) {
-
+	if ( record == NULL ) {
+		ntylog(" ntySendCommonBroadCastResult record==NULL \n");
 		void *group = ntyVectorCreator();
-		if (group == NULL) return NTY_RESULT_FAILED;
-
+		if ( group == NULL ){ 
+			ntylog(" ntySendCommonBroadCastResult group==NULL \n");
+			return NTY_RESULT_FAILED;
+		}
 		if(-1 == ntyQueryAppIDListSelectHandle(gId, group)) {
 			ntylog(" ntyQueryWatchIDListSelectHandle Failed \n");
 		}
-
-		ntylog(" ntySendCommonBroadCastResult record == NULL \n");
-		
+			
 		InterMsg *msg = (InterMsg*)malloc(sizeof(InterMsg));
-		if (msg == NULL) return NTY_RESULT_FAILED;
-		
+		if ( msg == NULL ){ 
+			ntylog(" ntyQueryWatchIDListSelectHandle msg==NULL \n");
+			return NTY_RESULT_FAILED;	
+		}
 		msg->buffer = json;
 		msg->length = length;
 		msg->group = &gId;
@@ -879,34 +885,34 @@ int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int leng
 		msg->arg = index;
 
 		ntyVectorIterator(group, ntySendCommonBroadCastIter, msg);
-
-		free(msg);
+		ntyFree(msg);
 		ntyVectorDestory(group);
-		
 	} else {
-		ntylog(" record != NULL \n");
-			
+		ntylog("ntySendCommonBroadCastResult record!=NULL \n");		
 		Client *pClient = (Client*)record->value;
-		if (pClient == NULL) return NTY_RESULT_NOEXIST;
-
-		ntylog(" ntySendCommonBroadCastResult pClient != NULL \n");
+		if ( pClient == NULL ){ 
+			ntylog("ntySendCommonBroadCastResult pClient==NULL \n");	
+			return NTY_RESULT_FAILED;
+		}
 		InterMsg *msg = (InterMsg*)malloc(sizeof(InterMsg));
-		if (msg == NULL) return NTY_RESULT_FAILED;
+		if ( msg == NULL ){
+			ntylog(" ntyQueryWatchIDListSelectHandle msg==NULL \n");
+			return NTY_RESULT_FAILED;
+		}
 		
 		msg->buffer = json;
 		msg->length = length;
 		msg->group = &gId;
 		msg->self = &selfId;
-		msg->arg = index;
-
-		ntylog(" ntySendCommonBroadCastResult ntyVectorIterator \n");
-		if (pClient->friends == NULL) {
-			free(msg);
+		msg->arg = index;		
+		if ( pClient->friends == NULL ) {
+			ntyFree( msg );
+			ntylog(" ntySendCommonBroadCastResult pClient->friends==NULL\n");
 			return NTY_RESULT_ERROR;
 		}
-		ntyVectorIterator(pClient->friends, ntySendCommonBroadCastIter, msg);
-
-		free(msg);
+		ntylog(" ntySendCommonBroadCastResult ntyVectorIterator \n");
+		ntyVectorIterator( pClient->friends, ntySendCommonBroadCastIter, msg );
+		ntyFree( msg );
 	}
 
 	return NTY_RESULT_SUCCESS;
@@ -916,10 +922,8 @@ int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int leng
 	//NRecord *record = ntyBHeapSelect(heap, gId);
 	//Client *pClient = (Client*)record->value;
 	//if (pClient == NULL) return NTY_RESULT_FAILED;
-
 	void *group = ntyVectorCreator();
 	if (group == NULL) return NTY_RESULT_FAILED;
-
 	if(-1 == ntyQueryAppIDListSelectHandle(gId, group)) {
 		ntylog(" ntyQueryWatchIDListSelectHandle Failed \n");
 	}
@@ -933,12 +937,10 @@ int ntySendCommonBroadCastResult(C_DEVID selfId, C_DEVID gId, U8 *json, int leng
 	msg->arg = index;
 	
 	ntylog(" -->> ntySendCommonBroadCastResult --> %s \n", json);
-
 	ntyVectorIterator(group, ntySendCommonBroadCastIter, msg);
-
-	free(msg);
-
+	ntyFree(msg);
 	ntyVectorDestory(group);
+	return NTY_RESULT_SUCCESS;
 #endif	
 }
 
@@ -1021,22 +1023,19 @@ int ntySendDataMessagePush(C_DEVID toId, U8 *buffer, int length){
 }
 
 int ntySendVoiceBroadCastItem(C_DEVID fromId, C_DEVID toId, C_DEVID gId, U8 *json, int length, int index) {
+	ntylog( "ntySendVoiceBroadCastItem begin,fromId:%lld,toId:%lld,gId:%lld\n",fromId,toId, gId);
 	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
 
 	buffer[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
 	buffer[NTY_PROTO_DEVTYPE_IDX] = NTY_PROTO_CLIENT_DEFAULT;
 	buffer[NTY_PROTO_PROTOTYPE_IDX] = PROTO_BROADCAST;
-	buffer[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_VOICE_BROADCAST;
-	
+	buffer[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_VOICE_BROADCAST;	
 	memcpy(&buffer[NTY_PROTO_VOICE_BROADCAST_DEVID_IDX], &fromId, sizeof(C_DEVID));
 	memcpy(&buffer[NTY_PROTO_VOICE_BROADCAST_MSGID_IDX], &index, sizeof(U32));
-
 	memcpy(&buffer[NTY_PROTO_VOICE_BROADCAST_JSON_LENGTH_IDX], &length, sizeof(U16));
 	memcpy(buffer+NTY_PROTO_VOICE_BROADCAST_JSON_CONTENT_IDX, json, length);
 	
 	length = length + NTY_PROTO_VOICE_BROADCAST_JSON_CONTENT_IDX + sizeof(U32);
-
-
 	void *map = ntyMapInstance();
 	ClientSocket *client = ntyMapSearch(map, toId);
 #if 0
@@ -1045,13 +1044,55 @@ int ntySendVoiceBroadCastItem(C_DEVID fromId, C_DEVID toId, C_DEVID gId, U8 *jso
 	}
 #else
 	ntySendPushNotify(toId, gId, NTY_PUSH_VOICE_MSG_CONTEXT, NTY_CATEGORY_VOICE);
+/*
+	//push to ios app,then do not send to ios app from SDK.
+	void *heap = ntyBHeapInstance();
+	NRecord *record = ntyBHeapSelect( heap, toId );
+	if ( record == NULL ) { 
+		ntylog("ntySendVoiceBroadCastItem Select FromId : %lld is No Exist \n", toId);
+		return NTY_RESULT_FAILED;
+	}
+	
+	Client *pClient = (Client*)record->value;
+	if ( pClient == NULL ){ 
+		ntylog("ntySendVoiceBroadCastItem pClient==NULL\n");
+		return NTY_RESULT_FAILED;
+	}
+
+	if ( pClient->deviceType==NTY_PROTO_CLIENT_IOS || pClient->deviceType==NTY_PROTO_CLIENT_IOS_PUBLISH ){
+		ntylog("ntySendVoiceBroadCastItem push to ios app,then do not send to ios app from SDK.\n");
+		return NTY_RESULT_SUCCESS;
+	}
+*/
 #endif
+	usleep( 100000 );
+	int ret = ntySendBuffer(client, buffer, length);
+	return ret;
+}
+
+int ntySendVoiceBroadCast(C_DEVID fromId, C_DEVID toId, C_DEVID gId, U8 *json, int length, int index) {
+	ntylog( "ntySendVoiceBroadCast begin,fromId:%lld,toId:%lld,gId:%lld\n",fromId,toId, gId);
+	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
+
+	buffer[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
+	buffer[NTY_PROTO_DEVTYPE_IDX] = NTY_PROTO_CLIENT_DEFAULT;
+	buffer[NTY_PROTO_PROTOTYPE_IDX] = PROTO_BROADCAST;
+	buffer[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_VOICE_BROADCAST;	
+	memcpy(&buffer[NTY_PROTO_VOICE_BROADCAST_DEVID_IDX], &fromId, sizeof(C_DEVID));
+	memcpy(&buffer[NTY_PROTO_VOICE_BROADCAST_MSGID_IDX], &index, sizeof(U32));
+	memcpy(&buffer[NTY_PROTO_VOICE_BROADCAST_JSON_LENGTH_IDX], &length, sizeof(U16));
+	memcpy(buffer+NTY_PROTO_VOICE_BROADCAST_JSON_CONTENT_IDX, json, length);
+	
+	length = length + NTY_PROTO_VOICE_BROADCAST_JSON_CONTENT_IDX + sizeof(U32);
+	void *map = ntyMapInstance();
+	ClientSocket *client = ntyMapSearch(map, toId);
 
 	return ntySendBuffer(client, buffer, length);
 }
 
+
 int ntySendVoiceBroadCastIter(void *self, void *arg) {
-	//U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
+	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
 	C_DEVID toId = 0, selfId = 0, gId = 0;
 	memcpy(&toId, self, sizeof(C_DEVID));
 
@@ -1067,7 +1108,10 @@ int ntySendVoiceBroadCastIter(void *self, void *arg) {
 	memcpy(&selfId, msg->self, sizeof(C_DEVID));
 
 	ntylog(" ntySendVoiceBroadCastIter --> toId:%lld, selfId:%lld\n", toId, selfId);
-	if (toId == selfId) return 0;
+	if (toId == selfId){ 
+		ntylog( "ntySendVoiceBroadCastIter toId=slefId do not broadcast\n" );	
+		return 0;
+	}
 #if 0
 	void *map = ntyMapInstance();
 	ClientSocket *client = ntyMapSearch(map, toId);
@@ -1076,17 +1120,21 @@ int ntySendVoiceBroadCastIter(void *self, void *arg) {
 	buffer[NTY_PROTO_DEVTYPE_IDX] = NTY_PROTO_CLIENT_DEFAULT;
 	buffer[NTY_PROTO_PROTOTYPE_IDX] = PROTO_BROADCAST;
 	buffer[NTY_PROTO_MSGTYPE_IDX] = NTY_PROTO_VOICE_BROADCAST;
-
 	memcpy(&buffer[NTY_PROTO_VOICE_BROADCAST_DEVID_IDX], &selfId, sizeof(C_DEVID));
+	memcpy(&buffer[NTY_PROTO_VOICE_BROADCAST_MSGID_IDX], &index, sizeof(U32));
 	memcpy(&buffer[NTY_PROTO_VOICE_BROADCAST_JSON_LENGTH_IDX], &length, sizeof(U16));
 	memcpy(buffer+NTY_PROTO_VOICE_BROADCAST_JSON_CONTENT_IDX, json, length);
 
 	length = length + NTY_PROTO_VOICE_BROADCAST_JSON_CONTENT_IDX + sizeof(U32);
-
-	return ntySendBuffer(client, buffer, length);
+	int nRet = ntySendBuffer(client, buffer, length);
+	ntylog( "ntySendVoiceBroadCastIter ntySendBuffer after\n" );
+	return nRet;
 #else
-
-	return ntySendVoiceBroadCastItem(selfId, toId, gId, json, length, index);
+	int nRet = ntySendVoiceBroadCastItem(selfId, toId, gId, json, length, index);
+	ntylog( "ntySendVoiceBroadCastIter ntySendVoiceBroadCastItem after\n" );
+	usleep( 100000 );
+	
+	return nRet;
 
 #endif
 }
@@ -1095,21 +1143,16 @@ int ntySendVoiceBroadCastIter(void *self, void *arg) {
 int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int length, int index) {
 
 #if BHEAP_VECTOR_ENABLE
-
 	void *heap = ntyBHeapInstance();
 	NRecord *record = ntyBHeapSelect(heap, gId);
-	if (record == NULL) {
-		
+	
+	if ( record == NULL	) {
 		void *group = ntyVectorCreator();
 		if (group == NULL) return NTY_RESULT_FAILED;
-
-		if(-1 == ntyQueryAppIDListSelectHandle(gId, group)) {
-			ntylog(" ntyQueryWatchIDListSelectHandle Failed \n");
+		if( -1 == ntyQueryAppIDListSelectHandle(gId, group) ) {	//find all the appids binded gId  
+			ntylog("ntySendVoiceBroadCastResult ntyQueryWatchIDListSelectHandle Failed \n");
 			return NTY_RESULT_FAILED;
-		}
-
-		ntylog(" ntySendCommonBroadCastResult record == NULL \n");
-		
+		}			
 		InterMsg *msg = (InterMsg*)malloc(sizeof(InterMsg));
 		if (msg == NULL) return NTY_RESULT_FAILED;
 		
@@ -1118,60 +1161,69 @@ int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int lengt
 		msg->group = &gId;
 		msg->self = &fromId;
 		msg->arg = index;
-
-		ntyVectorIterator(group, ntySendVoiceBroadCastIter, msg);
-		free(msg);
+		ntylog(" ntySendCommonBroadCastResult record==NULL ntyVectorIterator\n");
+		ntyVectorIterator(group, ntySendVoiceBroadCastIter, msg);  //broacast to all the appids binded the deviceid
+		ntyFree(msg);
 		ntyVectorDestory(group);
 
-		record = ntyBHeapSelect(heap, fromId);
-		if (record == NULL) { 
-			ntylog("ntySendVoiceBroadCastResult Select FromId : %lld is No Exist \n", fromId);
+		//when fromId is app,then send to the device.	
+		NRecord *recordPtr = ntyBHeapSelect(heap, fromId);
+		if ( recordPtr == NULL ) { 
+			ntylog("ntySendVoiceBroadCastResult gId record==NULL,Select FromId:%lld is Not Exist \n", fromId);
 			return NTY_RESULT_FAILED;
 		}
-		
-		Client *pClient = (Client*)record->value;
-		if (pClient == NULL) return NTY_RESULT_FAILED;
-
-		if (pClient->deviceType == NTY_PROTO_CLIENT_ANDROID 
-			|| pClient->deviceType == NTY_PROTO_CLIENT_IOS
-			|| pClient->deviceType == NTY_PROTO_CLIENT_IOS_PUBLISH) {
-			ntySendVoiceBroadCastItem(fromId, gId, gId, json, length, index);
+		Client *pClientPtr = (Client*)recordPtr->value;
+		if ( pClientPtr == NULL ){ 
+			ntylog("ntySendVoiceBroadCastResult gId record==NULL pClient==NULL\n");
+			return NTY_RESULT_FAILED;
 		}
+		if (pClientPtr->deviceType == NTY_PROTO_CLIENT_ANDROID 
+			|| pClientPtr->deviceType == NTY_PROTO_CLIENT_IOS
+			|| pClientPtr->deviceType == NTY_PROTO_CLIENT_IOS_PUBLISH) {	
+			ntylog( "ntySendVoiceBroadCastResult fromId is AppId,then send to the device.\n" );
+			ntySendVoiceBroadCast(fromId, gId, gId, json, length, index);
+		}	
 
-		
-	} else {
-	
+	}else {
 		Client *pClient = (Client*)record->value;
-		if (pClient == NULL) return NTY_RESULT_NOEXIST;
+		if (pClient == NULL){
+			ntylog( "ntySendVoiceBroadCastResult record!=NULL pClient==NULL\n" );
+			return NTY_RESULT_NOEXIST;
+		}
 		InterMsg *msg = (InterMsg*)malloc(sizeof(InterMsg));
 		msg->buffer = json;
 		msg->length = length;
 		msg->group = &gId;
 		msg->self = &fromId;
 		msg->arg = index;
-
-		if (pClient->friends == NULL) {
-			free(msg);
+		if ( pClient->friends == NULL ) {
+			ntylog( "ntySendVoiceBroadCastResult record==NULL pClient->friends==NULL\n" );
+			ntyFree(msg);
 			return NTY_RESULT_ERROR;
 		}
 
-		ntylog(" ntySendVoiceBroadCastResult --> ntyVectorIterator\n");
-		ntyVectorIterator(pClient->friends, ntySendVoiceBroadCastIter, msg);
+		ntylog(" ntySendCommonBroadCastResult record!=NULL ntyVectorIterator\n");
+		ntyVectorIterator(pClient->friends, ntySendVoiceBroadCastIter, msg);	//broacast to all the appids binded the deviceid
+		ntyFree(msg);
 
-		free(msg);
+		//when fromId is app,then send to the device.	
+		NRecord *recordPtr = ntyBHeapSelect(heap, fromId);
+		if ( recordPtr == NULL ) { 
+			ntylog("ntySendVoiceBroadCastResult gId record==NULL, Select FromId:%lld is not Exist \n", fromId);
+			return NTY_RESULT_FAILED;
+		}
 
-		//if fromId is AppId, need to send gId self
-		//else don't do that
-		record = ntyBHeapSelect(heap, fromId);
-		if (record == NULL) return NTY_RESULT_NOEXIST;
-
-		pClient = (Client*)record->value;
-		if (pClient == NULL) return NTY_RESULT_NOEXIST;
-		
-		if (pClient->deviceType == NTY_PROTO_CLIENT_ANDROID 
-			|| pClient->deviceType == NTY_PROTO_CLIENT_IOS
-			|| pClient->deviceType == NTY_PROTO_CLIENT_IOS_PUBLISH) {
-			ntySendVoiceBroadCastItem(fromId, gId, gId, json, length, index);
+		Client *pClientPtr = (Client*)recordPtr->value;
+		if ( pClientPtr == NULL ){ 
+			ntylog("ntySendVoiceBroadCastResult gId record==NULL pClientPtr==NULL\n");
+			return NTY_RESULT_FAILED;
+		}
+	
+		if (pClientPtr->deviceType == NTY_PROTO_CLIENT_ANDROID 
+			|| pClientPtr->deviceType == NTY_PROTO_CLIENT_IOS
+			|| pClientPtr->deviceType == NTY_PROTO_CLIENT_IOS_PUBLISH) {
+			ntylog( "ntySendVoiceBroadCastResult fromId is AppId,then send to the device.\n" );
+			ntySendVoiceBroadCast(fromId, gId, gId, json, length, index);
 		}
 	}
 #else
@@ -1196,29 +1248,22 @@ int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int lengt
 	} else {
 		ntylog(" Protocol Device Type is Error : %c\n", pClient->deviceType);
 	}
-
-
 	InterMsg *msg = (InterMsg*)malloc(sizeof(InterMsg));
 	if (msg == NULL) return NTY_RESULT_ERROR;
-	
 	msg->buffer = json;
 	msg->length = length;
 	msg->group = pClient;
 	msg->self = &fromId;
 	msg->arg = index;
 
-	
 	if (group == NULL){ 
 		free(msg);
 		return NTY_RESULT_ERROR;
 	}
 	ntylog(" ntySendVoiceBroadCastResult --> ntyVectorIterator\n");
-
 	ntyVectorIterator(group, ntySendVoiceBroadCastIter, msg);
-	
 	free(msg);
 	ntyVectorDestory(group);
-
 
 	//if fromId is AppId, need to send gId self
 	//else don't do that
@@ -1227,8 +1272,8 @@ int ntySendVoiceBroadCastResult(C_DEVID fromId, C_DEVID gId, U8 *json, int lengt
 		|| pClient->deviceType == NTY_PROTO_CLIENT_IOS_PUBLISH) {
 		ntySendVoiceBroadCastItem(fromId, gId, gId, json, length, index);
 	}
-
 #endif
+
 	return NTY_RESULT_SUCCESS;
 	
 }
@@ -1511,6 +1556,7 @@ int ntySendRecodeJsonPacket(C_DEVID fromId, C_DEVID toId, U8 *json, int length) 
 
 	ret = ntySendCommonReq(fromId, toId, json, length, msgId);
 	if (ret < NTY_RESULT_SUCCESS) {
+		ntylog("ntyExecuteCommonItemMsgInsertHandle ntySendCommonReq ret:%d\n", ret);
 		ntyExecuteCommonItemMsgDeleteHandle(msgId);
 	}
 
@@ -1601,22 +1647,21 @@ int ntyBigPacketEncode(U8 *pBuffer, int length) {
 	int pktLength = pktCount * NTY_VOICEREQ_PACKET_LENGTH + (length % NTY_VOICEREQ_DATA_LENGTH) + NTY_VOICEREQ_EXTEND_LENGTH;
 	//U8 *pktIndex = pBuffer + pktCount * NTY_VOICEREQ_PACKET_LENGTH;
 
-	ntylog("pktLength :%d, pktCount:%d\n", pktLength, pktCount);
+	ntylog("ntyBigPacketEncode pktLength :%d, pktCount:%d\n", pktLength, pktCount);
 	if (pktCount >= (NTY_VOICEREQ_COUNT_LENGTH-1)) return -1;
 
 	j = pktLength - NTY_CRCNUM_LENGTH;
 	k = length;
 
-	ntylog("j :%d, k :%d, pktCount:%d, last:%d\n", j, k, pktCount, (length % NTY_VOICEREQ_DATA_LENGTH));
+	ntylog("ntyBigPacketEncode j:%d, k:%d, pktCount:%d, last:%d\n", j, k, pktCount, (length % NTY_VOICEREQ_DATA_LENGTH));
 	for (idx = 0;idx < (length % NTY_VOICEREQ_DATA_LENGTH);idx ++) {
 		pBuffer[--j] = pBuffer[--k];
 	}	
 			
-
 	for (i = pktCount;i > 0;i --) {
 		j = i * NTY_VOICEREQ_PACKET_LENGTH - NTY_CRCNUM_LENGTH;
 		k = i * NTY_VOICEREQ_DATA_LENGTH;
-		ntylog("j :%d, k :%d\n", j, k);
+		ntylog("ntyBigPacketEncode j:%d, k:%d\n", j, k);
 		for (idx = 0;idx < NTY_VOICEREQ_DATA_LENGTH;idx ++) {
 			pBuffer[--j] = pBuffer[--k];
 		}
@@ -1629,26 +1674,19 @@ int ntySendBigPacket(U8 *buffer, int length, C_DEVID fromId, C_DEVID gId, C_DEVI
 	U16 Count = length / NTY_VOICEREQ_PACKET_LENGTH + 1 ;
 	U32 pktLength = NTY_VOICEREQ_DATA_LENGTH, i;
 	U8 *pkt = buffer;
-	
 	int ret = -1;
-
-	ntylog(" destId:%d, index:%d, length:%d", NTY_PROTO_VOICE_DATA_REQ_GROUP_IDX,
-			index, length);
-
+	ntylog("ntySendBigPacket destId:%d, index:%d, length:%d", NTY_PROTO_VOICE_DATA_REQ_GROUP_IDX, index, length);
 	void *map = ntyMapInstance();
 	ClientSocket *client = ntyMapSearch(map, toId);
 
-	for (i = 0;i < Count;i ++) {
+	for ( i = 0;i < Count;i ++ ) {
 		pkt = buffer+(i*NTY_VOICEREQ_PACKET_LENGTH);
-
 		pkt[NTY_PROTO_VERSION_IDX] = NTY_PROTO_VERSION;
 		pkt[NTY_PROTO_DEVTYPE_IDX] = NTY_PROTO_CLIENT_ANDROID;
 		pkt[NTY_PROTO_PROTOTYPE_IDX] = (U8) MSG_REQ;	
 		pkt[NTY_PROTO_VOICEREQ_TYPE_IDX] = NTY_PROTO_VOICE_DATA_REQ;
-
 		memcpy(pkt+NTY_PROTO_VOICE_DATA_REQ_DEVID_IDX, &fromId, sizeof(C_DEVID));
 		memcpy(pkt+NTY_PROTO_VOICE_DATA_REQ_GROUP_IDX, &gId, sizeof(C_DEVID));
-
 		memcpy(pkt+NTY_PROTO_VOICE_DATA_REQ_PKTINDEX_IDX, &i, sizeof(U16));
 		memcpy(pkt+NTY_PROTO_VOICE_DATA_REQ_PKTTOTLE_IDX, &Count , sizeof(U16));
 		memcpy(pkt+NTY_PROTO_VOICE_DATA_REQ_OFFLINEMSGID_IDX, &index, sizeof(U32));
@@ -1656,14 +1694,11 @@ int ntySendBigPacket(U8 *buffer, int length, C_DEVID fromId, C_DEVID gId, C_DEVI
 		if (i == Count-1) { //last packet
 			pktLength = (length % NTY_VOICEREQ_PACKET_LENGTH) - NTY_VOICEREQ_EXTEND_LENGTH;
 		}
-
-		memcpy(pkt+NTY_PROTO_VOICE_DATA_REQ_PKTLENGTH_IDX, &pktLength, sizeof(U32));
-		
-		ntySendBuffer(client, pkt, pktLength+NTY_VOICEREQ_EXTEND_LENGTH);
-		
-		ntylog(" index : %d", i );
-		ntylog(" pktLength:%d, Count:%d, ret:%d, selfIdx:%d\n",
-			pktLength+NTY_VOICEREQ_EXTEND_LENGTH, Count, ret, NTY_PROTO_VOICEREQ_SELFID_IDX);
+		memcpy(pkt+NTY_PROTO_VOICE_DATA_REQ_PKTLENGTH_IDX, &pktLength, sizeof(U32));	
+		ret = ntySendBuffer(client, pkt, pktLength+NTY_VOICEREQ_EXTEND_LENGTH);	
+		ntylog("ntySendBigPacket index:%d,pktLength:%d,Count:%d,send:%d,fromId:%lld,gId:%lld,toId:%lld\n", i,pktLength+NTY_VOICEREQ_EXTEND_LENGTH, Count, ret, fromId,gId,toId);
+		//ntylog(" pktLength:%d, Count:%d, ret:%d, selfIdx:%d\n",pktLength+NTY_VOICEREQ_EXTEND_LENGTH, Count, ret, NTY_PROTO_VOICEREQ_SELFID_IDX);
+		usleep(100000); //add by Rain 2017-10-29
 #if 0
 		usleep(20 * 1000); //Window Send
 #endif
@@ -1722,19 +1757,18 @@ int ntySendBinBufferBroadCastResult(U8 *u8Buffer, int length, C_DEVID fromId, C_
 }
 
 int ntySendVoiceBufferResult(U8 *u8Buffer, int length, C_DEVID fromId, C_DEVID gId, C_DEVID toId, U32 index) {
-
 	length = ntyBigPacketEncode(u8Buffer, length);
-	
+
 	return ntySendBigPacket(u8Buffer, length, fromId, gId, toId, index);
 }
-
 
 #endif
 
 
 
-int ntySendBindConfirmPushResult(C_DEVID proposerId, C_DEVID adminId, U8 *json, int length) {
-	ntylog(" -- ntySendBindConfirmPushResult --json: %s \n", json);
+int ntySendBindConfirmPushResult(C_DEVID proposerId, C_DEVID devId, C_DEVID adminId, U8 *json, int length) {
+	ntylog("ntySendBindConfirmPushResult begin\n");
+	ntylog("ntySendBindConfirmPushResult json:%s\n", json);
 
 	U16 bLength = (U16)length;
 	U8 buffer[NTY_DATA_PACKET_LENGTH] = {0};
@@ -1759,7 +1793,7 @@ int ntySendBindConfirmPushResult(C_DEVID proposerId, C_DEVID adminId, U8 *json, 
 		return ntySendPushNotify(adminId, NULL);
 	}
 #else
-	ntySendPushNotify(adminId, 0, NTY_PUSH_BINDCONFIRM_MSG_CONTEXT, NTY_CATEGORY_BINDCONFIRM);
+	ntySendPushNotify(adminId, devId, NTY_PUSH_BINDCONFIRM_MSG_CONTEXT, NTY_CATEGORY_BINDCONFIRM);
 #endif
 	
 

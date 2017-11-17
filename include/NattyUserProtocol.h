@@ -49,7 +49,7 @@
 
 #include <stdio.h>
 
-#define HTTP_QRCODE_URL			"http://app.quanjiakan.com/familycare/activate"
+#define HTTP_QRCODE_URL			"http://app.quanjiakan.com/pingan/views/authorize.jsp?authorizeTYPE=0&authorizeIMEI="
 #define HTTP_QJK_BASE_URL		"http://app.quanjiakan.com"
 #define HTTP_GAODE_BASE_URL		"http://apilocate.amap.com"
 #define HTTP_WEATHER_BASE_URL	"http://api.thinkpage.cn"
@@ -108,6 +108,8 @@
 #define NATTY_USER_PROTOCOL_STEPSREPORT		"StepsReport"
 #define NATTY_USER_PROTOCOL_HEARTREPORT		"HeartReport"
 #define NATTY_USER_PROTOCOL_BLOODREPORT		"BloodReport"
+#define NATTY_USER_PROTOCOL_DIASTOLEREPORT	"DiastoleReport"
+#define NATTY_USER_PROTOCOL_SHRINKREPORT	"ShrinkReport"
 
 
 #define NATTY_USER_PROTOCOL_FALLDOWN_TYPE1	"1"
@@ -131,6 +133,9 @@
 #define NATTY_USER_PROTOCOL_POWER			"Power"
 #define NATTY_USER_PROTOCOL_STEPS			"Steps"
 #define NATTY_USER_PROTOCOL_PHONENUM		"PhoneNum"
+#define NATTY_USER_PROTOCOL_SWVERSION		"SWVerno"
+#define NATTY_USER_PROTOCOL_DEVICETYPE		"DeviceType"
+#define NATTY_USER_PROTOCOL_SIMOPERATOR		"SimOperator"
 
 #define NATTY_USER_PROTOCOL_RESULTS			"Results"
 //#define NATTY_USER_PROTOCOL_RESULT			"Result"
@@ -160,6 +165,7 @@
 #define NATTY_USER_PROTOCOL_WATCHBELL 		"WatchBell"
 #define NATTY_USER_PROTOCOL_TAGETSTEP 		"TagetStep"
 #define NATTY_USER_PROTOCOL_MODEL 			"Model"
+#define NATTY_USER_PROTOCOL_POWERSAVING 	"PowerSaving"
 
 
 #define NATTY_USER_PROTOCOL_TURN 			"Turn"
@@ -200,6 +206,13 @@
 #define NATTY_USER_PROTOCOL_MESSAGE 		"Message"
 #define NATTY_USER_PROTOCOL_STATUS 			"Status"
 #define NATTY_USER_PROTOCOL_PHONENUM 		"PhoneNum"
+#define NATTY_USER_PROTOCOL_SERVICE 		"Service"
+#define NATTY_USER_PROTOCOL_CUSTOMERNUM 	"CustomerNum"
+#define NATTY_USER_PROTOCOL_DOCTORNUM 		"DoctorNum"
+#define NATTY_USER_PROTOCOL_ALARMFREQ 		"AlarmFreq"
+#define NATTY_USER_PROTOCOL_ALARMTIME 		"AlarmTime"
+
+#define NATTY_USER_PROTOCOL_INIT 			"Init"
 
 #define NATTY_USER_PROTOCOL_PROPOSER 		"Proposer"
 #define NATTY_USER_PROTOCOL_USERNAME 		"UserName"
@@ -226,6 +239,8 @@
 #define NATTY_USER_PROTOCOL_LATITUDE 		"Latitude"
 #define NATTY_USER_PROTOCOL_FALLDOWNREPORT 	"FalldownReport"
 #define NATTY_USER_PROTOCOL_SAFETYREPORT 	"SafetyReport"
+#define NATTY_USER_PROTOCOL_REALTIMEREPORT 	"RealTimeReport"
+
 
 
 
@@ -411,6 +426,9 @@ typedef struct _ICCIDSet {
 	const char *category;
 	const char *ICCID;
 	const char *phone_num;
+	const char *SWVersion;
+	const char *DeviceType;
+	const char *SimOperator;
 } ICCIDSet;
 
 typedef struct _CommonResult {
@@ -549,6 +567,7 @@ typedef struct _RunTimeItem {
 	const char *watch_bell;
 	const char *taget_step;
 	const char *model;
+	const char *PowerSaving;
 } RunTimeItem;
 typedef struct _RunTimeReq {
 	const char *msg;
@@ -945,6 +964,8 @@ typedef struct _BloodReportResults {
 	const char *IMEI;
 	const char *category;
 	const char *bloodReport;
+	const char *diastoleReport;
+	const char *shrinkReport;
 	const char *location;
 	const char *type;
 	const char *time;
@@ -1001,6 +1022,7 @@ typedef struct _LocatorBindReq{
 	const char *IMEI;
 	const char *Category;
 	const char *Name;
+	const char *NickName;
 	const char *PicURL;
 	const char *Type;
 }LocatorBindReq;
@@ -1045,6 +1067,7 @@ typedef struct _ClientRunTimeAckItem{
 	 char *LightPanel;
 	 char *WatchBell;
 	 char *TagetStep;
+	 char *PowerSaving;
 	 char *Model;
 }ClientRunTimeAckItem;
 typedef struct _ClientRunTimeAck{
@@ -1112,6 +1135,21 @@ typedef struct _ClientURLAck{
 	const char *Category;
 	ClientURLAckItem objClientURLAckItem;
 }ClientURLAck;
+
+typedef struct _ClientServiceAck{
+	const char *IMEI;
+	const char *Category;
+	const char *CustomerNum;
+	const char *DoctorNum;
+	const char *alarmFreq;
+	const char *alarmTime;
+}ClientServiceAck;
+
+typedef struct _ClientInitAck{
+	const char *IMEI;
+	const char *Category;
+	const char *Init;
+}ClientInitAck;
 
 
 typedef struct _DeviceEvent{

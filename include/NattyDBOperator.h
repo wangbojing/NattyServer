@@ -114,11 +114,13 @@
 #define NTY_DB_SELECT_EFENCE				"CALL PROC_SELECT_EFENCE(%lld)"
 
 #define NTY_DB_SELECT_THRESHOLD				"CALL PROC_SELECT_THRESHOLD(%lld, %d)"
+#define NTY_DB_SELECT_SERVICE				"CALL PROC_SELECT_SERVICE(%lld)"
+#define NTY_DB_SELECT_INIT					"CALL PROC_SELECT_INIT(%lld)"
 
 
 #define NTY_DB_SELECT_ICCID					"CALL PROC_SELECT_ICCID('%s')"
 
-#define NTY_DB_SET_ICCID					"CALL PROC_SET_ICCID(%lld, '%s', '%s')"
+#define NTY_DB_SET_ICCID					"CALL PROC_SET_ICCID(%lld, '%s', '%s', '%s', %d, %d)"
 
 
 #define NTY_DB_PHNUM_VALUE_SELECT			"CALL PROC_PHNUM_VALUE_SELECT(%lld, '%s')"
@@ -138,7 +140,7 @@
 
 
 //runtime
-#define NTY_DB_UPDATE_RUNTIME				"CALL PROC_UPDATE_RUNTIME(%lld, %d, %d, %d, '%s', %d)"
+#define NTY_DB_UPDATE_RUNTIME				"CALL PROC_UPDATE_RUNTIME(%lld, %d, %d, %d, '%s', %d, %d, %d)"
 
 #define NTY_DB_UPDATE_RUNTIME_AUTOCONN		"CALL PROC_UPDATE_RUNTIME_AUTOCONN(%lld, %d)"
 
@@ -212,7 +214,7 @@
 
 #define NTY_DB_INSERT_HEARTREPORT			"CALL PROC_INSERT_HEARTREPORT(%lld, %d)"
 
-#define NTY_DB_INSERT_BLOODREPORT			"CALL PROC_INSERT_BLOODREPORT(%lld, %d)"
+#define NTY_DB_INSERT_BLOODREPORT			"CALL PROC_INSERT_BLOODREPORT(%lld, %d, %d, %d)"
 
 
 #define NTY_DB_INSERT_COMMON_MSG_REJECT		"CALL PROC_INSERT_COMMON_MSG_REJECT(%lld, %lld, '%s')"
@@ -316,7 +318,7 @@ int ntyExecuteStepsReportInsertHandle(C_DEVID did, int step, int *msg);
 
 int ntyExecuteHeartReportInsertHandle(C_DEVID did, int heart, int *msg);
 
-int ntyExecuteBloodReportInsertHandle(C_DEVID did, int blood, int *msg);
+int ntyExecuteBloodReportInsertHandle(C_DEVID did, int bloodReport, int diastoleReport, int shrinkReport, int *msg);
 
 int ntyExecuteEfenceInsertHandle(C_DEVID aid, C_DEVID did, int index, int num, U8 *points, U8 *runtime, int *id);
 
@@ -326,9 +328,9 @@ int ntyExecuteEfenceDeleteHandle(C_DEVID aid, C_DEVID did, int index);
 
 int ntyExecuteICCIDSelectHandle(C_DEVID did, const char *iccid, char *phonenum);
 
-int ntyExecuteICCIDSetInsertHandle(C_DEVID did, const char *iccid, char *phonenum);
+int ntyExecuteICCIDSetUpdateHandle(C_DEVID did, const char *iccid, const char *phonenum, const char *version, int deviceType, int simOperator);
 
-int ntyExecuteRuntimeUpdateHandle(C_DEVID aid, C_DEVID did, int auto_conn, U8 loss_report, U8 light_panel, const char *bell, int target_step);
+int ntyExecuteRuntimeUpdateHandle(C_DEVID aid, C_DEVID did, U16 auto_conn, U16 loss_report, U16 light_panel, const char *bell, U16 target_step, U16 model, U16 powerSaving);
 
 int ntyExecuteRuntimeAutoConnUpdateHandle(C_DEVID aid, C_DEVID did, int runtime_param);
 
@@ -375,8 +377,10 @@ int ntyExecuteClientSelectEfenceHandle(C_DEVID aid, C_DEVID did, void *container
 int ntyExecuteClientSelectEfence( void *self, C_DEVID aid, C_DEVID did, void *container);
 int ntyExecuteClientSelectThresholdHandle(C_DEVID did, int type, int *minValue, int *maxValue);
 int ntyExecuteClientSelectThreshold( void *self, C_DEVID did, int type, int *minValue, int *maxValue);
-
-
+int ntyExecuteClientSelectServiceHandle(C_DEVID aid, C_DEVID did, char *customerNum, char *doctorNum, char *alarmFreq, char *alarmTime);
+int ntyExecuteClientSelectService( void *self, C_DEVID aid, C_DEVID did, char *customerNum, char *doctorNum, char *alarmFreq, char *alarmTime );
+int ntyExecuteClientSelectInitHandle(C_DEVID aid, C_DEVID did, char *initFlag);
+int ntyExecuteClientSelectInit( void *self, C_DEVID aid, C_DEVID did, char *initFlag);
 
 int ntyExecuteTimeTablesUpdateHandle(C_DEVID aid, C_DEVID did, const char *morning, U8 morning_turn, const char *afternoon,  U8 afternoon_turn, const char *daily, int *result);
 
